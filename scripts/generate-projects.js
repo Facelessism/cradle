@@ -40,7 +40,7 @@ function generateProjects() {
       projects.push({
         title: titleCase(project.name),
         category: categoryName,
-        path: `projects/${categoryName}/${project.name}`
+        path: `projects/${categoryName}/${project.name}/`
       });
     }
   }
