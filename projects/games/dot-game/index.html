@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dot Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+    <header class="card">
+        <h1>Dot Game</h1>
+        <p>Build, Explode, Conquer</p>
+    </header>
+
+    <section class="card controls">
+
+        <div class="control-group">
+            <label for="playerCount">
+                Players
+            </label>
+
+            <select id="playerCount">
+                <option value="2">2 Players</option>
+                <option value="3">3 Players</option>
+                <option value="4" selected>4 Players</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="gridSize">
+                Grid Size:
+                <span id="gridValue">
+                    15 × 15
+                </span>
+            </label>
+
+            <input
+                type="range"
+                id="gridSize"
+                min="8"
+                max="28"
+                value="15"
+            >
+        </div>
+
+        <button id="newGame" class="btn">
+            New Game
+        </button>
+
+    </section>
+
+    <section class="card status-bar">
+        Turn:
+        <span id="currentPlayer">
+            Red
+        </span>
+    </section>
+
+    <section id="boardWrapper" class="card">
+        <div id="board"></div>
+    </section>
+
+    <section class="card">
+        <h2>Player Stats</h2>
+        <div id="playerStats"></div>
+    </section>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>

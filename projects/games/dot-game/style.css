@@ -1,0 +1,131 @@
+:root {
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #dbe2ea;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 20px;
+    font-family: Segoe UI, sans-serif;
+    background: var(--bg);
+}
+
+.container {
+    max-width: 1400px;
+    margin: auto;
+}
+
+.card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.btn {
+    cursor: pointer;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+#boardWrapper {
+    overflow: auto;
+}
+
+#board {
+    display: grid;
+    gap: 1px;
+    width: fit-content;
+    margin: auto;
+}
+
+.cell {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #e2e8f0;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    cursor: pointer;
+
+    font-weight: 700;
+    font-size: 14px;
+
+    transition: 0.15s;
+}
+
+.cell:hover {
+    filter: brightness(0.95);
+}
+
+.red {
+    background: #ef4444;
+    color: white;
+}
+
+.blue {
+    background: #3b82f6;
+    color: white;
+}
+
+.green {
+    background: #22c55e;
+    color: white;
+}
+
+.yellow {
+    background: #eab308;
+    color: black;
+}
+
+#playerStats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.player-card {
+    padding: 10px 16px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+}
+
+.player-card.red {
+    background: #ef4444;
+}
+
+.player-card.blue {
+    background: #3b82f6;
+}
+
+.player-card.green {
+    background: #22c55e;
+}
+
+.player-card.yellow {
+    background: #eab308;
+    color: black;
+}

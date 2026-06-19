@@ -1,0 +1,220 @@
+:root {
+  --primary: #2563eb;
+
+  --bg: #f8fafc;
+  --card: #ffffff;
+
+  --text: #1e293b;
+  --border: #e2e8f0;
+
+  --red: #ef4444;
+  --green: #22c55e;
+  --yellow: #eab308;
+  --blue: #3b82f6;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  padding: 20px;
+}
+
+.container {
+  max-width: 1200px;
+  margin: auto;
+
+  display: grid;
+  grid-template-columns: 3fr 1.2fr;
+  gap: 20px;
+}
+
+header {
+  grid-column: 1 / -1;
+}
+
+header h1 {
+  margin-bottom: 6px;
+}
+
+#status {
+  color: #64748b;
+}
+
+.controls {
+  grid-column: 1 / -1;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.controls button {
+  border: none;
+  border-radius: 6px;
+  padding: 10px 14px;
+
+  background: var(--primary);
+  color: white;
+
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.controls button:hover {
+  opacity: 0.9;
+}
+
+#diceValue {
+  min-width: 60px;
+  text-align: center;
+
+  font-size: 1.5rem;
+  font-weight: bold;
+
+  padding: 8px 12px;
+
+  background: var(--card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.game-info {
+  grid-column: 1 / -1;
+
+  display: flex;
+  justify-content: space-between;
+
+  background: var(--card);
+
+  padding: 15px;
+  border-radius: 12px;
+
+  border: 1px solid var(--border);
+}
+
+.board {
+  background: var(--card);
+
+  border-radius: 12px;
+  border: 1px solid var(--border);
+
+  padding: 20px;
+
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 2px;
+
+  min-height: 650px;
+}
+
+.cell {
+  aspect-ratio: 1;
+
+  background: white;
+  border: 1px solid var(--border);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.token {
+  width: 70%;
+  height: 70%;
+
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.red {
+  background: var(--red);
+}
+
+.green {
+  background: var(--green);
+}
+
+.yellow {
+  background: var(--yellow);
+}
+
+.blue {
+  background: var(--blue);
+}
+
+.history {
+  background: var(--card);
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  padding: 20px;
+}
+
+.history h2 {
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+.history ol {
+  padding-left: 20px;
+
+  max-height: 550px;
+  overflow-y: auto;
+}
+
+.history li {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.history ol::-webkit-scrollbar {
+  width: 8px;
+}
+
+.history ol::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+@media (max-width: 1000px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+
+  .board {
+    min-height: auto;
+  }
+
+  .history {
+    order: 10;
+  }
+}
+
+@media (max-width: 700px) {
+  body {
+    padding: 12px;
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .game-info {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .board {
+    padding: 10px;
+  }
+}

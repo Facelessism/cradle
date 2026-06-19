@@ -20,9 +20,19 @@
     "path": "projects/dev-tools/cpu-emulator"
   },
   {
+    "title": "Dot Game",
+    "category": "games",
+    "path": "projects/games/dot-game"
+  },
+  {
     "title": "Image Classifier",
     "category": "aiml",
     "path": "projects/aiml/image-classifier"
+  },
+  {
+    "title": "Ludo Game",
+    "category": "games",
+    "path": "projects/games/ludo-game"
   },
   {
     "title": "Neural Network Playground",

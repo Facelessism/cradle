@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ludo Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Ludo</h1>
+            <p id="status">Red's turn</p>
+        </header>
+
+        <div class="controls">
+            <button id="rollDice">Roll Dice</button>
+            <div id="diceValue">🎲</div>
+
+            <button id="newGame">New Game</button>
+            <button id="backHome">Back Home</button>
+        </div>
+
+        <div class="game-info">
+            <div>Current Turn: <span id="turnLabel">Red</span></div>
+            <div>Moves: <span id="moveCount">0</span></div>
+        </div>
+
+        <div id="board" class="board"></div>
+
+        <section class="history">
+            <h2>Move History</h2>
+            <ol id="moveList"></ol>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
