@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pairwise — Memory Card Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="navbar__brand">
+      <span class="navbar__mark">⬖</span>
+      <span class="navbar__title">Pairwise</span>
+    </div>
+    <div class="navbar__stats" id="navStats" hidden>
+      <div class="navbar__stat">
+        <span class="navbar__stat-label">Flips</span>
+        <span class="navbar__stat-value" id="flipCount">0</span>
+      </div>
+      <div class="navbar__stat">
+        <span class="navbar__stat-label">Pairs</span>
+        <span class="navbar__stat-value" id="matchCount">0 / 32</span>
+      </div>
+      <button class="btn btn--ghost" id="restartBtn">Restart</button>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- HOME SCREEN -->
+    <section class="screen screen--home" id="homeScreen">
+      <p class="eyebrow">An 8 × 8 memory board</p>
+      <h1 class="hero-title">Find every pair.<br>Waste no flips.</h1>
+      <p class="hero-copy">Sixty-four tiles, thirty-two hidden pairs. Flip two at a time, keep what matches in your head, and clear the board in as few moves as you can.</p>
+      <button class="btn btn--primary" id="startBtn">Start Game</button>
+    </section>
+
+    <!-- GAME SCREEN -->
+    <section class="screen screen--game" id="gameScreen" hidden>
+      <div class="board" id="board"></div>
+    </section>
+
+    <!-- RESULT SCREEN -->
+    <section class="screen screen--result" id="resultScreen" hidden>
+      <p class="eyebrow">Board cleared</p>
+      <h1 class="hero-title">Solved in <span id="finalFlips">0</span> flips</h1>
+      <p class="hero-copy" id="resultCopy">Every pair found.</p>
+      <button class="btn btn--primary" id="playAgainBtn">Play Again</button>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>Pairwise — a simple memory card game.</p>
+    <p>Built with HTML, CSS &amp; JavaScript.</p>
+  </footer>
+
+<script src="script.js"></script>
+</body>
+</html>

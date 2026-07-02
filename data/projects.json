@@ -38,5 +38,10 @@
     "title": "Neural Network Playground",
     "category": "aiml",
     "path": "projects/aiml/neural-network-playground/"
+  },
+  {
+    "title": "Memory Flip Game ",
+    "category": "games",
+    "path": "projects/games/memory-flip-game/"
   }
 ]
