@@ -16,11 +16,10 @@
             <span class="logo-icon">🎲</span>
             <h1>Ludo</h1>
         </div>
-        <p id="status" class="status-badge">Red's turn</p>
+        <p id="status" class="status-badge" aria-live="polite" aria-atomic="true">Red's turn</p>
     </header>
 
     <main class="game-layout">
-        <!-- LEFT PANEL -->
         <aside class="side-panel left-panel">
             <div class="panel-section">
                 <h3 class="panel-title">Controls</h3>
@@ -28,8 +27,9 @@
                     <span class="btn-icon">🎯</span> Roll Dice
                 </button>
                 <div class="dice-row">
+                    <div id="diceValue" aria-live="polite" aria-atomic="true" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;"></div>
                     <div class="scene">
-                        <div class="cube" id="diceCube">
+                        <div class="cube" id="diceCube" aria-live="polite" aria-atomic="true">
                             <div class="cube-face cube-face-front">1</div>
                             <div class="cube-face cube-face-back">6</div>
                             <div class="cube-face cube-face-right">3</div>
@@ -76,93 +76,6 @@
             </div>
         </aside>
 
-        <!-- CENTER: CANVAS -->
         <div class="board-container">
             <canvas id="ludoCanvas" width="600" height="600"></canvas>
         </div>
-
-        <!-- RIGHT PANEL -->
-        <aside class="side-panel right-panel">
-            <div class="panel-section">
-                <h3 class="panel-title">Dashboard</h3>
-                <div class="stat-card">
-                    <span class="stat-label">Current Turn</span>
-                    <span class="stat-value" id="turnLabel">Red</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Total Moves</span>
-                    <span class="stat-value" id="moveCount">0</span>
-                </div>
-            </div>
-
-            <div class="panel-section">
-                <h3 class="panel-title">📜 Move History</h3>
-                <ol id="moveList"></ol>
-            </div>
-        </aside>
-    </main>
-
-    <!-- RESUME MODAL -->
-    <div id="resumeModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h2>Session Detected</h2>
-            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 10px;">It looks like you have an unfinished game. Would you like to resume?</p>
-            <button id="resumeGameBtn" class="btn btn-roll">
-                <span class="btn-icon">▶️</span> Resume Game
-            </button>
-            <button id="startFreshBtn" class="btn btn-ghost">
-                Start Fresh
-            </button>
-        </div>
-    </div>
-
-    <!-- SETUP MODAL -->
-    <div id="setupModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h2>Game Setup</h2>
-            <div class="player-config-list">
-                <div class="player-config-row">
-                    <div class="player-dot red"></div>
-                    <span>Red Player</span>
-                    <select id="select-red">
-                        <option value="human">Human 👤</option>
-                        <option value="bot">Bot 🤖</option>
-                    </select>
-                </div>
-                <div class="player-config-row">
-                    <div class="player-dot green"></div>
-                    <span>Green Player</span>
-                    <select id="select-green">
-                        <option value="human">Human 👤</option>
-                        <option value="bot" selected>Bot 🤖</option>
-                    </select>
-                </div>
-                <div class="player-config-row">
-                    <div class="player-dot blue"></div>
-                    <span>Blue Player</span>
-                    <select id="select-blue">
-                        <option value="human">Human 👤</option>
-                        <option value="bot" selected>Bot 🤖</option>
-                    </select>
-                </div>
-                <div class="player-config-row">
-                    <div class="player-dot yellow"></div>
-                    <span>Yellow Player</span>
-                    <select id="select-yellow">
-                        <option value="human">Human 👤</option>
-                        <option value="bot" selected>Bot 🤖</option>
-                    </select>
-                </div>
-            </div>
-            <button id="startGameBtn" class="btn btn-roll" style="margin-top: 20px;">
-                <span class="btn-icon">▶️</span> Start Game
-            </button>
-            <button id="closeModalBtn" class="btn btn-ghost" style="margin-top: 10px;">
-                Cancel
-            </button>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-</body>
-</html>
