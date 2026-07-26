@@ -49,8 +49,19 @@ function getCachedProjects(db) {
   });
 }
 
+async function fetchProjectsWithTimeout(url, timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function fetchAndCacheProjects(db) {
-  const response = await fetch("./data/projects.json");
+  const response = await fetchProjectsWithTimeout("./data/projects.json");
 
   if (!response.ok) {
     throw new Error("Failed to load projects");
@@ -91,6 +102,43 @@ function renderSkeleton(count = 6) {
   }
 }
 
+function getErrorMessage(error) {
+  if (error.name === "AbortError") {
+    return "Request timed out. Please check your connection.";
+  }
+  if (
+    error.message.includes("Failed to fetch") ||
+    error.message.includes("NetworkError")
+  ) {
+    return "Network error. Please check your connection and try again.";
+  }
+  if (error.message.includes("Unexpected token") || error.message.includes("JSON")) {
+    return "Failed to parse project data. The data file may be corrupted.";
+  }
+  return error.message || "Failed to load projects.";
+}
+
+function renderError(error) {
+  const errorDiv = document.createElement("div");
+  errorDiv.className = "error-state";
+  errorDiv.setAttribute("role", "alert");
+
+  const msg = document.createElement("p");
+  msg.textContent = getErrorMessage(error);
+  errorDiv.appendChild(msg);
+
+  const retryBtn = document.createElement("button");
+  retryBtn.className = "retry-btn";
+  retryBtn.textContent = "Try Again";
+  retryBtn.addEventListener("click", () => {
+    loadProjects();
+  });
+  errorDiv.appendChild(retryBtn);
+
+  projectsGrid.innerHTML = "";
+  projectsGrid.appendChild(errorDiv);
+}
+
 async function loadProjects() {
   renderSkeleton();
   try {
@@ -126,7 +174,7 @@ async function loadProjects() {
     renderProjects(allProjects);
   } catch (error) {
     console.error(error);
-    projectsGrid.innerHTML = "<p>Failed to load projects.</p>";
+    renderError(error);
   }
 }
 
