@@ -209,6 +209,32 @@
       </svg>
     </button>
 
+    <!-- Project Sandbox Iframe Overlay -->
+    <div
+      id="sandbox-overlay"
+      class="sandbox-overlay"
+      aria-hidden="true"
+      role="dialog"
+      aria-label="Project preview"
+    >
+      <div class="sandbox-toolbar">
+        <span id="sandbox-title" class="sandbox-title"></span>
+        <button
+          id="sandbox-close-btn"
+          class="sandbox-close-btn"
+          aria-label="Close project preview"
+        >
+          ✕
+        </button>
+      </div>
+      <iframe
+        id="sandbox-iframe"
+        class="sandbox-iframe"
+        sandbox="allow-scripts allow-same-origin"
+        title="Project preview"
+      ></iframe>
+    </div>
+
     <footer>
       <p>
         Enjoying Cradle?

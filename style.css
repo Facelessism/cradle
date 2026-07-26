@@ -471,6 +471,80 @@ footer {
 }
 
 /* ==========================================================================
+   Sandbox Iframe Overlay
+   ========================================================================== */
+
+.sandbox-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
+}
+
+.sandbox-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sandbox-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  z-index: 2001;
+}
+
+.sandbox-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sandbox-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.sandbox-close-btn:hover {
+  background: var(--card-hover);
+  color: var(--text);
+  border-color: var(--accent-hover);
+}
+
+.sandbox-close-btn:focus-visible {
+  outline: 2px solid var(--accent-hover);
+  outline-offset: 2px;
+}
+
+.sandbox-iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+}
+
+/* ==========================================================================
    Keyboard Shortcuts Modal Styles
    ========================================================================== */
 

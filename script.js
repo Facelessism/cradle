@@ -209,6 +209,8 @@ function prepareProjectCard(card, project, index) {
   card.classList.add("project-grid-card");
   card.dataset.projectIndex = String(index);
   card.dataset.projectPath = project.path;
+  card.dataset.projectTitle = project.title;
+  card.dataset.sandbox = "true";
   card.setAttribute("role", "link");
   card.setAttribute("tabindex", index === activeProjectIndex ? "0" : "-1");
   card.setAttribute("aria-label", `${label}. Press Enter to open.`);
@@ -261,11 +263,16 @@ function getProjectGridColumnCount(cards) {
 }
 
 function openFocusedProject(card) {
+  const useIframe = card.dataset.sandbox === "true";
   const link = card.querySelector("a[href]");
   const destination = link?.getAttribute("href") || card.dataset.projectPath;
 
   if (destination) {
-    window.location.href = destination;
+    if (useIframe && sandboxOverlay) {
+      openProjectInIframe(destination, card.dataset.projectTitle || "");
+    } else {
+      window.location.href = destination;
+    }
   }
 }
 
@@ -473,6 +480,41 @@ document.addEventListener("keydown", e => {
         openShortcutsModal();
       }
     }
+  }
+});
+
+/* ─── Project Sandbox Iframe ─── */
+
+const sandboxOverlay = document.getElementById("sandbox-overlay");
+const sandboxIframe = document.getElementById("sandbox-iframe");
+const sandboxTitle = document.getElementById("sandbox-title");
+const sandboxCloseBtn = document.getElementById("sandbox-close-btn");
+
+function openProjectInIframe(projectPath, projectTitle) {
+  if (!sandboxOverlay || !sandboxIframe) return;
+  sandboxIframe.src = projectPath;
+  if (sandboxTitle) sandboxTitle.textContent = projectTitle || "";
+  sandboxOverlay.classList.add("visible");
+  sandboxOverlay.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  if (sandboxCloseBtn) sandboxCloseBtn.focus();
+}
+
+function closeProjectIframe() {
+  if (!sandboxOverlay || !sandboxIframe) return;
+  sandboxOverlay.classList.remove("visible");
+  sandboxOverlay.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+  sandboxIframe.src = "";
+}
+
+if (sandboxCloseBtn) {
+  sandboxCloseBtn.addEventListener("click", closeProjectIframe);
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && sandboxOverlay?.classList.contains("visible")) {
+    closeProjectIframe();
   }
 });
 
