@@ -161,12 +161,20 @@
 
     <main>
       <section id="categories"></section>
+      <section id="tags-container" hidden aria-label="Filter by tag"></section>
 
       <section>
         <div class="section-header">
           <h2>Projects</h2>
 
-          <span id="project-count"> 0 projects </span>
+          <div class="section-header-controls">
+            <span id="project-count"> 0 projects </span>
+            <select id="sort-select" aria-label="Sort projects">
+              <option value="newest">Newest</option>
+              <option value="az">A–Z</option>
+              <option value="za">Z–A</option>
+            </select>
+          </div>
         </div>
 
         <div

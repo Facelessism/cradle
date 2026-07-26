@@ -1,11 +1,15 @@
 const projectsGrid = document.getElementById("projects-grid");
 const searchInput = document.getElementById("search");
 const categoriesContainer = document.getElementById("categories");
+const tagsContainer = document.getElementById("tags-container");
 const projectCount = document.getElementById("project-count");
 const clearFiltersBtn = document.getElementById("clear-filters");
+const sortSelect = document.getElementById("sort-select");
 
 let allProjects = [];
 let selectedCategory = "all";
+let selectedTags = new Set();
+let currentSort = "newest";
 let activeProjectIndex = 0;
 
 let filterWorker;
@@ -105,11 +109,13 @@ async function loadProjects() {
         allProjects = cachedProjects;
 
         renderCategories();
+        renderTags();
         renderProjects(allProjects);
 
         fetchAndCacheProjects(db)
           .then(() => {
             renderCategories();
+            renderTags();
             applyFilters();
           })
           .catch(console.error);
@@ -123,10 +129,11 @@ async function loadProjects() {
     await fetchAndCacheProjects(db);
 
     renderCategories();
+    renderTags();
     renderProjects(allProjects);
   } catch (error) {
     console.error(error);
-    projectsGrid.innerHTML = "<p>Failed to load projects.</p>";
+    renderError(error);
   }
 }
 
@@ -157,6 +164,87 @@ function renderCategories() {
 
     categoriesContainer.appendChild(btn);
   });
+}
+
+function sortProjects(projects) {
+  const sorted = [...projects];
+  switch (currentSort) {
+    case "az":
+      sorted.sort((a, b) => a.title.localeCompare(b.title));
+      break;
+    case "za":
+      sorted.sort((a, b) => b.title.localeCompare(a.title));
+      break;
+    default:
+      sorted.sort((a, b) => {
+        if (a.dateAdded && b.dateAdded) {
+          return new Date(b.dateAdded) - new Date(a.dateAdded);
+        }
+        if (a.dateAdded) return -1;
+        if (b.dateAdded) return 1;
+        return a.title.localeCompare(b.title);
+      });
+  }
+  return sorted;
+}
+
+function renderTags() {
+  if (!tagsContainer) return;
+  const tagSet = new Set();
+  allProjects.forEach(p => (p.tags || []).forEach(t => tagSet.add(t)));
+  const tags = [...tagSet].sort();
+  if (!tags.length) {
+    tagsContainer.hidden = true;
+    return;
+  }
+  tagsContainer.hidden = false;
+  tagsContainer.innerHTML = "";
+  tags.forEach(tag => {
+    const isActive = selectedTags.has(tag);
+    const btn = document.createElement("button");
+    btn.className = "tag-chip";
+    btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+    btn.textContent = tag;
+    btn.addEventListener("click", () => {
+      if (selectedTags.has(tag)) {
+        selectedTags.delete(tag);
+      } else {
+        selectedTags.add(tag);
+      }
+      applyFilters();
+      renderTags();
+    });
+    tagsContainer.appendChild(btn);
+  });
+}
+
+function readFiltersFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get("q");
+  if (q) searchInput.value = q;
+  const cat = params.get("category");
+  if (cat) selectedCategory = cat;
+  const sort = params.get("sort");
+  if (sort) currentSort = sort;
+  const tags = params.get("tags");
+  if (tags) {
+    tags.split(",").forEach(t => {
+      if (t) selectedTags.add(t);
+    });
+  }
+  if (sortSelect) sortSelect.value = currentSort;
+}
+
+function writeFiltersToURL() {
+  const params = new URLSearchParams();
+  const q = searchInput.value.trim();
+  if (q) params.set("q", q);
+  if (selectedCategory !== "all") params.set("category", selectedCategory);
+  if (currentSort !== "newest") params.set("sort", currentSort);
+  if (selectedTags.size > 0) params.set("tags", [...selectedTags].join(","));
+  const str = params.toString();
+  const url = str ? "?" + str : window.location.pathname;
+  window.history.replaceState(null, "", url);
 }
 
 function isNewProject(dateAdded) {
@@ -312,22 +400,36 @@ function handleProjectCardKeydown(event) {
 function applyFilters() {
   const query = searchInput.value.toLowerCase().trim();
 
+  const filtered = allProjects.filter(project => {
+    if (selectedCategory !== "all" && project.category !== selectedCategory) {
+      return false;
+    }
+    if (selectedTags.size > 0) {
+      const projectTags = project.tags || [];
+      if (![...selectedTags].some(t => projectTags.includes(t))) {
+        return false;
+      }
+    }
+    if (!query) return true;
+    const inTitle = project.title.toLowerCase().includes(query);
+    const inDesc = (project.description || "").toLowerCase().includes(query);
+    const inTags = (project.tags || []).some(t => t.toLowerCase().includes(query));
+    return inTitle || inDesc || inTags;
+  });
+
+  const sorted = sortProjects(filtered);
+
   if (filterWorker) {
     filterWorker.postMessage({
-      allProjects,
+      allProjects: sorted,
       selectedCategory,
       query,
     });
   } else {
-    const filtered = allProjects.filter(
-      project =>
-        (selectedCategory === "all" || project.category === selectedCategory) &&
-        project.title.toLowerCase().includes(query)
-    );
-
-    renderProjects(filtered);
+    renderProjects(sorted);
   }
 
+  writeFiltersToURL();
   updateClearButtonVisibility(query);
 }
 
@@ -343,8 +445,12 @@ function clearFilters() {
   searchInput.value = "";
   selectedCategory = "all";
 
+  selectedTags.clear();
+  currentSort = "newest";
+  if (sortSelect) sortSelect.value = currentSort;
   applyFilters();
   renderCategories();
+  renderTags();
   searchInput.focus();
 }
 
@@ -352,6 +458,13 @@ searchInput.addEventListener("input", applyFilters);
 
 if (clearFiltersBtn) {
   clearFiltersBtn.addEventListener("click", clearFilters);
+}
+
+if (sortSelect) {
+  sortSelect.addEventListener("change", () => {
+    currentSort = sortSelect.value;
+    applyFilters();
+  });
 }
 
 // Floating Back to Top Button Logic
@@ -477,5 +590,6 @@ document.addEventListener("keydown", e => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  readFiltersFromURL();
   loadProjects();
 });

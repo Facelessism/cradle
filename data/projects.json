@@ -1,147 +1,287 @@
 [
   {
+    "title": "Meme Generator",
+    "category": "misc",
+    "path": "projects/misc/meme-generator/",
+    "tags": [
+      "image",
+      "editor",
+      "fun",
+      "social"
+    ],
+    "description": "Create and share custom memes with image upload and preset management",
+    "difficulty": "intermediate",
+    "dateAdded": "2025-07-01"
+  },
+  {
+    "title": "Memory Flip",
+    "category": "games",
+    "path": "projects/games/memory-flip-game/",
+    "tags": [
+      "memory",
+      "cards",
+      "multiplayer"
+    ],
+    "description": "Test your memory by matching pairs of cards",
+    "difficulty": "beginner",
+    "dateAdded": "2025-06-20"
+  },
+  {
     "title": "2048 Game",
     "category": "games",
-    "path": "projects/games/2048-game/"
-  },
-  {
-    "title": "Advanced Qr Code Generator",
-    "category": "productivity",
-    "path": "projects/productivity/advanced-qr-code-generator/"
-  },
-  {
-    "title": "AI Circuit Builder",
-    "category": "aiml",
-    "path": "projects/aiml/ai-circuit-builder/"
-  },
-  {
-    "title": "ASCII Camera",
-    "category": "misc",
-    "path": "projects/misc/ascii-camera/"
-  },
-  {
-    "title": "Attendance Tracker",
-    "category": "productivity",
-    "path": "projects/productivity/attendance-tracker/"
-  },
-  {
-    "title": "Brain Dump Collector",
-    "category": "productivity",
-    "path": "projects/productivity/brain-dump-collector/"
-  },
-  {
-    "title": "Browser Storage Inspector",
-    "category": "dev-tools",
-    "path": "projects/dev-tools/browser-storage-inspector/"
-  },
-  {
-    "title": "Cannon Shooting",
-    "category": "games",
-    "path": "projects/games/cannon-shooting/"
+    "path": "projects/games/2048-game/",
+    "tags": [
+      "puzzle",
+      "grid",
+      "numbers",
+      "swipe"
+    ],
+    "description": "Classic 2048 puzzle game with customizable grid sizes and score tracking",
+    "difficulty": "beginner",
+    "dateAdded": "2025-06-15"
   },
   {
     "title": "Chess",
     "category": "games",
-    "path": "projects/games/chess/"
-  },
-  {
-    "title": "CPU Emulator",
-    "category": "dev-tools",
-    "path": "projects/dev-tools/cpu-emulator/"
-  },
-  {
-    "title": "Css Shape Designer",
-    "category": "editor",
-    "path": "projects/editor/css-shape-designer/"
-  },
-  {
-    "title": "Dot Game",
-    "category": "games",
-    "path": "projects/games/dot-game/"
-  },
-  {
-    "title": "Encoding Toolkit",
-    "category": "dev-tools",
-    "path": "projects/dev-tools/encoding-toolkit/"
-  },
-  {
-    "title": "File Difference Visualizer",
-    "category": "file-tools",
-    "path": "projects/file-tools/file-difference-visualizer/"
-  },
-  {
-    "title": "Image Classifier",
-    "category": "aiml",
-    "path": "projects/aiml/image-classifier/"
-  },
-  {
-    "title": "Invoice Generator",
-    "category": "productivity",
-    "path": "projects/productivity/invoice-generator/"
-  },
-  {
-    "title": "Ludo Game",
-    "category": "games",
-    "path": "projects/games/ludo-game/"
-  },
-  {
-    "title": "Markdown Resume Generator",
-    "category": "editor",
-    "path": "projects/editor/markdown-resume-generator/"
-  },
-  {
-    "title": "Matrix Playground",
-    "category": "math",
-    "path": "projects/math/matrix-playground/"
-  },
-  {
-    "title": "Meme Generator",
-    "category": "misc",
-    "path": "projects/misc/meme-generator/"
-  },
-  {
-    "title": "Memory Flip Game",
-    "category": "games",
-    "path": "projects/games/memory-flip-game/"
-  },
-  {
-    "title": "Morse Code Studio",
-    "category": "misc",
-    "path": "projects/misc/morse-code-studio/"
+    "path": "projects/games/chess/",
+    "tags": [
+      "board",
+      "AI",
+      "multiplayer",
+      "strategy"
+    ],
+    "description": "Full-featured chess game with AI opponent, PGN export, and FEN loading",
+    "difficulty": "advanced",
+    "dateAdded": "2025-05-01"
   },
   {
     "title": "Neural Network Playground",
     "category": "aiml",
-    "path": "projects/aiml/neural-network-playground/"
+    "path": "projects/aiml/neural-network-playground/",
+    "tags": [
+      "AI",
+      "machine-learning",
+      "visualization",
+      "training"
+    ],
+    "description": "Interactive neural network training and visualization tool",
+    "difficulty": "advanced",
+    "dateAdded": "2025-04-10"
+  },
+  {
+    "title": "Advanced Qr Code Generator",
+    "category": "productivity",
+    "path": "projects/productivity/advanced-qr-code-generator/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "AI Circuit Builder",
+    "category": "aiml",
+    "path": "projects/aiml/ai-circuit-builder/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "ASCII Camera",
+    "category": "misc",
+    "path": "projects/misc/ascii-camera/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "Attendance Tracker",
+    "category": "productivity",
+    "path": "projects/productivity/attendance-tracker/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "Brain Dump Collector",
+    "category": "productivity",
+    "path": "projects/productivity/brain-dump-collector/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "Browser Storage Inspector",
+    "category": "dev-tools",
+    "path": "projects/dev-tools/browser-storage-inspector/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "Cannon Shooting",
+    "category": "games",
+    "path": "projects/games/cannon-shooting/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "CPU Emulator",
+    "category": "dev-tools",
+    "path": "projects/dev-tools/cpu-emulator/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "Css Shape Designer",
+    "category": "editor",
+    "path": "projects/editor/css-shape-designer/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "Dot Game",
+    "category": "games",
+    "path": "projects/games/dot-game/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "Encoding Toolkit",
+    "category": "dev-tools",
+    "path": "projects/dev-tools/encoding-toolkit/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "File Difference Visualizer",
+    "category": "file-tools",
+    "path": "projects/file-tools/file-difference-visualizer/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "Image Classifier",
+    "category": "aiml",
+    "path": "projects/aiml/image-classifier/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "Invoice Generator",
+    "category": "productivity",
+    "path": "projects/productivity/invoice-generator/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "Ludo Game",
+    "category": "games",
+    "path": "projects/games/ludo-game/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "Markdown Resume Generator",
+    "category": "editor",
+    "path": "projects/editor/markdown-resume-generator/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "Matrix Playground",
+    "category": "math",
+    "path": "projects/math/matrix-playground/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
+  },
+  {
+    "title": "Morse Code Studio",
+    "category": "misc",
+    "path": "projects/misc/morse-code-studio/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
   },
   {
     "title": "Periodic Table",
     "category": "misc",
-    "path": "projects/misc/periodic-table/"
+    "path": "projects/misc/periodic-table/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
   },
   {
     "title": "Reading Progress Tracker",
     "category": "productivity",
-    "path": "projects/productivity/reading-progress-tracker/"
+    "path": "projects/productivity/reading-progress-tracker/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
   },
   {
     "title": "Sound Wave Visualizer",
     "category": "misc",
-    "path": "projects/misc/sound-wave-visualizer/"
+    "path": "projects/misc/sound-wave-visualizer/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
   },
   {
     "title": "Stone Paper Scissors Game",
     "category": "games",
-    "path": "projects/games/stone-paper-scissors-game/"
+    "path": "projects/games/stone-paper-scissors-game/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
   },
   {
     "title": "Time Blocking Planner",
     "category": "productivity",
-    "path": "projects/productivity/time-blocking-planner/"
+    "path": "projects/productivity/time-blocking-planner/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
   },
   {
     "title": "Url Parser",
     "category": "dev-tools",
-    "path": "projects/dev-tools/url-parser/"
+    "path": "projects/dev-tools/url-parser/",
+    "tags": [],
+    "description": "",
+    "difficulty": "",
+    "dateAdded": ""
   }
 ]

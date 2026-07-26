@@ -239,8 +239,19 @@ function generateSvgThumbnail(title, categoryName, projectAbsPath) {
   fs.writeFileSync(path.join(projectAbsPath, "thumbnail.svg"), svgContent);
 }
 
+function readProjectMeta(projectAbsPath) {
+  const metaPath = path.join(projectAbsPath, "project.json");
+  if (!fs.existsSync(metaPath)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+  } catch {
+    return {};
+  }
+}
+
 function generateProjects() {
   const projects = [];
+  const allTags = new Set();
 
   const categories = fs
     .readdirSync(PROJECTS_DIR, { withFileTypes: true })
@@ -261,23 +272,34 @@ function generateProjects() {
       .filter(dirent => dirent.isDirectory());
 
     for (const project of projectFolders) {
-      const projectTitle = titleCase(project.name);
-      
+      const projectAbsPath = path.join(categoryPath, project.name);
+      const meta = readProjectMeta(projectAbsPath);
+      const projectTitle = meta.title || titleCase(project.name);
+      const tags = meta.tags || [];
+      tags.forEach(t => allTags.add(t));
+
       projects.push({
         title: projectTitle,
         category: categoryName,
-        path: `projects/${categoryName}/${project.name}/`
+        path: `projects/${categoryName}/${project.name}/`,
+        tags: tags,
+        description: meta.description || "",
+        difficulty: meta.difficulty || "",
+        dateAdded: meta.dateAdded || ""
       });
 
-      // Generate thumbnail SVG in the project folder
-      const projectAbsPath = path.join(categoryPath, project.name);
       generateSvgThumbnail(projectTitle, categoryName, projectAbsPath);
     }
   }
 
-  projects.sort((a, b) =>
-    a.title.localeCompare(b.title)
-  );
+  projects.sort((a, b) => {
+    if (a.dateAdded && b.dateAdded) {
+      return new Date(b.dateAdded) - new Date(a.dateAdded);
+    }
+    if (a.dateAdded) return -1;
+    if (b.dateAdded) return 1;
+    return a.title.localeCompare(b.title);
+  });
 
   const output = JSON.stringify(projects, null, 2);
   const force = process.argv.includes("--force");

@@ -1,0 +1,7 @@
+{
+  "title": "2048 Game",
+  "description": "Classic 2048 puzzle game with customizable grid sizes and score tracking",
+  "tags": ["puzzle", "grid", "numbers", "swipe"],
+  "difficulty": "beginner",
+  "dateAdded": "2025-06-15"
+}

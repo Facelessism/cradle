@@ -1,0 +1,7 @@
+{
+  "title": "Chess",
+  "description": "Full-featured chess game with AI opponent, PGN export, and FEN loading",
+  "tags": ["board", "AI", "multiplayer", "strategy"],
+  "difficulty": "advanced",
+  "dateAdded": "2025-05-01"
+}
