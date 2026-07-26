@@ -5,6 +5,11 @@
     "path": "projects/games/2048-game/"
   },
   {
+    "title": "Advanced Qr Code Generator",
+    "category": "productivity",
+    "path": "projects/productivity/advanced-qr-code-generator/"
+  },
+  {
     "title": "AI Circuit Builder",
     "category": "aiml",
     "path": "projects/aiml/ai-circuit-builder/"
@@ -13,6 +18,11 @@
     "title": "Attendance Tracker",
     "category": "productivity",
     "path": "projects/productivity/attendance-tracker/"
+  },
+  {
+    "title": "Brain Dump Collector",
+    "category": "productivity",
+    "path": "projects/productivity/brain-dump-collector/"
   },
   {
     "title": "Browser Storage Inspector",
@@ -38,6 +48,11 @@
     "title": "Dot Game",
     "category": "games",
     "path": "projects/games/dot-game/"
+  },
+  {
+    "title": "File Difference Visualizer",
+    "category": "file-tools",
+    "path": "projects/file-tools/file-difference-visualizer/"
   },
   {
     "title": "Image Classifier",

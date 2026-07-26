@@ -247,7 +247,7 @@ const shortcutsModal = document.getElementById("shortcuts-modal");
 const shortcutsToggleBtn = document.querySelector('[aria-label="Keyboard Shortcuts"]');
 const closeShortcutsBtn = document.getElementById("close-shortcuts");
 const shortcutsOverlay = document.getElementById("shortcuts-overlay");
-const themeToggleBtn = document.getElementById("theme-toggle");
+const themeToggleBtn = document.getElementById("themeToggle") || document.getElementById("theme-toggle");
 
 function openShortcutsModal() {
   if (shortcutsModal) {
