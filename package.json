@@ -6,6 +6,8 @@
   "scripts": {
     "generate": "node scripts/generate-projects.js",
     "test": "node --test",
+    "test:e2e": "npx playwright test --config tests/e2e/playwright.config.js",
+    "test:e2e:ui": "npx playwright test --config tests/e2e/playwright.config.js --ui",
     "dev": "npm run generate && npx live-server",
     "build": "npm run generate",
     "format": "prettier --write .",

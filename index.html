@@ -76,6 +76,7 @@
             placeholder="Search projects... (Press '/' to focus)"
             autocomplete="off"
             aria-label="Search projects"
+            data-testid="search-input"
           />
           <span class="search-kbd-hint" title="Press '/' or Ctrl+K to search"
             ><kbd>/</kbd></span
@@ -177,6 +178,7 @@
           aria-describedby="project-grid-instructions"
           aria-live="polite"
           aria-atomic="true"
+          data-testid="project-grid"
         ></div>
         <p id="project-grid-instructions" class="sr-only">
           Use arrow keys to move between project cards. Press Enter or Space to

@@ -154,6 +154,7 @@ function renderCategories() {
     });
 
     btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+    btn.dataset.testid = "category-btn";
 
     categoriesContainer.appendChild(btn);
   });
@@ -209,6 +210,7 @@ function prepareProjectCard(card, project, index) {
   card.classList.add("project-grid-card");
   card.dataset.projectIndex = String(index);
   card.dataset.projectPath = project.path;
+  card.dataset.testid = "project-card";
   card.setAttribute("role", "link");
   card.setAttribute("tabindex", index === activeProjectIndex ? "0" : "-1");
   card.setAttribute("aria-label", `${label}. Press Enter to open.`);
