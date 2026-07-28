@@ -164,8 +164,9 @@ function renderProjects(projects) {
   }
 
   projectsGrid.innerHTML = "";
+  activeProjectIndex = 0;
 
-  projects.forEach(project => {
+  projects.forEach((project, index) => {
     const openButton = CradleButton.create({
       variant: "outline",
       size: "sm",
@@ -194,6 +195,7 @@ function renderProjects(projects) {
       footerAlign: "left",
     });
 
+    prepareProjectCard(card, project, index);
     projectsGrid.appendChild(card);
   });
 }
@@ -602,6 +604,46 @@ document.addEventListener("keydown", e => {
         openShortcutsModal();
       }
     }
+  }
+});
+
+projectsGrid.addEventListener("keydown", e => {
+  const cards = Array.from(projectsGrid.querySelectorAll(".project-grid-card"));
+  if (!cards.length) return;
+
+  let newIndex = activeProjectIndex;
+
+  if (e.key === "ArrowRight") {
+    e.preventDefault();
+    newIndex = (activeProjectIndex + 1) % cards.length;
+  } else if (e.key === "ArrowLeft") {
+    e.preventDefault();
+    newIndex = (activeProjectIndex - 1 + cards.length) % cards.length;
+  } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    const firstCardOffset = cards[0].offsetTop;
+    const cols = cards.filter(c => c.offsetTop === firstCardOffset).length || 1;
+
+    if (e.key === "ArrowDown") {
+      newIndex = Math.min(activeProjectIndex + cols, cards.length - 1);
+    } else {
+      newIndex = Math.max(activeProjectIndex - cols, 0);
+    }
+  } else if (e.key === "Enter") {
+    if (e.target.classList.contains("project-grid-card")) {
+      e.preventDefault();
+      const card = cards[activeProjectIndex];
+      if (card) {
+        window.location.href = card.dataset.projectPath;
+      }
+    }
+  }
+
+  if (newIndex !== activeProjectIndex) {
+    cards[activeProjectIndex].setAttribute("tabindex", "-1");
+    activeProjectIndex = newIndex;
+    cards[activeProjectIndex].setAttribute("tabindex", "0");
+    cards[activeProjectIndex].focus();
   }
 });
 
