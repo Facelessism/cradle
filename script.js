@@ -101,8 +101,8 @@ async function loadProjects() {
       if (cachedProjects && cachedProjects.length > 0) {
         allProjects = cachedProjects;
 
-        renderCategories();
-        renderProjects(allProjects);
+        // Categories are known now, so a ?category= link can be validated.
+        restoreFiltersFromUrl();
 
         fetchAndCacheProjects(db)
           .then(() => {
@@ -119,8 +119,7 @@ async function loadProjects() {
 
     await fetchAndCacheProjects(db);
 
-    renderCategories();
-    renderProjects(allProjects);
+    restoreFiltersFromUrl();
   } catch (error) {
     console.error(error);
     projectsGrid.innerHTML = "<p>Failed to load projects.</p>";
@@ -146,6 +145,8 @@ function renderCategories() {
         selectedCategory = category;
         applyFilters();
         renderCategories();
+        // A deliberate change, so Back should undo it.
+        syncFiltersToUrl(true);
         searchInput.focus();
       },
     });
@@ -476,6 +477,7 @@ function selectSearchSuggestion(index) {
   renderCategories();
   applyFilters();
   hideSearchSuggestions();
+  syncFiltersToUrl(true);
   searchInput.focus();
 }
 
@@ -548,6 +550,57 @@ async function copyProjectUrl(project, button) {
   }
 }
 
+/*
+ * Filter state is mirrored into the query string by scripts/urlState.js so a
+ * filtered view can be linked, bookmarked and restored on reload.
+ * The inline fallback simply disables the feature if that file fails to load.
+ */
+const urlState = window.CradleUrlState || {
+  ALL_CATEGORIES: "all",
+  parseFilterState: () => ({ query: "", category: "all" }),
+  syncToUrl: () => false,
+};
+
+/** Guards against writing to the URL while we are reading state out of it. */
+let isRestoringFromUrl = false;
+
+/**
+ * Mirror the current filters into the address bar.
+ *
+ * @param {boolean} push Add a history entry (deliberate change) rather than
+ *   replacing the current one (still typing).
+ */
+function syncFiltersToUrl(push) {
+  if (isRestoringFromUrl) return;
+
+  urlState.syncToUrl(
+    { query: searchInput.value, category: selectedCategory },
+    { push: Boolean(push) }
+  );
+}
+
+/**
+ * Adopt the filter state encoded in the current URL.
+ *
+ * Called on first load and again on every popstate, so Back and Forward walk
+ * through the filters the user applied instead of leaving the page.
+ */
+function restoreFiltersFromUrl() {
+  const categories = allProjects.map(project => project.category);
+  const state = urlState.parseFilterState(window.location.search, categories);
+
+  isRestoringFromUrl = true;
+
+  searchInput.value = state.query;
+  selectedCategory = state.category;
+
+  renderCategories();
+  applyFilters();
+  hideSearchSuggestions();
+
+  isRestoringFromUrl = false;
+}
+
 function applyFilters() {
   const query = searchInput.value.toLowerCase().trim();
 
@@ -586,12 +639,24 @@ function clearFilters() {
   applyFilters();
   renderCategories();
   hideSearchSuggestions();
+  syncFiltersToUrl(true);
   searchInput.focus();
 }
+
+/*
+ * Back and Forward now walk through the filters the user applied rather than
+ * jumping straight off the page.
+ */
+window.addEventListener("popstate", restoreFiltersFromUrl);
 
 searchInput.addEventListener("input", () => {
   applyFilters();
   renderSearchSuggestions();
+  /*
+   * Replace rather than push while typing — one history entry per keystroke
+   * would make the Back button useless.
+   */
+  syncFiltersToUrl(false);
 });
 
 searchInput.addEventListener("focus", renderSearchSuggestions);

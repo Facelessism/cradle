@@ -78,6 +78,16 @@ The Cradle landing page supports intuitive keyboard navigation:
 - `<kbd>T</kbd>` — Toggle light / dark color theme
 - `<kbd>?</kbd>` — Open / close the keyboard shortcuts help dialog
 
+## 🔗 Shareable Filters
+
+The active search query and category filter are mirrored into the page URL, so a filtered view can be linked, bookmarked, or reloaded without losing it:
+
+```text
+index.html?q=parser&category=dev-tools
+```
+
+Typing updates the URL in place, while picking a category or clearing the filters adds a history entry — so **Back** undoes your last filter change instead of leaving the page.
+
 ## 🗂️ Architecture Documentation
 
 Every project in Cradle includes an `ARCHITECTURE.md` file that explains its folder structure, components, data flow, and design decisions. If you are adding a new project, use the standardized template at the repository root:
