@@ -9,10 +9,69 @@ const PROJECTS_JSON = path.join(REPO_ROOT, "data", "projects.json");
 
 /**
  * Creates a mocked browser environment for evaluating scripts in Node.js VM context.
+ *
+ * Returns both the VM context and a `cleanup()` function. Calling `cleanup()`
+ * once a project's scripts have run is mandatory: mini projects routinely start
+ * game loops, clocks and animations at load time, and every timer they create
+ * is a real Node handle. An uncleared `setInterval` keeps the event loop alive
+ * forever, so the test process never exits — the assertions all pass, but the
+ * runner hangs until CI kills the job.
+ *
+ * @returns {{context: object, cleanup: Function}} Sandbox context and teardown.
  */
 function createBrowserSandbox() {
   const localStorageStore = new Map();
   const sessionStorageStore = new Map();
+
+  /* Every timer handed out to sandboxed code, so it can all be torn down. */
+  const pendingTimeouts = new Set();
+  const pendingIntervals = new Set();
+
+  const trackedSetTimeout = (cb, delay, ...args) => {
+    const handle = setTimeout(
+      (...inner) => {
+        pendingTimeouts.delete(handle);
+        if (typeof cb === "function") cb(...inner);
+      },
+      0,
+      ...args
+    );
+
+    pendingTimeouts.add(handle);
+    return handle;
+  };
+
+  const trackedClearTimeout = handle => {
+    pendingTimeouts.delete(handle);
+    clearTimeout(handle);
+  };
+
+  const trackedSetInterval = (cb, delay, ...args) => {
+    const handle = setInterval(cb, 0, ...args);
+    pendingIntervals.add(handle);
+    return handle;
+  };
+
+  const trackedClearInterval = handle => {
+    pendingIntervals.delete(handle);
+    clearInterval(handle);
+  };
+
+  /**
+   * Cancel every timer this sandbox handed out.
+   *
+   * @returns {number} How many handles were still live.
+   */
+  const cleanup = () => {
+    const cleared = pendingTimeouts.size + pendingIntervals.size;
+
+    pendingTimeouts.forEach(clearTimeout);
+    pendingIntervals.forEach(clearInterval);
+    pendingTimeouts.clear();
+    pendingIntervals.clear();
+
+    return cleared;
+  };
 
   const mockLocalStorage = {
     getItem: key =>
@@ -379,12 +438,19 @@ function createBrowserSandbox() {
     },
     removeEventListener: () => {},
     dispatchEvent: () => true,
-    setTimeout: (cb, delay, ...args) => setTimeout(cb, 0, ...args),
-    clearTimeout,
-    setInterval: (cb, delay, ...args) => setInterval(cb, 0, ...args),
-    clearInterval,
-    requestAnimationFrame: cb => setTimeout(() => cb(Date.now()), 0),
-    cancelAnimationFrame: id => clearTimeout(id),
+    setTimeout: trackedSetTimeout,
+    clearTimeout: trackedClearTimeout,
+    setInterval: trackedSetInterval,
+    clearInterval: trackedClearInterval,
+    /*
+     * A project doing `function loop(){ ...; requestAnimationFrame(loop); }`
+     * would otherwise schedule an unbroken chain of timers that never drains.
+     */
+    requestAnimationFrame: cb =>
+      trackedSetTimeout(() => {
+        if (typeof cb === "function") cb(Date.now());
+      }, 0),
+    cancelAnimationFrame: trackedClearTimeout,
     getComputedStyle: () => ({
       getPropertyValue: () => "",
       width: "800px",
@@ -512,7 +578,7 @@ function createBrowserSandbox() {
   sandbox.globalThis = sandbox;
   sandbox.self = sandbox;
 
-  return vm.createContext(sandbox);
+  return { context: vm.createContext(sandbox), cleanup };
 }
 
 /**
@@ -567,59 +633,67 @@ test("Smoke test: every mini project loads without JS errors", () => {
       }
     }
 
-    const context = createBrowserSandbox();
+    const { context, cleanup } = createBrowserSandbox();
 
-    for (const scriptElem of scriptElements) {
-      let code = "";
-      let scriptIdentifier = "";
+    try {
+      for (const scriptElem of scriptElements) {
+        let code = "";
+        let scriptIdentifier = "";
 
-      if (scriptElem.type === "src") {
-        const srcUrl = scriptElem.value.trim();
+        if (scriptElem.type === "src") {
+          const srcUrl = scriptElem.value.trim();
 
-        if (/^(https?:)?\/\//i.exec(srcUrl)) {
-          continue;
+          if (/^(https?:)?\/\//i.exec(srcUrl)) {
+            continue;
+          }
+
+          const cleanSrc = srcUrl.split("#")[0].split("?")[0];
+          const scriptAbsPath = path.resolve(projectDir, cleanSrc);
+
+          if (!fs.existsSync(scriptAbsPath)) {
+            errors.push(
+              `${project.title}: Referenced script not found: "${srcUrl}"`
+            );
+            continue;
+          }
+
+          code = fs.readFileSync(scriptAbsPath, "utf-8");
+          scriptIdentifier = path.relative(REPO_ROOT, scriptAbsPath);
+        } else {
+          code = scriptElem.value;
+          scriptIdentifier = `${project.title} (inline script)`;
         }
 
-        const cleanSrc = srcUrl.split("#")[0].split("?")[0];
-        const scriptAbsPath = path.resolve(projectDir, cleanSrc);
+        let executableCode = code;
+        if (
+          /\bexport\s+(default|const|let|var|function|class)\b/.test(
+            executableCode
+          )
+        ) {
+          executableCode = executableCode
+            .replace(/\bexport\s+default\s+/g, "")
+            .replace(/\bexport\s+/g, "");
+        }
 
-        if (!fs.existsSync(scriptAbsPath)) {
+        executableCode = executableCode.replace(/^(const|let)\s+/gm, "var ");
+
+        try {
+          const script = new vm.Script(executableCode, {
+            filename: scriptIdentifier,
+          });
+          script.runInContext(context);
+        } catch (err) {
           errors.push(
-            `${project.title}: Referenced script not found: "${srcUrl}"`
+            `JS Error in ${scriptIdentifier}:\n  ${err.name}: ${err.message}`
           );
-          continue;
         }
-
-        code = fs.readFileSync(scriptAbsPath, "utf-8");
-        scriptIdentifier = path.relative(REPO_ROOT, scriptAbsPath);
-      } else {
-        code = scriptElem.value;
-        scriptIdentifier = `${project.title} (inline script)`;
       }
-
-      let executableCode = code;
-      if (
-        /\bexport\s+(default|const|let|var|function|class)\b/.test(
-          executableCode
-        )
-      ) {
-        executableCode = executableCode
-          .replace(/\bexport\s+default\s+/g, "")
-          .replace(/\bexport\s+/g, "");
-      }
-
-      executableCode = executableCode.replace(/^(const|let)\s+/gm, "var ");
-
-      try {
-        const script = new vm.Script(executableCode, {
-          filename: scriptIdentifier,
-        });
-        script.runInContext(context);
-      } catch (err) {
-        errors.push(
-          `JS Error in ${scriptIdentifier}:\n  ${err.name}: ${err.message}`
-        );
-      }
+    } finally {
+      /*
+       * Always tear the sandbox down, including when a project throws part-way
+       * through — otherwise one bad project leaks timers and hangs the run.
+       */
+      cleanup();
     }
   }
 
@@ -628,4 +702,73 @@ test("Smoke test: every mini project loads without JS errors", () => {
       `Encountered ${errors.length} JS load error(s) across mini projects:\n\n${errors.join("\n\n")}`
     );
   }
+});
+
+test("sandbox cleanup cancels timers started by a mini project", () => {
+  /*
+   * Regression guard for the hang. The sandbox used to hand out real, untracked
+   * timers, so a single mini project starting a game loop kept Node's event
+   * loop alive indefinitely. The assertions still passed — the process just
+   * never exited, and CI failed on a job timeout hours later.
+   */
+  const { context, cleanup } = createBrowserSandbox();
+
+  vm.runInContext(
+    `
+      setInterval(function () {}, 16);
+      setInterval(function () {}, 100);
+      setTimeout(function () {}, 5000);
+      requestAnimationFrame(function loop() {
+        requestAnimationFrame(loop);
+      });
+    `,
+    context
+  );
+
+  const cleared = cleanup();
+
+  assert.ok(
+    cleared >= 4,
+    `expected the sandbox to be holding at least 4 live timers, got ${cleared}`
+  );
+
+  assert.equal(
+    cleanup(),
+    0,
+    "cleanup must be idempotent and leave nothing behind"
+  );
+});
+
+test("sandbox cleanup stops a runaway requestAnimationFrame loop", () => {
+  const { context, cleanup } = createBrowserSandbox();
+  let frames = 0;
+
+  context.countFrame = () => {
+    frames += 1;
+  };
+
+  vm.runInContext(
+    `
+      requestAnimationFrame(function loop() {
+        countFrame();
+        requestAnimationFrame(loop);
+      });
+    `,
+    context
+  );
+
+  cleanup();
+
+  const framesAtCleanup = frames;
+
+  return new Promise(resolve => {
+    setTimeout(() => {
+      assert.equal(
+        frames,
+        framesAtCleanup,
+        "the rAF chain must not keep scheduling after cleanup"
+      );
+      resolve();
+    }, 50);
+  });
 });
