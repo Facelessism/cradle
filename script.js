@@ -668,17 +668,58 @@ const shortcutsModal = document.getElementById("shortcuts-modal");
 const closeShortcutsBtn = document.getElementById("close-shortcuts");
 const shortcutsOverlay = document.getElementById("shortcuts-overlay");
 
+const shortcutsModalContent = shortcutsModal
+  ? shortcutsModal.querySelector(".shortcuts-modal-content")
+  : null;
+
+/*
+ * The dialog was previously only a visual overlay: focus stayed on the page
+ * behind it, Tab walked straight out of it, and closing it dropped the user at
+ * the top of the document. scripts/focusTrap.js fixes all three.
+ */
+const shortcutsFocusTrap =
+  window.CradleFocusTrap && shortcutsModalContent
+    ? window.CradleFocusTrap.createFocusTrap(shortcutsModalContent, {
+        initialFocus: closeShortcutsBtn,
+      })
+    : null;
+
+/** Class applied to <body> to stop the page scrolling behind the overlay. */
+const MODAL_OPEN_CLASS = "modal-open";
+
 function openShortcutsModal() {
-  if (shortcutsModal) {
-    shortcutsModal.classList.add("visible");
-    shortcutsModal.setAttribute("aria-hidden", "false");
+  if (!shortcutsModal) return;
+
+  shortcutsModal.classList.add("visible");
+  shortcutsModal.setAttribute("aria-hidden", "false");
+
+  /*
+   * aria-modal tells assistive technology that everything outside this element
+   * is inert while it is open — without it a screen reader will happily read
+   * the page behind the overlay.
+   */
+  shortcutsModal.setAttribute("aria-modal", "true");
+
+  document.body.classList.add(MODAL_OPEN_CLASS);
+
+  if (shortcutsFocusTrap) {
+    shortcutsFocusTrap.activate();
+  } else if (shortcutsModalContent) {
+    shortcutsModalContent.focus();
   }
 }
 
 function closeShortcutsModal() {
-  if (shortcutsModal) {
-    shortcutsModal.classList.remove("visible");
-    shortcutsModal.setAttribute("aria-hidden", "true");
+  if (!shortcutsModal) return;
+
+  shortcutsModal.classList.remove("visible");
+  shortcutsModal.setAttribute("aria-hidden", "true");
+  shortcutsModal.setAttribute("aria-modal", "false");
+
+  document.body.classList.remove(MODAL_OPEN_CLASS);
+
+  if (shortcutsFocusTrap) {
+    shortcutsFocusTrap.deactivate();
   }
 }
 
@@ -690,6 +731,20 @@ if (closeShortcutsBtn) {
 }
 if (shortcutsOverlay) {
   shortcutsOverlay.addEventListener("click", closeShortcutsModal);
+}
+
+/*
+ * Tab is handled in the capture phase so the trap sees it before the page's
+ * own keydown listeners, keeping focus inside the dialog while it is open.
+ */
+if (shortcutsFocusTrap) {
+  document.addEventListener(
+    "keydown",
+    event => {
+      shortcutsFocusTrap.handleKeydown(event);
+    },
+    true
+  );
 }
 
 // Keyboard Shortcuts Listeners

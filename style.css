@@ -54,9 +54,8 @@ body {
 
   font-family: Inter, system-ui, Arial, sans-serif;
 
-  background: radial-gradient(circle at top,
-      rgba(37, 99, 235, 0.1),
-      transparent 45%),
+  background:
+    radial-gradient(circle at top, rgba(37, 99, 235, 0.1), transparent 45%),
     linear-gradient(180deg, var(--bg) 0%, var(--bg-secondary) 100%);
 
   color: var(--text);
@@ -421,7 +420,7 @@ footer {
     align-self: center;
     margin: 1.6rem 0;
   }
-  
+
   #shortcuts-btn {
     align-self: center;
     margin-top: -30px;
@@ -510,6 +509,29 @@ footer {
 
 #shortcuts-modal[aria-hidden="true"] {
   display: none;
+}
+
+/*
+ * Stop the page scrolling behind the overlay. Without this a scroll gesture
+ * over the dialog moves the project grid underneath it, and the user loses
+ * their place as soon as they close the dialog.
+ */
+body.modal-open {
+  overflow: hidden;
+}
+
+/*
+ * The dialog is focused programmatically when it opens, so suppress the
+ * default outline there — but keep a visible ring for the controls inside it,
+ * since a focus trap is useless if you cannot see where focus is.
+ */
+.shortcuts-modal-content:focus {
+  outline: none;
+}
+
+.shortcuts-modal-content:focus-visible {
+  outline: 2px solid var(--accent-hover, #2563eb);
+  outline-offset: 4px;
 }
 
 .shortcuts-modal {
