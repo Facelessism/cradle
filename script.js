@@ -160,10 +160,24 @@ function formatCategoryLabel(category) {
   return category.toUpperCase().replace("-", " ");
 }
 
+/*
+ * Shared with the build step (scripts/generate-projects.js) so the freshness
+ * window and the accepted date format can never disagree.
+ * `scripts/projectDates.js` is loaded as a classic script in index.html; the
+ * inline fallback keeps cards rendering if that request fails.
+ */
+const projectDates = window.CradleProjectDates || {
+  isNewProject: dateAdded => {
+    if (!dateAdded) return false;
+    const parsed = new Date(dateAdded);
+    if (Number.isNaN(parsed.getTime())) return false;
+    const diffDays = (Date.now() - parsed.getTime()) / 86400000;
+    return diffDays >= -1 && diffDays <= 7;
+  },
+};
+
 function isNewProject(dateAdded) {
-  if (!dateAdded) return false;
-  const diffDays = (Date.now() - new Date(dateAdded)) / 86400000;
-  return diffDays <= 7;
+  return projectDates.isNewProject(dateAdded);
 }
 
 function getRecentProjects() {

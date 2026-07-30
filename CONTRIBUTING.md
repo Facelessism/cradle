@@ -102,6 +102,39 @@ Use this as a guideline rather than a strict requirement:
 
 Keep the project self-contained whenever possible. Avoid adding unrelated global files unless the change truly belongs to the project.
 
+### Registering the project in the catalog
+
+`data/projects.json` is generated, never hand-written. After adding your
+folder, run:
+
+```bash
+npm run generate
+```
+
+Each record looks like this:
+
+```json
+{
+  "title": "Json Converter",
+  "category": "dev-tools",
+  "path": "projects/dev-tools/json-converter/",
+  "dateAdded": "2026-07-24"
+}
+```
+
+`dateAdded` is what makes the **New** ribbon appear on the landing page for the
+first 7 days after a project lands. You do not need to set it yourself — the
+generator derives it from the commit that first added your folder, falling back
+to the folder's creation time when git history is unavailable.
+
+Once a value has been committed it is reused as-is on every later run, so
+regenerating the catalog never shifts the dates of existing projects. Pass
+`--refresh-dates` only if you genuinely need to re-derive all of them:
+
+```bash
+node scripts/generate-projects.js --refresh-dates
+```
+
 ### Naming conventions
 
 - Use lowercase folder names with hyphens when possible.

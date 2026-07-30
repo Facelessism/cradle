@@ -1,10 +1,13 @@
 const fs = require("fs");
 const path = require("path");
+const { execFileSync } = require("child_process");
 
-const PROJECTS_DIR = path.join(__dirname, "..", "projects");
+const projectDates = require("./projectDates.js");
+
+const REPO_ROOT = path.join(__dirname, "..");
+const PROJECTS_DIR = path.join(REPO_ROOT, "projects");
 const OUTPUT_FILE = path.join(
-  __dirname,
-  "..",
+  REPO_ROOT,
   "data",
   "projects.json"
 );
@@ -239,8 +242,119 @@ function generateSvgThumbnail(title, categoryName, projectAbsPath) {
   fs.writeFileSync(path.join(projectAbsPath, "thumbnail.svg"), svgContent);
 }
 
+/**
+ * Read the existing projects.json so previously resolved `dateAdded` values
+ * can be reused.
+ *
+ * Reusing them matters for two reasons: a published date must stay stable
+ * (otherwise the "New" ribbon could reappear on an old project), and CI
+ * checkouts are often shallow, so `git log` may not reach the commit that
+ * originally added the folder.
+ *
+ * @returns {Map<string, object>} Existing records keyed by project path.
+ */
+function readExistingProjects() {
+  const existing = new Map();
+
+  if (!fs.existsSync(OUTPUT_FILE)) return existing;
+
+  try {
+    const parsed = JSON.parse(fs.readFileSync(OUTPUT_FILE, "utf-8"));
+
+    if (Array.isArray(parsed)) {
+      for (const project of parsed) {
+        if (project && typeof project.path === "string") {
+          existing.set(project.path, project);
+        }
+      }
+    }
+  } catch (error) {
+    console.warn(`Could not parse existing projects.json: ${error.message}`);
+  }
+
+  return existing;
+}
+
+/**
+ * Date of the commit that first added a project folder.
+ *
+ * @param {string} projectRelPath Repo-relative path to the project folder.
+ * @returns {string|null} `YYYY-MM-DD`, or null when git cannot answer.
+ */
+function getGitCreationDate(projectRelPath) {
+  try {
+    const output = execFileSync(
+      "git",
+      ["log", "--diff-filter=A", "--format=%aI", "-1", "--", projectRelPath],
+      { cwd: REPO_ROOT, encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] }
+    ).trim();
+
+    if (!output) return null;
+
+    return projectDates.toIsoDate(new Date(output));
+  } catch (error) {
+    // Not a git checkout, git missing, or the folder is not committed yet.
+    // All are normal — the filesystem fallback below handles them.
+    return null;
+  }
+}
+
+/**
+ * Filesystem fallback for when git has no answer.
+ *
+ * @param {string} projectAbsPath Absolute path to the project folder.
+ * @returns {string|null} `YYYY-MM-DD`, or null.
+ */
+function getFilesystemCreationDate(projectAbsPath) {
+  try {
+    const stats = fs.statSync(projectAbsPath);
+
+    // birthtime is not populated on every filesystem and reads as the epoch
+    // when unavailable, so fall back to mtime rather than dating everything
+    // to 1970.
+    const birthMs = stats.birthtimeMs;
+    const source = birthMs && birthMs > 0 ? birthMs : stats.mtimeMs;
+
+    return projectDates.toIsoDate(new Date(source));
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Resolve the `dateAdded` for one project.
+ *
+ * Preference order: the value already committed to projects.json, then git
+ * history, then the filesystem, then today.
+ *
+ * @param {string} projectRelPath Repo-relative project path (trailing slash).
+ * @param {string} projectAbsPath Absolute path to the project folder.
+ * @param {Map<string, object>} existing Records from the previous run.
+ * @param {boolean} refresh Ignore the committed value and re-derive it.
+ * @returns {string} A `YYYY-MM-DD` date string.
+ */
+function resolveDateAdded(projectRelPath, projectAbsPath, existing, refresh) {
+  if (!refresh) {
+    const previous = existing.get(projectRelPath);
+
+    if (previous && projectDates.isValidIsoDate(previous.dateAdded)) {
+      return previous.dateAdded;
+    }
+  }
+
+  const gitDate = getGitCreationDate(projectRelPath);
+  if (gitDate) return gitDate;
+
+  const fsDate = getFilesystemCreationDate(projectAbsPath);
+  if (fsDate) return fsDate;
+
+  return projectDates.toIsoDate(new Date());
+}
+
 function generateProjects() {
   const projects = [];
+  const refreshDates = process.argv.includes("--refresh-dates");
+  const existingProjects = readExistingProjects();
 
   const categories = fs
     .readdirSync(PROJECTS_DIR, { withFileTypes: true })
@@ -262,15 +376,23 @@ function generateProjects() {
 
     for (const project of projectFolders) {
       const projectTitle = titleCase(project.name);
-      
+      const projectRelPath = `projects/${categoryName}/${project.name}/`;
+      const projectAbsPath = path.join(categoryPath, project.name);
+
       projects.push({
         title: projectTitle,
         category: categoryName,
-        path: `projects/${categoryName}/${project.name}/`
+        path: projectRelPath,
+        // Drives the "New" ribbon — see scripts/projectDates.js
+        dateAdded: resolveDateAdded(
+          projectRelPath,
+          projectAbsPath,
+          existingProjects,
+          refreshDates
+        )
       });
 
       // Generate thumbnail SVG in the project folder
-      const projectAbsPath = path.join(categoryPath, project.name);
       generateSvgThumbnail(projectTitle, categoryName, projectAbsPath);
     }
   }
