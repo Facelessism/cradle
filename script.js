@@ -692,78 +692,132 @@ if (shortcutsOverlay) {
   shortcutsOverlay.addEventListener("click", closeShortcutsModal);
 }
 
+/*
+ * Shortcut matching lives in scripts/keyboardShortcuts.js so the modifier and
+ * text-field rules are unit-testable. The inline fallback keeps `/` and Escape
+ * working if that file fails to load.
+ */
+const shortcuts = window.CradleShortcuts || {
+  ACTIONS: {
+    FOCUS_SEARCH: "focus-search",
+    DISMISS: "dismiss",
+    TOGGLE_THEME: "toggle-theme",
+    TOGGLE_SHORTCUTS: "toggle-shortcuts",
+  },
+  matchShortcut: event => {
+    if (!event || typeof event.key !== "string") return null;
+    if (event.key === "Escape") return "dismiss";
+    if (event.key.toLowerCase() === "k" && (event.ctrlKey || event.metaKey)) {
+      return "focus-search";
+    }
+    return null;
+  },
+  commandKeyLabel: () => "Ctrl",
+};
+
+function isShortcutsModalOpen() {
+  if (!shortcutsModal) return false;
+
+  return (
+    shortcutsModal.classList.contains("visible") ||
+    shortcutsModal.getAttribute("aria-hidden") === "false"
+  );
+}
+
+function focusSearchInput() {
+  if (!searchInput) return;
+
+  searchInput.focus();
+  searchInput.select();
+}
+
+function toggleTheme() {
+  const themeToggleEl = document.getElementById("themeToggle");
+
+  if (themeToggleEl) {
+    themeToggleEl.click();
+    return;
+  }
+
+  if (typeof window.toggleTheme === "function") {
+    window.toggleTheme();
+    return;
+  }
+
+  const isLight = document.documentElement.classList.contains("light-theme");
+
+  document.documentElement.classList.toggle("light-theme", !isLight);
+  localStorage.setItem("theme", isLight ? "dark" : "light");
+}
+
+function toggleShortcutsModal() {
+  if (!shortcutsModal) return;
+
+  if (isShortcutsModalOpen()) {
+    closeShortcutsModal();
+  } else {
+    openShortcutsModal();
+  }
+}
+
+/**
+ * Replace the hard-coded "Ctrl" hints with the modifier this platform
+ * actually uses, so macOS users are not told to press a key that does nothing.
+ */
+function localizeShortcutHints() {
+  const label = shortcuts.commandKeyLabel();
+  if (label === "Ctrl") return;
+
+  document.querySelectorAll("[data-command-key]").forEach(element => {
+    element.textContent = label;
+  });
+
+  const hint = document.querySelector(".search-kbd-hint");
+  if (hint) {
+    hint.title = `Press '/' or ${label}+K to search`;
+  }
+}
+
 // Keyboard Shortcuts Listeners
-document.addEventListener("keydown", e => {
-  const activeEl = document.activeElement;
-  const isInputActive =
-    activeEl &&
-    (activeEl.tagName === "INPUT" ||
-      activeEl.tagName === "TEXTAREA" ||
-      activeEl.isContentEditable);
+document.addEventListener("keydown", event => {
+  const action = shortcuts.matchShortcut(event, {
+    isModalOpen: isShortcutsModalOpen(),
+    activeElement: document.activeElement,
+  });
 
-  // Focus Search Bar
-  if (
-    (e.ctrlKey && e.key.toLowerCase() === "k") ||
-    (e.key === "/" && !isInputActive)
-  ) {
-    e.preventDefault();
-    if (searchInput) {
-      searchInput.focus();
-      searchInput.select();
-    }
-  }
+  if (!action) return;
 
-  // Close Modal or Clear search
-  if (e.key === "Escape") {
-    if (
-      shortcutsModal &&
-      (shortcutsModal.classList.contains("visible") ||
-        shortcutsModal.getAttribute("aria-hidden") === "false")
-    ) {
-      closeShortcutsModal();
-    } else {
-      clearFilters();
-    }
-  }
+  switch (action) {
+    case shortcuts.ACTIONS.FOCUS_SEARCH:
+      event.preventDefault();
+      focusSearchInput();
+      break;
 
-  // Toggle Theme
-  if (e.key.toLowerCase() === "t" && !isInputActive) {
-    e.preventDefault();
-    const themeToggleEl = document.getElementById("themeToggle");
-    if (themeToggleEl) {
-      themeToggleEl.click();
-    } else if (typeof window.toggleTheme === "function") {
-      window.toggleTheme();
-    } else {
-      const isLight =
-        document.documentElement.classList.contains("light-theme");
-      if (isLight) {
-        document.documentElement.classList.remove("light-theme");
-        localStorage.setItem("theme", "dark");
-      } else {
-        document.documentElement.classList.add("light-theme");
-        localStorage.setItem("theme", "light");
-      }
-    }
-  }
-
-  // Toggle Shortcuts Panel
-  if (e.key === "?" && !isInputActive) {
-    e.preventDefault();
-    if (shortcutsModal) {
-      const isVisible =
-        shortcutsModal.classList.contains("visible") ||
-        shortcutsModal.getAttribute("aria-hidden") === "false";
-      if (isVisible) {
+    case shortcuts.ACTIONS.DISMISS:
+      if (isShortcutsModalOpen()) {
         closeShortcutsModal();
       } else {
-        openShortcutsModal();
+        clearFilters();
       }
-    }
+      break;
+
+    case shortcuts.ACTIONS.TOGGLE_THEME:
+      event.preventDefault();
+      toggleTheme();
+      break;
+
+    case shortcuts.ACTIONS.TOGGLE_SHORTCUTS:
+      event.preventDefault();
+      toggleShortcutsModal();
+      break;
+
+    default:
+      break;
   }
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  localizeShortcutHints();
   renderRecentProjects();
   loadProjects();
 });
