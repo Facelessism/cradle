@@ -23,15 +23,120 @@ const RECENT_PROJECTS_KEY = "cradle:recent-projects";
 const RECENT_PROJECTS_COLLAPSED_KEY = "cradle:recent-projects-collapsed";
 const RECENT_PROJECTS_LIMIT = 5;
 
-let filterWorker;
+/*
+ * Filtering is shared with `scripts/worker.js` through
+ * `scripts/projectFilter.js`, which is loaded as a classic script in
+ * index.html and exposed as `window.CradleProjectFilter`.
+ *
+ * A tiny local fallback keeps the page usable even if that file is missing,
+ * so a single failed request can never take the whole landing page down.
+ */
+const projectFilter = window.CradleProjectFilter || {
+  ALL_CATEGORIES: "all",
+  formatCategoryLabel: category =>
+    typeof category === "string"
+      ? category.toUpperCase().replace(/-/g, " ")
+      : "",
+  filterProjects: (projects, options = {}) => {
+    const query = String(options.query || "")
+      .toLowerCase()
+      .trim();
+    const category = options.selectedCategory || "all";
 
-if (window.Worker) {
-  filterWorker = new Worker("./scripts/worker.js");
+    return (Array.isArray(projects) ? projects : []).filter(
+      project =>
+        (category === "all" || project.category === category) &&
+        (!query ||
+          String(project.title || "")
+            .toLowerCase()
+            .includes(query))
+    );
+  },
+};
 
-  filterWorker.onmessage = function (e) {
-    renderProjects(e.data);
-  };
+let filterWorker = null;
+let filterRequestId = 0;
+
+/**
+ * Create the filtering Web Worker, or return `null` when one cannot be used.
+ *
+ * `new Worker()` is not merely feature-detectable: it throws synchronously
+ * when the page is served from `file://` (Chrome reports origin `null`), when
+ * a Content Security Policy forbids worker scripts, and when the worker file
+ * itself is missing. Previously this call sat unguarded at module top level,
+ * so any of those cases aborted the entire module — the grid stayed empty and
+ * even the "Failed to load projects." message never rendered.
+ *
+ * @returns {Worker|null} A ready worker, or `null` to filter on the main thread.
+ */
+function createFilterWorker() {
+  if (typeof Worker === "undefined") return null;
+
+  try {
+    const worker = new Worker("./scripts/worker.js");
+
+    worker.onmessage = event => {
+      const data = event.data || {};
+
+      /*
+       * Messages can arrive out of order while the user is typing. Anything
+       * older than the newest request is stale and must be dropped, or the
+       * grid can settle on the results of a query the user already replaced.
+       */
+      if (data.requestId !== filterRequestId) return;
+
+      if (!data.ok) {
+        disableFilterWorker(data.error);
+        return;
+      }
+
+      renderProjects(data.projects);
+    };
+
+    /*
+     * Without these the worker could die (parse error, revoked permission,
+     * offline cache miss) and filtering would silently stop updating the grid
+     * for the rest of the session, with no error shown anywhere.
+     */
+    worker.onerror = event => {
+      event.preventDefault();
+      disableFilterWorker(event.message || "worker error");
+    };
+
+    worker.onmessageerror = () => {
+      disableFilterWorker("worker message could not be deserialized");
+    };
+
+    return worker;
+  } catch (error) {
+    console.warn(
+      "Filtering worker unavailable, falling back to the main thread:",
+      error
+    );
+    return null;
+  }
 }
+
+/**
+ * Tear down a broken worker and re-run the current filter on the main thread
+ * so the user sees correct results instead of a frozen grid.
+ *
+ * @param {string} reason Why the worker was dropped, for the console warning.
+ */
+function disableFilterWorker(reason) {
+  if (!filterWorker) return;
+
+  console.warn(
+    `Filtering worker disabled (${reason}); filtering on the main thread.`
+  );
+
+  filterWorker.terminate();
+  filterWorker = null;
+
+  applyFilters();
+}
+
+filterWorker = createFilterWorker();
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -157,7 +262,7 @@ function renderCategories() {
 }
 
 function formatCategoryLabel(category) {
-  return category.toUpperCase().replace("-", " ");
+  return projectFilter.formatCategoryLabel(category);
 }
 
 function isNewProject(dateAdded) {
@@ -351,6 +456,11 @@ function renderProjects(projects) {
 function getSearchableCategory(category) {
   return `${category} ${formatCategoryLabel(category)}`.toLowerCase();
 }
+
+/*
+ * Kept as thin wrappers over the shared module so the rest of this file reads
+ * unchanged, while `scripts/worker.js` and the tests use the same implementation.
+ */
 
 function getSearchSuggestions(query) {
   const normalizedQuery = query.toLowerCase().trim();
@@ -551,21 +661,22 @@ async function copyProjectUrl(project, button) {
 function applyFilters() {
   const query = searchInput.value.toLowerCase().trim();
 
+  filterRequestId += 1;
+
   if (filterWorker) {
     filterWorker.postMessage({
+      requestId: filterRequestId,
       allProjects,
       selectedCategory,
       query,
     });
   } else {
-    const filtered = allProjects.filter(
-      project =>
-        (selectedCategory === "all" || project.category === selectedCategory) &&
-        (project.title.toLowerCase().includes(query) ||
-          getSearchableCategory(project.category).includes(query))
+    renderProjects(
+      projectFilter.filterProjects(allProjects, {
+        selectedCategory,
+        query,
+      })
     );
-
-    renderProjects(filtered);
   }
 
   updateClearButtonVisibility(query);
