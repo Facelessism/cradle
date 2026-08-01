@@ -33,6 +33,14 @@ if (window.Worker) {
   };
 }
 
+// Cache versioning/validation policy — see scripts/project-cache.js.
+const {
+  CACHE_KEY,
+  sanitizeProjects,
+  createCacheEntry,
+  inspectCacheEntry,
+} = window.CradleProjectCache;
+
 function openDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open("CradleDB", 1);
@@ -53,16 +61,69 @@ function openDB() {
   });
 }
 
+/**
+ * Read the cached catalog, or null when the record must not be trusted:
+ * written under an older entry shape, older than CACHE_MAX_AGE_MS, or holding
+ * nothing the renderer can use. A rejected record is deleted so it cannot be
+ * re-examined on every visit.
+ */
 function getCachedProjects(db) {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(["projectsStore"], "readonly");
     const store = transaction.objectStore("projectsStore");
-    const request = store.get("projects");
+    const request = store.get(CACHE_KEY);
 
     request.onerror = () => reject(request.error);
 
-    request.onsuccess = () =>
-      resolve(request.result ? request.result.data : null);
+    request.onsuccess = () => {
+      const entry = request.result;
+      const { valid, reason } = inspectCacheEntry(entry);
+
+      if (valid) {
+        resolve(sanitizeProjects(entry.data));
+        return;
+      }
+
+      if (reason !== "missing") {
+        console.info(`Discarding cached catalog (${reason}).`);
+        deleteCachedProjects(db);
+      }
+
+      resolve(null);
+    };
+  });
+}
+
+function deleteCachedProjects(db) {
+  try {
+    const transaction = db.transaction(["projectsStore"], "readwrite");
+    transaction.objectStore("projectsStore").delete(CACHE_KEY);
+  } catch (error) {
+    console.warn("Failed to discard cached catalog:", error);
+  }
+}
+
+/** Store the catalog, surfacing quota/abort failures instead of swallowing them. */
+function writeCachedProjects(db, data) {
+  return new Promise(resolve => {
+    try {
+      const transaction = db.transaction(["projectsStore"], "readwrite");
+
+      transaction.oncomplete = () => resolve(true);
+      transaction.onabort = () => {
+        console.warn("Caching the catalog was aborted:", transaction.error);
+        resolve(false);
+      };
+      transaction.onerror = () => {
+        console.warn("Failed to cache the catalog:", transaction.error);
+        resolve(false);
+      };
+
+      transaction.objectStore("projectsStore").put(createCacheEntry(data));
+    } catch (error) {
+      console.warn("Failed to cache the catalog:", error);
+      resolve(false);
+    }
   });
 }
 
@@ -73,17 +134,16 @@ async function fetchAndCacheProjects(db) {
     throw new Error("Failed to load projects");
   }
 
-  const data = await response.json();
+  const data = sanitizeProjects(await response.json());
+
+  if (data.length === 0) {
+    throw new Error("data/projects.json contained no usable projects");
+  }
+
   allProjects = data;
 
   if (db) {
-    const transaction = db.transaction(["projectsStore"], "readwrite");
-    const store = transaction.objectStore("projectsStore");
-
-    store.put({
-      id: "projects",
-      data: data,
-    });
+    await writeCachedProjects(db, data);
   }
 
   return data;
@@ -109,7 +169,15 @@ async function loadProjects() {
             renderCategories();
             applyFilters();
           })
-          .catch(console.error);
+          .catch(error => {
+            // The page is usable — it is showing the cached catalog — but the
+            // user should know it may be out of date rather than silently
+            // browsing an old snapshot.
+            console.error("Failed to refresh the project catalog:", error);
+            setCopyStatus(
+              "Showing a cached list of projects — refreshing failed."
+            );
+          });
 
         return;
       }
