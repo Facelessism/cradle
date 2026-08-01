@@ -103,9 +103,14 @@ async function loadProjects() {
 
         renderCategories();
         renderProjects(allProjects);
+        syncRecentProjectsWithCatalog();
 
         fetchAndCacheProjects(db)
           .then(() => {
+            // The cached catalog may itself have been stale, so reconcile
+            // again against the freshly fetched one.
+            syncRecentProjectsWithCatalog();
+
             renderCategories();
             applyFilters();
           })
@@ -121,6 +126,7 @@ async function loadProjects() {
 
     renderCategories();
     renderProjects(allProjects);
+    syncRecentProjectsWithCatalog();
   } catch (error) {
     console.error(error);
     projectsGrid.innerHTML = "<p>Failed to load projects.</p>";
@@ -166,27 +172,53 @@ function isNewProject(dateAdded) {
   return diffDays <= 7;
 }
 
+// Pure reconciliation helpers shared with tests — see scripts/recent-projects.js.
+const { sanitizeRecentProjects, reconcileRecentProjects } =
+  window.CradleRecentProjects;
+
 function getRecentProjects() {
   try {
     const raw = localStorage.getItem(RECENT_PROJECTS_KEY);
     if (!raw) return [];
 
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
 
-    return parsed
-      .filter(
-        project =>
-          project &&
-          typeof project.title === "string" &&
-          typeof project.category === "string" &&
-          typeof project.path === "string"
-      )
-      .slice(0, RECENT_PROJECTS_LIMIT);
+    return sanitizeRecentProjects(parsed, RECENT_PROJECTS_LIMIT);
   } catch (error) {
     console.warn("Failed to load recently opened projects:", error);
     return [];
   }
+}
+
+/**
+ * Drop recent entries whose project no longer exists and refresh the metadata
+ * of the ones that survive.
+ *
+ * Called once the catalog is available. Until then the section renders from
+ * storage as before — a not-yet-loaded catalog must not be mistaken for an
+ * empty one and wipe the user's history.
+ */
+function syncRecentProjectsWithCatalog() {
+  const stored = getRecentProjects();
+  if (!stored.length) return;
+
+  const { entries, changed, removed } = reconcileRecentProjects(
+    stored,
+    allProjects,
+    { limit: RECENT_PROJECTS_LIMIT }
+  );
+
+  if (!changed) return;
+
+  if (removed.length) {
+    console.info(
+      `Removed ${removed.length} recently opened project(s) that no longer exist:`,
+      removed.map(entry => entry.path)
+    );
+  }
+
+  saveRecentProjects(entries);
+  renderRecentProjects();
 }
 
 function saveRecentProjects(projects) {
