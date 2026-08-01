@@ -1,20 +1,25 @@
+/**
+ * Filter worker.
+ *
+ * Runs the shared filtering logic off the main thread. The filter predicate
+ * itself lives in filter-projects.js so this file and script.js cannot drift
+ * apart.
+ *
+ * Every reply echoes back the `requestId` it was computed for. Worker replies
+ * are not guaranteed to arrive in the order their messages were posted, so the
+ * main thread uses that id to discard results for a query the user has already
+ * typed past.
+ */
+
+importScripts("./filter-projects.js");
+
 self.onmessage = function (e) {
-  const { allProjects, selectedCategory, query } = e.data;
+  const { requestId, allProjects, selectedCategory, query } = e.data || {};
 
-  function formatCategoryLabel(category) {
-    return category.toUpperCase().replace("-", " ");
-  }
+  const filtered = self.CradleFilters.filterProjects(allProjects, {
+    category: selectedCategory,
+    query,
+  });
 
-  function getSearchableCategory(category) {
-    return `${category} ${formatCategoryLabel(category)}`.toLowerCase();
-  }
-
-  const filtered = allProjects.filter(
-    project =>
-      (selectedCategory === "all" || project.category === selectedCategory) &&
-      (project.title.toLowerCase().includes(query) ||
-        getSearchableCategory(project.category).includes(query))
-  );
-
-  self.postMessage(filtered);
+  self.postMessage({ requestId, projects: filtered });
 };

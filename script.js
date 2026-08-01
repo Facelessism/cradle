@@ -23,13 +23,28 @@ const RECENT_PROJECTS_KEY = "cradle:recent-projects";
 const RECENT_PROJECTS_COLLAPSED_KEY = "cradle:recent-projects-collapsed";
 const RECENT_PROJECTS_LIMIT = 5;
 
+const FILTER_DEBOUNCE_MS = 120;
+
 let filterWorker;
+let filterRequestId = 0;
+let latestAppliedRequestId = 0;
+let filterDebounceTimer = null;
 
 if (window.Worker) {
   filterWorker = new Worker("./scripts/worker.js");
 
   filterWorker.onmessage = function (e) {
-    renderProjects(e.data);
+    const { requestId, projects } = e.data || {};
+
+    // Worker replies are not guaranteed to arrive in the order their messages
+    // were posted, and each carries a full copy of the catalog, so turnaround
+    // varies per message. Without this guard a slow result for "ch" could land
+    // after the fast result for "chess" and repaint the grid with the wrong
+    // set — leaving the grid, the search box and #project-count disagreeing
+    // until the next keystroke.
+    if (requestId !== latestAppliedRequestId) return;
+
+    renderProjects(projects);
   };
 }
 
@@ -107,7 +122,7 @@ async function loadProjects() {
         fetchAndCacheProjects(db)
           .then(() => {
             renderCategories();
-            applyFilters();
+            applyFilters({ immediate: true });
           })
           .catch(console.error);
 
@@ -137,14 +152,15 @@ function renderCategories() {
 
   categories.forEach(category => {
     const isActive = category === selectedCategory;
+    const label = formatCategoryLabel(category);
     const btn = CradleButton.create({
       variant: isActive ? "primary" : "ghost",
       size: "sm",
-      children: category.toUpperCase().replace("-", " "),
-      ariaLabel: `${category.toUpperCase().replace("-", " ")} projects`,
+      children: label,
+      ariaLabel: `${label} projects`,
       onClick: () => {
         selectedCategory = category;
-        applyFilters();
+        applyFilters({ immediate: true });
         renderCategories();
         searchInput.focus();
       },
@@ -156,9 +172,12 @@ function renderCategories() {
   });
 }
 
-function formatCategoryLabel(category) {
-  return category.toUpperCase().replace("-", " ");
-}
+// Shared filtering logic — the same module the filter worker imports, so the
+// worker path and the no-Worker fallback can never disagree. Replaces the
+// local formatCategoryLabel()/getSearchableCategory() copies that used to sit
+// here alongside a third copy in scripts/worker.js.
+const { formatCategoryLabel, getSearchableCategory, filterProjects } =
+  window.CradleFilters;
 
 function isNewProject(dateAdded) {
   if (!dateAdded) return false;
@@ -348,10 +367,6 @@ function renderProjects(projects) {
   });
 }
 
-function getSearchableCategory(category) {
-  return `${category} ${formatCategoryLabel(category)}`.toLowerCase();
-}
-
 function getSearchSuggestions(query) {
   const normalizedQuery = query.toLowerCase().trim();
   if (!normalizedQuery) return [];
@@ -474,7 +489,7 @@ function selectSearchSuggestion(index) {
   }
 
   renderCategories();
-  applyFilters();
+  applyFilters({ immediate: true });
   hideSearchSuggestions();
   searchInput.focus();
 }
@@ -548,27 +563,57 @@ async function copyProjectUrl(project, button) {
   }
 }
 
-function applyFilters() {
+function runFilters() {
   const query = searchInput.value.toLowerCase().trim();
 
   if (filterWorker) {
+    // Claim the newest request id up front; the onmessage handler drops any
+    // reply that is not for this id.
+    filterRequestId += 1;
+    latestAppliedRequestId = filterRequestId;
+
     filterWorker.postMessage({
+      requestId: filterRequestId,
       allProjects,
       selectedCategory,
       query,
     });
   } else {
-    const filtered = allProjects.filter(
-      project =>
-        (selectedCategory === "all" || project.category === selectedCategory) &&
-        (project.title.toLowerCase().includes(query) ||
-          getSearchableCategory(project.category).includes(query))
-    );
+    // Filtering synchronously on the main thread also supersedes anything the
+    // worker may still owe us, so bump the id here too.
+    filterRequestId += 1;
+    latestAppliedRequestId = filterRequestId;
 
-    renderProjects(filtered);
+    renderProjects(
+      filterProjects(allProjects, { category: selectedCategory, query })
+    );
   }
 
   updateClearButtonVisibility(query);
+}
+
+/**
+ * @param {{immediate?: boolean}} [options] `immediate` skips the debounce for
+ *   interactions that are a single deliberate action (category click, clearing
+ *   filters, picking a suggestion) rather than a burst of keystrokes.
+ */
+function applyFilters(options = {}) {
+  const { immediate = false } = options;
+
+  if (filterDebounceTimer !== null) {
+    window.clearTimeout(filterDebounceTimer);
+    filterDebounceTimer = null;
+  }
+
+  if (immediate) {
+    runFilters();
+    return;
+  }
+
+  filterDebounceTimer = window.setTimeout(() => {
+    filterDebounceTimer = null;
+    runFilters();
+  }, FILTER_DEBOUNCE_MS);
 }
 
 function updateClearButtonVisibility(query) {
@@ -583,7 +628,7 @@ function clearFilters() {
   searchInput.value = "";
   selectedCategory = "all";
 
-  applyFilters();
+  applyFilters({ immediate: true });
   renderCategories();
   hideSearchSuggestions();
   searchInput.focus();
