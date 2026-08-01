@@ -56,7 +56,7 @@
 
   <!-- Project Title -->
   <text x="100" y="300" font-family="'Space Grotesk', Inter, system-ui, sans-serif" font-size="64" font-weight="800" fill="#ffffff" letter-spacing="-1.5">Terminal Portfolio</text>
-<text x="100" y="375" font-family="'Space Grotesk', Inter, system-ui, sans-serif" font-size="64" font-weight="800" fill="#ffffff" letter-spacing="-1.5">Builder</text>
+<text x="100" y="375" font-family="'Space Grotesk', Inter, system-ui, sans-serif" font-size="64" font-weight="800" fill="#ffffff" letter-spacing="-1.5">Generator</text>
 
   <!-- Watermark logo -->
   <g transform="translate(1100, 560)" text-anchor="end">

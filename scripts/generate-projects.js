@@ -138,7 +138,7 @@ function wrapText(text, maxChars = 20) {
 }
 
 function escapeXml(unsafe) {
-  return unsafe.replace(/[<>&'"]/g, (c) => {
+  return String(unsafe == null ? "" : unsafe).replace(/[<>&'"]/g, (c) => {
     switch (c) {
       case "<": return "&lt;";
       case ">": return "&gt;";
@@ -149,19 +149,17 @@ function escapeXml(unsafe) {
   });
 }
 
-function generateSvgThumbnail(title, categoryName, projectAbsPath) {
-  const thumbnailPath = path.join(projectAbsPath, "thumbnail.svg");
-
-  if (fs.existsSync(thumbnailPath)) {
-    const thumbMtime = fs.statSync(thumbnailPath).mtimeMs;
-    const projMtime = fs.statSync(projectAbsPath).mtimeMs;
-    if (thumbMtime >= projMtime) {
-      return;
-    }
-  }
-
+/**
+ * Builds the thumbnail SVG for a project.
+ *
+ * Pure: the output depends only on (title, categoryName) and the CATEGORY_STYLES
+ * table, so identical inputs always produce identical bytes. That is what lets
+ * writeSvgThumbnail() decide whether a rewrite is needed by comparing content
+ * instead of guessing from filesystem timestamps.
+ */
+function buildSvgThumbnail(title, categoryName) {
   const style = CATEGORY_STYLES[categoryName] || defaultStyle;
-  
+
   // Word wrap for title
   const lines = wrapText(title, 20);
   let textY = 280;
@@ -173,9 +171,12 @@ function generateSvgThumbnail(title, categoryName, projectAbsPath) {
     .map((line, i) => `<text x="100" y="${textY + i * 75}" font-family="'Space Grotesk', Inter, system-ui, sans-serif" font-size="64" font-weight="800" fill="#ffffff" letter-spacing="-1.5">${escapeXml(line)}</text>`)
     .join("\n");
 
-  const badgeWidth = Math.max(120, categoryName.length * 10 + 40);
+  // Width is sized from the raw label; the label itself is escaped on the way
+  // into the markup so categories containing &, < or > cannot break the SVG.
+  const categoryLabel = String(categoryName == null ? "" : categoryName);
+  const badgeWidth = Math.max(120, categoryLabel.length * 10 + 40);
 
-  const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="100%" height="100%">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="100%" height="100%">
   <defs>
     <!-- Background Gradient -->
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -223,7 +224,7 @@ function generateSvgThumbnail(title, categoryName, projectAbsPath) {
   <!-- Category Badge -->
   <g transform="translate(100, 130)">
     <rect width="${badgeWidth}" height="40" rx="20" fill="${style.accent}" fill-opacity="0.2" stroke="${style.accent}" stroke-opacity="0.4" stroke-width="1.5" />
-    <text x="${badgeWidth / 2}" y="24" font-family="'Space Grotesk', Inter, system-ui, sans-serif" font-size="12" font-weight="800" fill="#ffffff" fill-opacity="0.9" letter-spacing="2" text-anchor="middle">${categoryName.toUpperCase()}</text>
+    <text x="${badgeWidth / 2}" y="24" font-family="'Space Grotesk', Inter, system-ui, sans-serif" font-size="12" font-weight="800" fill="#ffffff" fill-opacity="0.9" letter-spacing="2" text-anchor="middle">${escapeXml(categoryLabel.toUpperCase())}</text>
   </g>
 
   <!-- Project Title -->
@@ -235,12 +236,44 @@ function generateSvgThumbnail(title, categoryName, projectAbsPath) {
     <text y="22" font-family="'Space Grotesk', Inter, system-ui, sans-serif" font-size="10" font-weight="600" fill="#ffffff" fill-opacity="0.25" letter-spacing="1">EXPERIMENT SHOWCASE</text>
   </g>
 </svg>`;
-
-  fs.writeFileSync(path.join(projectAbsPath, "thumbnail.svg"), svgContent);
 }
 
-function generateProjects() {
+/**
+ * Writes thumbnail.svg for a project, but only when the bytes would actually
+ * change (or when --force is passed).
+ *
+ * The previous implementation compared the thumbnail's mtime against the
+ * project directory's mtime. That signal is unrelated to the thumbnail's
+ * inputs: editing CATEGORY_STYLES, wrapText() or titleCase() never touches a
+ * project directory, and a directory's mtime only moves when an entry is added
+ * or removed — so regenerated styling was silently dropped. It is also
+ * non-deterministic in CI, because git does not preserve mtimes and a fresh
+ * clone stamps everything with roughly the checkout time.
+ *
+ * @returns {"created"|"updated"|"unchanged"}
+ */
+function writeSvgThumbnail(title, categoryName, projectAbsPath, options = {}) {
+  const { force = false } = options;
+  const thumbnailPath = path.join(projectAbsPath, "thumbnail.svg");
+  const svgContent = buildSvgThumbnail(title, categoryName);
+
+  if (!fs.existsSync(thumbnailPath)) {
+    fs.writeFileSync(thumbnailPath, svgContent);
+    return "created";
+  }
+
+  if (!force && fs.readFileSync(thumbnailPath, "utf-8") === svgContent) {
+    return "unchanged";
+  }
+
+  fs.writeFileSync(thumbnailPath, svgContent);
+  return "updated";
+}
+
+function generateProjects(options = {}) {
+  const { force = process.argv.includes("--force") } = options;
   const projects = [];
+  const thumbnailStats = { created: 0, updated: 0, unchanged: 0 };
 
   const categories = fs
     .readdirSync(PROJECTS_DIR, { withFileTypes: true })
@@ -271,7 +304,13 @@ function generateProjects() {
 
       // Generate thumbnail SVG in the project folder
       const projectAbsPath = path.join(categoryPath, project.name);
-      generateSvgThumbnail(projectTitle, categoryName, projectAbsPath);
+      const result = writeSvgThumbnail(
+        projectTitle,
+        categoryName,
+        projectAbsPath,
+        { force }
+      );
+      thumbnailStats[result] += 1;
     }
   }
 
@@ -280,18 +319,47 @@ function generateProjects() {
   );
 
   const output = JSON.stringify(projects, null, 2);
-  const force = process.argv.includes("--force");
 
-  if (force || !fs.existsSync(OUTPUT_FILE) || fs.readFileSync(OUTPUT_FILE, "utf-8") !== output) {
+  const indexChanged =
+    force ||
+    !fs.existsSync(OUTPUT_FILE) ||
+    fs.readFileSync(OUTPUT_FILE, "utf-8") !== output;
+
+  if (indexChanged) {
     fs.writeFileSync(OUTPUT_FILE, output);
     console.log(
-      `Generated ${projects.length} projects & thumbnails → data/projects.json`
+      `Generated ${projects.length} projects → data/projects.json`
     );
   } else {
     console.log(
       `No changes — ${projects.length} projects up to date`
     );
   }
+
+  const thumbnailsWritten = thumbnailStats.created + thumbnailStats.updated;
+
+  if (thumbnailsWritten > 0) {
+    console.log(
+      `Thumbnails: ${thumbnailStats.created} created, ${thumbnailStats.updated} updated, ${thumbnailStats.unchanged} unchanged`
+    );
+  } else {
+    console.log(`Thumbnails: all ${thumbnailStats.unchanged} up to date`);
+  }
+
+  return { projects, indexChanged, thumbnailStats };
 }
 
-generateProjects();
+if (require.main === module) {
+  generateProjects();
+}
+
+module.exports = {
+  titleCase,
+  wrapText,
+  escapeXml,
+  buildSvgThumbnail,
+  writeSvgThumbnail,
+  generateProjects,
+  CATEGORY_STYLES,
+  defaultStyle,
+};
