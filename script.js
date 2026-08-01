@@ -160,6 +160,58 @@ function formatCategoryLabel(category) {
   return category.toUpperCase().replace("-", " ");
 }
 
+// Catalog ordering — see scripts/sort-projects.js.
+const { SORT_MODES, DEFAULT_SORT_MODE, normalizeSortMode, sortProjects } =
+  window.CradleSort;
+
+const SORT_MODE_KEY = "cradle:sort-mode";
+const sortSelect = document.getElementById("sort-projects");
+let selectedSortMode = DEFAULT_SORT_MODE;
+
+function getStoredSortMode() {
+  try {
+    return normalizeSortMode(localStorage.getItem(SORT_MODE_KEY));
+  } catch (error) {
+    console.warn("Failed to load the saved sort order:", error);
+    return DEFAULT_SORT_MODE;
+  }
+}
+
+function saveSortMode(mode) {
+  try {
+    localStorage.setItem(SORT_MODE_KEY, mode);
+  } catch (error) {
+    console.warn("Failed to save the sort order:", error);
+  }
+}
+
+function renderSortControl() {
+  if (!sortSelect) return;
+
+  sortSelect.innerHTML = "";
+
+  SORT_MODES.forEach(option => {
+    const optionEl = document.createElement("option");
+    optionEl.value = option.value;
+    optionEl.textContent = option.label;
+    sortSelect.appendChild(optionEl);
+  });
+
+  sortSelect.value = selectedSortMode;
+}
+
+function setSortMode(mode) {
+  const normalized = normalizeSortMode(mode);
+  if (normalized === selectedSortMode) return;
+
+  selectedSortMode = normalized;
+  saveSortMode(normalized);
+
+  if (sortSelect) sortSelect.value = normalized;
+
+  applyFilters();
+}
+
 function isNewProject(dateAdded) {
   if (!dateAdded) return false;
   const diffDays = (Date.now() - new Date(dateAdded)) / 86400000;
@@ -337,9 +389,13 @@ function renderProjects(projects) {
     return;
   }
 
+  // Sorting runs after filtering, so the count above stays the count of what
+  // is actually shown regardless of the chosen order.
+  const ordered = sortProjects(projects, selectedSortMode);
+
   projectsGrid.innerHTML = "";
 
-  projects.forEach(project => {
+  ordered.forEach(project => {
     projectsGrid.appendChild(
       createProjectCard(project, {
         onOpen: recordRecentlyOpenedProject,
@@ -763,7 +819,16 @@ document.addEventListener("keydown", e => {
   }
 });
 
+if (sortSelect) {
+  sortSelect.addEventListener("change", event => {
+    setSortMode(event.target.value);
+    setCopyStatus(`Projects sorted by ${sortSelect.selectedOptions[0].text}.`);
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  selectedSortMode = getStoredSortMode();
+  renderSortControl();
   renderRecentProjects();
   loadProjects();
 });

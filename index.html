@@ -211,7 +211,18 @@
         <div class="section-header">
           <h2>Projects</h2>
 
-          <span id="project-count"> 0 projects </span>
+          <div class="section-actions">
+            <div class="sort-control">
+              <label class="sort-label" for="sort-projects">Sort</label>
+              <select
+                id="sort-projects"
+                class="sort-select"
+                aria-label="Sort projects"
+              ></select>
+            </div>
+
+            <span id="project-count"> 0 projects </span>
+          </div>
         </div>
 
         <div
@@ -269,6 +280,8 @@
     <script src="src/components/ui/Button/Button.js"></script>
     <script src="src/components/ui/Card/Card.js"></script>
     <script src="src/components/ui/ThemeToggle/ThemeToggle.js"></script>
+    <!-- Catalog ordering used by the sort control -->
+    <script src="scripts/sort-projects.js"></script>
     <script type="module" src="script.js"></script>
   </body>
 </html>

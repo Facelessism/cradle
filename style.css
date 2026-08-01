@@ -307,6 +307,54 @@ main {
   font-size: 0.9rem;
 }
 
+/* ==========================================================================
+   Sort Control
+   ========================================================================== */
+
+.sort-control {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.sort-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+.sort-select {
+  appearance: none;
+  padding: 0.35rem 1.9rem 0.35rem 0.7rem;
+
+  background-color: var(--card);
+  /* Chevron drawn inline so the control needs no external asset. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.55rem center;
+  background-size: 0.85rem;
+
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+
+  transition:
+    border-color var(--transition),
+    background-color var(--transition);
+}
+
+.sort-select:hover {
+  border-color: var(--accent-hover);
+}
+
+.sort-select:focus-visible {
+  outline: 2px solid var(--accent-hover);
+  outline-offset: 2px;
+}
+
 .recent-projects-section {
   margin-bottom: 2.75rem;
   padding-bottom: 2.25rem;
