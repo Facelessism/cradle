@@ -326,6 +326,9 @@ function generateProjects() {
         category: categoryName,
         path: projectPathStr
       });
+
+      // (Re)generate the project's thumbnail (skipped internally if current).
+      generateSvgThumbnail(title, categoryName, fullProjectPath);
     }
   }
 
@@ -342,6 +345,14 @@ function generateProjects() {
 
   const output = JSON.stringify(projects, null, 2);
   const force = process.argv.includes("--force");
+
+  if (
+    force ||
+    !fs.existsSync(OUTPUT_FILE) ||
+    fs.readFileSync(OUTPUT_FILE, "utf-8") !== output
+  ) {
+    fs.writeFileSync(OUTPUT_FILE, output);
+  }
 
   console.log(
     `✅ Generated and validated ${projects.length} projects successfully → data/projects.json`
