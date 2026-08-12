@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="A playable virtual sitar mini project.">
+  <title>Virtual Sitar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <p class="eyebrow">CRADLE · INSTRUMENTS</p>
+      <h1>Virtual Sitar</h1>
+      <p class="subtitle">Pluck a string with your mouse, touch screen, or keyboard.</p>
+    </header>
+
+    <section class="sitar" aria-label="Playable sitar">
+      <div class="tumba" aria-hidden="true"></div>
+      <div class="neck">
+        <div class="frets" aria-hidden="true"></div>
+        <div id="strings" class="strings" aria-label="Sitar strings"></div>
+        <div class="bridge bridge-top" aria-hidden="true"></div>
+        <div class="bridge bridge-bottom" aria-hidden="true"></div>
+      </div>
+      <div class="tuning-box" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </section>
+
+    <section class="controls" aria-label="Keyboard controls">
+      <p class="hint"><kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd> <kbd>G</kbd> <kbd>H</kbd> <kbd>J</kbd> to play</p>
+      <button id="soundButton" type="button" aria-pressed="false">Sound on</button>
+    </section>
+
+    <p id="status" class="status" role="status" aria-live="polite">Select a string to begin.</p>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
