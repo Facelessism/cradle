@@ -173,3 +173,4 @@ None. The project uses native HTML, CSS, JavaScript, and the Web Audio API. No e
 
 - [MDN Web Docs — Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
 - [MDN Web Docs — Pointer events](https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events)
+
