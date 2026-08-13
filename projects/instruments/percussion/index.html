@@ -1,0 +1,31 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A virtual percussion set playable with keyboard, mouse, and touch.">
+  <title>Virtual Percussion Set</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <p class="eyebrow">Instruments</p>
+      <h1>Virtual Percussion Set</h1>
+      <p>Play the drums and percussion with your mouse, touch, or keyboard.</p>
+    </header>
+
+    <section class="set" aria-label="Virtual percussion set" id="percussionSet"></section>
+
+    <section class="controls" aria-label="Percussion controls">
+      <p id="status" role="status">Choose an instrument to play</p>
+      <button id="resetBtn" type="button">Reset</button>
+    </section>
+
+    <p class="hint">Keyboard: <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd> <kbd>G</kbd> <kbd>H</kbd></p>
+  </main>
+
+  <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+  <script src="script.js"></script>
+</body>
+</html>
