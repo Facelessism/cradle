@@ -1,0 +1,35 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A virtual guzheng playable with keyboard, mouse, and touch.">
+  <title>Virtual Guzheng</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <p class="eyebrow">Instruments</p>
+      <h1>Virtual Guzheng</h1>
+      <p>Pluck the strings with your mouse, touch, or keyboard.</p>
+    </header>
+
+    <section class="instrument" aria-label="Virtual guzheng">
+      <div class="bridge bridge-top" aria-hidden="true"></div>
+      <div class="strings" id="strings" aria-label="Guzheng strings"></div>
+      <div class="bridge bridge-bottom" aria-hidden="true"></div>
+    </section>
+
+    <section class="controls" aria-label="Guzheng controls">
+      <p id="status" role="status">Select a string to play</p>
+      <button id="resetBtn" type="button">Reset</button>
+    </section>
+
+    <p class="hint">Keyboard: <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd> <kbd>G</kbd> <kbd>H</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> <kbd>;</kbd></p>
+  </main>
+
+  <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+  <script src="script.js"></script>
+</body>
+</html>
