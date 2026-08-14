@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A playable virtual sitar with keyboard, mouse, and touch controls."
+    />
+    <title>Virtual Sitar</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+  </head>
+  <body>
+    <main class="sitar-app">
+      <section class="sitar-card" aria-labelledby="sitar-title">
+        <header class="sitar-header">
+          <div>
+            <p class="eyebrow">CRADLE · INSTRUMENTS</p>
+            <h1 id="sitar-title">Virtual Sitar</h1>
+            <p class="intro">Pluck a string with your mouse, keyboard, or finger.</p>
+          </div>
+          <div class="note-display" aria-live="polite">
+            <span>Now playing</span>
+            <strong id="noteName">—</strong>
+          </div>
+        </header>
+
+        <section class="sitar" aria-label="Playable virtual sitar">
+          <div class="sitar-neck" aria-label="Sitar strings">
+            <div class="bridge bridge-top" aria-hidden="true"></div>
+            <div id="strings" class="strings"></div>
+            <div class="frets" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="bridge bridge-bottom" aria-hidden="true"></div>
+          </div>
+          <div class="sitar-body" aria-hidden="true">
+            <div class="tumba"></div>
+            <div class="sound-hole"></div>
+            <div class="decor">✦</div>
+          </div>
+        </section>
+
+        <section class="controls" aria-label="Keyboard controls">
+          <p><strong>Keyboard:</strong> A S D F G H J</p>
+          <button id="muteButton" type="button" aria-pressed="false">Sound on</button>
+        </section>
+
+        <p class="status" id="status" aria-live="polite">Choose a string to begin.</p>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
