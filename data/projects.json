@@ -214,5 +214,10 @@
     "title": "URL Parser",
     "category": "dev-tools",
     "path": "projects/dev-tools/url-parser/"
+  },
+  {
+    "title": "Virtual Sitar",
+    "category": "instruments",
+    "path": "projects/instruments/sitar/"
   }
 ]
