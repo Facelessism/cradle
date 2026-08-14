@@ -58,43 +58,47 @@ function validateArchitectureStructure(projectDirectories, requiredSections = ge
   return issues;
 }
 
+function getPullRequestBaseSha() {
+  const eventPath = process.env.GITHUB_EVENT_PATH;
+  if (eventPath && fs.existsSync(eventPath)) {
+    const event = JSON.parse(fs.readFileSync(eventPath, "utf8"));
+    const baseSha = event?.pull_request?.base?.sha;
+    if (baseSha) return baseSha;
+  }
+
+  const baseRef = process.env.GITHUB_BASE_REF;
+  if (!baseRef) throw new Error("Unable to determine the pull-request base reference");
+  return baseRef;
+}
+
 function getValidationDirectories(projectDirectories) {
   if (process.env.GITHUB_EVENT_NAME !== "pull_request") return projectDirectories;
 
-  try {
-    const baseRef = process.env.GITHUB_BASE_REF;
-    if (!baseRef) throw new Error("GITHUB_BASE_REF is not available");
+  const baseRefOrSha = getPullRequestBaseSha();
+  execFileSync("git", ["fetch", "--no-tags", "--depth=1", "origin", baseRefOrSha], {
+    stdio: "ignore",
+  });
 
-    // Pull-request jobs use a shallow merge checkout, so HEAD^1 may not exist.
-    // Fetch the base branch and compare it directly with the checked-out merge.
-    execFileSync("git", ["fetch", "--no-tags", "--depth=1", "origin", baseRef], {
-      stdio: "ignore",
-    });
+  const changedFiles = execFileSync(
+    "git",
+    ["diff", "--name-only", baseRefOrSha, "HEAD"],
+    { encoding: "utf8" }
+  )
+    .split(/\r?\n/)
+    .map(file => file.trim())
+    .filter(Boolean);
 
-    const changedFiles = execFileSync(
-      "git",
-      ["diff", "--name-only", `origin/${baseRef}`, "HEAD"],
-      { encoding: "utf8" }
-    )
-      .split(/\r?\n/)
-      .map(file => file.trim())
-      .filter(Boolean);
-
-    const changedProjects = new Set();
-    for (const file of changedFiles) {
-      const match = file.match(/^(projects\/[^/]+\/[^/]+)(?:\/|$)/);
-      if (match) changedProjects.add(match[1]);
-    }
-
-    return projectDirectories.filter(projectDir =>
-      changedProjects.has(
-        path.relative(path.join(__dirname, ".."), projectDir).replace(/\\/g, "/")
-      )
-    );
-  } catch (error) {
-    console.warn("Could not determine PR-changed projects; validating all architecture documents.");
-    return projectDirectories;
+  const changedProjects = new Set();
+  for (const file of changedFiles) {
+    const match = file.match(/^(projects\/[^/]+\/[^/]+)(?:\/|$)/);
+    if (match) changedProjects.add(match[1]);
   }
+
+  return projectDirectories.filter(projectDir =>
+    changedProjects.has(
+      path.relative(path.join(__dirname, ".."), projectDir).replace(/\\/g, "/")
+    )
+  );
 }
 
 function validateArchitectureDocs() {
@@ -124,13 +128,14 @@ function validateArchitectureDocs() {
   if (!process.exitCode) console.log(`Validated ${validationDirectories.length} changed mini project architecture document(s).`);
 }
 
-if (require.main === module) validateArchitectureDocs();
+if (require.main === "module") validateArchitectureDocs();
 
 module.exports = {
   findMissingArchitectureDocs,
   formatRelativePaths,
   getProjectDirectories,
   getRequiredSections,
+  getPullRequestBaseSha,
   getValidationDirectories,
   hasTemplateNoticeBlock,
   validateArchitectureDocs,
