@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A playable virtual harp with keyboard, mouse, and touch controls."
+    />
+    <title>Virtual Harp</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <main class="harp-app">
+      <section class="harp-card" aria-labelledby="harp-title">
+        <header class="harp-header">
+          <div>
+            <p class="eyebrow">CRADLE · INSTRUMENTS</p>
+            <h1 id="harp-title">Virtual Harp</h1>
+            <p class="intro">Pluck a string using your keyboard, mouse, or finger.</p>
+          </div>
+          <div class="note-display" aria-live="polite">
+            <span>Now playing</span>
+            <strong id="noteName">—</strong>
+          </div>
+        </header>
+
+        <section class="harp" aria-label="Playable virtual harp">
+          <div class="harp-frame">
+            <div class="strings" id="strings"></div>
+          </div>
+          <div class="harp-base" aria-hidden="true"></div>
+        </section>
+
+        <section class="controls" aria-label="Harp controls">
+          <p><strong>Keyboard:</strong> A S D F G H J K</p>
+          <button id="muteButton" type="button" aria-pressed="false">Sound on</button>
+        </section>
+
+        <p class="status" id="status" aria-live="polite">Choose a string to begin.</p>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
