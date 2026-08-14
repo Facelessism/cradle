@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#160d06"/>
+      <stop offset="1" stop-color="#6b3b16"/>
+    </linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7b481f"/>
+      <stop offset="0.5" stop-color="#c48743"/>
+      <stop offset="1" stop-color="#5a3013"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <text x="90" y="145" fill="#e0b06c" font-family="system-ui,sans-serif" font-size="24" font-weight="700" letter-spacing="5">INSTRUMENTS</text>
+  <text x="90" y="225" fill="#fff" font-family="system-ui,sans-serif" font-size="72" font-weight="800">Virtual Sitar</text>
+  <rect x="90" y="285" width="650" height="135" rx="18" fill="url(#wood)"/>
+  <g stroke="#f1dfbd" stroke-width="7">
+    <line x1="125" y1="305" x2="700" y2="305"/>
+    <line x1="125" y1="325" x2="700" y2="325"/>
+    <line x1="125" y1="345" x2="700" y2="345"/>
+    <line x1="125" y1="365" x2="700" y2="365"/>
+    <line x1="125" y1="385" x2="700" y2="385"/>
+    <line x1="125" y1="405" x2="700" y2="405"/>
+  </g>
+  <ellipse cx="875" cy="355" rx="180" ry="190" fill="#a9672c" stroke="#4b260d" stroke-width="12"/>
+  <circle cx="875" cy="345" r="70" fill="#190d05" stroke="#e0a253" stroke-width="14"/>
+  <text x="90" y="505" fill="#e5d2bb" font-family="system-ui,sans-serif" font-size="30">Keyboard · Mouse · Touch</text>
+  <text x="1110" y="575" text-anchor="end" fill="#fff" fill-opacity=".45" font-family="system-ui,sans-serif" font-size="22" font-weight="800" letter-spacing="5">CRADLE</text>
+</svg>
