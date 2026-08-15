@@ -208,3 +208,15 @@ html.light-theme thead tr.text-gray-400 th.text-purple-400 {
 html.light-theme thead tr.text-gray-400 th.text-emerald-400 {
   color: #047857 !important;
 }
+
+/* ── Reduced Motion ───────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
