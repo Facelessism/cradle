@@ -8,6 +8,21 @@ The game supports 2–4 players, local Player vs Player and Player vs AI modes, 
 
 ---
 
+## Purpose & Goals
+
+- Provide a turn-based strategy game on a configurable grid for 2–4 players
+- Support both local multiplayer and single-player play against an AI
+- Implement chain-reaction logic that stays responsive during long explosion cascades
+- Record match history and analytics so players can review past games
+
+---
+
+## System / Project Architecture Overview
+
+The entire game lives in two files. `dotGameEngine.js` holds the pure board and chain-reaction rules, and `script.js` orchestrates the UI — rendering the grid, binding clicks, running the asynchronous chain reaction wave by wave, driving the AI, and persisting match history. `style.css` provides all visual styling. The board is a CSS Grid whose column count is set dynamically by JavaScript.
+
+---
+
 ## Folder Structure
 
 ```
@@ -19,7 +34,7 @@ dot-game/
 
 ---
 
-## Application Flow
+## Data Flow / Execution Flow
 
 ```
 User opens index.html
@@ -53,7 +68,7 @@ renderAnalytics() updates the match history panel
 
 ---
 
-## Core Components
+## Component Breakdown
 
 ### `index.html`
 
@@ -103,7 +118,51 @@ Visual styling for the grid, player colour classes (`red`, `blue`, `green`, `yel
 
 ---
 
-## State Management
+## Key Features
+
+- 2–4 player games on a configurable grid
+- Player vs Player and Player vs AI modes
+- Three AI difficulty levels plus a hint system
+- Chain-reaction explosions that can cascade across the board
+- Match analytics with history persisted in localStorage
+
+---
+
+## Technologies Used
+
+| Technology | Purpose |
+|---|---|
+| HTML5 | Controls, board container, player stats, analytics panels |
+| CSS3 (CSS Grid) | Board layout, player colours, hint highlight, charts |
+| Vanilla JavaScript | Game rules, AI, rendering, and analytics |
+| localStorage API | Persisting match history |
+
+---
+
+## File Responsibilities
+
+### `index.html`
+
+- Controls card (game mode, AI difficulty, player count, grid size, New Game, Hint), status bar, board wrapper, player stat cards, and match analytics panel
+
+### `dotGameEngine.js`
+
+- Pure board rules — cell ownership, capacity, and chain-reaction explosions
+
+### `script.js`
+
+- `createBoard(size)`, `getCapacity(row, col)`, `addDot(row, col)` — game setup and moves
+- `resolveBoardStep(queue, onDone)` / `explode(row, col, owner)` — asynchronous chain reaction
+- `getBestMove(player)` / `getRandomMove(player)` / `handleAiTurn()` — AI logic
+- `checkGameOver()`, `nextTurn()`, `saveMatchHistory()`, `renderAnalytics()` — flow and persistence
+
+### `style.css`
+
+- Grid, player colour classes, hint highlight, and analytics bar chart styling
+
+---
+
+## Design Decisions
 
 All game state is stored in a single `state` object:
 
@@ -159,9 +218,10 @@ addDot(row, col)
 
 ---
 
-## Assets
+## License & Attribution
 
-No image, audio, or external font assets are used. All colours are defined in CSS using named classes and hex values.
+- **Project License:** MIT (repository LICENSE)
+- No image, audio, or external font assets are used. All colours are defined in CSS using named classes and hex values.
 
 ---
 
@@ -178,3 +238,26 @@ None. The project is pure HTML, CSS, and JavaScript with no external libraries o
 - **Undo** — the `state.board` is plain data and could be snapshotted each turn to support an undo stack.
 - **Deeper AI** — the current AI is a one-step greedy heuristic. A minimax or Monte Carlo Tree Search could improve play quality significantly.
 - **Mobile touch support** — grid cells are `<button>` elements, so touch already works, but the layout could be further optimised for small screens.
+
+---
+
+## Known Limitations
+
+- The AI is a one-step greedy heuristic and is beatable with simple strategies
+- No undo — moves cannot be taken back once made
+- Match history is capped at the 10 most recent games
+- No online multiplayer
+
+---
+
+## Development Notes
+
+- Open `index.html` through a local server (e.g. `python3 -m http.server 8000`) rather than double-clicking the file, so localStorage persistence works reliably.
+- Unit tests live in `tests/dot-game.test.js`; run them with `node --test tests/dot-game.test.js`.
+- No build step is required. Edit the files and refresh the browser.
+
+---
+
+## References
+
+- [Chain reaction game — Wikipedia](https://en.wikipedia.org/wiki/Chain_reaction_(game))

@@ -1,14 +1,14 @@
 // --- LOCAL STORAGE & PRESETS ENGINE ---
+const storage =
+  typeof window !== "undefined" && window.CradleStorage
+    ? window.CradleStorage
+    : require("../../../src/components/ui/storage.js");
+
 const STORAGE_KEY = "cradle_meme_presets_v1";
 
 function getSavedMemes() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    console.error("Failed to read meme presets from localStorage", e);
-    return [];
-  }
+  const memes = storage.get(STORAGE_KEY, []);
+  return Array.isArray(memes) ? memes : [];
 }
 
 function saveMemePreset(preset) {
@@ -21,21 +21,13 @@ function saveMemePreset(preset) {
   };
   memes.unshift(newEntry);
   const trimmed = memes.slice(0, 10); // Keep max 10 presets
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-  } catch (e) {
-    console.error("Failed to save meme preset to localStorage", e);
-  }
+  storage.set(STORAGE_KEY, trimmed);
   return trimmed;
 }
 
 function deleteMemePreset(id) {
   const memes = getSavedMemes().filter(m => m.id !== id);
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(memes));
-  } catch (e) {
-    console.error("Failed to delete meme preset", e);
-  }
+  storage.set(STORAGE_KEY, memes);
   return memes;
 }
 

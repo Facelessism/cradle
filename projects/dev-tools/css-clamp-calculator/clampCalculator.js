@@ -104,10 +104,11 @@
 
   function calculatePreferredValue(input) {
     const values = validateInput(input);
-    const valueDelta = values.maxValue - values.minValue;
-    const viewportDelta = values.maxViewport - values.minViewport;
-    const slope = (valueDelta / viewportDelta) * 100;
-    const intercept = values.minValue - (slope * values.minViewport) / 100;
+    const base = values.unit === "rem" ? 16 : 1;
+    const minVp = values.minViewport / base;
+    const maxVp = values.maxViewport / base;
+    const slope = ((values.maxValue - values.minValue) / (maxVp - minVp)) * 100;
+    const intercept = values.minValue - (slope * minVp) / 100;
 
     return {
       ...values,

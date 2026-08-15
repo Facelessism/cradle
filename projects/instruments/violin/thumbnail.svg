@@ -1,0 +1,498 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 1200 675"
+  width="100%"
+  height="100%"
+  role="img"
+  aria-labelledby="thumbnail-title thumbnail-description"
+>
+  <title id="thumbnail-title">Violin</title>
+  <desc id="thumbnail-description">
+    Interactive Virtual Instrument — a playable virtual violin mini for Cradle.
+  </desc>
+
+  <defs>
+    <!-- ================================================================
+         Background Gradient
+         Matches the Chess thumbnail reference
+         ================================================================ -->
+    <linearGradient
+      id="bgGrad"
+      x1="0%"
+      y1="0%"
+      x2="100%"
+      y2="100%"
+    >
+      <stop offset="0%" stop-color="#0f051d" />
+      <stop offset="100%" stop-color="#4c0519" />
+    </linearGradient>
+
+    <!-- ================================================================
+         Aurora Blur
+         ================================================================ -->
+    <filter
+      id="auroraGlow"
+      x="-20%"
+      y="-20%"
+      width="140%"
+      height="140%"
+    >
+      <feGaussianBlur
+        stdDeviation="80"
+        result="blur"
+      />
+      <feComposite
+        in="SourceGraphic"
+        in2="blur"
+        operator="over"
+      />
+    </filter>
+
+    <!-- ================================================================
+         Card Shadow
+         ================================================================ -->
+    <filter
+      id="cardShadow"
+      x="-10%"
+      y="-10%"
+      width="120%"
+      height="120%"
+    >
+      <feDropShadow
+        dx="0"
+        dy="16"
+        stdDeviation="24"
+        flood-color="#000000"
+        flood-opacity="0.45"
+      />
+    </filter>
+
+    <!-- ================================================================
+         Violin Wood Gradient
+         ================================================================ -->
+    <linearGradient
+      id="violinWood"
+      x1="0%"
+      y1="0%"
+      x2="100%"
+      y2="100%"
+    >
+      <stop offset="0%" stop-color="#5b2415" />
+      <stop offset="25%" stop-color="#a84d20" />
+      <stop offset="50%" stop-color="#d97732" />
+      <stop offset="75%" stop-color="#a84d20" />
+      <stop offset="100%" stop-color="#4a1d12" />
+    </linearGradient>
+
+    <linearGradient
+      id="violinNeck"
+      x1="0%"
+      y1="0%"
+      x2="100%"
+      y2="0%"
+    >
+      <stop offset="0%" stop-color="#1a1110" />
+      <stop offset="50%" stop-color="#4a2b20" />
+      <stop offset="100%" stop-color="#1a1110" />
+    </linearGradient>
+  </defs>
+
+  <!-- ================================================================
+       BASE BACKGROUND
+       ================================================================ -->
+  <rect
+    width="1200"
+    height="675"
+    rx="0"
+    fill="url(#bgGrad)"
+  />
+
+  <!-- ================================================================
+       AURORA GLOWS
+       ================================================================ -->
+  <circle
+    cx="250"
+    cy="200"
+    r="300"
+    fill="#ea580c"
+    opacity="0.3"
+    filter="url(#auroraGlow)"
+  />
+
+  <circle
+    cx="950"
+    cy="450"
+    r="350"
+    fill="#ea580c"
+    opacity="0.25"
+    filter="url(#auroraGlow)"
+  />
+
+  <!-- ================================================================
+       DECORATIVE PATTERN
+       Same structure as Chess thumbnail
+       ================================================================ -->
+  <g opacity="0.12">
+    <rect
+      x="50"
+      y="50"
+      width="100"
+      height="100"
+      fill="none"
+      stroke="#ea580c"
+      stroke-width="2"
+    />
+
+    <rect
+      x="250"
+      y="150"
+      width="150"
+      height="150"
+      fill="none"
+      stroke="#ea580c"
+      stroke-width="2"
+    />
+
+    <rect
+      x="600"
+      y="80"
+      width="200"
+      height="200"
+      fill="none"
+      stroke="#ea580c"
+      stroke-width="2"
+    />
+
+    <rect
+      x="900"
+      y="300"
+      width="120"
+      height="120"
+      fill="none"
+      stroke="#ea580c"
+      stroke-width="2"
+    />
+
+    <circle
+      cx="80"
+      cy="450"
+      r="40"
+      fill="none"
+      stroke="#ea580c"
+      stroke-width="2"
+    />
+
+    <circle
+      cx="500"
+      cy="500"
+      r="60"
+      fill="none"
+      stroke="#ea580c"
+      stroke-width="2"
+    />
+
+    <path
+      d="M 800,100 L 950,250 M 150,550 L 300,400"
+      stroke="#ea580c"
+      stroke-width="2"
+    />
+  </g>
+
+  <!-- ================================================================
+       BORDER FRAME
+       ================================================================ -->
+  <rect
+    x="25"
+    y="25"
+    width="1150"
+    height="625"
+    rx="20"
+    fill="none"
+    stroke="#ea580c"
+    stroke-opacity="0.25"
+    stroke-width="2"
+  />
+
+  <!-- ================================================================
+       ACCENT CORNER HIGHLIGHTS
+       ================================================================ -->
+  <path
+    d="M 25 100
+       L 25 45
+       A 20 20 0 0 1 45 25
+       L 100 25"
+    fill="none"
+    stroke="#ea580c"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+
+  <path
+    d="M 1175 575
+       L 1175 630
+       A 20 20 0 0 1 1155 650
+       L 1100 650"
+    fill="none"
+    stroke="#ea580c"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+
+  <!-- ================================================================
+       GLASSMORPHIC CARD CONTAINER
+       ================================================================ -->
+  <rect
+    x="75"
+    y="75"
+    width="1050"
+    height="525"
+    rx="16"
+    fill="#ffffff"
+    fill-opacity="0.03"
+    stroke="#ffffff"
+    stroke-opacity="0.08"
+    stroke-width="1"
+    filter="url(#cardShadow)"
+  />
+
+  <!-- ================================================================
+       VIOLIN CATEGORY ICON
+       Replaces the Chess icon while preserving its position/scale.
+       ================================================================ -->
+  <g
+    transform="translate(985, 90) scale(3.7)"
+    stroke="#ea580c"
+    fill="none"
+    opacity="0.35"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <!-- Scroll -->
+    <path
+      stroke-width="1.5"
+      d="
+        M12 3
+        C9 3 7 5 7 8
+        C7 10 8 11 10 12
+        C8 13 7 15 8 17
+        C9 19 11 20 13 19
+        C15 18 15 16 14 14
+        C13 12 12 11 12 9
+        C12 7 14 6 15 7
+      "
+    />
+
+    <!-- Pegbox / neck -->
+    <path
+      stroke-width="1.5"
+      d="
+        M11 19
+        L11 25
+        L13 25
+        L13 19
+      "
+    />
+
+    <!-- Violin body -->
+    <path
+      stroke-width="1.5"
+      d="
+        M10 24
+        C7 25 6 28 7 31
+        C8 34 8 36 6 39
+        C5 41 6 44 9 45
+        C11 46 13 46 15 45
+        C18 44 19 41 18 39
+        C16 36 16 34 17 31
+        C18 28 17 25 14 24
+      "
+    />
+
+    <!-- Waist -->
+    <path
+      stroke-width="1.5"
+      d="
+        M10 31
+        C8 32 8 35 10 36
+        M14 31
+        C16 32 16 35 14 36
+      "
+    />
+
+    <!-- Strings -->
+    <path
+      stroke-width="1"
+      d="
+        M10 5 L10 43
+        M11.3 5 L11.3 43
+        M12.7 5 L12.7 43
+        M14 5 L14 43
+      "
+    />
+
+    <!-- Bridge -->
+    <path
+      stroke-width="1.2"
+      d="M9 34 Q12 35 15 34"
+    />
+
+    <!-- F-holes -->
+    <path
+      stroke-width="1.2"
+      d="
+        M8.5 30
+        C10 30 9 33 8.5 34
+        C8 35 9 36 9 37
+
+        M15.5 30
+        C14 30 15 33 15.5 34
+        C16 35 15 36 15 37
+      "
+    />
+  </g>
+
+  <!-- ================================================================
+       CATEGORY BADGE
+       ================================================================ -->
+  <g transform="translate(100, 130)">
+    <rect
+      width="155"
+      height="40"
+      rx="20"
+      fill="#ea580c"
+      fill-opacity="0.2"
+      stroke="#ea580c"
+      stroke-opacity="0.4"
+      stroke-width="1.5"
+    />
+
+    <text
+      x="77.5"
+      y="24"
+      font-family="'Space Grotesk', Inter, system-ui, sans-serif"
+      font-size="12"
+      font-weight="800"
+      fill="#ffffff"
+      fill-opacity="0.9"
+      letter-spacing="2"
+      text-anchor="middle"
+    >
+      INSTRUMENTS
+    </text>
+  </g>
+
+  <!-- ================================================================
+       PROJECT TITLE
+       ================================================================ -->
+  <text
+    x="100"
+    y="330"
+    font-family="'Space Grotesk', Inter, system-ui, sans-serif"
+    font-size="64"
+    font-weight="800"
+    fill="#ffffff"
+    letter-spacing="-1.5"
+  >
+    Violin
+  </text>
+
+  <!-- ================================================================
+       PROJECT SUBTITLE
+       ================================================================ -->
+  <text
+    x="103"
+    y="365"
+    font-family="Inter, system-ui, sans-serif"
+    font-size="17"
+    font-weight="500"
+    fill="#ffffff"
+    fill-opacity="0.62"
+    letter-spacing="0.2"
+  >
+    Interactive Virtual Instrument
+  </text>
+
+  <!-- ================================================================
+       SUBTLE VIOLIN LINE ART
+       Decorative visual element beneath the title
+       ================================================================ -->
+  <g
+    transform="translate(98, 400)"
+    fill="none"
+    stroke="#ea580c"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.45"
+  >
+    <!-- Bow -->
+    <path
+      d="M0 20 C80 5 160 5 240 20"
+      stroke-width="2"
+    />
+
+    <!-- Bow hair -->
+    <path
+      d="M0 24 C80 9 160 9 240 24"
+      stroke-width="0.8"
+      opacity="0.65"
+    />
+
+    <!-- Small violin silhouette -->
+    <g transform="translate(275, -5) scale(0.65)">
+      <path
+        d="
+          M15 0
+          C10 5 10 12 14 17
+          C17 21 17 25 14 30
+          C10 37 10 47 18 53
+          C24 57 32 57 38 53
+          C46 47 46 37 42 30
+          C39 25 39 21 42 17
+          C46 12 46 5 41 0
+        "
+        stroke-width="2"
+      />
+
+      <path
+        d="M28 -10 L28 63"
+        stroke-width="2"
+      />
+
+      <path
+        d="M24 29 Q28 32 32 29"
+        stroke-width="1.5"
+      />
+    </g>
+  </g>
+
+  <!-- ================================================================
+       WATERMARK LOGO
+       ================================================================ -->
+  <g
+    transform="translate(1100, 560)"
+    text-anchor="end"
+  >
+    <text
+      font-family="'Space Grotesk', Inter, system-ui, sans-serif"
+      font-size="20"
+      font-weight="800"
+      fill="#ffffff"
+      fill-opacity="0.45"
+      letter-spacing="4"
+    >
+      CRADLE
+    </text>
+
+    <text
+      y="22"
+      font-family="'Space Grotesk', Inter, system-ui, sans-serif"
+      font-size="10"
+      font-weight="600"
+      fill="#ffffff"
+      fill-opacity="0.25"
+      letter-spacing="1"
+    >
+      EXPERIMENT SHOWCASE
+    </text>
+  </g>
+</svg>

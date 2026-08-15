@@ -33,7 +33,7 @@ audio-waveform-generator/
 
 ---
 
-## System Architecture
+## System / Project Architecture Overview
 
 The project uses a lightweight separation between reusable engine data and browser-specific application logic.
 
@@ -210,7 +210,7 @@ The oscillator generates the selected waveform, the gain node controls volume, a
 
 ---
 
-## Data & Execution Flow
+## Data Flow / Execution Flow
 
 ```text
 User opens index.html
@@ -269,6 +269,34 @@ Audio playback stops and visualization is cleared
 | Vanilla JavaScript | Application logic and event handling             |
 | Web Audio API      | Audio synthesis and processing                   |
 | Canvas API         | Real-time waveform visualization                 |
+
+---
+
+## File Responsibilities
+
+### `index.html`
+
+- Controls panel with waveform type buttons, frequency and volume sliders, and play/stop button
+- Waveform oscilloscope canvas and its meta display
+- Piano keyboard container (keys rendered by `script.js`)
+
+### `script.js`
+
+- `initAudio()` — creates the `AudioContext` and wires oscillator → gain → analyser → destination
+- `start()` / `stop()` / `togglePlay()` — playback lifecycle management
+- `drawWaveform()` — `requestAnimationFrame` oscilloscope loop using `getByteTimeDomainData()`
+- `buildPiano()` — renders piano keys from `WaveformEngine.NOTES`
+- `playNote()` — updates frequency and starts playback on mouse, touch, or keyboard input
+- Global `keydown` handler for Space, number (1–4), and letter (A–J) shortcuts
+
+### `waveformEngine.js`
+
+- `NOTES` — the seven C4–B4 notes with equal-temperament frequencies (A4 = 440 Hz)
+- `NOTE_NAMES` — direct note-to-frequency lookup used by keyboard shortcuts
+
+### `style.css`
+
+- Theme, layout, controls, canvas, and piano key styling
 
 ---
 
@@ -354,6 +382,14 @@ npx live-server
 A user interaction is required before creating or starting the `AudioContext` because of browser autoplay policies.
 
 The reusable engine data can also be tested through the repository's Node-based test suite without loading the browser UI.
+
+---
+
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:**
+  - Outfit and JetBrains Mono (fonts) — Google Fonts CDN — UI typography
 
 ---
 

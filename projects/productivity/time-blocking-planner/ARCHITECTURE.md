@@ -124,7 +124,12 @@ Mouse position snapped to 15-minute steps → Block state updated → Saved to l
 
 ## Dependencies
 
-None. Uses native browser Web APIs exclusively.
+| Dependency | Version | How loaded | Purpose |
+| --- | --- | --- | --- |
+| Outfit | — | Google Fonts CDN (`<link>` tags) | UI typography |
+| JetBrains Mono | — | Google Fonts CDN (`<link>` tags) | Monospace times and labels |
+
+The project otherwise relies exclusively on native browser Web APIs and the shared Cradle `storage.js` and `escapeHtml.js` components.
 
 ---
 
@@ -144,3 +149,20 @@ None. Uses native browser Web APIs exclusively.
 ## Development Notes
 
 - Test date changing and schedule exports across browsers.
+
+---
+
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:**
+  - Outfit font by The Outfit Project (https://fonts.google.com/specimen/Outfit), loaded from the Google Fonts CDN.
+  - JetBrains Mono font by JetBrains (https://fonts.google.com/specimen/JetBrains+Mono), loaded from the Google Fonts CDN.
+
+---
+
+## References
+
+- [MDN Web Docs — Web Storage API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API)
+- [RFC 5545 — Internet Calendaring and Scheduling Core Object Specification (iCalendar)](https://datatracker.ietf.org/doc/html/rfc5545)
+- [MDN Web Docs — Drag and drop events](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API)

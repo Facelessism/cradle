@@ -126,6 +126,9 @@ body {
 .status-dot.stopped {
   background: #f59e0b;
 }
+.status-dot.error {
+  background: #ef4444;
+}
 
 @keyframes pulse-red {
   0%,

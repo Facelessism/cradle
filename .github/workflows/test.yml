@@ -17,4 +17,5 @@ jobs:
           cache: npm
       - run: npm ci --prefer-offline || npm install
       - run: npm run validate:architecture
+      - run: npm run validate:project-order
       - run: npm test

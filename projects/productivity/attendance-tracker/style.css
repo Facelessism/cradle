@@ -269,3 +269,23 @@ td {
   font-weight: 750;
   color: var(--text);
 }
+
+/* Alert Banner */
+.alert-banner {
+  grid-column: 1 / -1;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  padding: 10px 15px;
+  color: #ef4444;
+  font-size: 0.875rem;
+  font-weight: 550;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 15px;
+  line-height: 1.4;
+}
+.alert-banner .alert-icon {
+  flex-shrink: 0;
+}

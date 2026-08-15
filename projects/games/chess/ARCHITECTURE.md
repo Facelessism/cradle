@@ -8,6 +8,21 @@ Features include legal move generation (including castling, en passant, and pawn
 
 ---
 
+## Purpose & Goals
+
+- Provide a fully playable chess game that runs entirely in the browser
+- Support both local two-player and single-player (human vs AI) modes
+- Keep the rules engine free of DOM access so it can be reused and unit tested
+- Run the AI on a Web Worker so the UI never freezes while the computer thinks
+
+---
+
+## System / Project Architecture Overview
+
+The codebase separates chess rules from presentation and AI. `chessLogic.js` is a plain script (not a module) containing every rule of chess with no DOM access, loaded both by `index.html` and by `ai-worker.js` via `importScripts()`. `ai-worker.js` runs a minimax search with alpha-beta pruning inside a Web Worker. `script.js` owns all DOM references, user input, game flow, notation, and state snapshots. `style.css` handles all visual styling, including Unicode piece glyphs.
+
+---
+
 ## Folder Structure
 
 ```
@@ -27,7 +42,7 @@ The three JavaScript files have distinct responsibilities and are never intercha
 
 ---
 
-## Application Flow
+## Data Flow / Execution Flow
 
 ```
 User opens index.html
@@ -67,7 +82,7 @@ render() redraws the board
 
 ---
 
-## Core Components
+## Component Breakdown
 
 ### `index.html`
 
@@ -123,7 +138,56 @@ Provides the full visual design: board colours, piece glyphs (Unicode chess symb
 
 ---
 
-## State Management
+## Key Features
+
+- Two-player local play and single-player mode vs an AI opponent
+- Legal move generation with castling, en passant, and pawn promotion
+- Check, checkmate, and stalemate detection
+- Undo/redo, board flipping, captured piece display, and move history
+- PGN export and FEN import/export
+- AI difficulty levels (Easy = depth 1, Medium = 3, Hard = 4) running off-thread in a Web Worker
+
+---
+
+## Technologies Used
+
+| Technology | Purpose |
+|---|---|
+| HTML5 | Page shell, board grid, side panel, controls |
+| CSS3 | Board colours, piece glyphs, highlights, responsive layout |
+| Vanilla JavaScript | Rules engine, AI search, and UI controller |
+| Web Workers | Off-main-thread AI computation |
+| navigator.clipboard | Copy PGN feature |
+
+---
+
+## File Responsibilities
+
+### `index.html`
+
+- Defines the board grid, player strips, status card, control buttons, mode/difficulty selectors, captured piece displays, and move list
+
+### `chessLogic.js`
+
+- Pure chess rules — move generation, legality filtering, check/checkmate detection, FEN helpers
+
+### `ai-worker.js`
+
+- `evaluateBoard(board, color)` — position scoring with piece values and piece-square tables
+- `minimax(board, depth, alpha, beta, isMaximizing, color)` — alpha-beta pruned search
+- `onmessage` handler — receives board state and posts the best move back
+
+### `script.js`
+
+- UI rendering, click handling, move application, promotion modal, undo/redo, notation, FEN/PGN, and AI triggering
+
+### `style.css`
+
+- All visual styling including square highlights and the promotion modal
+
+---
+
+## Design Decisions
 
 Game state is held in module-level variables inside `script.js`:
 
@@ -181,11 +245,11 @@ render() redraws the board
 
 ---
 
-## Assets
+## License & Attribution
 
-No image or audio files are used. Chess pieces are rendered with Unicode HTML entities (e.g. `&#9812;` for ♔). All visual styling is pure CSS.
-
-The `Outfit` font (referenced in the CSS) is the system sans-serif fallback; it is not loaded from an external source in this project.
+- **Project License:** MIT (repository LICENSE)
+- No image or audio files are used. Chess pieces are rendered with Unicode HTML entities (e.g. `&#9812;` for ♔). All visual styling is pure CSS.
+- The `Outfit` font (referenced in the CSS) is the system sans-serif fallback; it is not loaded from an external source in this project.
 
 ---
 
@@ -205,3 +269,27 @@ None. The project uses only native browser APIs:
 - **Opening book** — adding a small set of known opening moves would make the AI's early game stronger and more varied.
 - **Time controls** — per-player countdown clocks would allow timed games.
 - **Draw detection** — threefold repetition and the fifty-move rule are not currently detected.
+
+---
+
+## Known Limitations
+
+- No draw detection — threefold repetition and the fifty-move rule are not implemented
+- Board coordinates (a–h, 1–8) are styled in CSS but not injected into the DOM
+- The AI plays from a single opening; there is no opening book
+- No time controls — games are untimed
+
+---
+
+## Development Notes
+
+- Open `index.html` through a local server (e.g. `python3 -m http.server 8000`) rather than double-clicking the file, because the AI uses a Web Worker which is blocked under the `file://` protocol.
+- The rules engine (`chessLogic.js`) is a plain script loaded both by a `<script>` tag and by `importScripts()` inside the worker — keep it free of module syntax.
+- Unit tests live in `tests/chess-logic.test.js`; run them with `node --test tests/chess-logic.test.js`.
+
+---
+
+## References
+
+- [MDN Web Docs — Web Workers API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API)
+- [Portable Game Notation (PGN) — Wikipedia](https://en.wikipedia.org/wiki/Portable_Game_Notation)

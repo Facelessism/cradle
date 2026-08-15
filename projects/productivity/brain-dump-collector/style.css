@@ -471,3 +471,21 @@ textarea:focus {
     width: 100%;
   }
 }
+
+/* Alert Container */
+.alert-container {
+  background: rgba(194, 65, 75, 0.1);
+  border: 1px solid rgba(194, 65, 75, 0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+}
+.alert-container .alert-icon {
+  flex-shrink: 0;
+}

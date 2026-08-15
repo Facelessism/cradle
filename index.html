@@ -1,275 +1,176 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+  <meta charset="UTF-8" />
 
-    <title>Cradle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <meta
-      name="description"
-      content="Cradle — A curated archive of experiments."
-    />
+  <title>Cradle</title>
 
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&display=swap"
-      rel="stylesheet"
-    />
+  <meta name="description" content="Cradle — A curated archive of experiments." />
 
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="src/components/ui/tokens.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&display=swap"
+    rel="stylesheet" />
 
-    <!-- Prevent flash of wrong theme before CSS loads -->
-    <script>
-      (function () {
-        var t =
-          localStorage.getItem("theme") ||
-          (window.matchMedia("(prefers-color-scheme: light)").matches
-            ? "light"
-            : "dark");
-        if (t === "light")
-          document.documentElement.classList.add("light-theme");
-      })();
-    </script>
-  </head>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="src/components/ui/tokens.css" />
 
-  <body>
-    <header class="hero">
-      <h1>Cradle</h1>
+  <!-- Prevent flash of wrong theme before CSS loads -->
+  <script>
+    (function () {
+      var t =
+        localStorage.getItem("theme") ||
+        (window.matchMedia("(prefers-color-scheme: light)").matches
+          ? "light"
+          : "dark");
+      if (t === "light")
+        document.documentElement.classList.add("light-theme");
+    })();
+  </script>
+</head>
 
-      <p class="hero-tagline">A curated archive of experiments...</p>
+<body>
+  <header class="hero">
+    <h1>Cradle</h1>
 
-      <div class="hero-actions">
-        <!-- Upgraded: CradleThemeToggle component (replaces hardcoded emoji button) -->
-        <button
-          id="themeToggle"
-          data-cradle-theme-toggle
-          data-size="md"
-          class="theme-toggle"
-          aria-label="Toggle theme"
-        ></button>
-      </div>
+    <p class="hero-tagline">A curated archive of experiments...</p>
 
-      <div class="search-container">
-        <div class="search-wrapper">
-          <svg
-            class="search-icon"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
+    <div class="hero-actions">
+      <!-- Upgraded: CradleThemeToggle component (replaces hardcoded emoji button) -->
+      <button id="themeToggle" data-cradle-theme-toggle data-size="md" class="theme-toggle"
+        aria-label="Toggle theme"></button>
+    </div>
 
-          <input
-            type="text"
-            id="search"
-            placeholder="Search projects... (Press '/' to focus)"
-            autocomplete="off"
-            role="combobox"
-            aria-label="Search projects"
-            aria-autocomplete="list"
-            aria-controls="search-suggestions"
-            aria-expanded="false"
-          />
-          <span class="search-kbd-hint" title="Press '/' or Ctrl+K to search"
-            ><kbd>/</kbd></span
-          >
-          <div
-            id="search-suggestions"
-            class="search-suggestions"
-            role="listbox"
-            aria-label="Search suggestions"
-            hidden
-          ></div>
+    <div class="search-container">
+      <div class="search-wrapper">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+
+        <div class="search-box">
+          <input type="text" id="search" placeholder="Search projects... (Press '/' to focus)" autocomplete="off"
+            role="combobox" aria-label="Search projects" aria-autocomplete="list" aria-controls="search-suggestions"
+            aria-expanded="false" />
+          <button type="button" id="clearSearch" class="clear-search" aria-label="Clear search" title="Clear search"
+            hidden>
+            ×
+          </button>
         </div>
 
-        <button
-          id="clear-filters"
-          data-cradle-btn
-          data-variant="ghost"
-          data-size="sm"
-          hidden
-          aria-label="Clear all filters"
-        >
-          ✕ Clear Filters
-        </button>
-
-        <button
-          id="shortcuts-btn"
-          data-cradle-btn
-          data-variant="ghost"
-          data-size="sm"
-          aria-label="Keyboard Shortcuts"
-          title="Keyboard Shortcuts (?)"
-        >
-          ⌨️ Shortcuts
-        </button>
+        <span class="search-kbd-hint" title="Press '/' or Ctrl+K to search"><kbd>×</kbd></span>
+        <div id="search-suggestions" class="search-suggestions" role="listbox" aria-label="Search suggestions" hidden>
+        </div>
       </div>
 
-      <!-- Keyboard Shortcuts Modal -->
-      <div
-        id="shortcuts-modal"
-        class="shortcuts-modal"
-        aria-hidden="true"
-        role="dialog"
-        aria-labelledby="shortcuts-title"
-      >
-        <div class="shortcuts-modal-overlay" id="shortcuts-overlay"></div>
-        <div class="shortcuts-modal-content">
-          <div class="shortcuts-modal-header">
-            <h3 id="shortcuts-title">⌨️ Keyboard Shortcuts</h3>
-            <button
-              id="close-shortcuts"
-              class="shortcuts-close-btn"
-              aria-label="Close modal"
-            >
-              ✕
-            </button>
+      <button id="clear-filters" data-cradle-btn data-variant="ghost" data-size="sm" hidden
+        aria-label="Clear all filters">
+        ✕ Clear Filters
+      </button>
+
+      <button id="shortcuts-btn" data-cradle-btn data-variant="ghost" data-size="sm" aria-label="Keyboard Shortcuts"
+        title="Keyboard Shortcuts (?)">
+        ⌨️ Shortcuts
+      </button>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div id="shortcuts-modal" class="shortcuts-modal" aria-hidden="true" role="dialog"
+      aria-labelledby="shortcuts-title">
+      <div class="shortcuts-modal-overlay" id="shortcuts-overlay"></div>
+      <div class="shortcuts-modal-content">
+        <div class="shortcuts-modal-header">
+          <h3 id="shortcuts-title">⌨️ Keyboard Shortcuts</h3>
+          <button id="close-shortcuts" class="shortcuts-close-btn" aria-label="Close modal">
+            ✕
+          </button>
+        </div>
+        <div class="shortcuts-list">
+          <div class="shortcut-item">
+            <span class="shortcut-keys"><kbd>/</kbd> or <kbd>Ctrl</kbd>+<kbd>K</kbd></span>
+            <span class="shortcut-desc">Focus Search Bar</span>
           </div>
-          <div class="shortcuts-list">
-            <div class="shortcut-item">
-              <span class="shortcut-keys"
-                ><kbd>/</kbd> or <kbd>Ctrl</kbd>+<kbd>K</kbd></span
-              >
-              <span class="shortcut-desc">Focus Search Bar</span>
-            </div>
-            <div class="shortcut-item">
-              <span class="shortcut-keys"><kbd>Esc</kbd></span>
-              <span class="shortcut-desc">Clear Search / Close Modal</span>
-            </div>
-            <div class="shortcut-item">
-              <span class="shortcut-keys"><kbd>T</kbd></span>
-              <span class="shortcut-desc">Toggle Theme</span>
-            </div>
-            <div class="shortcut-item">
-              <span class="shortcut-keys"><kbd>?</kbd></span>
-              <span class="shortcut-desc">Toggle Shortcuts Helper</span>
-            </div>
+          <div class="shortcut-item">
+            <span class="shortcut-keys"><kbd>Esc</kbd></span>
+            <span class="shortcut-desc">Clear Search / Close Modal</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-keys"><kbd>T</kbd></span>
+            <span class="shortcut-desc">Toggle Theme</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-keys"><kbd>?</kbd></span>
+            <span class="shortcut-desc">Toggle Shortcuts Helper</span>
           </div>
         </div>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <main>
-      <section id="categories"></section>
+  <main>
+    <section id="categories"></section>
 
-      <section
-        id="recent-projects-section"
-        class="recent-projects-section"
-        aria-labelledby="recent-projects-title"
-        hidden
-      >
-        <div class="section-header">
-          <div>
-            <h2 id="recent-projects-title">Recently Opened</h2>
-            <p class="section-subtitle">
-              Quick access to projects opened in this browser.
-            </p>
-          </div>
-
-          <div class="section-actions">
-            <button
-              id="toggle-recent-projects"
-              data-cradle-btn
-              data-variant="ghost"
-              data-size="sm"
-              aria-controls="recent-projects-grid"
-              aria-expanded="true"
-              aria-label="Collapse recently opened projects"
-            >
-              Collapse
-            </button>
-
-            <button
-              id="clear-recent-projects"
-              data-cradle-btn
-              data-variant="ghost"
-              data-size="sm"
-              aria-label="Clear recently opened projects"
-            >
-              Clear Recent
-            </button>
-          </div>
+    <section id="recent-projects-section" class="recent-projects-section" aria-labelledby="recent-projects-title"
+      hidden>
+      <div class="section-header">
+        <div>
+          <h2 id="recent-projects-title">Recently Opened</h2>
+          <p class="section-subtitle">
+            Quick access to projects opened in this browser.
+          </p>
         </div>
 
-        <div
-          id="recent-projects-grid"
-          class="projects-grid recent-projects-grid"
-          aria-live="polite"
-        ></div>
-      </section>
+        <div class="section-actions">
+          <button id="toggle-recent-projects" data-cradle-btn data-variant="ghost" data-size="sm"
+            aria-controls="recent-projects-grid" aria-expanded="true" aria-label="Collapse recently opened projects">
+            Collapse
+          </button>
 
-      <section>
-        <div class="section-header">
-          <h2>Projects</h2>
-
-          <span id="project-count"> 0 projects </span>
+          <button id="clear-recent-projects" data-cradle-btn data-variant="ghost" data-size="sm"
+            aria-label="Clear recently opened projects">
+            Clear Recent
+          </button>
         </div>
+      </div>
 
-        <div
-          id="projects-grid"
-          class="projects-grid"
-          aria-live="polite"
-          aria-atomic="true"
-        ></div>
-        <p
-          id="copy-status"
-          class="sr-only"
-          role="status"
-          aria-live="polite"
-        ></p>
-      </section>
-    </main>
+      <div id="recent-projects-grid" class="projects-grid recent-projects-grid" aria-live="polite"></div>
+    </section>
 
-    <!-- Floating Back to Top Button -->
-    <button
-      id="back-to-top"
-      class="back-to-top"
-      aria-label="Back to top"
-      title="Back to top"
-      hidden
-    >
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      >
-        <polyline points="18 15 12 9 6 15"></polyline>
-      </svg>
-    </button>
+    <section>
+      <div class="section-header">
+        <h2>Projects</h2>
 
-    <footer>
-      <p>
-        Enjoying Cradle?
+        <span id="project-count"> 0 projects </span>
+      </div>
 
-        <a
-          href="https://github.com/Facelessism/cradle"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="footer-link"
-        >
-          ★ Star the repository on GitHub
-        </a>
-      </p>
-    </footer>
-    <script src="src/components/ui/Button/Button.js"></script>
-    <script src="src/components/ui/Card/Card.js"></script>
-    <script src="src/components/ui/ThemeToggle/ThemeToggle.js"></script>
-    <script type="module" src="script.js"></script>
-  </body>
+      <div id="projects-grid" class="projects-grid" aria-live="polite" aria-atomic="true"></div>
+      <p id="copy-status" class="sr-only" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <!-- Floating Back to Top Button -->
+  <button id="back-to-top" class="back-to-top" aria-label="Back to top" title="Back to top" hidden>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="18 15 12 9 6 15"></polyline>
+    </svg>
+  </button>
+
+  <footer>
+    <p>
+      Enjoying Cradle?
+
+      <a href="https://github.com/Facelessism/cradle" target="_blank" rel="noopener noreferrer" class="footer-link">
+        ★ Star the repository on GitHub
+      </a>
+    </p>
+  </footer>
+  <script src="src/components/ui/Button/Button.js"></script>
+  <script src="src/components/ui/Card/Card.js"></script>
+  <script src="src/components/ui/ThemeToggle/ThemeToggle.js"></script>
+  <script type="module" src="script.js"></script>
+</body>
+
 </html>

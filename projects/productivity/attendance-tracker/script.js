@@ -11,6 +11,20 @@ function loadData() {
 
 let data = loadData();
 
+let alertTimeout;
+function showAlert(message) {
+  const banner = document.getElementById("alertBanner");
+  const msgEl = document.getElementById("alertMessage");
+  if (banner && msgEl) {
+    msgEl.textContent = message;
+    banner.style.display = "flex";
+    clearTimeout(alertTimeout);
+    alertTimeout = setTimeout(() => {
+      banner.style.display = "none";
+    }, 5000);
+  }
+}
+
 function render() {
   const body = document.getElementById("attendance-body");
   const logBox = document.getElementById("history-log");
@@ -54,9 +68,9 @@ function render() {
     inputTotal.type = "number";
     inputTotal.value = s.total;
     inputTotal.style.width = "50px";
-    inputTotal.onchange = function () {
-      updateTotal(i, this.value);
-    };
+    inputTotal.addEventListener("change", () =>
+      updateTotal(i, inputTotal.value)
+    );
     tdTotal.appendChild(inputTotal);
     tr.appendChild(tdTotal);
 
@@ -68,9 +82,7 @@ function render() {
     const btnPDec = document.createElement("button");
     btnPDec.className = "btn btn-dec";
     btnPDec.textContent = "-";
-    btnPDec.onclick = function () {
-      update(i, "p", -1);
-    };
+    btnPDec.addEventListener("click", () => update(i, "p", -1));
 
     const spanP = document.createElement("span");
     spanP.textContent = s.p;
@@ -78,9 +90,7 @@ function render() {
     const btnPInc = document.createElement("button");
     btnPInc.className = "btn btn-inc";
     btnPInc.textContent = "+";
-    btnPInc.onclick = function () {
-      update(i, "p", 1);
-    };
+    btnPInc.addEventListener("click", () => update(i, "p", 1));
 
     divPGroup.appendChild(btnPDec);
     divPGroup.appendChild(spanP);
@@ -96,9 +106,7 @@ function render() {
     const btnADec = document.createElement("button");
     btnADec.className = "btn btn-dec";
     btnADec.textContent = "-";
-    btnADec.onclick = function () {
-      update(i, "a", -1);
-    };
+    btnADec.addEventListener("click", () => update(i, "a", -1));
 
     const spanA = document.createElement("span");
     spanA.textContent = s.a;
@@ -106,9 +114,7 @@ function render() {
     const btnAInc = document.createElement("button");
     btnAInc.className = "btn btn-inc";
     btnAInc.textContent = "+";
-    btnAInc.onclick = function () {
-      update(i, "a", 1);
-    };
+    btnAInc.addEventListener("click", () => update(i, "a", 1));
 
     divAGroup.appendChild(btnADec);
     divAGroup.appendChild(spanA);
@@ -140,9 +146,7 @@ function render() {
     btnRemove.style.color = "#94a3b8";
     btnRemove.style.background = "transparent";
     btnRemove.innerHTML = "&times;";
-    btnRemove.onclick = function () {
-      removeSub(i);
-    };
+    btnRemove.addEventListener("click", () => removeSub(i));
     tdRemove.appendChild(btnRemove);
     tr.appendChild(tdRemove);
 
@@ -227,7 +231,7 @@ function updateChart() {
 
 function exportCSV() {
   if (!data.subjects || data.subjects.length === 0) {
-    alert("No data to export.");
+    showAlert("No data to export.");
     return;
   }
   const csv = exportToCSV(data.subjects);
@@ -268,7 +272,7 @@ function importCSV(event) {
         render();
       }
     } else {
-      alert("No valid subject data found in CSV.");
+      showAlert("No valid subject data found in CSV.");
     }
   };
   reader.readAsText(file);
@@ -283,12 +287,12 @@ function closeModal() {
   document.getElementById("newSubjectForm").reset();
 }
 
-window.onclick = function (event) {
+window.addEventListener("click", event => {
   let modal = document.getElementById("addModal");
   if (event.target === modal) {
     closeModal();
   }
-};
+});
 
 function addSubject(event) {
   event.preventDefault();
@@ -327,7 +331,7 @@ function update(i, field, val) {
   const conducted = subject.p + subject.a;
 
   if (val === 1 && conducted >= subject.total) {
-    alert("Total classes limit reached.");
+    showAlert("Total classes limit reached.");
     return;
   }
 
@@ -356,5 +360,25 @@ function clearHistory() {
   data.logs = [];
   render();
 }
+
+document
+  .querySelector(".btn-export-action")
+  .addEventListener("click", exportCSV);
+document
+  .querySelector(".btn-import-action")
+  .addEventListener("click", triggerImport);
+document
+  .getElementById("csvFileInput")
+  .addEventListener("change", importCSV);
+document
+  .getElementById("btn-new-subject")
+  .addEventListener("click", openModal);
+document
+  .querySelector(".btn-clear-history-action")
+  .addEventListener("click", clearHistory);
+document.querySelector(".close-btn").addEventListener("click", closeModal);
+document
+  .getElementById("newSubjectForm")
+  .addEventListener("submit", addSubject);
 
 render();

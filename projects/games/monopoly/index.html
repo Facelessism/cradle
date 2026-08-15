@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Monopoly</title>
+    <meta name="description" content="Turn-based Monopoly board game simulation supporting multiple local players and roll mechanics." />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -50,9 +51,9 @@
     <div class="setup-row">
       <label>Number of Players</label>
       <div class="num-picker" id="numPicker">
-        <button data-n="2" class="sel">2</button>
-        <button data-n="3">3</button>
-        <button data-n="4">4</button>
+        <button data-n="2" class="sel" aria-label="Select 2 players">2</button>
+        <button data-n="3" aria-label="Select 3 players">3</button>
+        <button data-n="4" aria-label="Select 4 players">4</button>
       </div>
     </div>
     <div class="setup-row">
@@ -60,7 +61,7 @@
       <div class="name-inputs" id="nameInputs"></div>
     </div>
     <div class="btn-row">
-      <button id="startGameBtn">Start Game</button>
+      <button id="startGameBtn" aria-label="Start game with selected players">Start Game</button>
     </div>
   </div>
 </div>

@@ -252,10 +252,12 @@ Example:
 ## Design Decisions
 
 <!--
-Explain non-obvious choices made during development.
-This is especially useful for reviewers and future contributors.
+Document non-obvious design choices and the reasoning behind them.
 
 Example:
+- Modular Engine Separation: Pure computational logic is separated into engine modules (*Engine.js / *Logic.js) with UMD exports for headless Node.js unit testing, while inline script.js handles DOM bindings, canvas animations, and UI fallbacks.
+-->
+
 - **Immutable state** — `moveGameState` always returns a new object rather than
   mutating state in place, making the logic easy to test and the history easy to track.
 - **UMD wrapper in logic.js** — allows the same file to be loaded in a browser

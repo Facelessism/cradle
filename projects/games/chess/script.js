@@ -580,7 +580,7 @@ document.getElementById("copyPGN").addEventListener("click", () => {
       setTimeout(() => (btn.innerHTML = originalText), 2000);
     })
     .catch(() => {
-      alert("Failed to copy PGN.");
+      setStatus("Failed to copy PGN.");
     });
 });
 document.getElementById("flipBoard").addEventListener("click", () => {
@@ -807,7 +807,7 @@ function loadFEN(fenString) {
     checkTriggerAI();
     return true;
   } catch (e) {
-    alert("Error loading FEN: " + e.message);
+    setStatus("Error loading FEN: " + e.message);
     return false;
   }
 }
@@ -819,7 +819,7 @@ if (loadFENBtn) {
     if (input) {
       loadFEN(input);
     } else {
-      alert("Please enter a FEN string.");
+      setStatus("Please enter a FEN string.");
     }
   });
 }
@@ -837,7 +837,7 @@ if (copyFENBtn) {
         setTimeout(() => (copyFENBtn.innerHTML = originalText), 2000);
       })
       .catch(() => {
-        alert("Failed to copy FEN.");
+        setStatus("Failed to copy FEN.");
       });
   });
 }

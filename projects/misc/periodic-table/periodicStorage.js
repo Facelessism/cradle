@@ -4,36 +4,27 @@
  */
 
 (function (exports) {
+  const storage =
+    typeof window !== "undefined" && window.CradleStorage
+      ? window.CradleStorage
+      : require("../../../src/components/ui/storage.js");
+
   const STORAGE_KEY_BOOKMARKS = "cradle_periodic_bookmarks";
   const STORAGE_KEY_SETTINGS = "cradle_periodic_settings";
 
-  let memoryBookmarks = [];
-  let memorySettings = {
+  const DEFAULT_SETTINGS = {
     tempK: 298,
     tempUnit: "C",
-    themeMode: "standard"
+    themeMode: "standard",
   };
-
-  function isLocalStorageAvailable() {
-    try {
-      return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
-    } catch (e) {
-      return false;
-    }
-  }
 
   /**
    * Retrieves bookmarked atomic numbers.
    * @returns {number[]} Array of atomic numbers
    */
   function getBookmarkedElements() {
-    if (!isLocalStorageAvailable()) return memoryBookmarks;
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY_BOOKMARKS);
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      return memoryBookmarks;
-    }
+    const list = storage.get(STORAGE_KEY_BOOKMARKS, []);
+    return Array.isArray(list) ? list : [];
   }
 
   /**
@@ -53,13 +44,7 @@
       isBookmarked = true;
     }
 
-    if (isLocalStorageAvailable()) {
-      try {
-        localStorage.setItem(STORAGE_KEY_BOOKMARKS, JSON.stringify(list));
-      } catch (e) {}
-    } else {
-      memoryBookmarks = list;
-    }
+    storage.set(STORAGE_KEY_BOOKMARKS, list);
 
     return isBookmarked;
   }
@@ -79,13 +64,10 @@
    * @returns {Object} Settings object
    */
   function getSettings() {
-    if (!isLocalStorageAvailable()) return memorySettings;
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY_SETTINGS);
-      return raw ? { ...memorySettings, ...JSON.parse(raw) } : memorySettings;
-    } catch (e) {
-      return memorySettings;
-    }
+    const saved = storage.get(STORAGE_KEY_SETTINGS, {});
+    return saved && typeof saved === "object" && !Array.isArray(saved)
+      ? { ...DEFAULT_SETTINGS, ...saved }
+      : DEFAULT_SETTINGS;
   }
 
   /**
@@ -93,17 +75,8 @@
    * @param {Object} newSettings
    */
   function saveSettings(newSettings) {
-    const current = getSettings();
-    const updated = { ...current, ...newSettings };
-
-    if (isLocalStorageAvailable()) {
-      try {
-        localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(updated));
-      } catch (e) {}
-    } else {
-      memorySettings = updated;
-    }
-
+    const updated = { ...getSettings(), ...newSettings };
+    storage.set(STORAGE_KEY_SETTINGS, updated);
     return updated;
   }
 
@@ -112,5 +85,4 @@
   exports.isBookmarked = isBookmarked;
   exports.getSettings = getSettings;
   exports.saveSettings = saveSettings;
-
 })(typeof exports === "undefined" ? (window.PeriodicStorage = {}) : exports);

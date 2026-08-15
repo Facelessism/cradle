@@ -141,6 +141,20 @@ if (savePresetBtn) {
   });
 }
 
+let errorTimeout;
+function showError(msg) {
+  const container = document.getElementById("errorContainer");
+  const message = document.getElementById("errorMessage");
+  if (container && message) {
+    message.textContent = msg;
+    container.style.display = "flex";
+    clearTimeout(errorTimeout);
+    errorTimeout = setTimeout(() => {
+      container.style.display = "none";
+    }, 5000);
+  }
+}
+
 if (downloadBtn) {
   downloadBtn.addEventListener("click", () => {
     try {
@@ -149,7 +163,7 @@ if (downloadBtn) {
       link.href = canvas.toDataURL("image/png");
       link.click();
     } catch (e) {
-      alert(
+      showError(
         "To download cross-origin images, upload a local image or host on same origin."
       );
     }

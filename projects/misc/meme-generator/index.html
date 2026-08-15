@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Meme Generator Studio</title>
+    <meta name="description" content="Create, edit, caption, and download custom visual memes directly in your browser." />
     <link rel="stylesheet" href="style.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
@@ -89,6 +90,16 @@
               <span>Download Meme</span>
             </button>
           </div>
+          <div
+            id="errorContainer"
+            class="error-container"
+            role="status"
+            aria-live="polite"
+            style="display: none;"
+          >
+            <span class="error-icon">⚠️</span>
+            <span id="errorMessage"></span>
+          </div>
         </section>
 
         <!-- Canvas Preview Area -->
@@ -121,6 +132,7 @@
       defer
     ></script>
     <script src="memeEngine.js"></script>
+    <script src="../../../src/components/ui/storage.js"></script>
     <script src="memeStorage.js"></script>
     <script src="script.js"></script>
   </body>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Response Inspector | Cradle</title>
+    <meta name="description"
+        content="Send a request to any API URL and inspect its status, headers, response time, and formatted body." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <main class="shell">
+        <header class="project-header">
+            <div>
+                <a href="../../../index.html" class="back-link">Back to Cradle</a>
+                <p class="eyebrow">Dev Tools Mini</p>
+                <h1>API Response Inspector</h1>
+                <p class="subtitle">
+                    Send a request to any API URL and see its status, response time,
+                    headers, and formatted body.
+                </p>
+            </div>
+
+            <div class="summary-grid" aria-label="Last response summary">
+                <article>
+                    <span id="summaryStatus">—</span>
+                    <small>Status</small>
+                </article>
+                <article>
+                    <span id="summaryTime">—</span>
+                    <small>Time</small>
+                </article>
+                <article>
+                    <span id="summarySize">—</span>
+                    <small>Size</small>
+                </article>
+                <article>
+                    <span id="summaryHeaders">—</span>
+                    <small>Headers</small>
+                </article>
+            </div>
+        </header>
+
+        <section class="toolbar" aria-label="Request builder">
+            <div class="request-row">
+                <select id="methodSelect" aria-label="HTTP method">
+                    <option>GET</option>
+                    <option>POST</option>
+                    <option>PUT</option>
+                    <option>PATCH</option>
+                    <option>DELETE</option>
+                    <option>HEAD</option>
+                </select>
+                <input id="urlInput" type="text" placeholder="https://api.example.com/endpoint"
+                    value="https://jsonplaceholder.typicode.com/todos/1" aria-label="Request URL" />
+                <button id="sendBtn" class="cradle-btn" type="button">Send</button>
+            </div>
+
+            <details class="advanced">
+                <summary>Headers &amp; body</summary>
+                <div class="advanced-grid">
+                    <div>
+                        <label for="headersInput">Request headers (one per line, Key: Value)</label>
+                        <textarea id="headersInput" rows="4"
+                            placeholder="Authorization: Bearer token&#10;Accept: application/json"></textarea>
+                    </div>
+                    <div>
+                        <label for="bodyInput">Request body (JSON, ignored for GET/HEAD)</label>
+                        <textarea id="bodyInput" rows="4" placeholder='{"title": "example"}'></textarea>
+                    </div>
+                </div>
+            </details>
+        </section>
+
+        <section id="errorBox" class="error-box" hidden></section>
+
+        <section id="resultPanel" class="result-panel" hidden>
+            <div class="panel-header">
+                <h2>Response Headers</h2>
+            </div>
+            <div id="headersList" class="headers-list"></div>
+
+            <div class="panel-header">
+                <h2>Response Body</h2>
+                <button id="copyBodyBtn" class="cradle-btn cradle-btn-outline" type="button">
+                    Copy body
+                </button>
+            </div>
+            <pre id="bodyOutput" class="body-output"><code id="bodyCode"></code></pre>
+        </section>
+
+        <p id="emptyState" class="empty-state">
+            Enter a URL above and hit Send to inspect a response.
+        </p>
+    </main>
+
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="apiEngine.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>

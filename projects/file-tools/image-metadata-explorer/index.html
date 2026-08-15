@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Image Metadata Analyzer</title>
+    <meta name="description" content="Extract and analyze EXIF, GPS, camera settings, and file metadata from image files." />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header class="navbar">
+    <div class="logo">
+      <span>EXIF</span> Analyzer
+    </div>
+
+    <nav class="nav-links">
+      <a href="#upload">Analyze</a>
+      <a href="#about">About</a>
+    </nav>
+  </header>
+
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- HERO -->
+    <section class="hero" id="upload">
+      <div class="hero-content">
+
+        <span class="eyebrow">
+          IMAGE METADATA TOOL
+        </span>
+
+        <h1>
+          Discover What's
+          <span>Inside Your Image</span>
+        </h1>
+
+        <p>
+          Upload an image and inspect its basic EXIF metadata,
+          including camera information, exposure settings,
+          location, and capture details.
+        </p>
+
+      </div>
+    </section>
+
+
+    <!-- UPLOAD SECTION -->
+    <section
+      class="upload-card"
+      id="uploadCard"
+    >
+
+      <div class="upload-icon">
+        📷
+      </div>
+
+      <h2>
+        Analyze an Image
+      </h2>
+
+      <p>
+        Drop an image here or choose one from your device.
+      </p>
+
+      <label class="upload-btn">
+        Choose Image
+
+        <input
+          type="file"
+          id="imageInput"
+          accept="image/jpeg,image/jpg,image/png,image/webp"
+          hidden
+        />
+      </label>
+
+      <p class="upload-hint">
+        JPEG photos with camera EXIF data provide the most
+        information.
+      </p>
+
+      <p class="upload-hint privacy-hint">
+        🔒 Images are processed locally in your browser.
+      </p>
+
+    </section>
+
+
+    <!-- ERROR -->
+    <div
+      class="error-message hidden"
+      id="errorMessage"
+      role="alert"
+    ></div>
+
+
+    <!-- RESULTS -->
+    <section
+      class="results-section hidden"
+      id="resultsSection"
+    >
+
+      <!-- TOP BAR -->
+      <div class="top-bar">
+
+        <div class="file-heading">
+          <span class="section-label">
+            ANALYZED IMAGE
+          </span>
+
+          <h2>
+            Image Details
+          </h2>
+
+          <p id="fileName">
+            No image selected
+          </p>
+        </div>
+
+        <div class="actions">
+
+          <button
+            class="btn btn-secondary"
+            id="newImageBtn"
+            type="button"
+          >
+            Choose Another
+          </button>
+
+          <button
+            class="btn btn-accent"
+            id="exportBtn"
+            type="button"
+          >
+            Export JSON
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- CONTENT -->
+      <div class="content-grid">
+
+
+        <!-- IMAGE PREVIEW -->
+        <div class="preview-card">
+
+          <div class="card-header">
+            <div>
+              <span class="section-label">
+                IMAGE
+              </span>
+
+              <h3>
+                Preview
+              </h3>
+            </div>
+          </div>
+
+
+          <div class="image-preview">
+            <img
+              id="imagePreview"
+              alt="Selected image preview"
+            />
+          </div>
+
+
+          <!-- FILE INFORMATION -->
+          <div class="image-info">
+
+            <div class="info-item">
+              <span>
+                File Size
+              </span>
+
+              <strong id="fileSize">
+                —
+              </strong>
+            </div>
+
+            <div class="info-item">
+              <span>
+                Dimensions
+              </span>
+
+              <strong id="dimensions">
+                —
+              </strong>
+            </div>
+
+            <div class="info-item">
+              <span>
+                Format
+              </span>
+
+              <strong id="fileType">
+                —
+              </strong>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- METADATA -->
+        <div class="metadata-card">
+
+          <div class="card-header">
+
+            <div>
+              <span class="section-label">
+                EXIF DATA
+              </span>
+
+              <h3>
+                Metadata
+              </h3>
+            </div>
+
+            <span
+              id="metadataCount"
+              class="metadata-count"
+            >
+              0 fields
+            </span>
+
+          </div>
+
+
+          <div id="metadataContainer">
+
+
+            <!-- CAMERA -->
+            <div class="metadata-group">
+
+              <h4>
+                📷 Camera
+              </h4>
+
+              <div class="metadata-grid">
+
+                <div class="metadata-item">
+                  <span>
+                    Make
+                  </span>
+
+                  <strong id="cameraMake">
+                    —
+                  </strong>
+                </div>
+
+                <div class="metadata-item">
+                  <span>
+                    Model
+                  </span>
+
+                  <strong id="cameraModel">
+                    —
+                  </strong>
+                </div>
+
+                <div class="metadata-item">
+                  <span>
+                    Lens
+                  </span>
+
+                  <strong id="lensModel">
+                    —
+                  </strong>
+                </div>
+
+                <div class="metadata-item">
+                  <span>
+                    Software
+                  </span>
+
+                  <strong id="software">
+                    —
+                  </strong>
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <!-- EXPOSURE -->
+            <div class="metadata-group">
+
+              <h4>
+                ⚙️ Exposure
+              </h4>
+
+              <div class="metadata-grid">
+
+                <div class="metadata-item">
+                  <span>
+                    Exposure Time
+                  </span>
+
+                  <strong id="exposureTime">
+                    —
+                  </strong>
+                </div>
+
+                <div class="metadata-item">
+                  <span>
+                    F-Number
+                  </span>
+
+                  <strong id="fNumber">
+                    —
+                  </strong>
+                </div>
+
+                <div class="metadata-item">
+                  <span>
+                    ISO
+                  </span>
+
+                  <strong id="iso">
+                    —
+                  </strong>
+                </div>
+
+                <div class="metadata-item">
+                  <span>
+                    Focal Length
+                  </span>
+
+                  <strong id="focalLength">
+                    —
+                  </strong>
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <!-- LOCATION -->
+            <div class="metadata-group">
+
+              <h4>
+                📍 Location
+              </h4>
+
+              <div class="metadata-grid">
+
+                <div class="metadata-item">
+                  <span>
+                    Latitude
+                  </span>
+
+                  <strong id="latitude">
+                    —
+                  </strong>
+                </div>
+
+                <div class="metadata-item">
+                  <span>
+                    Longitude
+                  </span>
+
+                  <strong id="longitude">
+                    —
+                  </strong>
+                </div>
+
+                <div class="metadata-item">
+                  <span>
+                    Altitude
+                  </span>
+
+                  <strong id="altitude">
+                    —
+                  </strong>
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <!-- OTHER -->
+            <div class="metadata-group">
+
+              <h4>
+                📋 Other
+              </h4>
+
+              <div class="metadata-grid">
+
+                <div class="metadata-item">
+                  <span>
+                    Date Taken
+                  </span>
+
+                  <strong id="dateTaken">
+                    —
+                  </strong>
+                </div>
+
+                <div class="metadata-item">
+                  <span>
+                    Orientation
+                  </span>
+
+                  <strong id="orientation">
+                    —
+                  </strong>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <!-- EMPTY METADATA -->
+          <div
+            class="empty-state hidden"
+            id="emptyMetadata"
+          >
+
+            <div class="empty-icon">
+              🔍
+            </div>
+
+            <h3>
+              No EXIF Metadata Found
+            </h3>
+
+            <p>
+              This image does not contain readable EXIF
+              metadata.
+            </p>
+
+            <small>
+              Try uploading an original JPEG photo taken
+              with a digital camera or smartphone.
+            </small>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ABOUT -->
+    <section
+      class="about-section"
+      id="about"
+    >
+
+      <div class="about-content">
+
+        <span class="section-label">
+          ABOUT
+        </span>
+
+        <h2>
+          Simple. Private. Local.
+        </h2>
+
+        <p>
+          This tool reads basic EXIF metadata directly from
+          your image in the browser. Your image is not uploaded
+          to a server.
+        </p>
+
+        <div class="feature-grid">
+
+          <div class="feature-card">
+            <span>🔒</span>
+
+            <h3>
+              Private
+            </h3>
+
+            <p>
+              Your image stays on your device.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <span>⚡</span>
+
+            <h3>
+              Fast
+            </h3>
+
+            <p>
+              Metadata is read directly in your browser.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <span>📋</span>
+
+            <h3>
+              Exportable
+            </h3>
+
+            <p>
+              Export the detected metadata as JSON.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- FOOTER -->
+  <footer>
+
+    <p>
+      Built with HTML, CSS &amp; JavaScript
+    </p>
+
+    <p class="footer-small">
+      Image Metadata Analyzer
+    </p>
+
+  </footer>
+
+
+  <!-- SCRIPT -->
+  <script src="metadataEngine.js"></script>
+  <script src="script.js"></script>
+
+</body>
+</html>

@@ -323,7 +323,7 @@ function buildHarmonicList() {
 
 /* ──── Theme ───────────────────────────────────────────────────────── */
 function initTheme() {
-  const saved = localStorage.getItem('cradle-theme');
+  const saved = localStorage.getItem('theme');
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const isDark = saved !== null ? saved === 'dark' : prefersDark;
   document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
@@ -335,7 +335,7 @@ themeToggle.addEventListener('click', () => {
   const current = document.documentElement.getAttribute('data-theme');
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('cradle-theme', next);
+  localStorage.setItem('theme', next);
   themeIcon.className = next === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
   themeToggle.setAttribute('aria-pressed', String(next === 'dark'));
 });

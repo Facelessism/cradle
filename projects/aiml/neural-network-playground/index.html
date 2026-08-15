@@ -264,10 +264,16 @@
                   id="btnRemoveLayer"
                   class="btn-icon"
                   title="Remove Layer"
+                  aria-label="Remove hidden layer"
                 >
                   <i aria-hidden="true" class="fas fa-minus"></i>
                 </button>
-                <button id="btnAddLayer" class="btn-icon" title="Add Layer">
+                <button
+                  id="btnAddLayer"
+                  class="btn-icon"
+                  title="Add Layer"
+                  aria-label="Add hidden layer"
+                >
                   <i aria-hidden="true" class="fas fa-plus"></i>
                 </button>
               </div>
@@ -336,6 +342,16 @@
               <i aria-hidden="true" class="fab fa-python"></i> Python
             </button>
           </div>
+          <p
+            id="exportStatus"
+            class="error-container"
+            role="status"
+            aria-live="polite"
+            style="display: none"
+          >
+            <i aria-hidden="true" class="fas fa-exclamation-circle"></i>
+            <span id="exportStatusMessage"></span>
+          </p>
         </section>
       </aside>
 

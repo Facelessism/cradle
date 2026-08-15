@@ -207,6 +207,15 @@ All runtime dependencies are loaded via CDN or local reference. There is no buil
 
 ---
 
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:**
+  - 'Space Grotesk', 'Inter', and 'JetBrains Mono' fonts by [Google Fonts](https://fonts.google.com) (OFL License)
+  - Font Awesome 6.5.1 icons by [Fonticons, Inc.](https://fontawesome.com) (CC BY 4.0)
+
+---
+
 ## References
 
 - [Fourier Series — Wikipedia](https://en.wikipedia.org/wiki/Fourier_series) — coefficient formulas for square, sawtooth, and triangle waves

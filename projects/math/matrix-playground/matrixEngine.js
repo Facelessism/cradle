@@ -362,25 +362,58 @@
     const subDetSum = m00 + m11 + m22;
     const det = determinant(matrix);
 
-    const p = tr * tr - 3 * subDetSum;
-    const q = 2 * tr * tr * tr - 9 * tr * subDetSum + 27 * det;
+    // Solve the characteristic cubic λ³ - tr·λ² + subDetSum·λ - det = 0 via the
+    // depressed cubic t³ + P·t + Q = 0 (λ = t + tr/3). The discriminant selects
+    // the case: Δ' > 0 → one real + two complex-conjugate roots; Δ' < 0 → three
+    // distinct real roots; Δ' = 0 → repeated roots. (The old code returned tr/3
+    // three times for any p ≤ 0, which was wrong for every matrix with complex
+    // eigenvalues, e.g. a rotation.)
+    const shift = tr / 3;
+    const P = subDetSum - (tr * tr) / 3;
+    const Q = (-2 * tr * tr * tr) / 27 + (tr * subDetSum) / 3 - det;
 
-    if (p <= 1e-12) {
-      const val = tr / 3;
-      return [{ real: val, imag: 0 }, { real: val, imag: 0 }, { real: val, imag: 0 }];
+    const round6 = (x) => Number(x.toFixed(6));
+    const discriminant = (Q * Q) / 4 + (P * P * P) / 27;
+
+    if (discriminant > 1e-9) {
+      // One real root and a complex-conjugate pair (Cardano).
+      const sqrtDisc = Math.sqrt(discriminant);
+      const u = Math.cbrt(-Q / 2 + sqrtDisc);
+      const v = Math.cbrt(-Q / 2 - sqrtDisc);
+      const realRoot = u + v;
+      const realPart = -(u + v) / 2;
+      const imagPart = (Math.sqrt(3) / 2) * (u - v);
+      return [
+        { real: round6(realRoot + shift), imag: 0 },
+        { real: round6(realPart + shift), imag: round6(imagPart) },
+        { real: round6(realPart + shift), imag: round6(-imagPart) }
+      ];
     }
 
-    const phi = Math.acos(Math.max(-1, Math.min(1, q / (2 * Math.sqrt(p * p * p)))));
-    const sqrtP = Math.sqrt(p);
+    if (discriminant < -1e-9) {
+      // Three distinct real roots (trigonometric form; here P < 0).
+      const m = 2 * Math.sqrt(-P / 3);
+      const arg = Math.max(-1, Math.min(1, (3 * Q) / (P * m)));
+      const theta = Math.acos(arg) / 3;
+      return [0, 1, 2].map((k) => ({
+        real: round6(m * Math.cos(theta - (2 * Math.PI * k) / 3) + shift),
+        imag: 0
+      }));
+    }
 
-    const e1 = (tr + 2 * sqrtP * Math.cos(phi / 3)) / 3;
-    const e2 = (tr + 2 * sqrtP * Math.cos((phi + 2 * Math.PI) / 3)) / 3;
-    const e3 = (tr + 2 * sqrtP * Math.cos((phi + 4 * Math.PI) / 3)) / 3;
-
+    // Repeated roots (Δ' ≈ 0).
+    if (Math.abs(P) < 1e-9) {
+      return [
+        { real: round6(shift), imag: 0 },
+        { real: round6(shift), imag: 0 },
+        { real: round6(shift), imag: 0 }
+      ];
+    }
+    const w = Math.cbrt(-Q / 2);
     return [
-      { real: Number(e1.toFixed(6)), imag: 0 },
-      { real: Number(e2.toFixed(6)), imag: 0 },
-      { real: Number(e3.toFixed(6)), imag: 0 }
+      { real: round6(2 * w + shift), imag: 0 },
+      { real: round6(-w + shift), imag: 0 },
+      { real: round6(-w + shift), imag: 0 }
     ];
   }
 

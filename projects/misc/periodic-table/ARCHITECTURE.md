@@ -19,28 +19,7 @@ Interactive Periodic Table is a client-side web application for exploring elemen
 
 ---
 
-## Features
-
-- **Search Elements**: Instant search filtering by element name, chemical symbol, atomic number, or element category.
-- **Detailed Properties**: Click any element to view comprehensive property metadata including atomic mass, electron configuration, electronegativity, melting/boiling points, density, discovery year, and summary.
-- **Visual Category Highlighting**: Interactive category filter pills highlighting Alkali Metals, Alkaline Earth Metals, Transition Metals, Metalloids, Nonmetals, Halogens, Noble Gases, Lanthanides, and Actinides.
-- **Bohr Model Visualizer**: Interactive canvas rendering electron shells and electron distribution for each element.
-- **Temperature Slider**: Dynamic state of matter visualization (Solid, Liquid, Gas, Synthetic) calculated in real-time as temperature changes from 0 K (-273°C) up to 6000 K (5727°C).
-- **View Modes**: Switch between Standard view, Electronegativity Heatmap, and Atomic Mass Gradient views.
-
----
-
-## How to Run Locally
-
-1. Open `index.html` directly in any web browser, or serve via local web server:
-   ```bash
-   python -m http.server 8000
-   ```
-2. Navigate to `http://localhost:8000/projects/misc/periodic-table/` in your browser.
-
----
-
-## Project & Folder Structure
+## Folder Structure
 
 ```text
 projects/misc/periodic-table/
@@ -56,7 +35,7 @@ projects/misc/periodic-table/
 
 ---
 
-## System & Project Architecture
+## System / Project Architecture Overview
 
 The application is structured into three main layers:
 
@@ -74,6 +53,8 @@ The application is structured into three main layers:
 | `index.html`  | Page markup, search input, view mode buttons, temperature slider, table container, detail modal         |
 | `style.css`   | 18-column CSS grid layout, category color variables, element tile micro-animations, modal styles        |
 | `elements.js` | Full dataset of 118 elements with atomic properties, melting/boiling points, and shell arrays           |
+| `periodicEngine.js` | Pure calculation engine: phase state, temperature conversion, shell parsing, filtering, stats        |
+| `periodicStorage.js` | Bookmark and settings persistence backed by localStorage with an in-memory fallback                  |
 | `script.js`   | Grid rendering logic, state-of-matter calculator, search & category filters, canvas Bohr model renderer |
 
 ---
@@ -105,6 +86,12 @@ User clicks an element tile → Modal opens → HTML5 Canvas draws Bohr model fo
 - Canvas-based dynamic Bohr atomic model visualization inside element modal
 - Real-time search and category filtering
 - Keyboard shortcuts: `Escape` to close element detail modal
+- **Search Elements**: Instant search filtering by element name, chemical symbol, atomic number, or element category.
+- **Detailed Properties**: Click any element to view comprehensive property metadata including atomic mass, electron configuration, electronegativity, melting/boiling points, density, discovery year, and summary.
+- **Visual Category Highlighting**: Interactive category filter pills highlighting Alkali Metals, Alkaline Earth Metals, Transition Metals, Metalloids, Nonmetals, Halogens, Noble Gases, Lanthanides, and Actinides.
+- **Bohr Model Visualizer**: Interactive canvas rendering electron shells and electron distribution for each element.
+- **Temperature Slider**: Dynamic state of matter visualization (Solid, Liquid, Gas, Synthetic) calculated in real-time as temperature changes from 0 K (-273°C) up to 6000 K (5727°C).
+- **View Modes**: Switch between Standard view, Electronegativity Heatmap, and Atomic Mass Gradient views.
 
 ---
 
@@ -125,12 +112,26 @@ User clicks an element tile → Modal opens → HTML5 Canvas draws Bohr model fo
 - Exports `ELEMENTS` array containing 118 element records.
 - Exports `CATEGORY_NAMES` mapping category keys to human-readable strings.
 
+### `periodicEngine.js`
+
+- `convertTemperature(value, fromUnit, toUnit)` — converts between Kelvin, Celsius, and Fahrenheit.
+- `calculatePhaseState(melt, boil, tempK, phaseAtSTP)` — returns `Solid`, `Liquid`, `Gas`, or `Synthetic` for a given temperature.
+- `parseShellElectrons(configStr)` — parses electron configuration strings into per-shell electron counts.
+- `filterElements(elements, options)` — filters by search, category, block, and phase.
+- `calculateElementStats(elements, tempK)` — tallies solid/liquid/gas/synthetic counts and category distribution.
+
+### `periodicStorage.js`
+
+- `getBookmarkedElements()` / `toggleBookmark(atomicNumber)` / `isBookmarked(atomicNumber)` — bookmark management in localStorage.
+- `getSettings()` / `saveSettings(newSettings)` — persist and restore user preferences with defaults.
+
 ### `script.js`
 
 - `renderTable()`: Generates tile elements and positions them into grid cells.
 - `getElementState(elem, tempK)`: Determines element state at given Kelvin temperature.
 - `applyFilters()`: Toggles `.dimmed` and `.highlighted` CSS classes based on active search and category filters.
 - `drawBohrModel(shells, symbol)`: Clears canvas and draws atomic nucleus and orbital shells with electron dots.
+- `openModal(elem)` / `closeModal()`: Populate and dismiss the element detail modal.
 
 ---
 
@@ -139,18 +140,13 @@ User clicks an element tile → Modal opens → HTML5 Canvas draws Bohr model fo
 - **CSS Grid for 18 Groups**: Used `grid-column` and `grid-row` matching standard IUPAC group numbers to place elements without needing empty placeholder elements.
 - **HTML5 Canvas for Bohr Models**: Rendered dynamically via canvas rather than inline SVGs to maintain performance and smooth rendering.
 - **Zero Build Step**: Ensured full compatibility with standard browser execution via simple script tags.
+- **Engine/UI separation**: Pure logic (phase math, parsing, stats) lives in `periodicEngine.js` (UMD-style wrapper, Node.js compatible) while `script.js` handles DOM work.
 
 ---
 
 ## Dependencies
 
 None. Uses native browser APIs exclusively.
-
----
-
-## Known Limitations
-
-- F-block elements (Lanthanides and Actinides) are rendered below the main grid to maintain desktop grid legibility.
 
 ---
 
@@ -162,6 +158,34 @@ None. Uses native browser APIs exclusively.
 
 ---
 
+## Known Limitations
+
+- F-block elements (Lanthanides and Actinides) are rendered below the main grid to maintain desktop grid legibility.
+
+---
+
 ## Development Notes
 
-- Serve through a local HTTP server (`python -m http.server`) for standard browser testing.
+- Open `index.html` directly in any web browser, or serve via local web server:
+   ```bash
+   python -m http.server 8000
+   ```
+- Navigate to `http://localhost:8000/projects/misc/periodic-table/` in your browser.
+- `periodicEngine.js` and `periodicStorage.js` are UMD-style modules that work in both the browser and Node.js for testing.
+
+---
+
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:**
+  - 'Outfit' font by Google Fonts (OFL License)
+  - 'JetBrains Mono' font by Google Fonts (OFL License)
+
+---
+
+## References
+
+- [MDN Web Docs — Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
+- [IUPAC Periodic Table](https://iupac.org/what-we-do/periodic-table-of-elements/)
+- [Google Fonts](https://fonts.google.com)

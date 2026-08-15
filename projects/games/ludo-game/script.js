@@ -394,6 +394,7 @@ function executeMove(token) {
   if (LudoEngine.checkWinner(state, token.color)) {
     gameOver = true;
     setStatus(`${capitalize(token.color)} wins!`);
+    localStorage.removeItem("cradle_ludo_save");
     localStorage.removeItem("ludoSave");
     return;
   }
@@ -556,7 +557,7 @@ function saveGame() {
     diceValue: diceValue,
     playerTypes: playerTypes,
   };
-  localStorage.setItem("ludoSave", JSON.stringify(saveData));
+  localStorage.setItem("cradle_ludo_save", JSON.stringify(saveData));
 }
 
 function loadGame(saveData) {
@@ -613,7 +614,7 @@ function loadGame(saveData) {
 }
 
 // Initial Load Logic
-const savedDataString = localStorage.getItem("ludoSave");
+const savedDataString = localStorage.getItem("cradle_ludo_save") || localStorage.getItem("ludoSave");
 const resumeModal = document.getElementById("resumeModal");
 
 if (savedDataString) {
@@ -635,6 +636,7 @@ document.getElementById("resumeGameBtn").addEventListener("click", () => {
 
 document.getElementById("startFreshBtn").addEventListener("click", () => {
   resumeModal.classList.add("hidden");
+  localStorage.removeItem("cradle_ludo_save");
   localStorage.removeItem("ludoSave");
   setupModal.classList.remove("hidden");
 });

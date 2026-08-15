@@ -8,20 +8,45 @@ Everything lives in one HTML file. There's no build step, no server, and no exte
 
 ---
 
+## Purpose & Goals
+
+- Recreate the classic Monopoly board and core buying/renting loop in a single-page, pass-and-play game.
+- Support 2–4 local players with a setup screen for player count and names.
+- Keep the ruleset simple enough to fit in one file with no external libraries.
+- Extract pure helpers (`cellGridArea`, `computeRent`) into `gameLogic.js` so they can be unit tested with Node.js.
+
+---
+
 ## Folder Structure
 
 ```
 monopoly/
-└── index.html 
-└── style.css 
-└── script.js 
-  # Everything: markup, styling, and game logic in one file
+├── index.html     # Board container, side panel, setup overlay, card modal
+├── style.css      # CSS Grid board layout, dice pips, buttons, modals
+├── script.js      # Board data, game rules, turn logic, and rendering
+└── gameLogic.js   # Pure helpers (grid placement, rent math) for headless testing
 ```
-
 
 ---
 
-## Application Flow
+## System / Project Architecture Overview
+
+The game is a single-page app with two clear layers. The `BOARD` array in `script.js` is the data model: 40 space objects in board order. Game state lives in three module-level variables — `players[]`, `owners{}`, and `currentPlayerIdx`. `renderAll()` always redraws the DOM from that state, so the UI never holds truth. Pure helpers shared with tests live in `gameLogic.js`, which is not loaded by the page but is imported by the Node test suite. There is no build step and no external library.
+
+---
+
+## Component Breakdown
+
+| File | Responsibility |
+|---|---|
+| `index.html` | Board, players/turn/log panel, setup overlay, Chance/Chest modal |
+| `script.js` | Board data, cards, game state, dice/turn logic, rendering, event handling |
+| `gameLogic.js` | `cellGridArea` and `computeRent` as pure, Node-testable functions |
+| `style.css` | 11x11 CSS Grid board, CSS dice pips, buttons, modal overlay |
+
+---
+
+## Data Flow / Execution Flow
 
 ```
 User opens index.html
@@ -60,84 +85,84 @@ When only one player is left → that player wins, buttons are disabled
 
 ---
 
-## Core Components
+## Key Features
 
-### The board (`BOARD` array + `initBoard()`)
-`BOARD` is a plain JavaScript array of 40 objects, one per space, in board order — the same order and names as the real Monopoly board (Mediterranean Avenue → Boardwalk). Each object holds its type (`property`, `railroad`, `utility`, `tax`, `chance`, `chest`, `jail`, `gotojail`, `parking`, `go`), name, price, and rent where relevant.
-
-`initBoard()` reads this array once at game start and creates one `<div class="cell">` per space, positioning each on the correct edge of a CSS grid using `cellGridArea()` (a small function that maps a space index 0–39 to a grid column/row).
-
-### Players (`players` array)
-Each player is an object: `{ id, name, cash, pos, color, letter, inJail, jailTurns, bankrupt }`. This is the single source of truth for player state — the UI is always redrawn from this array, never edited directly.
-
-### Ownership (`owners` object)
-A simple map of `space index → player id`, e.g. `{1: 0, 5: 2}` means space 1 is owned by player 0 and space 5 is owned by player 2. Used to look up who to pay rent to, and to draw the colored ownership dots on the board.
-
-### Turn logic (`doRoll`, `resolveSpace`, `endTurn`)
-- `doRoll()` — rolls two dice, handles jail rules, moves the player, and calls `resolveSpace()`.
-- `resolveSpace()` — the main branching function; decides what happens based on the space type.
-- `endTurn()` — either lets the same player roll again (doubles) or advances to the next player.
-
-### Cards (`CHANCE_CARDS`, `CHEST_CARDS`)
-Two small arrays of card objects, each with a `text` (shown in the popup) and an `fn` (a function that applies the effect to the player — pay them, charge them, move them, or send them to jail).
-
-### Rendering functions
-- `renderTokens()` — draws player tokens on their current board space.
-- `renderOwnership()` — draws colored dots on owned spaces.
-- `renderPlayers()` — redraws the players list (name, cash, jail badge, active-turn highlight).
-- `renderAll()` — calls all three.
-
-These are called after any state change, so the UI always matches the underlying `players` / `owners` data.
+- Full 40-space board matching the official US layout and names (Mediterranean Avenue through Boardwalk).
+- Hotseat play for 2–4 players, each with a color token, a letter, and $1500 starting cash.
+- Dice rendered as CSS pips with doubles detection and a running sum display.
+- Buy unowned properties, railroads, and utilities when landed on.
+- Rent system: base rents for properties, escalating rents for railroads (25/50/100/200), and dice-based utility rent (4x or 10x the dice sum).
+- Chance and Community Chest decks of 8 cards each, shown in a modal before their effect applies.
+- Jail mechanics: roll doubles to escape, pay $50 bail after three failed turns, and three consecutive doubles send the player to jail.
+- $200 collected for passing GO; Income Tax and Luxury Tax charged automatically.
+- Bankruptcy hands the player's properties back to the bank; the last player standing wins.
+- Live game log and status messages.
 
 ---
 
+## Technologies Used
 
-## Event Flow
-
-```
-User clicks "Roll Dice"
-        ↓
-doRoll()
-  ├─ roll two dice, update dice display
-  ├─ if in jail → try to get out (doubles or 3rd-turn bail)
-  ├─ move player, collect $200 if passing GO
-  └─ resolveSpace(player, diceSum, wasDouble)
-        ↓
-resolveSpace() looks at BOARD[player.pos].type and either:
-  ├─ shows the Buy button, or
-  ├─ charges rent / tax immediately, or
-  ├─ opens the Chance/Chest modal, or
-  └─ moves the player to jail
-        ↓
-User clicks "Buy Property" (if shown) → buyCurrentProperty()
-  adds the space to owners{}, deducts price from cash
-        ↓
-User clicks "End Turn" → endTurn()
-  ├─ if doubles were rolled → same player rolls again
-  └─ else → currentPlayerIdx moves to the next non-bankrupt player
-```
+| Technology | Purpose |
+|---|---|
+| HTML5 | Board, panels, overlay, modal markup |
+| CSS3 (Grid, Flexbox) | 11x11 board layout, dice pips, buttons |
+| Vanilla JavaScript (ES6+) | Game state, rules, DOM rendering, events |
+| Node.js test runner | Headless tests for `gameLogic.js` |
 
 ---
 
-## Assets
+## File Responsibilities
 
-No images, fonts, or audio files. Dice pips are drawn with plain CSS (a 3×3 grid of dots toggled on/off per die value). Player tokens are colored circles with a letter, drawn with CSS.
+### `index.html`
+
+- `#board` — the 11x11 grid that cells are injected into at game start.
+- Side panel — Players list, dice area with `#die1`/`#die2`, status message, and Roll Dice / Buy Property / End Turn buttons.
+- `#log` — scrollable game log.
+- `#setupOverlay` — player count picker (2–4) and name inputs.
+- `#modalOverlay` — Chance/Community Chest card popup.
+
+### `script.js`
+
+- `BOARD` — the 40-space data array (type, name, price, rent where relevant).
+- `CHANCE_CARDS` / `CHEST_CARDS` — 8 cards each; every card has `text` and an `fn` that mutates the active player.
+- `initBoard()` / `cellGridArea()` — creates one `.cell` per space and places it on the grid.
+- `renderTokens()` / `renderOwnership()` / `renderPlayers()` / `renderAll()` — redraw the UI from state.
+- `doRoll()` — rolls two dice, resolves jail rules, moves the player, and collects $200 for passing GO.
+- `resolveSpace()` — branches by space type: buy offer, rent, tax, card draw, jail, or nothing.
+- `computeRent()` — returns the correct rent for properties, railroads, and utilities.
+- `buyCurrentProperty()` — deducts the price and records ownership in `owners{}`.
+- `endTurn()` — gives a doubles re-roll or advances to the next non-bankrupt player.
+- `handleBankruptcy()` / `checkGameOver()` — removes bankrupt players and detects the winner.
+- `showCardModal()` — renders a card and applies its effect on OK.
+
+### `gameLogic.js`
+
+- `cellGridArea(i)` — maps a space index 0–39 to a grid column/row (shared with `script.js`).
+- `computeRent(space, owner, diceSum, owners, board)` — pure rent math used by the unit tests.
+
+### `style.css`
+
+- `.board` — 11x11 CSS Grid holding the 40 cells plus the center logo.
+- `.die` / `.pip` — dice faces built from a 3x3 grid of pips toggled via the `data-v` attribute.
+- `.owner-strip` / `.owner-dot` — ownership markers on owned spaces.
+- `.setup-overlay` / `.modal-overlay` — full-screen overlays.
+
+---
+
+## Design Decisions
+
+- **Data-driven board** — every space is data in the `BOARD` array; rendering and rules branch on `type`, so adding a board variant is just data.
+- **Single source of truth** — `players[]` and `owners{}` are the only state; all render functions read from them, and the UI is never mutated directly.
+- **Grid placement math** — `cellGridArea()` converts a space index to grid coordinates, so no hard-coded cell positions are needed.
+- **Simplified ruleset** — houses/hotels, mortgaging, trading, and auctions are omitted to keep the codebase small while preserving the familiar board and loop.
+- **Pure helpers extracted** — `cellGridArea` and `computeRent` live in `gameLogic.js` (with `module.exports`) so the Node test suite can run them without a browser.
+- **CSS-only dice** — die faces are pure CSS pips toggled with a data attribute, avoiding any image assets.
 
 ---
 
 ## Dependencies
 
-None. No JavaScript libraries, no CSS frameworks, no build tools. Just HTML, CSS, and vanilla JavaScript in one file.
-
----
-
-## Known Simplifications (vs. real Monopoly rules)
-
-- No houses or hotels — rent is always the base rate.
-- No mortgaging properties.
-- No trading between players.
-- Chance and Community Chest decks have 8 cards each instead of the official 16.
-- No bank auction when a player declines to buy a property.
+None. The project uses only native browser APIs — no external libraries, fonts, or build tools.
 
 ---
 
@@ -148,3 +173,39 @@ None. No JavaScript libraries, no CSS frameworks, no build tools. Just HTML, CSS
 - **Trading** — let players propose and accept property/cash trades with each other.
 - **Full 16-card decks** — fill out the remaining Chance and Community Chest cards from the official rules.
 - **Auctions** — when a player declines to buy, auction the property to all players instead of leaving it unowned.
+
+---
+
+## Known Limitations
+
+- No houses or hotels — rent is always the base rate.
+- No mortgaging properties.
+- No trading between players.
+- Chance and Community Chest decks have 8 cards each instead of the official 16.
+- No bank auction when a player declines to buy a property.
+- Local hotseat only — no computer opponents and no network play.
+- No save/load — the session resets on page reload.
+
+---
+
+## Development Notes
+
+- No build step is required. Open `index.html` in a browser.
+- `gameLogic.js` is not loaded by the page; it exists for headless testing. Run:
+  `node --test tests/monopoly.test.js`
+- The board order in `BOARD` matches the official US board (Mediterranean Avenue → Boardwalk).
+- To tweak rents, edit `computeRent()`; to tweak card effects, edit the `fn` callbacks in `CHANCE_CARDS` / `CHEST_CARDS`.
+
+---
+
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:** None. No images, fonts, or audio are used — the board names and prices follow the standard Monopoly game layout.
+
+---
+
+## References
+
+- [Monopoly (game) — Wikipedia](https://en.wikipedia.org/wiki/Monopoly_(game))
+- [MDN Web Docs — CSS Grid Layout](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout)

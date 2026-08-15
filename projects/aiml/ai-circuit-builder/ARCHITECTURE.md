@@ -104,25 +104,14 @@ User can compare it with their previous designs
 
 ---
 
-<!-- ## Design Decisions -->
+## Design Decisions
 
-<!--
-Explain non-obvious choices made during development.
-This is especially useful for reviewers and future contributors.
+- **Client-side PPA estimation** — `calculatePPA()` approximates power, die area, and TOPS throughput from the selected process node, core count, frequency, architecture, and design goal using simplified semiconductor scaling formulas, so results are computed entirely in the browser with no backend.
+- **Procedural floorplan rendering** — `drawCircuitDiagram()` draws the chip layout (core grid, L3 cache, interconnect bus) on a canvas based on the current configuration rather than using pre-made images.
+- **LocalStorage vault and comparison** — designs are persisted under `neuralforge_projects` and the comparison matrix under `neuralforge_comparison` so users can reload, restore, and compare previous designs.
+- **No runtime AI model** — despite the "AI-powered" branding, PPA metrics and diagrams are generated procedurally in JavaScript, keeping the app dependency-light.
 
-Example:
-- **Immutable state** — `moveGameState` always returns a new object rather than
-  mutating state in place, making the logic easy to test and the history easy to track.
-- **UMD wrapper in logic.js** — allows the same file to be loaded in a browser
-  via a script tag and imported in Node.js for unit testing.
-- **No framework** — kept vanilla to minimize the learning curve for contributors
-  and avoid a build step.
--->
-
-<!-- -  Decision 1 and the reason for it -->
-<!-- -  Decision 2 and the reason for it -->
-
-<!-- --- -->
+---
 
 ## Dependencies
 
@@ -136,23 +125,12 @@ Example:
 
 - User friendly guide on how to use this project and its various parameters
 
-<!-- ---
+## Known Limitations
 
-## Known Limitations -->
-
-<!--
-Be honest about current shortcomings.
-This helps contributors understand the scope of the project
-and prevents duplicate bug reports.
-
-Example:
-- No mobile/touch support — keyboard only
-- Pawn auto-promotes to queen only; no promotion choice dialog
-- AI does not detect threefold repetition or the fifty-move rule
--->
-
-<!-- - Limitation 1 -->
-<!-- -  Limitation 2 -->
+- PPA estimates are approximations from simplified scaling formulas, not results from real semiconductor EDA tools.
+- The floorplan canvas draws at most 32 core modules even when more cores are configured.
+- Saving a design with an existing project name overwrites the earlier entry.
+- No actual AI model performs design synthesis; generation is rule-based.
 
 ---
 
@@ -162,3 +140,18 @@ Example:
 - Visit (`http://localhost:8000`)
 
 ---
+
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:**
+  - Tailwind CSS (CDN `<script>` tag) — utility-first CSS framework
+  - Font Awesome 6.6.0 (CDN via cdnjs) — UI icons
+
+---
+
+## References
+
+- [Tailwind CSS](https://tailwindcss.com) — utility-first CSS framework used for the interface
+- [Font Awesome](https://fontawesome.com) — icon set used across the UI
+- [MDN Web Docs — Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API) — procedural floorplan rendering

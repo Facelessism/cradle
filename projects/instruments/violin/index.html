@@ -1,0 +1,1647 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Virtual Violin</title>
+
+  <meta
+    name="description"
+    content="A standalone playable virtual violin with mouse, touch, and keyboard note interactions."
+  />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <main class="app">
+
+    <section
+      class="game-shell"
+      aria-labelledby="violin-title"
+    >
+
+      <!-- ==========================================================
+           HEADER
+           ========================================================== -->
+
+      <header class="header">
+
+        <div class="header-copy">
+
+          <p class="eyebrow">
+            Interactive Instrument
+          </p>
+
+          <h1 id="violin-title">
+            Virtual Violin
+          </h1>
+
+          <p class="subtitle">
+            Tap, drag, or use your keyboard to play four violin strings.
+          </p>
+
+          <div
+            class="feature-chips"
+            aria-label="Instrument features"
+          >
+            <span>4 Strings</span>
+            <span>Touch Ready</span>
+            <span>Keyboard Play</span>
+          </div>
+
+        </div>
+
+        <div
+          class="turn-card"
+          aria-live="polite"
+        >
+          <span>Playing</span>
+
+          <strong id="note-label">
+            Ready
+          </strong>
+        </div>
+
+      </header>
+
+
+      <!-- ==========================================================
+           MAIN LAYOUT
+           ========================================================== -->
+
+      <div class="layout">
+
+        <!-- ========================================================
+             LEFT / VIOLIN BOARD
+             ======================================================== -->
+
+        <section
+          class="board-panel"
+          aria-label="Virtual violin"
+        >
+
+          <div class="player-strip">
+
+            <span>
+              Standard tuning
+            </span>
+
+            <strong>
+              G · D · A · E
+            </strong>
+
+          </div>
+
+
+          <!-- ======================================================
+               VIOLIN STAGE
+               ====================================================== -->
+
+          <div
+            class="violin-stage"
+            id="violin-stage"
+          >
+
+            <div
+              class="instrument-glow"
+              aria-hidden="true"
+            ></div>
+
+
+            <!-- ====================================================
+                 VIOLIN SVG
+                 ==================================================== -->
+
+            <svg
+              class="violin-art"
+              viewBox="0 0 360 820"
+              role="img"
+              aria-label="Illustration of a four-string violin"
+              preserveAspectRatio="xMidYMid meet"
+            >
+
+              <defs>
+
+                <!-- BODY VARNISH -->
+
+                <linearGradient
+                  id="vBody"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="0"
+                >
+                  <stop offset="0%" stop-color="#4b0804" />
+                  <stop offset="8%" stop-color="#7e1208" />
+                  <stop offset="22%" stop-color="#b92712" />
+                  <stop offset="48%" stop-color="#d94820" />
+                  <stop offset="68%" stop-color="#bd2c12" />
+                  <stop offset="88%" stop-color="#7e1208" />
+                  <stop offset="100%" stop-color="#3f0603" />
+                </linearGradient>
+
+
+                <radialGradient
+                  id="vBodyLight"
+                  cx="50%"
+                  cy="45%"
+                  r="62%"
+                >
+                  <stop
+                    offset="0%"
+                    stop-color="#ef7040"
+                    stop-opacity=".7"
+                  />
+
+                  <stop
+                    offset="45%"
+                    stop-color="#c63b1c"
+                    stop-opacity=".25"
+                  />
+
+                  <stop
+                    offset="100%"
+                    stop-color="#3b0503"
+                    stop-opacity=".55"
+                  />
+                </radialGradient>
+
+
+                <linearGradient
+                  id="vRim"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="0"
+                >
+                  <stop offset="0%" stop-color="#260403" />
+                  <stop offset="18%" stop-color="#5c0a05" />
+                  <stop offset="50%" stop-color="#9f1d0d" />
+                  <stop offset="82%" stop-color="#5c0a05" />
+                  <stop offset="100%" stop-color="#210302" />
+                </linearGradient>
+
+
+                <!-- NECK -->
+
+                <linearGradient
+                  id="vNeck"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="0"
+                >
+                  <stop offset="0%" stop-color="#32170d" />
+                  <stop offset="25%" stop-color="#6b361c" />
+                  <stop offset="50%" stop-color="#9b5a2c" />
+                  <stop offset="72%" stop-color="#633019" />
+                  <stop offset="100%" stop-color="#281209" />
+                </linearGradient>
+
+
+                <linearGradient
+                  id="vFingerboard"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="0"
+                >
+                  <stop offset="0%" stop-color="#090807" />
+                  <stop offset="25%" stop-color="#181412" />
+                  <stop offset="50%" stop-color="#342a25" />
+                  <stop offset="75%" stop-color="#171310" />
+                  <stop offset="100%" stop-color="#070605" />
+                </linearGradient>
+
+
+                <!-- PEGS -->
+
+                <linearGradient
+                  id="vPeg"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="1"
+                >
+                  <stop offset="0%" stop-color="#8d5a31" />
+                  <stop offset="40%" stop-color="#543018" />
+                  <stop offset="75%" stop-color="#30180c" />
+                  <stop offset="100%" stop-color="#160a05" />
+                </linearGradient>
+
+
+                <linearGradient
+                  id="vEbony"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="1"
+                >
+                  <stop offset="0%" stop-color="#3d3530" />
+                  <stop offset="45%" stop-color="#171411" />
+                  <stop offset="100%" stop-color="#050403" />
+                </linearGradient>
+
+
+                <!-- BRIDGE -->
+
+                <linearGradient
+                  id="vBridge"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="1"
+                >
+                  <stop offset="0%" stop-color="#f3c27d" />
+                  <stop offset="45%" stop-color="#c58b47" />
+                  <stop offset="100%" stop-color="#74481e" />
+                </linearGradient>
+
+
+                <!-- METAL -->
+
+                <linearGradient
+                  id="vMetal"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="1"
+                >
+                  <stop offset="0%" stop-color="#f5df9b" />
+                  <stop offset="50%" stop-color="#b28b42" />
+                  <stop offset="100%" stop-color="#624717" />
+                </linearGradient>
+
+
+                <!-- SHADOWS -->
+
+                <filter
+                  id="violinShadow"
+                  x="-30%"
+                  y="-20%"
+                  width="160%"
+                  height="150%"
+                >
+                  <feDropShadow
+                    dx="0"
+                    dy="12"
+                    stdDeviation="9"
+                    flood-color="#000"
+                    flood-opacity=".30"
+                  />
+                </filter>
+
+
+                <filter
+                  id="smallShadow"
+                  x="-30%"
+                  y="-30%"
+                  width="160%"
+                  height="160%"
+                >
+                  <feDropShadow
+                    dx="0"
+                    dy="3"
+                    stdDeviation="2"
+                    flood-color="#000"
+                    flood-opacity=".30"
+                  />
+                </filter>
+
+              </defs>
+
+
+              <!-- ==================================================
+                   COMPLETE VIOLIN
+                   ================================================== -->
+
+              <g filter="url(#violinShadow)">
+
+
+                <!-- ==================================================
+                     NECK
+                     ================================================== -->
+
+                <path
+                  d="
+                    M162 148
+                    L198 148
+                    L202 410
+                    L158 410
+                    Z
+                  "
+                  fill="url(#vNeck)"
+                  stroke="#2b1008"
+                  stroke-width="2"
+                />
+
+
+                <path
+                  d="
+                    M168 150
+                    L174 150
+                    L176 402
+                    L168 402
+                    Z
+                  "
+                  fill="#c27a3b"
+                  opacity=".28"
+                />
+
+
+                <!-- ==================================================
+                     FINGERBOARD
+                     ================================================== -->
+
+                <path
+                  d="
+                    M159 142
+                    Q180 136 201 142
+                    L211 610
+                    Q180 618 149 610
+                    Z
+                  "
+                  fill="url(#vFingerboard)"
+                  stroke="#050403"
+                  stroke-width="2"
+                />
+
+
+                <path
+                  d="
+                    M176 150
+                    Q180 148 184 150
+                    L188 605
+                    Q180 608 172 605
+                    Z
+                  "
+                  fill="#51443c"
+                  opacity=".12"
+                />
+
+
+                <!-- ==================================================
+                     PEGBOX
+                     ================================================== -->
+
+                <path
+                  d="
+                    M158 150
+                    L158 62
+                    Q158 48 170 43
+                    Q180 39 190 43
+                    Q202 48 202 62
+                    L202 150
+                    Z
+                  "
+                  fill="url(#vNeck)"
+                  stroke="#2b0c06"
+                  stroke-width="2"
+                />
+
+
+                <path
+                  d="
+                    M168 65
+                    L192 65
+                    L192 143
+                    L168 143
+                    Z
+                  "
+                  fill="#21100a"
+                  opacity=".9"
+                />
+
+
+                <!-- ==================================================
+                     SCROLL
+                     ================================================== -->
+
+                <g filter="url(#smallShadow)">
+
+                  <path
+                    d="
+                      M180 8
+                      C160 8 147 22 147 40
+                      C147 57 159 70 176 70
+                      C190 70 201 61 206 50
+                      C212 38 208 21 197 13
+                      C192 9 186 8 180 8
+                      Z
+                    "
+                    fill="url(#vBody)"
+                    stroke="#3a0704"
+                    stroke-width="2"
+                  />
+
+
+                  <path
+                    d="
+                      M180 17
+                      C167 17 157 26 157 38
+                      C157 50 166 59 178 59
+                      C190 59 198 51 198 40
+                      C198 30 191 23 182 23
+                      C175 23 169 28 169 35
+                      C169 42 174 47 180 47
+                      C186 47 190 43 190 38
+                    "
+                    fill="none"
+                    stroke="#e05a2d"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                    opacity=".75"
+                  />
+
+
+                  <circle
+                    cx="180"
+                    cy="38"
+                    r="5"
+                    fill="#6f1309"
+                    stroke="#f06c38"
+                    stroke-width="1"
+                  />
+
+                </g>
+
+
+                <!-- ==================================================
+                     TUNING PEGS
+                     ================================================== -->
+
+                <!-- LEFT TOP -->
+
+                <g>
+
+                  <rect
+                    x="134"
+                    y="72"
+                    width="32"
+                    height="6"
+                    rx="3"
+                    fill="#351a0c"
+                  />
+
+                  <ellipse
+                    cx="129"
+                    cy="75"
+                    rx="16"
+                    ry="9"
+                    fill="url(#vPeg)"
+                    stroke="#1b0d06"
+                    stroke-width="2"
+                  />
+
+                  <ellipse
+                    cx="126"
+                    cy="73"
+                    rx="6"
+                    ry="3"
+                    fill="#a86b37"
+                    opacity=".4"
+                  />
+
+                </g>
+
+
+                <!-- RIGHT TOP -->
+
+                <g>
+
+                  <rect
+                    x="194"
+                    y="88"
+                    width="32"
+                    height="6"
+                    rx="3"
+                    fill="#351a0c"
+                  />
+
+                  <ellipse
+                    cx="231"
+                    cy="91"
+                    rx="16"
+                    ry="9"
+                    fill="url(#vPeg)"
+                    stroke="#1b0d06"
+                    stroke-width="2"
+                  />
+
+                  <ellipse
+                    cx="228"
+                    cy="89"
+                    rx="6"
+                    ry="3"
+                    fill="#a86b37"
+                    opacity=".4"
+                  />
+
+                </g>
+
+
+                <!-- LEFT BOTTOM -->
+
+                <g>
+
+                  <rect
+                    x="134"
+                    y="106"
+                    width="32"
+                    height="6"
+                    rx="3"
+                    fill="#351a0c"
+                  />
+
+                  <ellipse
+                    cx="129"
+                    cy="109"
+                    rx="16"
+                    ry="9"
+                    fill="url(#vPeg)"
+                    stroke="#1b0d06"
+                    stroke-width="2"
+                  />
+
+                  <ellipse
+                    cx="126"
+                    cy="107"
+                    rx="6"
+                    ry="3"
+                    fill="#a86b37"
+                    opacity=".4"
+                  />
+
+                </g>
+
+
+                <!-- RIGHT BOTTOM -->
+
+                <g>
+
+                  <rect
+                    x="194"
+                    y="122"
+                    width="32"
+                    height="6"
+                    rx="3"
+                    fill="#351a0c"
+                  />
+
+                  <ellipse
+                    cx="231"
+                    cy="125"
+                    rx="16"
+                    ry="9"
+                    fill="url(#vPeg)"
+                    stroke="#1b0d06"
+                    stroke-width="2"
+                  />
+
+                  <ellipse
+                    cx="228"
+                    cy="123"
+                    rx="6"
+                    ry="3"
+                    fill="#a86b37"
+                    opacity=".4"
+                  />
+
+                </g>
+
+
+                <!-- ==================================================
+                     OUTER BODY RIM
+                     ================================================== -->
+
+                <path
+                  d="
+                    M149 382
+
+                    C117 378 81 397 61 425
+                    C43 451 39 484 47 513
+
+                    C53 536 72 554 91 570
+
+                    C103 580 106 590 96 602
+
+                    C83 618 58 631 43 650
+
+                    C23 675 17 709 27 739
+
+                    C43 785 87 811 131 817
+
+                    C151 820 168 820 180 820
+
+                    C192 820 209 820 229 817
+
+                    C273 811 317 785 333 739
+
+                    C343 709 337 675 317 650
+
+                    C302 631 277 618 264 602
+
+                    C254 590 257 580 269 570
+
+                    C288 554 307 536 313 513
+
+                    C321 484 317 451 299 425
+
+                    C279 397 243 378 211 382
+
+                    C197 384 188 389 180 396
+
+                    C172 389 163 384 149 382
+
+                    Z
+                  "
+                  fill="url(#vRim)"
+                  stroke="#2a0302"
+                  stroke-width="4"
+                />
+
+
+                <!-- ==================================================
+                     MAIN BODY
+                     ================================================== -->
+
+                <path
+                  d="
+                    M151 390
+
+                    C120 386 87 403 68 430
+                    C51 454 48 484 55 509
+
+                    C61 532 78 548 96 563
+
+                    C113 577 116 589 103 605
+
+                    C88 622 66 633 52 652
+
+                    C34 676 29 707 38 733
+
+                    C52 774 92 799 134 805
+
+                    C151 808 168 809 180 809
+
+                    C192 809 209 808 226 805
+
+                    C268 799 308 774 322 733
+
+                    C331 707 326 676 308 652
+
+                    C294 633 272 622 257 605
+
+                    C244 589 247 577 264 563
+
+                    C282 548 299 532 305 509
+
+                    C312 484 309 454 292 430
+
+                    C273 403 240 386 209 390
+
+                    C196 392 188 398 180 405
+
+                    C172 398 164 392 151 390
+
+                    Z
+                  "
+                  fill="url(#vBody)"
+                  stroke="#6c1008"
+                  stroke-width="2"
+                />
+
+
+                <!-- ==================================================
+                     BODY LIGHT
+                     ================================================== -->
+
+                <path
+                  d="
+                    M151 397
+
+                    C119 393 87 412 71 439
+                    C57 463 55 489 62 509
+
+                    C68 528 83 543 99 557
+
+                    C117 573 122 590 108 608
+
+                    C94 625 73 638 61 657
+
+                    C45 681 42 708 51 731
+
+                    C66 768 101 789 139 797
+
+                    C154 800 168 801 180 801
+
+                    C192 801 206 800 221 797
+
+                    C259 789 294 768 309 731
+
+                    C318 708 315 681 299 657
+
+                    C287 638 266 625 252 608
+
+                    C238 590 243 573 261 557
+
+                    C277 543 292 528 298 509
+
+                    C305 489 303 463 289 439
+
+                    C273 412 241 393 209 397
+
+                    C196 399 188 405 180 412
+
+                    C172 405 164 399 151 397
+
+                    Z
+                  "
+                  fill="url(#vBodyLight)"
+                  opacity=".72"
+                />
+
+
+                <!-- ==================================================
+                     PURFLING
+                     ================================================== -->
+
+                <path
+                  d="
+                    M150 397
+
+                    C119 394 87 412 70 438
+                    C55 462 53 489 60 510
+
+                    C66 530 82 546 99 560
+
+                    C116 574 120 590 106 607
+
+                    C92 624 71 637 59 656
+
+                    C42 682 40 708 49 732
+
+                    C64 769 100 790 138 798
+
+                    C153 801 168 802 180 802
+
+                    C192 802 207 801 222 798
+
+                    C260 790 296 769 311 732
+
+                    C320 708 318 682 301 656
+
+                    C289 637 268 624 254 607
+
+                    C240 590 244 574 261 560
+
+                    C278 546 294 530 300 510
+
+                    C307 489 305 462 290 438
+
+                    C273 412 241 394 210 397
+
+                    C196 399 188 405 180 412
+
+                    C172 405 164 399 150 397
+
+                    Z
+                  "
+                  fill="none"
+                  stroke="#e7a15b"
+                  stroke-width="1.6"
+                  opacity=".45"
+                />
+
+
+                <!-- ==================================================
+                     F HOLE - LEFT
+                     ================================================== -->
+
+                <g
+                  fill="#190503"
+                  stroke="#080202"
+                  stroke-width="1"
+                >
+
+                  <path
+                    d="
+                      M124 538
+                      C115 552 112 574 114 595
+                      C116 616 124 632 119 647
+                      C117 654 122 658 127 652
+                      C134 644 133 635 129 625
+                      C124 611 124 594 127 578
+                      C130 563 137 550 135 542
+                      C134 536 129 533 124 538
+                      Z
+                    "
+                  />
+
+                  <circle
+                    cx="129"
+                    cy="540"
+                    r="5"
+                  />
+
+                  <circle
+                    cx="124"
+                    cy="651"
+                    r="6"
+                  />
+
+                  <path
+                    d="M119 588 L132 588"
+                    stroke-width="3"
+                  />
+
+                </g>
+
+
+                <!-- ==================================================
+                     F HOLE - RIGHT
+                     ================================================== -->
+
+                <g
+                  fill="#190503"
+                  stroke="#080202"
+                  stroke-width="1"
+                >
+
+                  <path
+                    d="
+                      M236 538
+                      C245 552 248 574 246 595
+                      C244 616 236 632 241 647
+                      C243 654 238 658 233 652
+                      C226 644 227 635 231 625
+                      C236 611 236 594 233 578
+                      C230 563 223 550 225 542
+                      C226 536 231 533 236 538
+                      Z
+                    "
+                  />
+
+                  <circle
+                    cx="231"
+                    cy="540"
+                    r="5"
+                  />
+
+                  <circle
+                    cx="236"
+                    cy="651"
+                    r="6"
+                  />
+
+                  <path
+                    d="M228 588 L241 588"
+                    stroke-width="3"
+                  />
+
+                </g>
+
+
+                <!-- ==================================================
+                     BRIDGE
+                     ================================================== -->
+
+                <g filter="url(#smallShadow)">
+
+                  <path
+                    d="
+                      M136 682
+                      Q180 673 224 682
+                      L222 704
+                      Q180 712 138 704
+                      Z
+                    "
+                    fill="url(#vBridge)"
+                    stroke="#74451b"
+                    stroke-width="1.5"
+                  />
+
+
+                  <path
+                    d="
+                      M138 685
+                      Q180 676 222 685
+                    "
+                    fill="none"
+                    stroke="#f5d08f"
+                    stroke-width="2"
+                    opacity=".7"
+                  />
+
+
+                  <path
+                    d="
+                      M146 699
+                      L161 699
+                      L161 707
+                      L147 707
+                      Z
+
+                      M199 699
+                      L214 699
+                      L213 707
+                      L199 707
+                      Z
+                    "
+                    fill="#a36c2c"
+                  />
+
+
+                  <path
+                    d="
+                      M174 688
+                      Q180 682 186 688
+                      L184 699
+                      Q180 703 176 699
+                      Z
+                    "
+                    fill="#8a5724"
+                    opacity=".7"
+                  />
+
+                </g>
+
+
+                <!-- ==================================================
+                     FOUR AND ONLY FOUR VISUAL STRINGS
+                     ================================================== -->
+
+                <!-- G -->
+
+                <path
+                  id="violin-string-g"
+                  class="violin-string"
+                  data-string-index="0"
+                  d="M168 142 C166 310 160 505 157 686 L162 766"
+                  fill="none"
+                  stroke="#cfcfcf"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                />
+
+
+                <!-- D -->
+
+                <path
+                  id="violin-string-d"
+                  class="violin-string"
+                  data-string-index="1"
+                  d="M176 142 C175 310 173 505 172 686 L174 768"
+                  fill="none"
+                  stroke="#eeeeee"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                />
+
+
+                <!-- A -->
+
+                <path
+                  id="violin-string-a"
+                  class="violin-string"
+                  data-string-index="2"
+                  d="M184 142 C185 310 187 505 188 686 L186 768"
+                  fill="none"
+                  stroke="#f7f7f7"
+                  stroke-width="1.35"
+                  stroke-linecap="round"
+                />
+
+
+                <!-- E -->
+
+                <path
+                  id="violin-string-e"
+                  class="violin-string"
+                  data-string-index="3"
+                  d="M192 142 C194 310 200 505 203 686 L198 766"
+                  fill="none"
+                  stroke="#ffffff"
+                  stroke-width="1"
+                  stroke-linecap="round"
+                />
+
+
+                <!-- ==================================================
+                     TAILPIECE
+                     ================================================== -->
+
+                <path
+                  d="
+                    M150 748
+                    Q180 756 210 748
+                    L198 806
+                    Q180 814 162 806
+                    Z
+                  "
+                  fill="url(#vEbony)"
+                  stroke="#050403"
+                  stroke-width="2"
+                />
+
+
+                <path
+                  d="
+                    M176 755
+                    Q180 757 184 755
+                    L184 803
+                    Q180 805 176 803
+                    Z
+                  "
+                  fill="#655b54"
+                  opacity=".15"
+                />
+
+
+                <!-- ==================================================
+                     FINE TUNERS
+                     ================================================== -->
+
+                <g fill="url(#vMetal)">
+
+                  <circle cx="162" cy="757" r="2.7" />
+                  <circle cx="174" cy="759" r="2.7" />
+                  <circle cx="186" cy="759" r="2.7" />
+                  <circle cx="198" cy="757" r="2.7" />
+
+                </g>
+
+
+                <!-- ==================================================
+                     CHIN REST
+                     ================================================== -->
+
+                <path
+                  d="
+                    M73 730
+                    C66 742 69 764 83 781
+                    C101 803 128 814 155 813
+                    C166 813 171 807 165 799
+                    C151 780 142 756 121 744
+                    C104 734 84 726 73 730
+                    Z
+                  "
+                  fill="url(#vEbony)"
+                  stroke="#050403"
+                  stroke-width="2"
+                />
+
+
+                <path
+                  d="
+                    M81 741
+                    C76 753 82 768 93 779
+                    C110 795 132 803 153 803
+                  "
+                  fill="none"
+                  stroke="#71665d"
+                  stroke-width="2"
+                  opacity=".3"
+                />
+
+
+                <!-- CHIN REST HARDWARE -->
+
+                <rect
+                  x="101"
+                  y="802"
+                  width="5"
+                  height="14"
+                  rx="1"
+                  fill="#8e8e8e"
+                />
+
+                <rect
+                  x="126"
+                  y="807"
+                  width="5"
+                  height="11"
+                  rx="1"
+                  fill="#8e8e8e"
+                />
+
+
+                <!-- END PIN -->
+
+                <rect
+                  x="175"
+                  y="810"
+                  width="10"
+                  height="10"
+                  rx="2"
+                  fill="#090807"
+                />
+
+                <circle
+                  cx="180"
+                  cy="816"
+                  r="2"
+                  fill="#6d6a66"
+                />
+
+              </g>
+
+            </svg>
+
+
+            <!-- ====================================================
+                 FINGER POSITION GUIDES
+                 ==================================================== -->
+
+            <div
+              class="fingerboard-lines"
+              aria-hidden="true"
+            >
+              <span style="--y: 24%"></span>
+              <span style="--y: 34%"></span>
+              <span style="--y: 44%"></span>
+              <span style="--y: 54%"></span>
+            </div>
+
+
+            <!-- ====================================================
+                 TRANSPARENT INTERACTION LAYER
+
+                 IMPORTANT:
+                 This does NOT render strings.
+                 ==================================================== -->
+
+            <div
+              class="string-layer"
+              id="string-layer"
+              aria-label="Playable strings"
+            ></div>
+
+
+            <div
+              class="position-labels"
+              aria-hidden="true"
+            >
+              <span>4</span>
+              <span>3</span>
+              <span>2</span>
+              <span>1</span>
+              <span>Open</span>
+            </div>
+
+          </div>
+
+
+          <div class="player-strip">
+
+            <span>
+              Interaction
+            </span>
+
+            <strong id="interaction-label">
+              Tap a string
+            </strong>
+
+          </div>
+
+        </section>
+
+
+        <!-- ========================================================
+             RIGHT / CONTROL PANEL
+             ======================================================== -->
+
+        <aside class="side-panel">
+
+
+          <!-- CURRENT NOTE -->
+
+          <section class="status-card">
+
+            <span>
+              Current note
+            </span>
+
+            <div
+              class="status"
+              id="status"
+              role="status"
+              aria-live="polite"
+            >
+              Choose a string to begin.
+            </div>
+
+          </section>
+
+
+          <!-- QUICK PLAY -->
+
+          <section class="control-card">
+
+            <div class="section-heading">
+
+              <div>
+
+                <span class="section-kicker">
+                  Quick Play
+                </span>
+
+                <strong>
+                  Open Strings
+                </strong>
+
+              </div>
+
+              <span class="section-hint">
+                G · D · A · E
+              </span>
+
+            </div>
+
+
+            <div
+              class="quick-play-grid"
+              aria-label="Quick play open strings"
+            >
+
+              <button
+                class="quick-string"
+                type="button"
+                data-string-index="0"
+                aria-label="Play open G string"
+              >
+                <span>G</span>
+                <small>G3</small>
+              </button>
+
+
+              <button
+                class="quick-string"
+                type="button"
+                data-string-index="1"
+                aria-label="Play open D string"
+              >
+                <span>D</span>
+                <small>D4</small>
+              </button>
+
+
+              <button
+                class="quick-string"
+                type="button"
+                data-string-index="2"
+                aria-label="Play open A string"
+              >
+                <span>A</span>
+                <small>A4</small>
+              </button>
+
+
+              <button
+                class="quick-string"
+                type="button"
+                data-string-index="3"
+                aria-label="Play open E string"
+              >
+                <span>E</span>
+                <small>E5</small>
+              </button>
+
+            </div>
+
+          </section>
+
+
+          <!-- STRING SELECTION -->
+
+          <section class="control-card">
+
+            <div class="section-heading">
+
+              <div>
+
+                <span class="section-kicker">
+                  String Selection
+                </span>
+
+                <strong>
+                  Active String
+                </strong>
+
+              </div>
+
+              <span
+                class="selected-string-label"
+                id="selected-string-label"
+              >
+                G
+              </span>
+
+            </div>
+
+
+            <div
+              class="string-selector"
+              role="group"
+              aria-label="Select violin string"
+            >
+
+              <button
+                class="string-select active"
+                type="button"
+                data-string-index="0"
+                aria-pressed="true"
+              >
+                G
+              </button>
+
+              <button
+                class="string-select"
+                type="button"
+                data-string-index="1"
+                aria-pressed="false"
+              >
+                D
+              </button>
+
+              <button
+                class="string-select"
+                type="button"
+                data-string-index="2"
+                aria-pressed="false"
+              >
+                A
+              </button>
+
+              <button
+                class="string-select"
+                type="button"
+                data-string-index="3"
+                aria-pressed="false"
+              >
+                E
+              </button>
+
+            </div>
+
+          </section>
+
+
+          <!-- VOLUME -->
+
+          <section class="control-card volume-card">
+
+            <div class="section-heading">
+
+              <div>
+
+                <span class="section-kicker">
+                  Volume
+                </span>
+
+                <strong>
+                  Instrument Level
+                </strong>
+
+              </div>
+
+              <strong
+                id="volume-value"
+                class="volume-value"
+              >
+                18%
+              </strong>
+
+            </div>
+
+
+            <div class="volume-control">
+
+              <button
+                id="mute-button"
+                class="mute-button"
+                type="button"
+                aria-label="Mute volume"
+                aria-pressed="false"
+              >
+                🔊
+              </button>
+
+
+              <input
+                id="volume-slider"
+                class="volume-slider"
+                type="range"
+                min="0"
+                max="100"
+                value="18"
+                step="1"
+                aria-label="Instrument volume"
+              />
+
+            </div>
+
+          </section>
+
+
+          <!-- CONTROLS -->
+
+          <section
+            class="controls"
+            aria-label="Instrument controls"
+          >
+
+            <button
+              id="sustain-toggle"
+              type="button"
+              aria-pressed="false"
+            >
+              Sustain: Off
+            </button>
+
+
+            <button
+              id="clear-button"
+              type="button"
+            >
+              Release All
+            </button>
+
+          </section>
+
+
+          <!-- INFO -->
+
+          <section
+            class="info-grid"
+            aria-label="Violin information"
+          >
+
+            <div>
+              <span>Strings</span>
+              <strong>4</strong>
+            </div>
+
+            <div>
+              <span>Notes</span>
+              <strong>20</strong>
+            </div>
+
+            <div>
+              <span>Input</span>
+              <strong>Pointer</strong>
+            </div>
+
+            <div>
+              <span>Keyboard</span>
+              <strong>A–L</strong>
+            </div>
+
+          </section>
+
+
+          <!-- KEYBOARD MAP -->
+
+          <section class="moves-box">
+
+            <div class="moves-title">
+
+              <span>
+                Keyboard map
+              </span>
+
+              <span>
+                4 positions
+              </span>
+
+            </div>
+
+
+            <ul class="key-list">
+
+              <li>
+                <kbd>A</kbd>
+                <span>G string · open</span>
+              </li>
+
+              <li>
+                <kbd>S</kbd>
+                <span>D string · open</span>
+              </li>
+
+              <li>
+                <kbd>D</kbd>
+                <span>A string · open</span>
+              </li>
+
+              <li>
+                <kbd>F</kbd>
+                <span>E string · open</span>
+              </li>
+
+              <li>
+                <kbd>Q W E R</kbd>
+                <span>G · D · A · E, 1st finger</span>
+              </li>
+
+              <li>
+                <kbd>1 2 3 4</kbd>
+                <span>G · D · A · E, 2nd finger</span>
+              </li>
+
+              <li>
+                <kbd>Z X C V</kbd>
+                <span>G · D · A · E, 3rd finger</span>
+              </li>
+
+              <li>
+                <kbd>5 6 7 8</kbd>
+                <span>G · D · A · E, 4th finger</span>
+              </li>
+
+            </ul>
+
+          </section>
+
+
+          <!-- HELP -->
+
+          <section class="help-box">
+
+            <strong>
+              How to play
+            </strong>
+
+            <p>
+              Tap or drag along a string. Moving toward the
+              bridge raises the pitch. Use String Selection
+              to choose a string, Quick Play for open strings,
+              or use the keyboard map.
+            </p>
+
+          </section>
+
+        </aside>
+
+      </div>
+
+    </section>
+
+    <footer class="site-footer">
+  <span>Built by Chigael</span>
+
+  <a
+    href="https://github.com/chigael"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Chigael on GitHub"
+    class="github-link"
+  >
+    <svg
+      class="github-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        fill="currentColor"
+        d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.38.6.11.82-.26.82-.58
+        0-.28-.01-1.02-.02-2-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.33-1.76-1.33-1.76
+        -1.09-.75.08-.74.08-.74 1.2.08 1.84 1.23 1.84 1.23
+        1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61
+        -2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.23-3.22
+        -.12-.3-.53-1.52.12-3.18 0 0 1-.32 3.3 1.23
+        .96-.27 1.98-.4 3-.4s2.04.13 3 .4c2.3-1.56 3.3-1.23
+        3.3-1.23.65 1.66.24 2.88.12 3.18.76.84 1.23 1.91 1.23 3.22
+        0 4.6-2.8 5.62-5.48 5.92.43.37.81 1.1.81 2.22
+        0 1.6-.01 2.89-.01 3.28 0 .32.22.7.83.58
+        A12.01 12.01 0 0 0 24 12C24 5.37 18.63 0 12 0Z"
+      />
+    </svg>
+
+    <span>GitHub</span>
+  </a>
+</footer>
+
+  </main>
+
+
+  <script
+    src="../../../src/components/ui/BackToHome/BackToHome.js"
+    defer
+  ></script>
+
+  <script
+    src="script.js"
+    defer
+  ></script>
+
+</body>
+</html>

@@ -5,6 +5,11 @@
 (function (exports) {
   "use strict";
 
+  const storage =
+    typeof window !== "undefined" && window.CradleStorage
+      ? window.CradleStorage
+      : require("../../../src/components/ui/storage.js");
+
   const STORAGE_KEY = "cradle_matrix_playground_saved_v1";
 
   const PRESETS = {
@@ -65,38 +70,24 @@
   }
 
   function saveCustomMatrix(name, matrix) {
-    try {
-      const current = getSavedMatrices();
-      current[name] = {
-        name,
-        matrix,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
-      return true;
-    } catch (e) {
-      return false;
-    }
+    const current = getSavedMatrices();
+    current[name] = {
+      name,
+      matrix,
+      timestamp: Date.now()
+    };
+    return storage.set(STORAGE_KEY, current);
   }
 
   function getSavedMatrices() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : {};
-    } catch (e) {
-      return {};
-    }
+    const saved = storage.get(STORAGE_KEY, {});
+    return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
   }
 
   function deleteSavedMatrix(name) {
-    try {
-      const current = getSavedMatrices();
-      delete current[name];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
-      return true;
-    } catch (e) {
-      return false;
-    }
+    const current = getSavedMatrices();
+    delete current[name];
+    return storage.set(STORAGE_KEY, current);
   }
 
   /**

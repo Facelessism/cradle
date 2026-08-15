@@ -206,6 +206,14 @@ None. This project uses only native browser APIs (DOM, Clipboard, Blob) and Node
 
 ---
 
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:**
+  - "Inter" and "JetBrains Mono" fonts by [Google Fonts](https://fonts.google.com) (OFL License)
+
+---
+
 ## References
 
 - [YAML 1.2 Specification](https://yaml.org/spec/1.2.2/) — reference for YAML serialization rules

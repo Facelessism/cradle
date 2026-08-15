@@ -10,6 +10,15 @@ Graph Theory Explorer is an interactive graph visualization tool for learning tr
 
 ---
 
+## Purpose & Goals
+
+- Teach BFS, DFS, Prim's Minimum Spanning Tree, and Dijkstra's shortest path through visual playback
+- Let users build and edit their own graphs interactively with weighted edges
+- Keep the algorithm layer pure and DOM-free so it can be unit-tested in Node
+- Provide step-by-step playback with human-readable explanations for each algorithm step
+
+---
+
 ## Folder Structure
 
 ```text
@@ -24,7 +33,7 @@ projects/math/graph-theory-explorer/
 
 ---
 
-## System Architecture
+## System / Project Architecture Overview
 
 ```mermaid
 graph TD
@@ -50,7 +59,7 @@ graph TD
 
 ---
 
-## Data Flow
+## Data Flow / Execution Flow
 
 ```text
 User edits graph or selects an algorithm
@@ -119,3 +128,126 @@ Playback controls use the generated step list to move forward, backward, restart
 ## Testing Notes
 
 The graph algorithms are isolated in `graphLogic.js`, allowing Node tests to import and validate the algorithm behavior without requiring a browser DOM or SVG canvas.
+
+---
+
+## Key Features
+
+- Add nodes and weighted edges directly on an SVG canvas, with drag-to-move repositioning
+- Random graph generator (6 nodes in a ring plus chords) and "Clear All" for quick experiments
+- Four algorithms: BFS, DFS, Prim's MST, and Dijkstra's shortest path
+- Step-by-step playback with previous/next/play/restart controls and adjustable speed
+- Per-step explanation text plus final results (MST weight, distance table, shortest path)
+- Node highlighting for visited/current/settled/on-path states and edge classes for frontier/tree/path
+- Dark/light theme toggle
+
+---
+
+## Technologies Used
+
+| Technology | Purpose |
+|---|---|
+| HTML5 | Page shell, controls panel, SVG workspace |
+| CSS3 (Grid, Flexbox, Custom Properties) | Layout, canvas styling, cards, theme |
+| Vanilla JavaScript (ES6+) | Graph editing, rendering, animation playback |
+| SVG | Graph rendering and state-based highlighting |
+| Font Awesome 6.5.1 (CDN) | UI icons |
+| Google Fonts (Space Grotesk, Inter, JetBrains Mono) | Typography |
+| Cradle tokens.css | Shared design tokens |
+
+---
+
+## File Responsibilities
+
+### `graphLogic.js`
+
+- `buildAdjacency(nodes, edges)` — undirected weighted adjacency map from the pure graph shape
+- `bfs(nodes, edges, startId)` — breadth-first traversal as `visit`/`frontier-edge` steps
+- `dfs(nodes, edges, startId)` — depth-first traversal as `visit`/`frontier-edge` steps
+- `primMST(nodes, edges, startId)` — MST `tree-edge` steps, edge list, and total weight
+- `dijkstra(nodes, edges, startId, endId)` — `settle`/`relax` steps, distances map, and shortest path
+
+### `script.js`
+
+- `state` — in-memory nodes, edges, edit mode, algorithm, and playback state
+- `addNode(x, y)` / `addEdge(fromId, toId)` — graph editing from canvas clicks (edge weight via prompt)
+- `render()` — clears and redraws the SVG from nodes, edges, and the current step
+- `computeSteps()` — calls the selected algorithm and stores the step timeline
+- `goToStep(index)` / `startPlaying()` / `stopPlaying()` / `resetPlayback()` — playback engine
+- `describeStep(step)` / `updateResultPanel()` — human-readable per-step explanations and final results
+- Theme toggle and speed slider handlers
+
+### `style.css`
+
+- Cradle design tokens with `--theme-accent` overrides
+- `.op-grid` / `.op-btn.active` — algorithm and edit-mode selectors
+- `.graph-canvas` node/edge state classes (`.visited`, `.current`, `.on-path`, `.tree-edge`, `.path-edge`)
+- `.player-toolbar` / `.step-progress-*` — visual stepper UI
+- Responsive breakpoint at 960px
+
+---
+
+## Design Decisions
+
+- **Pure algorithm engine separated from DOM** — `graphLogic.js` has no DOM dependency and exposes its API for both the browser and Node, so the algorithms can be verified headlessly.
+- **Step-based results instead of final-only** — every algorithm returns an ordered array of step objects, letting the UI replay the computation rather than just showing the outcome.
+- **SVG instead of Canvas** — nodes and edges are SVG elements, which makes per-element clicks, dragging, and class-based highlighting straightforward.
+- **In-memory state model** — graph data lives in browser memory only (no persistence), and `graphLogic.js` consumes a simplified shape (`{id}` nodes, `{from, to, weight}` edges) independent of canvas coordinates.
+
+---
+
+## Dependencies
+
+| Dependency | Version | How loaded | Purpose |
+|---|---|---|---|
+| Font Awesome | 6.5.1 | CDN (`<link>`) | UI icons |
+| Space Grotesk / Inter / JetBrains Mono | — | Google Fonts CDN | Typography |
+| Cradle tokens.css | — | Local stylesheet | Shared design tokens |
+| Cradle BackToHome.js | — | Local script | Home navigation button |
+
+No build step, package manager, or npm dependency.
+
+---
+
+## Future Improvements
+
+- Add node and edge deletion directly from the canvas
+- Support directed graphs and additional algorithms (e.g. A*, Floyd-Warshall)
+- Persist graphs to localStorage
+- Add touch/swipe support for mobile devices
+
+---
+
+## Known Limitations
+
+- Undirected graphs only — every edge is treated as two-way
+- Individual nodes and edges cannot be deleted; only "Clear All" resets the graph
+- Edge weights are entered through a browser `prompt()` dialog
+- The random graph always generates 6 nodes in a ring plus 2 random chords
+
+---
+
+## Development Notes
+
+- Open `index.html` through a local server (e.g. `python3 -m http.server 8000`) so the shared Cradle assets (tokens.css, BackToHome.js) load correctly
+- Run algorithm tests in Node: `node --test tests/graph-theory-explorer-logic.test.js`
+- `graphLogic.js` is a standalone UMD module: `const { bfs } = require('./graphLogic.js')`
+- No build step is required. Edit any file and refresh the browser.
+
+---
+
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:**
+  - 'Space Grotesk', 'Inter', and 'JetBrains Mono' fonts by [Google Fonts](https://fonts.google.com) (OFL License)
+  - Font Awesome 6.5.1 icons by [Fonticons, Inc.](https://fontawesome.com) (CC BY 4.0)
+
+---
+
+## References
+
+- [Breadth-first search — Wikipedia](https://en.wikipedia.org/wiki/Breadth-first_search)
+- [Depth-first search — Wikipedia](https://en.wikipedia.org/wiki/Depth-first_search)
+- [Prim's algorithm — Wikipedia](https://en.wikipedia.org/wiki/Prim%27s_algorithm)
+- [Dijkstra's algorithm — Wikipedia](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm)

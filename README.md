@@ -23,18 +23,26 @@ Cradle/
 │   └── projects.json
 │
 ├── projects/
-│   ├── ai-ml/
-│   ├── devtools/
-│   ├── games/
-│   └── productivity/...
+│   ├── aiml/                  # AI & Machine Learning prototypes
+│   ├── dev-tools/             # Developer utilities & code formatters
+│   ├── editor/                # Creative design & document generation tools
+│   ├── file-tools/            # File processing & metadata analyzers
+│   ├── games/                 # Interactive browser & arcade games
+│   ├── math/                  # Mathematical visualizations & algorithms
+│   ├── misc/                  # Audio, camera & hardware utilities
+│   └── productivity/          # Personal trackers & planning tools
 │
-├── scripts/
-│   └── generate-projects.js
+├── scripts/                   # Generators & project validation scripts
+├── src/                       # Shared UI components & design tokens
+├── tests/                     # Automated test suites & validation checks
 │
-├── README.md
-├── index.html
-├── script.js
-└── style.css
+├── ARCHITECTURE.md            # Overall repository architecture overview
+├── ARCHITECTURE_TEMPLATE.md   # Standardized template for mini projects
+├── CONTRIBUTING.md            # Guidelines for repository contributors
+├── README.md                  # Project overview documentation
+├── index.html                 # Main landing page entry point
+├── script.js                  # Global landing page logic & search engine
+└── style.css                  # Core CSS design system
 ```
 
 ## Getting started

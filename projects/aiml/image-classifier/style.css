@@ -110,6 +110,7 @@ body {
 .container {
   min-height: 720px;
   z-index: 2;
+  position: relative;
 }
 
 .prediction-panel {
@@ -633,4 +634,38 @@ button:disabled,
 .upload-btn[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Status Toast / Alert Banner */
+.status-toast {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(220, 38, 38, 0.95);
+  backdrop-filter: blur(10px);
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  white-space: nowrap;
+  animation: slide-down-fade 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes slide-down-fade {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }

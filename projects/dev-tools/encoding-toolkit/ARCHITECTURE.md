@@ -171,3 +171,20 @@ None. This project uses only native browser APIs — no external libraries are r
   node -e "const l = require('./logic.js'); console.log(l.encodeBase64('hi'))"
   ```
 - No build step is required. Edit the files and refresh the browser.
+
+---
+
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:**
+  - "Space Grotesk" font by [Google Fonts](https://fonts.google.com/specimen/Space+Grotesk) (OFL License)
+
+---
+
+## References
+
+- [MDN Web Docs — TextEncoder](https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder)
+- [MDN Web Docs — TextDecoder](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder)
+- [MDN Web Docs — Clipboard API](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API)
+- [MDN Web Docs — Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob)

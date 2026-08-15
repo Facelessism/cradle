@@ -908,3 +908,22 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Alert Container */
+.alert-container {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #ef4444;
+  font-size: 0.875rem;
+  font-weight: 550;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 1.5rem;
+  line-height: 1.4;
+}
+.alert-container .alert-icon {
+  flex-shrink: 0;
+}

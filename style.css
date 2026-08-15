@@ -223,6 +223,10 @@ html.light-theme .hero h1 {
   box-shadow: 0 18px 40px var(--shadow);
 }
 
+.search-suggestions[hidden] {
+  display: none !important;
+}
+
 .search-suggestion {
   display: flex;
   align-items: center;
@@ -240,6 +244,69 @@ html.light-theme .hero h1 {
   font: inherit;
   text-align: left;
 }
+
+/* Keep the original search box width */
+.search-box {
+  position: relative;
+  width: 100%;
+  max-width: 465px;
+  box-sizing: border-box;
+}
+
+/* Search input should use the full available width */
+.search-box input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 45px;
+}
+
+/* Clear button */
+.clear-search {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 28px;
+  height: 28px;
+
+  border: none;
+  border-radius: 50%;
+
+  background: transparent;
+  color: inherit;
+
+  font-size: 20px;
+  line-height: 1;
+
+  cursor: pointer;
+
+  align-items: center;
+  justify-content: center;
+
+  transition: background-color 0.2s ease;
+}
+
+/* IMPORTANT:
+   hidden must actually hide the button */
+.clear-search[hidden] {
+  display: none !important;
+}
+
+/* Only display it when it isn't hidden */
+.clear-search:not([hidden]) {
+  display: flex;
+}
+
+.clear-search:hover {
+  background-color: rgba(128, 128, 128, 0.15);
+}
+
+.clear-search:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
 
 .search-suggestion:hover,
 .search-suggestion.is-active {
@@ -421,7 +488,7 @@ footer {
     align-self: center;
     margin: 1.6rem 0;
   }
-  
+
   #shortcuts-btn {
     align-self: center;
     margin-top: -30px;

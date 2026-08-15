@@ -15,6 +15,11 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
+  const storage =
+    typeof window !== "undefined" && window.CradleStorage
+      ? window.CradleStorage
+      : require("../../../src/components/ui/storage.js");
+
   const STORAGE_KEY = "qr-studio-presets-v1";
 
   const DEFAULT_OPTIONS = Object.freeze({
@@ -113,13 +118,8 @@
 
   /** Load saved presets from storage */
   function getSavedPresets() {
-    try {
-      if (typeof localStorage === "undefined") return [];
-      const data = localStorage.getItem(STORAGE_KEY);
-      return data ? JSON.parse(data) : [];
-    } catch {
-      return [];
-    }
+    const presets = storage.get(STORAGE_KEY, []);
+    return Array.isArray(presets) ? presets : [];
   }
 
   /** Save preset configuration */
@@ -149,28 +149,14 @@
       presets.push(presetObj);
     }
 
-    try {
-      if (typeof localStorage !== "undefined") {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
-      }
-      return true;
-    } catch {
-      return false;
-    }
+    return storage.set(STORAGE_KEY, presets);
   }
 
   /** Delete a preset by ID */
   function deletePreset(id) {
     const presets = getSavedPresets();
     const filtered = presets.filter(p => p.id !== id);
-    try {
-      if (typeof localStorage !== "undefined") {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-      }
-      return true;
-    } catch {
-      return false;
-    }
+    return storage.set(STORAGE_KEY, filtered);
   }
 
   return {

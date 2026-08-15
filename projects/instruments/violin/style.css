@@ -1,0 +1,1255 @@
+/* ============================================================
+   RESET
+   ============================================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  color: #202020;
+
+  background:
+    linear-gradient(
+      135deg,
+      #faf9f6 0%,
+      #f1eee7 50%,
+      #faf9f6 100%
+    );
+}
+
+
+/* ============================================================
+   APP
+   ============================================================ */
+
+.app {
+  width: 100%;
+  min-height: 100vh;
+
+  padding: 32px;
+}
+
+
+/* ============================================================
+   MAIN SHELL
+   ============================================================ */
+
+.game-shell {
+  width: min(1400px, 100%);
+  margin: 0 auto;
+
+  background: #ffffff;
+
+  border: 1px solid #dedbd4;
+  border-radius: 24px;
+
+  box-shadow:
+    0 20px 60px rgba(50, 43, 31, 0.10),
+    0 4px 14px rgba(50, 43, 31, 0.06);
+
+  overflow: hidden;
+}
+
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 32px;
+
+  padding: 32px 36px 28px;
+
+  border-bottom: 1px solid #e7e3da;
+
+  background: #fffdf9;
+}
+
+.header-copy {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0 0 7px;
+
+  color: #9a2c18;
+
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.header h1 {
+  margin: 0;
+
+  color: #252525;
+
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.subtitle {
+  max-width: 620px;
+
+  margin: 12px 0 18px;
+
+  color: #706d66;
+
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+
+/* ============================================================
+   FEATURE CHIPS
+   ============================================================ */
+
+.feature-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.feature-chips span {
+  padding: 7px 11px;
+
+  border: 1px solid #e2ded5;
+  border-radius: 999px;
+
+  background: #f7f4ed;
+
+  color: #625e57;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+/* ============================================================
+   PLAYING CARD
+   ============================================================ */
+
+.turn-card {
+  flex: 0 0 auto;
+
+  min-width: 132px;
+
+  padding: 15px 18px;
+
+  border: 1px solid #dfd9ce;
+  border-radius: 14px;
+
+  background: #f7f4ed;
+
+  text-align: right;
+}
+
+.turn-card span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #8a847b;
+
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.turn-card strong {
+  color: #8f2411;
+
+  font-size: 20px;
+}
+
+
+/* ============================================================
+   MAIN LAYOUT
+   ============================================================ */
+
+.layout {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    360px;
+
+  min-height: 780px;
+}
+
+
+/* ============================================================
+   BOARD PANEL
+   ============================================================ */
+
+.board-panel {
+  min-width: 0;
+
+  padding: 24px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #f9f7f1,
+      #eeeae0
+    );
+
+  border-right: 1px solid #ddd8cd;
+}
+
+
+/* ============================================================
+   PLAYER STRIP
+   ============================================================ */
+
+.player-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  min-height: 46px;
+
+  padding: 0 15px;
+
+  border: 1px solid #ded9cf;
+  border-radius: 11px;
+
+  background: rgba(255, 255, 255, 0.72);
+
+  color: #77736c;
+
+  font-size: 12px;
+}
+
+.player-strip strong {
+  color: #292724;
+
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+
+/* ============================================================
+   VIOLIN STAGE
+   ============================================================ */
+
+.violin-stage {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 700px;
+
+  margin: 16px 0;
+
+  overflow: hidden;
+
+  border: 1px solid #ddd7cb;
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.55),
+      rgba(237,232,222,.42),
+      rgba(255,255,255,.55)
+    );
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.8);
+}
+
+
+/* ============================================================
+   SUBTLE INSTRUMENT GLOW
+   ============================================================ */
+
+.instrument-glow {
+  position: absolute;
+
+  width: 310px;
+  height: 520px;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      ellipse,
+      rgba(193, 63, 27, 0.10) 0%,
+      rgba(193, 63, 27, 0.045) 40%,
+      transparent 72%
+    );
+
+  filter: blur(10px);
+
+  pointer-events: none;
+}
+
+
+/* ============================================================
+   VIOLIN SVG
+   ============================================================ */
+
+.violin-art {
+  position: relative;
+  z-index: 2;
+
+  display: block;
+
+  width: min(430px, 74%);
+  height: min(680px, 82%);
+
+  overflow: visible;
+
+  filter:
+    drop-shadow(
+      0 18px 22px rgba(62, 34, 20, 0.15)
+    );
+}
+
+
+/* ============================================================
+   VISUAL STRINGS
+   ============================================================ */
+
+.violin-string {
+  transition:
+    stroke 100ms ease,
+    stroke-width 100ms ease,
+    filter 100ms ease;
+}
+
+
+/*
+ * IMPORTANT:
+ * Only the string currently being played becomes yellow.
+ *
+ * The rest of the violin stays exactly the same.
+ */
+
+.violin-string.is-playing {
+  stroke: #ffd21c !important;
+
+  filter:
+    drop-shadow(
+      0 0 3px rgba(255, 210, 28, 0.95)
+    )
+    drop-shadow(
+      0 0 7px rgba(255, 210, 28, 0.55)
+    );
+}
+
+
+#violin-string-g.is-playing {
+  stroke-width: 2.9;
+}
+
+#violin-string-d.is-playing {
+  stroke-width: 2.35;
+}
+
+#violin-string-a.is-playing {
+  stroke-width: 1.9;
+}
+
+#violin-string-e.is-playing {
+  stroke-width: 1.6;
+}
+
+
+/* ============================================================
+   FINGERBOARD GUIDES
+   ============================================================ */
+
+.fingerboard-lines {
+  position: absolute;
+
+  top: 18%;
+  left: 50%;
+
+  z-index: 3;
+
+  width: 17%;
+
+  height: 42%;
+
+  transform: translateX(-50%);
+
+  pointer-events: none;
+}
+
+.fingerboard-lines span {
+  position: absolute;
+
+  left: 0;
+
+  width: 100%;
+  height: 1px;
+
+  top: var(--y);
+
+  background: rgba(255, 255, 255, 0.10);
+}
+
+
+/* ============================================================
+   INTERACTION STRING LAYER
+   ============================================================ */
+
+.string-layer {
+  position: absolute;
+
+  top: 16%;
+  left: 50%;
+
+  z-index: 5;
+
+  width: 18%;
+  height: 70%;
+
+  transform: translateX(-50%);
+
+  pointer-events: auto;
+}
+
+
+/*
+ * Four transparent hit areas.
+ *
+ * They do not visually draw strings.
+ */
+
+.string-hit {
+  position: absolute;
+
+  top: 0;
+
+  width: 24%;
+  height: 100%;
+
+  border: 0;
+
+  padding: 0;
+
+  background: transparent;
+
+  cursor: pointer;
+
+  touch-action: none;
+}
+
+.string-hit:nth-child(1) {
+  left: 9%;
+}
+
+.string-hit:nth-child(2) {
+  left: 33%;
+}
+
+.string-hit:nth-child(3) {
+  left: 57%;
+}
+
+.string-hit:nth-child(4) {
+  left: 81%;
+}
+
+
+/* ============================================================
+   POSITION LABELS
+   ============================================================ */
+
+.position-labels {
+  position: absolute;
+
+  right: 13px;
+  bottom: 22%;
+
+  z-index: 4;
+
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  color: #8b867d;
+
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.position-labels span {
+  min-width: 38px;
+
+  padding: 5px 7px;
+
+  border: 1px solid #ddd7cc;
+  border-radius: 6px;
+
+  background: rgba(255,255,255,.55);
+
+  text-align: center;
+}
+
+
+/* ============================================================
+   SIDE PANEL
+   ============================================================ */
+
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  padding: 20px;
+
+  background: #fffdf9;
+
+  overflow-y: auto;
+}
+
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+
+.status-card,
+.control-card,
+.moves-box,
+.help-box {
+  border: 1px solid #e2ddd4;
+  border-radius: 13px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 2px 5px rgba(40, 35, 28, 0.025);
+}
+
+
+/* ============================================================
+   STATUS
+   ============================================================ */
+
+.status-card {
+  padding: 16px;
+}
+
+.status-card > span {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: #8c867d;
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.status {
+  min-height: 44px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 10px 12px;
+
+  border-radius: 9px;
+
+  background: #f7f4ed;
+
+  color: #5e5a53;
+
+  font-size: 13px;
+}
+
+
+/* ============================================================
+   CONTROL CARD
+   ============================================================ */
+
+.control-card {
+  padding: 16px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  margin-bottom: 13px;
+}
+
+.section-heading > div {
+  min-width: 0;
+}
+
+.section-kicker {
+  display: block;
+
+  margin-bottom: 3px;
+
+  color: #9a2c18;
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.section-heading strong {
+  color: #302d29;
+
+  font-size: 14px;
+}
+
+.section-hint {
+  color: #969087;
+
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+
+/* ============================================================
+   QUICK PLAY
+   ============================================================ */
+
+.quick-play-grid {
+  display: grid;
+
+  grid-template-columns: repeat(4, 1fr);
+
+  gap: 7px;
+}
+
+.quick-string {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 66px;
+
+  padding: 8px;
+
+  border: 1px solid #ddd8ce;
+  border-radius: 9px;
+
+  background: #f8f6f0;
+
+  color: #302d29;
+
+  cursor: pointer;
+
+  transition:
+    background .15s ease,
+    border-color .15s ease,
+    transform .15s ease;
+}
+
+.quick-string:hover {
+  border-color: #bd735e;
+
+  background: #fff7f3;
+
+  transform: translateY(-1px);
+}
+
+.quick-string:active {
+  transform: translateY(1px);
+}
+
+.quick-string span {
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.quick-string small {
+  margin-top: 3px;
+
+  color: #918a81;
+
+  font-size: 10px;
+}
+
+
+/* ============================================================
+   STRING SELECTOR
+   ============================================================ */
+
+.string-selector {
+  display: grid;
+
+  grid-template-columns: repeat(4, 1fr);
+
+  gap: 6px;
+}
+
+.string-select {
+  height: 40px;
+
+  border: 1px solid #ddd8ce;
+  border-radius: 8px;
+
+  background: #f8f6f0;
+
+  color: #5d5850;
+
+  font-size: 13px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.string-select:hover {
+  border-color: #bf745f;
+}
+
+.string-select.active {
+  border-color: #9a2c18;
+
+  background: #9a2c18;
+
+  color: #ffffff;
+}
+
+.selected-string-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 28px;
+  height: 28px;
+
+  border-radius: 7px;
+
+  background: #f3e5df;
+
+  color: #9a2c18;
+
+  font-size: 12px;
+  font-weight: 900;
+}
+
+
+/* ============================================================
+   VOLUME
+   ============================================================ */
+
+.volume-control {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+.mute-button {
+  width: 38px;
+  height: 38px;
+
+  flex: 0 0 auto;
+
+  border: 1px solid #ddd8ce;
+  border-radius: 8px;
+
+  background: #f8f6f0;
+
+  cursor: pointer;
+}
+
+.mute-button[aria-pressed="true"] {
+  background: #f1e0da;
+
+  border-color: #d7a99a;
+}
+
+.volume-slider {
+  width: 100%;
+
+  accent-color: #9a2c18;
+
+  cursor: pointer;
+}
+
+.volume-value {
+  color: #9a2c18 !important;
+}
+
+
+/* ============================================================
+   MAIN CONTROLS
+   ============================================================ */
+
+.controls {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 8px;
+}
+
+.controls button {
+  min-height: 40px;
+
+  border: 1px solid #ddd8ce;
+  border-radius: 8px;
+
+  background: #f8f6f0;
+
+  color: #4e4942;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.controls button:hover {
+  border-color: #bb6f59;
+
+  background: #fff7f3;
+}
+
+#sustain-toggle[aria-pressed="true"] {
+  border-color: #9a2c18;
+
+  background: #9a2c18;
+
+  color: white;
+}
+
+
+/* ============================================================
+   INFO GRID
+   ============================================================ */
+
+.info-grid {
+  display: grid;
+
+  grid-template-columns: repeat(4, 1fr);
+
+  border: 1px solid #e2ddd4;
+  border-radius: 13px;
+
+  overflow: hidden;
+
+  background: #ffffff;
+}
+
+.info-grid div {
+  min-width: 0;
+
+  padding: 11px 8px;
+
+  border-right: 1px solid #e8e3da;
+
+  text-align: center;
+}
+
+.info-grid div:last-child {
+  border-right: 0;
+}
+
+.info-grid span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #918a81;
+
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.info-grid strong {
+  display: block;
+
+  color: #34312d;
+
+  font-size: 11px;
+}
+
+
+/* ============================================================
+   KEYBOARD MAP
+   ============================================================ */
+
+.moves-box {
+  padding: 15px;
+}
+
+.moves-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 10px;
+
+  color: #48443e;
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.moves-title span:last-child {
+  color: #999187;
+
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.key-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
+}
+
+.key-list li {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  min-height: 28px;
+
+  color: #6f6a62;
+
+  font-size: 10px;
+}
+
+kbd {
+  min-width: 52px;
+
+  padding: 4px 6px;
+
+  border: 1px solid #d9d4ca;
+  border-bottom-width: 2px;
+  border-radius: 5px;
+
+  background: #f3f0e9;
+
+  color: #49453f;
+
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 800;
+
+  text-align: center;
+}
+
+
+/* ============================================================
+   HELP
+   ============================================================ */
+
+.help-box {
+  padding: 15px;
+
+  background: #fbf8f2;
+}
+
+.help-box strong {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #403b35;
+
+  font-size: 12px;
+}
+
+.help-box p {
+  margin: 0;
+
+  color: #777168;
+
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+
+/* ============================================================
+   PLAYING STATES
+   ============================================================ */
+
+.is-string-playing {
+  border-color: #e5bc20 !important;
+
+  background: #fffbed !important;
+}
+
+.quick-string.is-playing {
+  border-color: #e0b900;
+
+  background: #fff8cf;
+
+  box-shadow:
+    0 0 0 2px rgba(255, 210, 28, 0.12);
+}
+
+.string-select.is-playing {
+  border-color: #e0b900;
+
+  background: #fff8cf;
+
+  color: #8c6500;
+}
+
+
+/* ============================================================
+   FOCUS
+   ============================================================ */
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid rgba(154, 44, 24, .20);
+
+  outline-offset: 2px;
+}
+
+
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (max-width: 1050px) {
+
+  .app {
+    padding: 18px;
+  }
+
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+
+  .board-panel {
+    padding: 18px;
+  }
+
+  .side-panel {
+    padding: 16px;
+  }
+
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 820px) {
+
+  .app {
+    padding: 0;
+  }
+
+  .game-shell {
+    border-radius: 0;
+
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .header {
+    padding: 24px 20px;
+
+    flex-direction: column;
+  }
+
+  .turn-card {
+    width: 100%;
+
+    text-align: left;
+  }
+
+  .layout {
+    display: flex;
+
+    flex-direction: column;
+  }
+
+  .board-panel {
+    border-right: 0;
+    border-bottom: 1px solid #ddd8cd;
+  }
+
+  .side-panel {
+    overflow: visible;
+  }
+
+  .violin-stage {
+    min-height: 650px;
+  }
+
+  .violin-art {
+    width: min(390px, 82%);
+  }
+
+}
+
+
+/* ============================================================
+   SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 520px) {
+
+  .header {
+    padding: 20px 15px;
+  }
+
+  .header h1 {
+    font-size: 32px;
+  }
+
+  .board-panel {
+    padding: 12px;
+  }
+
+  .player-strip {
+    padding: 0 11px;
+
+    font-size: 10px;
+  }
+
+  .violin-stage {
+    min-height: 580px;
+
+    border-radius: 14px;
+  }
+
+  .violin-art {
+    width: 88%;
+    height: 94%;
+  }
+
+  .position-labels {
+    display: none;
+  }
+
+  .side-panel {
+    padding: 12px;
+  }
+
+  .info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .info-grid div:nth-child(2) {
+    border-right: 0;
+  }
+
+  .info-grid div:nth-child(-n + 2) {
+    border-bottom: 1px solid #e8e3da;
+  }
+
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+.site-footer {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 14px 10px 4px;
+
+  font-size: 0.78rem;
+  color: #7a716b;
+}
+
+.site-footer > span {
+  white-space: nowrap;
+}
+
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  color: #5f5751;
+  text-decoration: none;
+  font-weight: 600;
+
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.github-link:hover {
+  color: #b92712;
+  transform: translateY(-1px);
+}
+
+.github-link:focus-visible {
+  outline: 2px solid #b92712;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.github-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+@media (max-width: 600px) {
+  .site-footer {
+    margin-top: 14px;
+    padding-top: 12px;
+    font-size: 0.74rem;
+  }
+
+  .github-icon {
+    width: 15px;
+    height: 15px;
+  }
+}

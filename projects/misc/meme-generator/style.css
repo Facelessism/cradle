@@ -192,3 +192,21 @@ body {
   font-size: 0.85rem;
   color: var(--text-muted);
 }
+
+/* Error Container */
+.error-container {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+}
+.error-container .error-icon {
+  flex-shrink: 0;
+}

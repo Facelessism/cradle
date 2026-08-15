@@ -233,6 +233,7 @@ renderProjects() re-renders the grid with the filtered list
 - **Web Worker for filtering** - keeps search/category filtering off the main thread as the project list grows, with a synchronous fallback when Workers are unavailable.
 - **Zero-dependency component library** - `src/components/ui` is plain JS/CSS with no build tooling, so any project, including ones written before the library existed, can opt in without adopting a framework.
 - **Per-project ARCHITECTURE.md instead of one giant doc** - each project keeps its own architecture notes; this file documents only the shared root infrastructure and metadata flow.
+- **Engine Modules vs. Inline Logic Rationale** - mini-projects featuring dedicated engine/logic/storage modules (`*Engine.js`, `*Logic.js`, `*Storage.js`) encapsulate pure mathematical, algorithmic, and state computations in UMD modules for headless Node.js unit testing. Meanwhile, inline client scripts (`script.js`) handle DOM bindings, rendering loops, and browser UI fallbacks, ensuring zero-build static browser execution alongside automated test coverage.
 
 ---
 

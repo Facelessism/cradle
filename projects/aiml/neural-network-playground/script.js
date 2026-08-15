@@ -307,6 +307,7 @@ function startTraining() {
   $("btnTrain").disabled = true;
   $("btnPause").disabled = false;
   document.body.classList.add("training-active");
+  hideExportError();
   trainStep();
 }
 
@@ -324,6 +325,7 @@ function resetAll() {
   $("btnTrain").innerHTML = '<i class="fas fa-play"></i> Train';
   initNetwork();
   renderAll();
+  hideExportError();
 }
 
 function renderLayerUI() {
@@ -516,10 +518,20 @@ function setupEvents() {
     reader.readAsText(file);
   });
 
+  // ── EXPORT HELPERS ────────────────────────────────────────────
+  function showExportError(message) {
+    $("exportStatusMessage").textContent = message;
+    $("exportStatus").style.display = "flex";
+  }
+
+  function hideExportError() {
+    $("exportStatus").style.display = "none";
+  }
+
   // ── EXPORT JS ────────────────────────────────────────────────
   function exportJS() {
-    if (!state.net) {
-      alert("Train a model before exporting.");
+    if (!state.net || state.epoch === 0) {
+      showExportError("Train a model before exporting.");
       return;
     }
 
@@ -570,8 +582,8 @@ function predict(input) {
 
   // ── EXPORT PYTHON ────────────────────────────────────────────
   function exportPy() {
-    if (!state.net) {
-      alert("Train a model before exporting.");
+    if (!state.net || state.epoch === 0) {
+      showExportError("Train a model before exporting.");
       return;
     }
 

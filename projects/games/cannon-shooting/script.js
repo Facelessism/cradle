@@ -19,46 +19,65 @@ fireAudio.onerror = () => {
 let stats = CannonStorage.loadStats();
 
 function updateHUD() {
-  $("#hud-score").text(stats.score);
-  $("#hud-high-score").text(stats.highScore);
-  $("#hud-streak").text(stats.currentStreak + "🔥");
-  $("#hud-best-streak").text(stats.bestStreak);
+  document.getElementById("hud-score").textContent = stats.score;
+  document.getElementById("hud-high-score").textContent = stats.highScore;
+  document.getElementById("hud-streak").textContent =
+    stats.currentStreak + "🔥";
+  document.getElementById("hud-best-streak").textContent = stats.bestStreak;
   const acc =
     stats.totalShots > 0
       ? Math.round((stats.totalHits / stats.totalShots) * 100)
       : 100;
-  $("#hud-accuracy").text(acc + "%");
+  document.getElementById("hud-accuracy").textContent = acc + "%";
 }
 
-$(document).ready(() => {
+document.addEventListener("DOMContentLoaded", () => {
   updateHUD();
 });
 
+// Vanilla replacement for jQuery's $.fn.animate({left: ...}, duration, callback)
+function animateLeft(el, targetLeft, duration, callback) {
+  el.style.transition = `left ${duration}ms linear`;
+  void el.offsetWidth; // force reflow so the transition applies
+  el.style.left = targetLeft;
+  const onEnd = (e) => {
+    if (e.propertyName !== "left") return;
+    el.removeEventListener("transitionend", onEnd);
+    el.style.transition = "";
+    if (callback) callback();
+  };
+  el.addEventListener("transitionend", onEnd);
+}
+
 setInterval(() => {
   countdown = countdown > 0 ? countdown : 0;
-  $(".countdown").text(countdown--);
+  document.querySelector(".countdown").textContent = countdown--;
 }, 1000);
 
 setInterval(() => {
-  let cmCanPipe = $(".cm .pipe");
-  let allPipe = $(".pipe");
-  let cmCan = $(".cannon.cm");
-  let canBall = $(".ball");
+  let cmCanPipe = document.querySelector(".cm .pipe");
+  let allPipe = document.querySelectorAll(".pipe");
+  let cmCan = document.querySelector(".cannon.cm");
+  let canBalls = document.querySelectorAll(".ball");
   let cmCanAngle = Math.floor(Math.random() * 45);
   let cmCanX = Math.floor(Math.random() * 8) + 2;
 
   let ballMileage = CannonEngine.calculateBallMileage(cmCanX, cmCanAngle);
   countdown = fireTime / 1000 - 3;
 
-  cmCanPipe.css({ transform: "rotate(" + cmCanAngle + "deg)" });
-  cmCan.css({ transform: "translateX(" + cmCanX + "cm)" });
-  $(".cm .wheel").css({ transform: "rotate(" + cmCanX + "deg)" });
+  cmCanPipe.style.transform = "rotate(" + cmCanAngle + "deg)";
+  cmCan.style.transform = "translateX(" + cmCanX + "cm)";
+  document.querySelector(".cm .wheel").style.transform =
+    "rotate(" + cmCanX + "deg)";
 
-  $(".level-monitor").text(cmCanAngle);
-  canBall.css("left", 0);
-  allPipe.removeClass("fire");
-  $(".game-container").removeClass("defended");
-  $(".level").width(ballMileage + "cm");
+  document.querySelector(".level-monitor").textContent = cmCanAngle;
+  canBalls.forEach((ball) => {
+    ball.style.transition = "";
+    ball.style.left = "0";
+  });
+  allPipe.forEach((pipe) => pipe.classList.remove("fire"));
+  document.querySelector(".game-container").classList.remove("defended");
+  document.querySelector(".level").style.width = ballMileage + "cm";
 
   setTimeout(() => {
     let comCanX = cmCanX * 37.79;
@@ -70,11 +89,14 @@ setInterval(() => {
     );
 
     try {
-      fireAudio.play().catch(() => {});
-    } catch (e) {}
-    allPipe.addClass("fire");
+      fireAudio.play().catch(() => { });
+    } catch (e) { }
+    allPipe.forEach((pipe) => pipe.classList.add("fire"));
 
-    const scoreResult = CannonEngine.calculateScore(isHit, stats.currentStreak);
+    const scoreResult = CannonEngine.calculateScore(
+      isHit,
+      stats.currentStreak
+    );
     stats = CannonStorage.recordShot(
       stats,
       isHit,
@@ -84,69 +106,67 @@ setInterval(() => {
     updateHUD();
 
     if (isHit) {
-      $(".game-container").addClass("defended");
-      canBall.animate(
-        {
-          left: -ballMileage + 4.23 + "cm",
-        },
-        500,
-        () => {
+      document.querySelector(".game-container").classList.add("defended");
+      canBalls.forEach((ball) => {
+        animateLeft(ball, -ballMileage + 4.23 + "cm", 500, () => {
           try {
-            hitAudio.play().catch(() => {});
-          } catch (e) {}
-        }
-      );
+            hitAudio.play().catch(() => { });
+          } catch (e) { }
+        });
+      });
     } else {
-      canBall.animate(
-        {
-          left: "-100vw",
-        },
-        1000
-      );
+      canBalls.forEach((ball) => animateLeft(ball, "-100vw", 1000));
     }
   }, fireTime - 2000);
 }, fireTime);
 
-$(".wheel-handle").mousedown(function (e) {
-  const clickX = e.pageX;
-  let canX = userCanX;
+document
+  .querySelector(".wheel-handle")
+  .addEventListener("mousedown", function (e) {
+    const clickX = e.pageX;
+    let canX = userCanX;
 
-  function onMouseMove(e) {
-    let canDX = e.pageX - clickX + userCanX;
-    canX = canDX < 375 && canDX > 35 ? canDX : canX;
+    function onMouseMove(e) {
+      let canDX = e.pageX - clickX + userCanX;
+      canX = canDX < 375 && canDX > 35 ? canDX : canX;
 
-    $(".user-col .cannon").css({ transform: "translateX(" + canX + "px)" });
-    $(".user-col .wheel").css({ transform: "rotate(" + canX + "deg)" });
-  }
+      document.querySelector(".user-col .cannon").style.transform =
+        "translateX(" + canX + "px)";
+      document.querySelector(".user-col .wheel").style.transform =
+        "rotate(" + canX + "deg)";
+    }
 
-  function onMouseUp() {
-    $(document).off("mousemove", onMouseMove);
-    $(document).off("mouseup", onMouseUp);
-    userCanX = canX;
-  }
+    function onMouseUp() {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+      userCanX = canX;
+    }
 
-  $(document).on("mousemove", onMouseMove);
-  $(document).on("mouseup", onMouseUp);
-});
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  });
 
-$(".level-handle").mousedown(function (e) {
-  const clickY = e.pageY;
-  let canY = userCanY;
+document
+  .querySelector(".level-handle")
+  .addEventListener("mousedown", function (e) {
+    const clickY = e.pageY;
+    let canY = userCanY;
 
-  function onMouseMove(e) {
-    let canDY = e.pageY - clickY + userCanY;
-    canY = canDY < 65 && canDY > -5 ? canDY : canY;
+    function onMouseMove(e) {
+      let canDY = e.pageY - clickY + userCanY;
+      canY = canDY < 65 && canDY > -5 ? canDY : canY;
 
-    $(".level-handle").text(canY);
-    $(".user-col .pipe").css({ transform: "rotate(" + canY + "deg)" });
-  }
+      document.querySelector(".level-handle").textContent = canY;
+      document.querySelector(".user-col .pipe").style.transform =
+        "rotate(" + canY + "deg)";
+    }
 
-  function onMouseUp() {
-    $(document).off("mousemove", onMouseMove);
-    $(document).off("mouseup", onMouseUp);
-    userCanY = canY;
-  }
+    function onMouseUp() {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+      userCanY = canY;
+    }
 
-  $(document).on("mousemove", onMouseMove);
-  $(document).on("mouseup", onMouseUp);
-});
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  });

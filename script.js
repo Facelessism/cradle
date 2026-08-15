@@ -13,6 +13,29 @@ const toggleRecentProjectsBtn = document.getElementById(
   "toggle-recent-projects"
 );
 
+const clearSearch = document.querySelector("#clearSearch");
+
+function updateClearSearchButton() {
+  clearSearch.hidden = searchInput.value.trim() === "";
+}
+
+searchInput.addEventListener("input", () => {
+  updateClearSearchButton();
+});
+
+clearSearch.addEventListener("click", () => {
+  searchInput.value = "";
+
+  // Trigger the existing search/filter logic
+  searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+  searchInput.focus();
+
+  updateClearSearchButton();
+});
+
+updateClearSearchButton();
+
 let allProjects = [];
 let selectedCategory = "all";
 let activeProjectIndex = 0;

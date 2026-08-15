@@ -9,8 +9,20 @@
  *  - Toggles <html class="light-theme"> — same convention as the homepage
  *  - Animated icon transition (moon ↔ sun)
  *  - Accessible: role="switch", aria-checked, aria-label
- *  - Dispatches a custom "cradle:themechange" event on <html>
+*  - Dispatches a custom "cradle:themechange" event on <html>
  *  - Can be dropped anywhere; multiple instances stay in sync
+ *
+ * Events:
+ *   cradle:themechange — dispatched on document.documentElement whenever
+ *   the theme changes (toggle click or OS preference change, if the user
+ *   hasn't set a manual preference). event.detail = { theme: 'light' | 'dark' }.
+ *   This component listens to it internally to keep all toggle instances
+ *   on the page in sync. It is also a public hook other projects/pages can
+ *   use to react to theme changes without polling <html> class list, e.g.:
+ *
+ *     document.documentElement.addEventListener('cradle:themechange', (e) => {
+ *       console.log('theme is now', e.detail.theme);
+ *     });
  *
  * Usage (create programmatically):
  *   const toggle = CradleThemeToggle.create({ size: 'md' });

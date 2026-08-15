@@ -149,7 +149,12 @@ DOM re-renders from state (no partial patching)
 
 ## Dependencies
 
-None. This project uses only native browser APIs — no external libraries are required.
+| Dependency | Version | How loaded | Purpose |
+| --- | --- | --- | --- |
+| Outfit | — | Google Fonts CDN (`<link>` tags) | UI typography |
+| JetBrains Mono | — | Google Fonts CDN (`<link>` tags) | Monospace numbers and labels |
+
+This project otherwise uses only native browser APIs and the shared Cradle `escapeHtml.js` component — no external libraries are required.
 
 ---
 
@@ -179,6 +184,15 @@ None. This project uses only native browser APIs — no external libraries are r
   node --test tests/reading-progress-tracker.test.js
   ```
 - No build step required — edit and refresh the browser.
+
+---
+
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:**
+  - Outfit font by The Outfit Project (https://fonts.google.com/specimen/Outfit), loaded from the Google Fonts CDN.
+  - JetBrains Mono font by JetBrains (https://fonts.google.com/specimen/JetBrains+Mono), loaded from the Google Fonts CDN.
 
 ---
 

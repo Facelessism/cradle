@@ -42,4 +42,4 @@ jobs:
             echo "Status: failed" >> "$GITHUB_STEP_SUMMARY"
           fi
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Validated build generation, architecture docs, mini-project structure, internal links, duplicate JS detection, and test coverage." >> "$GITHUB_STEP_SUMMARY"
+          echo "Validated build generation, architecture docs, mini-project structure, internal links, duplicate JS detection, accessible labels, and test coverage." >> "$GITHUB_STEP_SUMMARY"

@@ -341,7 +341,7 @@ function generateProjects() {
   );
 
   const output = JSON.stringify(projects, null, 2);
-  const force = process.argv.includes("--force");
+  fs.writeFileSync(OUTPUT_FILE, output);
 
   console.log(
     `✅ Generated and validated ${projects.length} projects successfully → data/projects.json`

@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Feature Flag Playground | Cradle</title>
+    <meta name="description"
+        content="Create, toggle, and roll out feature flags across development, staging, and production environments." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <main class="shell">
+        <header class="project-header">
+            <div>
+                <a href="../../../index.html" class="back-link">Back to Cradle</a>
+                <p class="eyebrow">Dev Tools Mini</p>
+                <h1>Feature Flag Playground</h1>
+                <p class="subtitle">
+                    Create feature flags, toggle them per environment, and simulate
+                    percentage rollouts for individual users — all stored locally in
+                    your browser.
+                </p>
+            </div>
+
+            <div class="summary-grid" aria-label="Flag counts">
+                <article>
+                    <span id="totalCount">0</span>
+                    <small>Total Flags</small>
+                </article>
+                <article>
+                    <span id="devCount">0</span>
+                    <small>On in Dev</small>
+                </article>
+                <article>
+                    <span id="stagingCount">0</span>
+                    <small>On in Staging</small>
+                </article>
+                <article>
+                    <span id="prodCount">0</span>
+                    <small>On in Prod</small>
+                </article>
+            </div>
+        </header>
+
+        <section class="toolbar" aria-label="Playground controls">
+            <label class="search-box">
+                <span>Search flags</span>
+                <input id="searchInput" type="search" placeholder="Search by name, key, or description..." />
+            </label>
+
+            <div class="toolbar-actions">
+                <button id="newFlagBtn" data-cradle-btn data-variant="primary" data-size="sm" type="button">
+                    New Flag
+                </button>
+                <button id="exportBtn" data-cradle-btn data-variant="secondary" data-size="sm" type="button">
+                    Export JSON
+                </button>
+                <label class="import-label" data-cradle-btn data-variant="outline" data-size="sm">
+                    Import JSON
+                    <input id="importInput" type="file" accept="application/json" hidden />
+                </label>
+                <button id="resetBtn" data-cradle-btn data-variant="danger" data-size="sm" type="button">
+                    Reset Demo Data
+                </button>
+            </div>
+        </section>
+
+        <section id="flagFormWrap" class="form-wrap">
+            <form id="flagForm" class="editor-form">
+                <label>
+                    Flag name
+                    <input name="name" required placeholder="New Dashboard" />
+                </label>
+                <label>
+                    Description
+                    <textarea name="description" rows="2" placeholder="What does this flag control?"></textarea>
+                </label>
+                <div class="form-actions">
+                    <button data-cradle-btn data-variant="success" data-size="sm" type="submit">
+                        Create Flag
+                    </button>
+                    <button id="cancelFormBtn" data-cradle-btn data-variant="ghost" data-size="sm" type="button">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <nav class="tabs" aria-label="Environments">
+            <button class="tab active" data-panel="development" type="button">
+                Development
+            </button>
+            <button class="tab" data-panel="staging" type="button">
+                Staging
+            </button>
+            <button class="tab" data-panel="production" type="button">
+                Production
+            </button>
+        </nav>
+
+        <section id="statusMessage" class="status" role="status" aria-live="polite"></section>
+
+        <section id="development" class="panel active">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Flag</th>
+                            <th>Enabled</th>
+                            <th>Rollout</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="developmentRows"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="staging" class="panel">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Flag</th>
+                            <th>Enabled</th>
+                            <th>Rollout</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stagingRows"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="production" class="panel">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Flag</th>
+                            <th>Enabled</th>
+                            <th>Rollout</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productionRows"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel evaluate-panel" aria-label="Evaluate a user">
+            <div class="panel-header">
+                <div>
+                    <h2>Evaluate for a user</h2>
+                    <p>
+                        Check whether each flag is ON for a given user in the currently
+                        selected environment tab, based on its rollout percentage.
+                    </p>
+                </div>
+            </div>
+
+            <div class="evaluate-controls">
+                <label>
+                    User ID
+                    <input id="evalUserId" placeholder="user-1024" />
+                </label>
+                <button id="evalRandomBtn" data-cradle-btn data-variant="outline" data-size="sm" type="button">
+                    Random User
+                </button>
+                <button id="evalRunBtn" data-cradle-btn data-variant="primary" data-size="sm" type="button">
+                    Evaluate
+                </button>
+            </div>
+
+            <div id="evalResults" class="eval-results"></div>
+        </section>
+    </main>
+
+    <script src="../../../src/components/ui/Button/Button.js"></script>
+    <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="flagEngine.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>

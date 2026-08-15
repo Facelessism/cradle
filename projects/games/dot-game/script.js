@@ -28,8 +28,12 @@ document.getElementById("difficultyGroup").style.display =
 
 let boardSize = 8;
 let state = {};
-let matchHistory = JSON.parse(localStorage.getItem("dotGameHistory")) || [];
-
+let matchHistory = [];
+try {
+  matchHistory = JSON.parse(localStorage.getItem("cradle_dot_game_history") || localStorage.getItem("dotGameHistory")) || [];
+} catch {
+  matchHistory = [];
+}
 function updateGridValue(size) {
   gridValueElement.textContent = `${size} × ${size}`;
 }
@@ -99,7 +103,7 @@ function renderBoard() {
 }
 
 function initTheme() {
-  const savedTheme = localStorage.getItem("neuralforge_theme") || "dark";
+  const savedTheme = localStorage.getItem("cradle_theme") || localStorage.getItem("neuralforge_theme") || "dark";
   setTheme(savedTheme);
 }
 
@@ -111,12 +115,15 @@ function setTheme(theme) {
     html.classList.add("light-theme");
     if (themeBtn)
       themeBtn.innerHTML = '<i class="fas fa-sun text-orange-400"></i>';
-    localStorage.setItem("neuralforge_theme", "light");
+    localStorage.setItem("theme", "light");
+
+    localStorage.setItem("cradle_theme", "light");
   } else {
     html.classList.remove("light-theme");
     if (themeBtn)
       themeBtn.innerHTML = '<i class="fas fa-moon text-yellow-400"></i>';
-    localStorage.setItem("neuralforge_theme", "dark");
+    localStorage.setItem("theme", "dark");
+    localStorage.setItem("cradle_theme", "dark");
   }
 }
 
@@ -193,6 +200,49 @@ function getBestMove(board, player, difficulty = "medium") {
   return bestMoves[
     Math.floor(Math.random() * bestMoves.length)
   ];
+}
+
+function countPlayerCells(player) {
+  let count = 0;
+  for (let row = 0; row < boardSize; row++) {
+    for (let col = 0; col < boardSize; col++) {
+      if (state.board[row][col].owner === player) count++;
+    }
+  }
+  return count;
+}
+
+// Advance to the next player. Once every player has had an opening move,
+// skip any player who has been eliminated (owns no cells).
+function nextTurn() {
+  const total = state.players.length;
+  const openingDone = state.analytics.moves > total;
+  for (let step = 1; step <= total; step++) {
+    const idx = (state.currentPlayer + step) % total;
+    if (!openingDone || countPlayerCells(state.players[idx]) > 0) {
+      state.currentPlayer = idx;
+      return;
+    }
+  }
+  state.currentPlayer = (state.currentPlayer + 1) % total;
+}
+
+// Play the AI's move in Player-vs-AI mode. Setting isAiTurnProcessing lets
+// addDot's "human click during AI turn" guard allow this move through.
+function handleAiTurn() {
+  if (!state.isActive) return;
+  if (state.gameMode !== "pvai") return;
+  if (state.players[state.currentPlayer] === COLORS[0]) return;
+
+  state.isAiTurnProcessing = true;
+  const move = getBestMove(
+    state.board,
+    state.players[state.currentPlayer],
+    difficultyElement.value,
+  );
+  state.isAiTurnProcessing = false;
+
+  if (move) addDot(move.row, move.col);
 }
 
 function addDot(row, col) {
@@ -490,7 +540,7 @@ function saveMatchHistory() {
   matchHistory.unshift(historyEntry); // Add to beginning
   if (matchHistory.length > 10) matchHistory.pop(); // Keep last 10
 
-  localStorage.setItem("dotGameHistory", JSON.stringify(matchHistory));
+  localStorage.setItem("cradle_dot_game_history", JSON.stringify(matchHistory));
 }
 
 function renderAnalytics() {

@@ -657,7 +657,7 @@ function importJSON(file) {
       saveState();
       render();
     } catch (err) {
-      alert(`Import failed: ${err.message}`);
+      showAlert(`Import failed: ${err.message}`);
     }
   };
   reader.readAsText(file);
@@ -764,3 +764,17 @@ function initEvents() {
   initEvents();
   render();
 })();
+
+let alertTimeout;
+function showAlert(message) {
+  const container = document.getElementById("alertContainer");
+  const messageEl = document.getElementById("alertMessage");
+  if (container && messageEl) {
+    messageEl.textContent = message;
+    container.style.display = "flex";
+    clearTimeout(alertTimeout);
+    alertTimeout = setTimeout(() => {
+      container.style.display = "none";
+    }, 5000);
+  }
+}

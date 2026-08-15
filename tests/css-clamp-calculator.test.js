@@ -12,8 +12,8 @@ test("generateClamp creates a valid rem clamp formula", () => {
     maxValue: 2.25,
   });
 
-  assert.equal(result.clamp, "clamp(1rem, calc(0.5833rem + 0.1302vw), 2.25rem)");
-  assert.equal(result.cssRule, "font-size: clamp(1rem, calc(0.5833rem + 0.1302vw), 2.25rem);");
+  assert.equal(result.clamp, "clamp(1rem, calc(0.5833rem + 2.0833vw), 2.25rem)");
+  assert.equal(result.cssRule, "font-size: clamp(1rem, calc(0.5833rem + 2.0833vw), 2.25rem);");
 });
 
 test("calculatePreferredValue returns slope and intercept", () => {

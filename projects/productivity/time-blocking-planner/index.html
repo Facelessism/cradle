@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Time Blocking Planner | Cradle</title>
+    <meta name="description" content="Time blocking schedule planner for organizing daily tasks, deep work, and category stats." />
     <link rel="stylesheet" href="style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -31,6 +32,17 @@
           </div>
         </div>
       </header>
+
+      <div
+        id="alertContainer"
+        class="alert-container"
+        role="status"
+        aria-live="polite"
+        style="display: none;"
+      >
+        <span class="alert-icon">⚠️</span>
+        <span id="alertMessage"></span>
+      </div>
 
       <!-- Toolbar & Stats -->
       <div class="toolbar-panel">
@@ -207,7 +219,7 @@
         <div class="modal-card">
           <div class="modal-header">
             <h3 id="modal-title-text">Add Time Block</h3>
-            <button class="modal-close" id="modal-close">✕</button>
+            <button class="modal-close" id="modal-close" aria-label="Close modal dialog">✕</button>
           </div>
           <form id="block-form" class="modal-form">
             <input type="hidden" id="block-id" />
@@ -292,6 +304,7 @@
     </div>
 
   <script src="plannerEngine.js"></script>
+  <script src="../../../src/components/ui/storage.js"></script>
   <script src="plannerStorage.js"></script>
   <script src="../../../src/components/ui/escapeHtml.js"></script>
   <script src="script.js"></script>

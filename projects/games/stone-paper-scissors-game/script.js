@@ -198,6 +198,10 @@ function startCountdown(playerChoice) {
   }, 400);
 }
 
+function getComputerChoice() {
+  return choicesList[Math.floor(Math.random() * choicesList.length)];
+}
+
 function playGame(player, computer) {
   playerPickEl.textContent = emojis[player];
   computerPickEl.textContent = emojis[computer];

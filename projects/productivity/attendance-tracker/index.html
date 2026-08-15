@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Attendance Pro</title>
+    <meta name="description" content="Track student or team attendance percentages, absent records, and summary reports." />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
   </head>
@@ -20,7 +21,6 @@
             data-variant="success"
             data-size="sm"
             data-left-icon="⬇"
-            onclick="exportCSV()"
           >
             Export CSV
           </button>
@@ -31,7 +31,6 @@
             data-variant="outline"
             data-size="sm"
             data-left-icon="⬆"
-            onclick="triggerImport()"
           >
             Import CSV
           </button>
@@ -41,19 +40,29 @@
             accept=".csv"
             aria-label="Import attendance CSV file"
             style="display: none"
-            onchange="importCSV(event)"
           />
 
           <button
+            id="btn-new-subject"
             data-cradle-btn
             data-variant="primary"
             data-size="sm"
             data-left-icon="+"
-            onclick="openModal()"
           >
             New Subject
           </button>
         </div>
+      </div>
+
+      <div
+        id="alertBanner"
+        class="alert-banner"
+        role="status"
+        aria-live="polite"
+        style="display: none;"
+      >
+        <span class="alert-icon">⚠️</span>
+        <span id="alertMessage"></span>
       </div>
 
       <div class="stats-dashboard" id="statsDashboard">
@@ -95,7 +104,6 @@
             data-cradle-btn
             data-variant="danger"
             data-size="sm"
-            onclick="clearHistory()"
             aria-label="Clear all attendance history"
           >
             Clear History
@@ -115,11 +123,11 @@
       <div class="modal-box">
         <div class="modal-header">
           <h2>Add New Subject</h2>
-          <button class="close-btn" aria-label="Close" onclick="closeModal()">
+          <button class="close-btn" aria-label="Close">
             &times;
           </button>
         </div>
-        <form id="newSubjectForm" onsubmit="addSubject(event)">
+        <form id="newSubjectForm">
           <div class="form-group">
             <label for="subName">Subject Name</label>
             <input

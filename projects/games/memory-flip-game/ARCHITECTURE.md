@@ -6,6 +6,15 @@ Pairwise is a single-player memory card game. The player is presented with 64 fa
 
 ---
 
+## Purpose & Goals
+
+- Provide a responsive memory-matching game that runs entirely in the browser with no backend.
+- Offer both a relaxed Standard mode (unlimited flips) and a harder Challenge mode with a 50-flip limit.
+- Persist personal best scores to `localStorage` per mode and show them on the home screen.
+- Demonstrate a pure-CSS 3D card flip effect with no animation library or build step.
+
+---
+
 ## Folder Structure
 
 ```
@@ -18,7 +27,24 @@ memory-flip-game/
 
 ---
 
-## Application Flow
+## System / Project Architecture Overview
+
+The page is built from three `<section>` screens (home, game, result) that are shown one at a time via the `hidden` attribute. `script.js` holds all game logic and screen management, `utils.js` isolates the `localStorage` high-score helpers so they can be unit tested with Node.js, and `style.css` implements the 3D flip animation. There is no build step; the browser loads `index.html`, `utils.js`, and `script.js` directly.
+
+---
+
+## Component Breakdown
+
+| File | Responsibility |
+|---|---|
+| `index.html` | Three screens, navbar stats, mode selector, and high-score displays |
+| `script.js` | Deck building, card click handling, match checking, screen switching |
+| `utils.js` | Pure `localStorage` helpers for reading and saving high scores |
+| `style.css` | Card flip animation, shake feedback, board grid, navbar layout |
+
+---
+
+## Data Flow / Execution Flow
 
 ```
 User opens index.html
@@ -51,97 +77,74 @@ User clicks "Play Again" → startGame() restarts
 
 ---
 
-## Core Components
+## Key Features
+
+- 8×8 board with 64 tiles hiding 32 matched emoji pairs.
+- CSS 3D flip animation using `perspective`, `preserve-3d`, and `backface-visibility`.
+- Standard Mode (unlimited flips) and Challenge Mode (50-flip limit).
+- Live flip counter and matched-pairs counter in the navbar during a game.
+- Personal best high scores per mode, saved to `localStorage` and shown on the home screen.
+- "New Personal Best" badge on the result screen when a record is beaten.
+- Mismatched cards shake before flipping back after 700 ms.
+- Restart and Play Again buttons reset the game without a page reload.
+
+---
+
+## Technologies Used
+
+| Technology | Purpose |
+|---|---|
+| HTML5 | Semantic sections for home, game, and result screens |
+| CSS3 (Grid, Flexbox, 3D transforms) | Board layout, navbar, card flip effect |
+| Vanilla JavaScript (ES6+) | Game logic, DOM creation, event handling |
+| localStorage API | High score persistence per mode |
+| Google Fonts (Fraunces, Space Grotesk) | Display and body typography |
+
+---
+
+## File Responsibilities
 
 ### `index.html`
 
-Three `<section>` elements are used as screens; only one is visible at a time (controlled via the `hidden` attribute):
-
-- **`#homeScreen`** — welcome copy and the "Start Game" button.
-- **`#gameScreen`** — contains the `#board` div where cards are injected.
-- **`#resultScreen`** — shows the final flip count and a "Play Again" button.
-
-The `<header class="navbar">` is always visible. It shows the live flip counter and matched pair count during a game, hidden on the home and result screens.
+- `#homeScreen` — hero copy, game mode select, personal best displays, Start Game button.
+- `#gameScreen` — `#board` container where cards are injected.
+- `#resultScreen` — result label, title, copy, and Play Again button.
+- `.navbar` — flip / flips-left / pairs stats plus a Restart button, visible only during a game.
 
 ### `script.js`
 
-The entire game fits in one small file. Key functions:
+- `SYMBOLS` — the 32 emoji characters used as card faces.
+- `buildDeck()` — duplicates and shuffles the symbols with Fisher-Yates, returning `{ id, symbol }` cards.
+- `startGame()` — resets state, builds card DOM elements, and shows the game screen.
+- `onCardClick(card)` — guards double-clicks and locked boards, flips a card, and triggers match checks.
+- `checkForMatch()` — compares the two flipped cards; marks matches or schedules the 700 ms flip-back.
+- `endGame(victory)` — writes the result, updates high scores, and shows the result screen.
+- `showScreen(screen)` — toggles the `hidden` attribute across the three screens and navbar stats.
+- `shuffle(array)` — in-place Fisher-Yates shuffle.
+- State variables: `flippedCards`, `matchedPairs`, `flipCount`, `flipsLeft`, `currentMode`, `boardLocked`.
 
-| Function             | Purpose                                                                                                                           |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `buildDeck()`        | Duplicates the 32-symbol `SYMBOLS` array, shuffles it using Fisher-Yates, and returns an array of `{ id, symbol }` card objects   |
-| `startGame()`        | Resets all counters, clears the board, creates card DOM elements, and switches to the game screen                                 |
-| `onCardClick(card)`  | Guards against double-clicks and locked board; flips the card by adding `.is-flipped`; calls `checkForMatch` when two are flipped |
-| `checkForMatch()`    | Compares `data-symbol` attributes of the two flipped cards; marks matched pairs or schedules a flip-back                          |
-| `endGame()`          | Writes the final flip count to the result screen and switches to it                                                               |
-| `showScreen(screen)` | Toggles the `hidden` attribute on the three screens and the navbar stats                                                          |
-| `shuffle(array)`     | In-place Fisher-Yates shuffle, returns the mutated array                                                                          |
+### `utils.js`
 
-The `SYMBOLS` array at the top of the file contains 32 unique emoji characters. These are the only "assets" in the game.
+- `getHighScore(mode)` — reads the best score from `localStorage`, falling back to legacy `pairwise_...` keys.
+- `saveHighScore(score, mode)` — stores a new best only when the score improves; returns `true` for a new record.
 
 ### `style.css`
 
-Implements the card flip effect using CSS 3D transforms:
-
-- Each `.card` has `perspective` applied.
-- `.card__inner` uses `transform-style: preserve-3d` and `transition: transform 0.45s`.
-- `.card__face--back` is the default visible face; `.card__face--front` has `transform: rotateY(180deg)` and is hidden by `backface-visibility: hidden`.
-- Adding `.is-flipped` or `.is-matched` to `.card` rotates `.card__inner` by 180°, revealing the front face.
-- Mismatched cards get a brief shake animation via `.is-mismatch`.
-
-Layout uses a CSS Grid of `repeat(8, 1fr)` for the board and flexbox for the navbar.
+- `.card__inner` — `transform-style: preserve-3d` with a `transition: transform 0.45s` flip.
+- `.card__face--front` — `rotateY(180deg)` with `backface-visibility: hidden`.
+- `.is-flipped` / `.is-matched` — rotates the card inner 180 degrees to reveal the front face.
+- `.is-mismatch` — brief shake keyframe for failed pairs.
+- `#board` — CSS Grid with `repeat(8, 1fr)`.
 
 ---
 
-## State Management
+## Design Decisions
 
-State is tracked with several module-level variables in `script.js`:
-
-| Variable       | Type        | Purpose                                                 |
-| -------------- | ----------- | ------------------------------------------------------- |
-| `flippedCards` | `Element[]` | Holds the one or two currently face-up, unmatched cards |
-| `matchedPairs` | `number`    | Count of matched pairs; wins when it reaches 32         |
-| `flipCount`    | `number`    | Total number of two-card flip attempts in Standard Mode |
-| `flipsLeft`    | `number`    | Remaining flips left in Challenge Mode (starts at 50)   |
-| `currentMode`  | `string`    | Selected game mode: `"standard"` or `"challenge"`       |
-| `boardLocked`  | `boolean`   | Prevents further clicks during the mismatch delay       |
-
-Scores are persisted locally via `localStorage` for both Standard and Challenge modes, and the personal bests are loaded and updated dynamically.
-
----
-
-## Event Flow
-
-```
-User clicks a tile
-        ↓
-onCardClick(card)
-  ├─ boardLocked? → return
-  ├─ already flipped or matched? → return
-  ├─ two cards already held? → return
-  └─ add .is-flipped, push to flippedCards[]
-        ↓
-If flippedCards.length === 2:
-  flipCount++, update navbar
-  checkForMatch()
-    ├─ Same symbol?
-    │   ├─ add .is-matched to both
-    │   ├─ matchedPairs++
-    │   └─ matchedPairs === 32 → setTimeout(endGame, 500)
-    └─ Different symbol?
-        ├─ boardLocked = true
-        ├─ add .is-mismatch (shake animation)
-        └─ setTimeout 700 ms:
-              remove .is-flipped and .is-mismatch
-              flippedCards = []
-              boardLocked = false
-```
-
----
-
-## Assets
-
-No image or audio files are used. The 32 game symbols are Unicode emoji embedded directly in the `SYMBOLS` array in `script.js`. The `Fraunces` and `Space Grotesk` fonts are loaded from Google Fonts.
+- **CSS-only 3D flip** — the card reveal is a pure CSS transform transition, keeping the JavaScript small and the animation smooth.
+- **Module-level state** — counters and the flipped-cards stack are module-level variables in `script.js`; the UI is driven directly from them.
+- **Separate `utils.js`** — high-score logic is isolated from the DOM so it can be unit tested with Node.js (UMD `module.exports`).
+- **Emoji instead of images** — the 32 symbols are Unicode emoji embedded in source, so there are no image assets to load.
+- **Fewer flips is better** — `saveHighScore` only writes when the new flip count is strictly lower than the stored best.
 
 ---
 
@@ -160,6 +163,44 @@ No JavaScript libraries are used.
 
 - **Difficulty levels** — offer smaller grids (e.g. 4×4, 6×6) for beginners alongside the full 8×8 board.
 - **Timer** — show elapsed time alongside the flip count to give players a second metric to improve.
-- **Best score persistence** — save the all-time lowest flip count to `localStorage` and display it on the home screen.
 - **Themed card sets** — allow players to switch between emoji categories (animals, food, sports) without changing the game rules.
+- **Sound effects** — add audio cues for matches and mismatches.
 - **Accessibility** — add `aria-label` attributes to each card describing its state (face-down, flipped, matched) for screen reader support.
+
+---
+
+## Known Limitations
+
+- The board is fixed at 8×8; there is no smaller-grid difficulty option.
+- No timer is shown, so players cannot compare completion time.
+- Emoji rendering depends on the operating system's font support.
+- No sound effects for matches or mismatches.
+- No touch-specific optimizations or keyboard controls.
+
+---
+
+## Development Notes
+
+- No build step is required. Open `index.html` in a browser or serve the folder with a static server.
+- `utils.js` exports via UMD, so high-score logic can be exercised in Node:
+  `node -e "const u = require('./projects/games/memory-flip-game/utils.js'); console.log(u.getHighScore('standard'))"`
+- Run the unit tests with:
+  `node --test tests/memory-flip.test.js`
+- High scores live under the `cradle_memory_flip_high_score` and `cradle_memory_flip_challenge_high_score` keys; legacy `pairwise_...` keys are read for backward compatibility.
+
+---
+
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:**
+  - Fraunces font by Google Fonts (OFL license), loaded from the Google Fonts CDN.
+  - Space Grotesk font by Google Fonts (OFL license), loaded from the Google Fonts CDN.
+
+---
+
+## References
+
+- [MDN Web Docs — Using CSS 3D transforms](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_transforms/Using_CSS_transforms)
+- [MDN Web Docs — Window.localStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)
+- [Fisher–Yates shuffle — Wikipedia](https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)

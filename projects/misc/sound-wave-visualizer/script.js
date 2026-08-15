@@ -189,9 +189,7 @@ async function startRecording() {
     startAnimation();
   } catch (err) {
     console.error("[Visualizer] Mic access failed:", err);
-    alert(
-      "Microphone access denied or unavailable. Please allow microphone access and try again."
-    );
+    setStatus("error", "Mic access denied or unavailable");
   }
 }
 

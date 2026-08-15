@@ -1,3 +1,4 @@
+
 document.addEventListener("DOMContentLoaded", () => {
   // Constants
   const HOUR_HEIGHT = 60; // 60px per hour = 1px per minute
@@ -556,7 +557,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Export iCalendar (.ics)
   btnExportIcs.addEventListener("click", () => {
     if (!blocks.length) {
-      alert("No time blocks to export!");
+      showAlert("No time blocks to export!");
       return;
     }
     const icsContent = typeof PlannerEngine !== "undefined"
@@ -598,15 +599,15 @@ document.addEventListener("DOMContentLoaded", () => {
           blocks = parsed.blocks;
           saveBlocksForDate();
           renderBlocks();
-          alert("Schedule imported successfully!");
+          showAlert("Schedule imported successfully!", true);
         } else if (Array.isArray(parsed)) {
           blocks = parsed;
           saveBlocksForDate();
           renderBlocks();
-          alert("Schedule imported successfully!");
+          showAlert("Schedule imported successfully!", true);
         }
       } catch (err) {
-        alert("Failed to parse JSON file.");
+        showAlert("Failed to parse JSON file.");
       }
     };
     reader.readAsText(file);
@@ -622,6 +623,27 @@ document.addEventListener("DOMContentLoaded", () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  }
+
+  let alertTimeout;
+  function showAlert(message, isSuccess = false) {
+    const container = document.getElementById("alertContainer");
+    const messageEl = document.getElementById("alertMessage");
+    if (container && messageEl) {
+      messageEl.textContent = message;
+      if (isSuccess) {
+        container.classList.add("success");
+        container.querySelector(".alert-icon").textContent = "✅";
+      } else {
+        container.classList.remove("success");
+        container.querySelector(".alert-icon").textContent = "⚠️";
+      }
+      container.style.display = "flex";
+      clearTimeout(alertTimeout);
+      alertTimeout = setTimeout(() => {
+        container.style.display = "none";
+      }, 5000);
+    }
   }
 
   // Initialize

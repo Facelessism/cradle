@@ -1,6 +1,12 @@
 // Cannon Storage System for persisting high scores and defense streaks
 
-const STORAGE_KEY = "cannonShootingStats";
+const storage =
+  typeof window !== "undefined" && window.CradleStorage
+    ? window.CradleStorage
+    : require("../../../src/components/ui/storage.js");
+
+const STORAGE_KEY = "cradle_cannon_stats";
+const LEGACY_STORAGE_KEY = "cannonShootingStats";
 
 function getInitialStats() {
   return {
@@ -14,24 +20,15 @@ function getInitialStats() {
 }
 
 function loadStats() {
-  if (typeof localStorage === "undefined") return getInitialStats();
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return getInitialStats();
-    return { ...getInitialStats(), ...JSON.parse(raw) };
-  } catch (e) {
-    console.error("Failed to load cannon stats from localStorage:", e);
-    return getInitialStats();
-  }
+  const saved =
+    storage.get(STORAGE_KEY, null) ?? storage.get(LEGACY_STORAGE_KEY, null);
+  return saved && typeof saved === "object"
+    ? { ...getInitialStats(), ...saved }
+    : getInitialStats();
 }
 
 function saveStats(stats) {
-  if (typeof localStorage === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
-  } catch (e) {
-    console.error("Failed to save cannon stats to localStorage:", e);
-  }
+  storage.set(STORAGE_KEY, stats);
 }
 
 function recordShot(stats, isHit, scoreAwarded = 0, newStreak = 0) {

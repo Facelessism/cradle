@@ -102,25 +102,14 @@ D --> E
 
 ---
 
-<!-- ## Design Decisions 
+## Design Decisions
 
-<!--
-Explain non-obvious choices made during development.
-This is especially useful for reviewers and future contributors.
+- **Pure logic engine separation** — `classifierEngine.js` holds DOM-free, testable utilities (prediction formatting, class-name validation, confidence formatting) and exposes them through a UMD-style export for use in both the browser and Node tests.
+- **Transfer learning with KNN** — custom mode reuses MobileNet's feature extraction (`model.infer`) and feeds the activations into a KNN classifier, letting users train a custom model with only a handful of images per class.
+- **Client-side only** — all inference runs in the browser; images are never uploaded to a server.
+- **Low confidence guard** — predictions below a 10% probability are flagged as low-confidence instead of being shown as reliable results.
 
-Example:
-- **Immutable state** — `moveGameState` always returns a new object rather than
-  mutating state in place, making the logic easy to test and the history easy to track.
-- **UMD wrapper in logic.js** — allows the same file to be loaded in a browser
-  via a script tag and imported in Node.js for unit testing.
-- **No framework** — kept vanilla to minimize the learning curve for contributors
-  and avoid a build step.
--->
-
-<!-- -  Decision 1 and the reason for it -->
-<!-- -  Decision 2 and the reason for it -->
-
-<!-- ---   -->
+---
 
 ## Dependencies
 
@@ -150,3 +139,20 @@ Example:
 - Visit (`http://localhost:8000`)
 
 ---
+
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:**
+  - Poppins (font) — Google Fonts CDN — UI typography
+  - TensorFlow.js — CDN via jsDelivr — in-browser ML runtime
+  - MobileNet (`@tensorflow-models/mobilenet`) — CDN via jsDelivr — feature extraction model
+  - KNN Classifier (`@tensorflow-models/knn-classifier`) — CDN via jsDelivr — custom class prediction
+
+---
+
+## References
+
+- [TensorFlow.js](https://www.tensorflow.org/js) — ML runtime used for in-browser inference
+- [MobileNet — TensorFlow Models](https://github.com/tensorflow/tfjs-models) — feature extraction backbone
+- [MDN Web Docs — File API](https://developer.mozilla.org/en-US/docs/Web/API/File) — local image upload handling

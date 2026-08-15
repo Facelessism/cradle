@@ -89,6 +89,38 @@ User prints/PDF exports, exports JSON, or imports JSON
 
 ---
 
+## Data Persistence
+
+The application stores invoice drafts entirely in the browser using the `localStorage` API.
+
+- Every invoice change automatically updates the saved draft.
+- When the application loads, it restores the previously saved invoice if one exists.
+- If no saved invoice is found, the bundled `sampleInvoice` is loaded instead.
+- No invoice data is transmitted to any external server.
+
+---
+
+## Import / Export Format
+
+Invoice data is serialized as JSON for portability.
+
+The exported file contains:
+
+- Business information
+- Client information
+- Invoice metadata
+- Line items
+- Discount, tax, and shipping values
+- Selected invoice template
+- Selected currency
+- Payment terms
+- Notes
+- Uploaded logo as a Data URL
+
+Importing a previously exported JSON file restores the complete invoice state.
+
+---
+
 ## Key Features
 
 - Editable business and client billing details.
@@ -167,41 +199,13 @@ User prints/PDF exports, exports JSON, or imports JSON
 
 ---
 
-## Data Persistence
-
-The application stores invoice drafts entirely in the browser using the `localStorage` API.
-
-- Every invoice change automatically updates the saved draft.
-- When the application loads, it restores the previously saved invoice if one exists.
-- If no saved invoice is found, the bundled `sampleInvoice` is loaded instead.
-- No invoice data is transmitted to any external server.
-
----
-
-## Import / Export Format
-
-Invoice data is serialized as JSON for portability.
-
-The exported file contains:
-
-- Business information
-- Client information
-- Invoice metadata
-- Line items
-- Discount, tax, and shipping values
-- Selected invoice template
-- Selected currency
-- Payment terms
-- Notes
-- Uploaded logo as a Data URL
-
-Importing a previously exported JSON file restores the complete invoice state.
-
----
-
 ## Dependencies
 
-None. This project uses native browser APIs and existing Cradle UI files only.
+| Dependency | Version | How loaded | Purpose |
+| --- | --- | --- | --- |
+| Inter and JetBrains Mono | — | Google Fonts CDN (`<link>` tags) | UI and monospace typography |
+
+This project otherwise uses native browser APIs and existing Cradle UI files (`tokens.css`, `Button.js`, `BackToHome.js`, `escapeHtml.js`) only.
 
 ---
 
@@ -247,6 +251,15 @@ Manual testing checklist:
 - Upload a small logo image and confirm it appears in preview.
 - Export JSON, import it again, and confirm values restore.
 - Click `Export PDF`, choose save-as-PDF in the browser print dialog, and confirm only the invoice prints.
+
+---
+
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:**
+  - Inter font by Rasmus Andersson (https://fonts.google.com/specimen/Inter), loaded from the Google Fonts CDN.
+  - JetBrains Mono font by JetBrains (https://fonts.google.com/specimen/JetBrains+Mono), loaded from the Google Fonts CDN.
 
 ---
 

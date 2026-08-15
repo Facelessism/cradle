@@ -2,34 +2,21 @@
  * Planner Storage - Persistence layer & JSON Data Exporter/Importer
  */
 (function (exports) {
-  const STORAGE_PREFIX = "cradle_tb_planner_";
-
-  function isLocalStorageAvailable() {
-    try {
-      return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
-    } catch (e) {
-      return false;
-    }
-  }
+  const storage =
+    typeof window !== "undefined" && window.CradleStorage
+      ? window.CradleStorage
+      : require("../../../src/components/ui/storage.js");
+  const store = storage.namespace("cradle_tb_planner_");
 
   function getSchedule(dateStr) {
-    if (!dateStr || !isLocalStorageAvailable()) return [];
-    try {
-      const raw = localStorage.getItem(STORAGE_PREFIX + dateStr);
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      return [];
-    }
+    if (!dateStr) return [];
+    const blocks = store.get(dateStr, []);
+    return Array.isArray(blocks) ? blocks : [];
   }
 
   function saveSchedule(dateStr, blocks) {
-    if (!dateStr || !isLocalStorageAvailable()) return false;
-    try {
-      localStorage.setItem(STORAGE_PREFIX + dateStr, JSON.stringify(blocks));
-      return true;
-    } catch (e) {
-      return false;
-    }
+    if (!dateStr) return false;
+    return store.set(dateStr, blocks);
   }
 
   function sanitizeBlocks(blocks) {
@@ -41,7 +28,7 @@
       start: String(b.start || "09:00"),
       end: String(b.end || "10:00"),
       color: String(b.color || "#3b82f6"),
-      notes: String(b.notes || "")
+      notes: String(b.notes || ""),
     }));
   }
 

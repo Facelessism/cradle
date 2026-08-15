@@ -5,7 +5,7 @@ const escapeHTML =
 
 // Theme Management
 function initTheme() {
-  const savedTheme = localStorage.getItem("neuralforge_theme") || "dark";
+  const savedTheme = localStorage.getItem("theme") || "dark";
   setTheme(savedTheme);
 }
 
@@ -17,12 +17,12 @@ function setTheme(theme) {
     html.classList.add("light-theme");
     if (themeBtn)
       themeBtn.innerHTML = '<i class="fas fa-sun text-orange-400"></i>';
-    localStorage.setItem("neuralforge_theme", "light");
+    localStorage.setItem("theme", "light");
   } else {
     html.classList.remove("light-theme");
     if (themeBtn)
       themeBtn.innerHTML = '<i class="fas fa-moon text-yellow-400"></i>';
-    localStorage.setItem("neuralforge_theme", "dark");
+    localStorage.setItem("theme", "dark");
   }
 }
 
@@ -42,6 +42,27 @@ if (typeof document !== "undefined") {
     initTheme();
     renderSavedProjectsList();
     renderComparisonTable();
+
+    document.querySelectorAll(".arch-btn").forEach(btn => {
+      btn.addEventListener("click", () => selectArch(btn));
+    });
+
+    document.getElementById("cores").addEventListener("input", e => {
+      document.getElementById("coreValue").innerText =
+        e.target.value + " Cores";
+    });
+
+    document.getElementById("frequency").addEventListener("input", e => {
+      document.getElementById("freqValue").innerText =
+        parseFloat(e.target.value).toFixed(2) + " GHz";
+    });
+
+    document
+      .getElementById("btn-generate")
+      .addEventListener("click", generateDesign);
+    document
+      .getElementById("btn-clear-comparison")
+      .addEventListener("click", clearComparison);
   });
 }
 
@@ -272,10 +293,10 @@ function renderDesignOutput() {
       </div>
 
       <div class="flex flex-col sm:flex-row gap-3 pt-2">
-        <button onclick="exportDesignToJSON()" class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium py-3.5 px-4 rounded-xl transition border border-gray-700 text-sm flex items-center justify-center gap-2">
+        <button data-action="export-json" class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium py-3.5 px-4 rounded-xl transition border border-gray-700 text-sm flex items-center justify-center gap-2">
           <i class="fas fa-file-code"></i> Export Design JSON
         </button>
-        <button onclick="saveActiveProject()" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3.5 px-4 rounded-xl transition shadow-md shadow-pink-900/10 text-sm flex items-center justify-center gap-2">
+        <button data-action="save-project" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3.5 px-4 rounded-xl transition shadow-md shadow-pink-900/10 text-sm flex items-center justify-center gap-2">
           <i class="fas fa-cloud-upload-alt"></i> Commit to Local Project Vault
         </button>
       </div>
@@ -290,6 +311,13 @@ function renderDesignOutput() {
   const wrapper = document.createElement("div");
   wrapper.innerHTML = html; // static template only
   outNode.appendChild(wrapper);
+
+  wrapper
+    .querySelector('[data-action="export-json"]')
+    .addEventListener("click", exportDesignToJSON);
+  wrapper
+    .querySelector('[data-action="save-project"]')
+    .addEventListener("click", saveActiveProject);
 
   outNode.classList.remove("hidden");
 }
@@ -533,7 +561,7 @@ function renderSavedProjectsList() {
     card.className =
       "bg-gray-800/40 hover:bg-gray-800 border border-gray-800 hover:border-gray-700 p-2.5 rounded-xl cursor-pointer flex justify-between items-center transition group";
 
-    card.onclick = () => loadSavedProject(p.id);
+    card.addEventListener("click", () => loadSavedProject(p.id));
 
     const left = document.createElement("div");
     left.className = "truncate mr-2";
@@ -553,7 +581,7 @@ function renderSavedProjectsList() {
     deleteBtn.className =
       "text-gray-500 hover:text-red-400 p-1 rounded opacity-0 group-hover:opacity-100 transition duration-150";
     deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-    deleteBtn.onclick = event => deleteProject(p.id, event);
+    deleteBtn.addEventListener("click", event => deleteProject(p.id, event));
 
     card.appendChild(left);
     card.appendChild(deleteBtn);

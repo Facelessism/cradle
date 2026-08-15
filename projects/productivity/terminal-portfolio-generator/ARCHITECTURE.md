@@ -114,7 +114,12 @@ User clicks Export → `exportHtml.js` combines output and theme into a blob →
 
 ## Dependencies
 
-None. This project uses only native browser APIs — no external libraries are required.
+| Dependency | Version | How loaded | Purpose |
+| --- | --- | --- | --- |
+| IBM Plex Mono | — | Google Fonts CDN (`<link>` tags) | Terminal UI typography |
+| JetBrains Mono | — | Google Fonts CDN (`<link>` tags) | Terminal and editor typography |
+
+This project otherwise uses only native browser APIs and the shared Cradle `escapeHtml.js` component — no external libraries are required.
 
 ---
 
@@ -123,3 +128,37 @@ None. This project uses only native browser APIs — no external libraries are r
 - Add support for importing an existing configuration JSON or HTML file
 - Support for more advanced terminal animations (typing effect)
 - Expand available color themes and add custom theme creator
+
+---
+
+## Known Limitations
+
+- Editor state is not persisted — refreshing the page resets all form fields.
+- No import support for existing configuration files.
+- The exported standalone HTML shows the static command output only; the interactive terminal emulator is not included in the export.
+- Typo suggestions rely on an edit-distance threshold, so very distant typos fall back to a plain "command not found".
+
+---
+
+## Development Notes
+
+- Open `index.html` through a local server (e.g. `python3 -m http.server 8000`), not by double-clicking the file, so the Google Fonts stylesheet loads correctly.
+- `portfolioEngine.js`, `theme.js`, and `exportHtml.js` use UMD-style exports, so they can also be required in Node.js for unit testing.
+- No build step is required — edit the files and refresh the browser.
+
+---
+
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:**
+  - IBM Plex Mono font by IBM (https://fonts.google.com/specimen/IBM+Plex+Mono), loaded from the Google Fonts CDN.
+  - JetBrains Mono font by JetBrains (https://fonts.google.com/specimen/JetBrains+Mono), loaded from the Google Fonts CDN.
+
+---
+
+## References
+
+- [MDN Web Docs — Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob)
+- [MDN Web Docs — URL.createObjectURL](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static)
+- [Levenshtein distance — Wikipedia](https://en.wikipedia.org/wiki/Levenshtein_distance)

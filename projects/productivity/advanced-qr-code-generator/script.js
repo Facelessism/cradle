@@ -70,12 +70,12 @@ function applyTheme(theme) {
     el.themeIcon.classList.add("fa-moon");
     el.themeToggle.setAttribute("aria-pressed", "false");
   }
-  localStorage.setItem("qr-studio-theme", theme);
+  localStorage.setItem("theme", theme);
 }
 
 /** Initialize theme from saved preference or system setting */
 function initTheme() {
-  const saved = localStorage.getItem("qr-studio-theme");
+  const saved = localStorage.getItem("theme");
   if (saved) {
     applyTheme(saved);
     return;

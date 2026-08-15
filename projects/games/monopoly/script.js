@@ -242,7 +242,8 @@ function charge(p, amt){
   renderPlayers();
 }
 function payEachPlayer(from, amt){
-  players.forEach(p=>{ if(p!==from && !p.bankrupt){ p.cash -= amt; from.cash += amt; } });
+  players.forEach(p=>{ if(p!==from && !p.bankrupt){ from.cash -= amt; p.cash += amt; } });
+  if(from.cash < 0) handleBankruptcy(from);
   renderPlayers();
 }
 

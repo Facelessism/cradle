@@ -2,33 +2,24 @@
  * RPS Storage Handler - Manages score history, win streaks, and match statistics
  */
 (function (exports) {
-  const STORAGE_KEY = "cradle_rps_stats";
+  const storage =
+    typeof window !== "undefined" && window.CradleStorage
+      ? window.CradleStorage
+      : require("../../../src/components/ui/storage.js");
+  const store = storage.namespace("cradle_rps_");
 
-  let memoryStats = {
+  const memoryStats = {
     wins: 0,
     losses: 0,
     ties: 0,
     currentStreak: 0,
     bestStreak: 0,
-    moveCounts: { rock: 0, paper: 0, scissors: 0, lizard: 0, spock: 0 }
+    moveCounts: { rock: 0, paper: 0, scissors: 0, lizard: 0, spock: 0 },
   };
 
-  function isLocalStorageAvailable() {
-    try {
-      return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
-    } catch (e) {
-      return false;
-    }
-  }
-
   function getStats() {
-    if (!isLocalStorageAvailable()) return memoryStats;
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? { ...memoryStats, ...JSON.parse(raw) } : memoryStats;
-    } catch (e) {
-      return memoryStats;
-    }
+    const saved = store.get("stats", {});
+    return { ...memoryStats, ...saved };
   }
 
   function recordOutcome(outcome, playerChoice) {
@@ -50,32 +41,14 @@
       stats.moveCounts[playerChoice] += 1;
     }
 
-    if (isLocalStorageAvailable()) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
-      } catch (e) {}
-    } else {
-      memoryStats = stats;
-    }
+    store.set("stats", stats);
 
     return stats;
   }
 
   function resetStats() {
-    const fresh = {
-      wins: 0,
-      losses: 0,
-      ties: 0,
-      currentStreak: 0,
-      bestStreak: 0,
-      moveCounts: { rock: 0, paper: 0, scissors: 0, lizard: 0, spock: 0 }
-    };
-    if (isLocalStorageAvailable()) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
-      } catch (e) {}
-    }
-    memoryStats = fresh;
+    const fresh = { ...memoryStats };
+    store.set("stats", fresh);
     return fresh;
   }
 

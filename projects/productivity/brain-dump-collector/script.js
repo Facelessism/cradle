@@ -540,7 +540,7 @@ function importNotes(event) {
       persistNotes();
       render();
     } catch (error) {
-      window.alert("Could not import this JSON file.");
+      showAlert("Could not import this JSON file.");
     } finally {
       elements.importFile.value = "";
     }
@@ -588,4 +588,18 @@ function titleCase(value) {
 
 function escapeHtml(str) {
   return CradleEscape.escapeHtml(str);
+}
+
+let alertTimeout;
+function showAlert(message) {
+  const container = document.getElementById("alertContainer");
+  const messageEl = document.getElementById("alertMessage");
+  if (container && messageEl) {
+    messageEl.textContent = message;
+    container.style.display = "flex";
+    clearTimeout(alertTimeout);
+    alertTimeout = setTimeout(() => {
+      container.style.display = "none";
+    }, 5000);
+  }
 }

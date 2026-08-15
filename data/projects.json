@@ -2,247 +2,226 @@
   {
     "title": "2048 Game",
     "category": "games",
-    "path": "projects/games/2048-game/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/games/2048-game/"
   },
   {
     "title": "Advanced QR Code Generator",
     "category": "productivity",
-    "path": "projects/productivity/advanced-qr-code-generator/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/productivity/advanced-qr-code-generator/"
   },
   {
     "title": "AI Circuit Builder",
     "category": "aiml",
-    "path": "projects/aiml/ai-circuit-builder/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/aiml/ai-circuit-builder/"
+  },
+  {
+    "title": "Api Response Inspector",
+    "category": "dev-tools",
+    "path": "projects/dev-tools/api-response-inspector/"
   },
   {
     "title": "ASCII Camera",
     "category": "misc",
-    "path": "projects/misc/ascii-camera/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/misc/ascii-camera/"
   },
   {
     "title": "Attendance Tracker",
     "category": "productivity",
-    "path": "projects/productivity/attendance-tracker/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/productivity/attendance-tracker/"
   },
   {
     "title": "Audio Waveform Generator",
     "category": "misc",
-    "path": "projects/misc/audio-waveform-generator/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/misc/audio-waveform-generator/"
   },
   {
     "title": "Avatar Creator",
     "category": "misc",
-    "path": "projects/misc/avatar-creator/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/misc/avatar-creator/"
   },
   {
     "title": "Brain Dump Collector",
     "category": "productivity",
-    "path": "projects/productivity/brain-dump-collector/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/productivity/brain-dump-collector/"
   },
   {
     "title": "Browser Storage Inspector",
     "category": "dev-tools",
-    "path": "projects/dev-tools/browser-storage-inspector/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/dev-tools/browser-storage-inspector/"
   },
   {
     "title": "Cannon Shooting",
     "category": "games",
-    "path": "projects/games/cannon-shooting/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/games/cannon-shooting/"
   },
   {
     "title": "Chess",
     "category": "games",
-    "path": "projects/games/chess/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/games/chess/"
   },
   {
     "title": "Color Contrast Checker",
     "category": "dev-tools",
-    "path": "projects/dev-tools/color-contrast-checker/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/dev-tools/color-contrast-checker/"
   },
   {
     "title": "CPU Emulator",
     "category": "dev-tools",
-    "path": "projects/dev-tools/cpu-emulator/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/dev-tools/cpu-emulator/"
   },
   {
     "title": "CSS Clamp Calculator",
     "category": "dev-tools",
-    "path": "projects/dev-tools/css-clamp-calculator/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/dev-tools/css-clamp-calculator/"
   },
   {
     "title": "CSS Shape Designer",
     "category": "editor",
-    "path": "projects/editor/css-shape-designer/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/editor/css-shape-designer/"
   },
   {
     "title": "CSV Data Cleaner",
     "category": "file-tools",
-    "path": "projects/file-tools/csv-data-cleaner/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/file-tools/csv-data-cleaner/"
   },
   {
     "title": "Dot Game",
     "category": "games",
-    "path": "projects/games/dot-game/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/games/dot-game/"
   },
   {
     "title": "Encoding Toolkit",
     "category": "dev-tools",
-    "path": "projects/dev-tools/encoding-toolkit/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/dev-tools/encoding-toolkit/"
+  },
+  {
+    "title": "Feature Flag Playground",
+    "category": "dev-tools",
+    "path": "projects/dev-tools/feature-flag-playground/"
   },
   {
     "title": "File Difference Visualizer",
     "category": "file-tools",
-    "path": "projects/file-tools/file-difference-visualizer/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/file-tools/file-difference-visualizer/"
   },
   {
     "title": "Fourier Series Visualizer",
     "category": "math",
-    "path": "projects/math/fourier-series-visualizer/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/math/fourier-series-visualizer/"
   },
   {
     "title": "Graph Theory Explorer",
     "category": "math",
-    "path": "projects/math/graph-theory-explorer/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/math/graph-theory-explorer/"
   },
   {
     "title": "Image Classifier",
     "category": "aiml",
-    "path": "projects/aiml/image-classifier/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/aiml/image-classifier/"
+  },
+  {
+    "title": "Image Metadata Explorer",
+    "category": "file-tools",
+    "path": "projects/file-tools/image-metadata-explorer/"
   },
   {
     "title": "Invoice Generator",
     "category": "productivity",
-    "path": "projects/productivity/invoice-generator/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/productivity/invoice-generator/"
   },
   {
     "title": "JSON Converter",
     "category": "dev-tools",
-    "path": "projects/dev-tools/json-converter/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/dev-tools/json-converter/"
   },
   {
     "title": "Ludo Game",
     "category": "games",
-    "path": "projects/games/ludo-game/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/games/ludo-game/"
   },
   {
     "title": "Markdown Resume Generator",
     "category": "editor",
-    "path": "projects/editor/markdown-resume-generator/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/editor/markdown-resume-generator/"
   },
   {
     "title": "Matrix Playground",
     "category": "math",
-    "path": "projects/math/matrix-playground/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/math/matrix-playground/"
   },
   {
     "title": "Meme Generator",
     "category": "misc",
-    "path": "projects/misc/meme-generator/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/misc/meme-generator/"
   },
   {
     "title": "Memory Flip Game",
     "category": "games",
-    "path": "projects/games/memory-flip-game/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/games/memory-flip-game/"
   },
   {
     "title": "Monopoly",
     "category": "games",
-    "path": "projects/games/monopoly/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/games/monopoly/"
   },
   {
     "title": "Morse Code Studio",
     "category": "misc",
-    "path": "projects/misc/morse-code-studio/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/misc/morse-code-studio/"
   },
   {
     "title": "Neural Network Playground",
     "category": "aiml",
-    "path": "projects/aiml/neural-network-playground/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/aiml/neural-network-playground/"
   },
   {
     "title": "Periodic Table",
     "category": "misc",
-    "path": "projects/misc/periodic-table/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/misc/periodic-table/"
   },
   {
     "title": "Reading Progress Tracker",
     "category": "productivity",
-    "path": "projects/productivity/reading-progress-tracker/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/productivity/reading-progress-tracker/"
   },
   {
     "title": "Regex Visualizer",
     "category": "dev-tools",
-    "path": "projects/dev-tools/regex-visualizer/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/dev-tools/regex-visualizer/"
   },
   {
     "title": "Sound Wave Visualizer",
     "category": "misc",
-    "path": "projects/misc/sound-wave-visualizer/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/misc/sound-wave-visualizer/"
   },
   {
     "title": "Stone Paper Scissors Game",
     "category": "games",
-    "path": "projects/games/stone-paper-scissors-game/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/games/stone-paper-scissors-game/"
   },
   {
     "title": "Terminal Portfolio Generator",
     "category": "productivity",
-    "path": "projects/productivity/terminal-portfolio-generator/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/productivity/terminal-portfolio-generator/"
   },
   {
     "title": "Text Diff Checker",
     "category": "dev-tools",
-    "path": "projects/dev-tools/text-diff-checker/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/dev-tools/text-diff-checker/"
   },
   {
     "title": "Time Blocking Planner",
     "category": "productivity",
-    "path": "projects/productivity/time-blocking-planner/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/productivity/time-blocking-planner/"
   },
   {
     "title": "URL Parser",
     "category": "dev-tools",
-    "path": "projects/dev-tools/url-parser/",
-    "dateAdded": "2026-08-08T14:10:51+05:30"
+    "path": "projects/dev-tools/url-parser/"
+  },
+  {
+    "title": "Violin",
+    "category": "instruments",
+    "path": "projects/instruments/violin/"
   }
 ]

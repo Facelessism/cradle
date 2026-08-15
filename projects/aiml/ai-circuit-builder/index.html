@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NeuralForge - AI Chip Design Assistant</title>
+    <meta name="description" content="Interactive AI logic circuit simulator for building, evaluating, and visualizing neural network components." />
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       rel="stylesheet"
@@ -123,28 +124,24 @@
                   class="grid grid-cols-2 gap-3 text-xs font-bold tracking-wider"
                 >
                   <button
-                    onclick="selectArch(this)"
                     data-arch="cpu"
                     class="arch-btn bg-gray-800 hover:bg-gray-700 rounded-2xl py-3.5 text-center transition border border-gray-700/50"
                   >
                     CPU
                   </button>
                   <button
-                    onclick="selectArch(this)"
                     data-arch="npu"
                     class="arch-btn bg-blue-600 text-white rounded-2xl py-3.5 text-center transition border border-blue-500"
                   >
                     NPU
                   </button>
                   <button
-                    onclick="selectArch(this)"
                     data-arch="gpu"
                     class="arch-btn bg-gray-800 hover:bg-gray-700 rounded-2xl py-3.5 text-center transition border border-gray-700/50"
                   >
                     GPU
                   </button>
                   <button
-                    onclick="selectArch(this)"
                     data-arch="asic"
                     class="arch-btn bg-gray-800 hover:bg-gray-700 rounded-2xl py-3.5 text-center transition border border-gray-700/50"
                   >
@@ -172,10 +169,6 @@
                   max="128"
                   value="16"
                   class="w-full accent-blue-500 bg-gray-800 h-2 rounded-lg cursor-pointer"
-                  oninput="
-                    document.getElementById('coreValue').innerText =
-                      this.value + ' Cores'
-                  "
                 />
                 <div
                   class="flex justify-between text-[10px] text-gray-500 font-mono mt-1"
@@ -206,10 +199,6 @@
                   step="0.1"
                   value="2.5"
                   class="w-full accent-purple-500 bg-gray-800 h-2 rounded-lg cursor-pointer"
-                  oninput="
-                    document.getElementById('freqValue').innerText =
-                      parseFloat(this.value).toFixed(2) + ' GHz'
-                  "
                 />
                 <div
                   class="flex justify-between text-[10px] text-gray-500 font-mono mt-1"
@@ -221,7 +210,7 @@
               </div>
 
               <button
-                onclick="generateDesign()"
+                id="btn-generate"
                 class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 py-4 rounded-2xl font-semibold text-base transition-all shadow-lg shadow-purple-900/20 active:scale-[0.98] mt-2 flex items-center justify-center gap-2"
               >
                 <i aria-hidden="true" class="fas fa-microchip text-sm"></i>
@@ -296,7 +285,7 @@
                 Comparison Workspace
               </h3>
               <button
-                onclick="clearComparison()"
+                id="btn-clear-comparison"
                 class="text-xs font-medium text-red-400 hover:underline bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-xl transition"
               >
                 Clear Matrix

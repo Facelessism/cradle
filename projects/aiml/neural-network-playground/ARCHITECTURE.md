@@ -26,7 +26,7 @@ projects/aiml/neural-network-playground/
 
 ---
 
-## Architecture
+## System / Project Architecture Overview
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -67,6 +67,17 @@ projects/aiml/neural-network-playground/
 2. **Loss Function**:
    Binary Cross-Entropy Loss:
    $$\mathcal{L} = -\frac{1}{N} \sum_{i=1}^N \left[ y_i \log(\hat{y}_i) + (1 - y_i) \log(1 - \hat{y}_i) \right]$$
+
+---
+
+## Component Breakdown
+
+| File | Responsibility |
+|---|---|
+| `index.html` | UI layout, control panels, and the three visualization canvases |
+| `script.js` | State management, canvas rendering loops, event wiring, CSV import, and model export |
+| `nnEngine.js` | Network math: dataset generation, activations, forward pass, backpropagation |
+| `style.css` | Layout, theming, and responsive styling |
 
 ---
 
@@ -155,25 +166,16 @@ Example:
 
 ---
 
-<!-- ## Design Decisions -->
+## Design Decisions
 
-<!--
-Explain non-obvious choices made during development.
-This is especially useful for reviewers and future contributors.
+- **Engine Modules vs. Inline Logic** — core mathematical operations, forward pass, backpropagation, and weight updates are isolated in `nnEngine.js` with UMD exports, decoupling business logic from DOM state and allowing headless unit testing via `node --test` while `script.js` handles interactive Canvas rendering and UI event listeners.
+- **He initialization** — weights are initialized with a `sqrt(2 / fanIn)` scale to keep activations well-conditioned for ReLU-style layers.
+- **Single-threaded visual training loop** — mini-batch SGD runs in the main thread inside a `requestAnimationFrame` loop so training stays live and interruptible.
+- **Vanilla implementation** — no ML framework is used; the network is implemented from scratch so every step is inspectable.
 
-Example:
-- **Immutable state** — `moveGameState` always returns a new object rather than
-  mutating state in place, making the logic easy to test and the history easy to track.
-- **UMD wrapper in logic.js** — allows the same file to be loaded in a browser
-  via a script tag and imported in Node.js for unit testing.
-- **No framework** — kept vanilla to minimize the learning curve for contributors
-  and avoid a build step.
--->
+---
 
-<!-- - Decision 1 and the reason for it -->
-<!-- - Decision 2 and the reason for it -->
-
-<!-- --- -->
+---
 
 ## Dependencies
 
@@ -217,3 +219,18 @@ None. This project uses only native browser APIs — no external libraries are r
 - Visit (`http://localhost:8000`)
 
 ---
+
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:**
+  - Inter and JetBrains Mono (fonts) — Google Fonts CDN — UI typography
+  - Font Awesome 6.5.0 (CDN via cdnjs) — control panel icons
+
+---
+
+## References
+
+- [Backpropagation — Wikipedia](https://en.wikipedia.org/wiki/Backpropagation) — training algorithm reference
+- [Stochastic gradient descent — Wikipedia](https://en.wikipedia.org/wiki/Stochastic_gradient_descent) — optimizer reference
+- [MDN Web Docs — Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API) — rendering the visualizations

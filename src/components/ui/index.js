@@ -25,6 +25,7 @@
  *   - CradleNavbar       Sticky navbar with mobile drawer
  *   - CradleBackToHome   Fixed "Back to Home" pill button
  *   - CradleEscape       HTML escaping utility (CradleEscape.escapeHtml)
+ *   - CradleStorage      localStorage helper (CradleStorage.get/set/...)
  *
  * Individual component files:
  *   /src/components/ui/Button/Button.js
@@ -35,6 +36,7 @@
  *
  * Utility files:
  *   /src/components/ui/escapeHtml.js
+ *   /src/components/ui/storage.js
  *
  * Design tokens:
  *   /src/components/ui/tokens.css
@@ -99,7 +101,7 @@
   ];
 
   /* Non-DOM utilities that follow the same load-on-demand pattern. */
-  const UTILITIES = ["escapeHtml.js"];
+  const UTILITIES = ["escapeHtml.js", "storage.js"];
 
   /**
    * Load a single component script.
@@ -148,7 +150,7 @@
 
     /**
      * Load a single component or utility by name.
-     * @param {'Button'|'Card'|'ThemeToggle'|'Navbar'|'BackToHome'|'escapeHtml'} name
+     * @param {'Button'|'Card'|'ThemeToggle'|'Navbar'|'BackToHome'|'escapeHtml'|'storage'} name
      * @returns {Promise<void>}
      */
     load(name) {

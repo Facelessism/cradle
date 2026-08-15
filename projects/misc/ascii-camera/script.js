@@ -114,7 +114,7 @@
       setStatus("Camera Active", "Live Streaming", "Streaming live webcam feed.");
       scheduleNextFrame();
     } catch (err) {
-      alert("Camera access denied or unavailable: " + err.message);
+      setStatus("Camera Error", "Access Denied", "Camera access denied or unavailable: " + err.message);
       setEmptyState();
     }
   }

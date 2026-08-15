@@ -70,6 +70,7 @@ const GLOBAL_TRACK = [
   [8, 1],
   [8, 0],
   [7, 0],
+  [6, 0],
 ];
 
 const SAFE_ZONES = [

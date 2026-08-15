@@ -8,6 +8,14 @@ The project is intentionally self-contained: no build tools, no frameworks, no e
 
 ---
 
+## Purpose & Goals
+
+- Reach a tile worth 2048 by merging equal tiles
+- Demonstrate a pure game-logic module (`logic.js`) that has no DOM dependency and can be unit tested in Node.js
+- Showcase immutable state management and localStorage persistence without frameworks or a build step
+
+---
+
 ## Folder Structure
 
 ```text
@@ -25,7 +33,13 @@ The project is intentionally self-contained: no build tools, no frameworks, no e
 
 ---
 
-## Application Flow
+## System / Project Architecture Overview
+
+The project follows a strict separation of concerns. `logic.js` contains every game rule as pure functions exposed through a UMD wrapper, `storage.js` handles best-score persistence, `gameUndoManager.js` keeps an undo history stack, and `gameThemeEngine.js` supplies the grid colour themes. `script.js` is the only file that touches the DOM — it reads the public API from `window.__2048Logic`, handles keyboard input, and re-renders the board. There is no build step; the browser loads the files directly.
+
+---
+
+## Data Flow / Execution Flow
 
 ```text
 User opens index.html
@@ -53,7 +67,7 @@ Win / loss status is checked and displayed
 
 ---
 
-## Core Components
+## Component Breakdown
 
 ### `index.html`
 
@@ -91,7 +105,60 @@ Handles all visual presentation. Tile colours are assigned through CSS classes n
 
 ---
 
-## State Management
+## Key Features
+
+- 4×4 sliding tile grid with merge-on-collision logic
+- Score counter and persistent best score via localStorage
+- Keyboard (arrow keys) and WASD controls
+- Win detection at 2048 and loss detection when no moves remain
+- Undo support via a move history stack and switchable colour themes
+
+---
+
+## Technologies Used
+
+| Technology | Purpose |
+|---|---|
+| HTML5 | Page structure and semantic markup |
+| CSS3 (CSS Grid) | Board layout and tile colour theming |
+| Vanilla JavaScript (ES6+) | Game logic, storage, and DOM manipulation |
+| localStorage API | Persisting the best score across sessions |
+
+---
+
+## File Responsibilities
+
+### `index.html`
+
+- Defines the page shell, score cards, board container, and Restart button
+
+### `logic.js`
+
+- Pure game rules — board creation, moves, merges, win/loss detection
+
+### `script.js`
+
+- UI layer — rendering the board, handling keyboard events, applying moves
+
+### `storage.js`
+
+- Saves and loads game state and best score per grid size
+
+### `gameUndoManager.js`
+
+- Manages the move history stack and rollback
+
+### `gameThemeEngine.js`
+
+- Provides preset colour themes (Classic, Dark Neon, Cyberpunk)
+
+### `style.css`
+
+- All visual presentation, tile colours, and responsive layout
+
+---
+
+## Design Decisions
 
 All game state lives in a single plain JavaScript object (`state`) held in `script.js`:
 
@@ -132,9 +199,10 @@ renderBoard()  →  updates all tile divs and score elements
 
 ---
 
-## Assets
+## License & Attribution
 
-This project uses no image, audio, font, or icon assets. All visual styling is achieved with CSS gradients, colours, and typography using the system font stack (`Inter, system-ui, …`).
+- **Project License:** MIT (repository LICENSE)
+- No image, audio, font, or icon assets are used. All visual styling is achieved with CSS gradients, colours, and typography using the system font stack (`Inter, system-ui, …`).
 
 ---
 
@@ -150,3 +218,26 @@ None. The project is pure HTML, CSS, and JavaScript with no external libraries.
 - **Tile slide animations** — animate tiles moving across the grid before they settle.
 - **Undo** — since state is immutable, keeping a history stack would be straightforward.
 - **Keyboard shortcut hints** — surface the WASD alternative visually for new players.
+
+---
+
+## Known Limitations
+
+- No touch/swipe support — keyboard only
+- No animation — tiles jump instantly instead of sliding
+- Undo is implemented via `gameUndoManager.js`, but there is no "undo" button in the current UI
+
+---
+
+## Development Notes
+
+- Open `index.html` through a local server (e.g. `python3 -m http.server 8000`), not by double-clicking the file, since some browsers restrict localStorage under the `file://` protocol.
+- `logic.js` uses a UMD wrapper so it can be tested with Node.js:
+  `node -e "const l = require('./logic.js'); console.log(l.createInitialState())"`
+- No build step is required. Edit the files and refresh the browser.
+
+---
+
+## References
+
+- [2048 by Gabriele Cirulli](https://github.com/gabrielecirulli/2048) — original game that inspired this implementation

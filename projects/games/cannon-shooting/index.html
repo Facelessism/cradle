@@ -31,89 +31,125 @@
         <span class="hud-label">ACCURACY</span>
         <span class="hud-value" id="hud-accuracy">100%</span>
       </div>
-    </div>
 
-    <div class="game-wrapper">
-      <div class="countdown">10</div>
-      <div class="game-container">
-        <div class="game-col computer-col">
-          <div class="cannon cm">
-            <div class="pipe">
-              <div class="level"></div>
-              <div class="ball"></div>
-              <div class="level-monitor">0</div>
-            </div>
-            <div class="wheel"></div>
+<head>
+  <meta charset="UTF-8" />
+  <title>Cannon Shooting</title>
+  <meta name="description" content="Arcade cannon shooting defense game with score streaks and physics mechanics." />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+  <div class="hud-banner">
+    <div class="hud-item">
+      <span class="hud-label">SCORE</span>
+      <span class="hud-value" id="hud-score">0</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">HIGH SCORE</span>
+      <span class="hud-value" id="hud-high-score">0</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">STREAK</span>
+      <span class="hud-value" id="hud-streak">0🔥</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">BEST STREAK</span>
+      <span class="hud-value" id="hud-best-streak">0</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">ACCURACY</span>
+      <span class="hud-value" id="hud-accuracy">100%</span>
+    </div>
+  </div>
+
+  <div class="game-wrapper">
+    <div class="countdown">10</div>
+    <div class="game-container">
+      <div class="game-col computer-col">
+        <div class="cannon cm">
+          <div class="pipe">
+            <div class="level"></div>
+            <div class="ball"></div>
+            <div class="level-monitor">0</div>
           </div>
-        </div>
-        <div class="game-col user-col">
-          <div class="cannon">
-            <div class="pipe">
-              <div class="level"></div>
-              <div class="ball"></div>
-              <div class="level-handle">0</div>
-            </div>
-            <div class="wheel"></div>
-            <div class="wheel-handle"></div>
-          </div>
+          <div class="wheel"></div>
         </div>
       </div>
-      <div class="road">
-        <div class="scale">
-          <ul class="scale-point mirror">
-            <li><span class="unit">1</span></li>
-            <li><span class="unit">2</span></li>
-            <li><span class="unit">3</span></li>
-            <li><span class="unit">4</span></li>
-            <li><span class="unit">5</span></li>
-            <li><span class="unit">6</span></li>
-            <li><span class="unit">7</span></li>
-            <li><span class="unit">8</span></li>
-            <li><span class="unit">9</span></li>
-            <li><span class="unit">10</span></li>
-            <li><span class="unit">11</span></li>
-            <li><span class="unit">12</span></li>
-            <li><span class="unit">13</span></li>
-            <li><span class="unit">14</span></li>
-            <li><span class="unit">15</span></li>
-            <li><span class="unit">16</span></li>
-            <li><span class="unit">17</span></li>
-            <li><span class="unit">18</span></li>
-            <li><span class="unit">19</span></li>
-            <li><span class="unit">20</span></li>
-          </ul>
-          <ul class="scale-point">
-            <li><span class="unit">0</span></li>
-            <li><span class="unit">1</span></li>
-            <li><span class="unit">2</span></li>
-            <li><span class="unit">3</span></li>
-            <li><span class="unit">4</span></li>
-            <li><span class="unit">5</span></li>
-            <li><span class="unit">6</span></li>
-            <li><span class="unit">7</span></li>
-            <li><span class="unit">8</span></li>
-            <li><span class="unit">9</span></li>
-            <li><span class="unit">10</span></li>
-            <li><span class="unit">11</span></li>
-            <li><span class="unit">12</span></li>
-            <li><span class="unit">13</span></li>
-            <li><span class="unit">14</span></li>
-            <li><span class="unit">15</span></li>
-            <li><span class="unit">16</span></li>
-            <li><span class="unit">17</span></li>
-            <li><span class="unit">18</span></li>
-            <li><span class="unit">19</span></li>
-          </ul>
+      <div class="game-col user-col">
+        <div class="cannon">
+          <div class="pipe">
+            <div class="level"></div>
+            <div class="ball"></div>
+            <div class="level-handle">0</div>
+          </div>
+          <div class="wheel"></div>
+          <div class="wheel-handle"></div>
         </div>
       </div>
     </div>
+    <div class="road">
+      <div class="scale">
+        <ul class="scale-point mirror">
+          <li><span class="unit">1</span></li>
+          <li><span class="unit">2</span></li>
+          <li><span class="unit">3</span></li>
+          <li><span class="unit">4</span></li>
+          <li><span class="unit">5</span></li>
+          <li><span class="unit">6</span></li>
+          <li><span class="unit">7</span></li>
+          <li><span class="unit">8</span></li>
+          <li><span class="unit">9</span></li>
+          <li><span class="unit">10</span></li>
+          <li><span class="unit">11</span></li>
+          <li><span class="unit">12</span></li>
+          <li><span class="unit">13</span></li>
+          <li><span class="unit">14</span></li>
+          <li><span class="unit">15</span></li>
+          <li><span class="unit">16</span></li>
+          <li><span class="unit">17</span></li>
+          <li><span class="unit">18</span></li>
+          <li><span class="unit">19</span></li>
+          <li><span class="unit">20</span></li>
+        </ul>
+        <ul class="scale-point">
+          <li><span class="unit">0</span></li>
+          <li><span class="unit">1</span></li>
+          <li><span class="unit">2</span></li>
+          <li><span class="unit">3</span></li>
+          <li><span class="unit">4</span></li>
+          <li><span class="unit">5</span></li>
+          <li><span class="unit">6</span></li>
+          <li><span class="unit">7</span></li>
+          <li><span class="unit">8</span></li>
+          <li><span class="unit">9</span></li>
+          <li><span class="unit">10</span></li>
+          <li><span class="unit">11</span></li>
+          <li><span class="unit">12</span></li>
+          <li><span class="unit">13</span></li>
+          <li><span class="unit">14</span></li>
+          <li><span class="unit">15</span></li>
+          <li><span class="unit">16</span></li>
+          <li><span class="unit">17</span></li>
+          <li><span class="unit">18</span></li>
+          <li><span class="unit">19</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+  <script src="./cannonEngine.js"></script>
+  <script src="./cannonStorage.js"></script>
+  <script src="./script.js"></script>
+</body>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+</html>
     <script
       src="../../../src/components/ui/BackToHome/BackToHome.js"
       defer
     ></script>
     <script src="./cannonEngine.js"></script>
+    <script src="../../../src/components/ui/storage.js"></script>
     <script src="./cannonStorage.js"></script>
     <script src="./script.js"></script>
     </main>
