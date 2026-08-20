@@ -139,6 +139,8 @@
     } else {
       html.classList.remove(LIGHT_CLASS);
     }
+    /* Expose dataset.theme for e2e / visual-regression tests (issue #265) */
+    html.dataset.theme = theme;
     if (persist) storeTheme(theme);
 
     /* Notify all registered toggle instances */
@@ -232,7 +234,8 @@
       btn.setAttribute("role", "switch");
       btn.setAttribute("aria-checked", theme === "light" ? "true" : "false");
       btn.setAttribute("aria-label", labelFor(theme));
-
+      btn.setAttribute("data-testid", "theme-toggle");
+      
       const icon = document.createElement("span");
       icon.className = "cradle-theme-toggle__icon";
       icon.setAttribute("aria-hidden", "true");
@@ -269,6 +272,7 @@
         el.setAttribute("role", "switch");
         el.setAttribute("aria-checked", theme === "light" ? "true" : "false");
         el.setAttribute("aria-label", labelFor(theme));
+        el.setAttribute("data-testid", "theme-toggle");
         el.type = "button";
 
         /* Replace inner content with icon span */
