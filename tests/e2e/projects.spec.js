@@ -23,7 +23,7 @@ test.describe("Project pages", () => {
     }
   });
 
-  for (const project of await loadProjectsSync()) {
+  for (const project of loadProjectsSync()) {
     const title = project.title;
     const url = `${BASE_URL}/${project.path.replace(/^projects\//, "projects/")}`;
 
