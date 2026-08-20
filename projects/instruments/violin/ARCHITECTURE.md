@@ -1,25 +1,66 @@
-# Virtual Violin Architecture
+# Project Architecture
 
 ## Overview
 
-The Virtual Violin is a standalone, dependency-light Cradle mini located at `projects/instruments/`.
-
-It provides a playable violin surface with four visible strings, open-string notes, a simplified fingerboard for higher notes, mouse/touch pointer interaction, and keyboard shortcuts. Sound is generated locally with the browser Web Audio API; no audio files or third-party runtime libraries are required.
+The Virtual Violin is a standalone, dependency-light Cradle mini located under `projects/instruments/violin/`. It provides a playable violin surface with four visible strings, open-string notes, a simplified fingerboard for higher notes, mouse/touch pointer interaction, and keyboard shortcuts. Sound is generated locally with the browser Web Audio API; no audio files or third-party runtime libraries are required.
 
 The implementation intentionally keeps the project as a small static application so it can be opened directly from its `index.html` or served by the same lightweight local server used by Cradle.
+
+## Purpose & Goals
+
+* Provide a playable violin surface that works without any external audio samples or runtime dependencies.
+* Demonstrate how the Web Audio API can synthesize a bowed-string-like tone using only oscillators, a gain envelope, and a low-pass filter.
+* Support three input modalities — keyboard, mouse, and touch — using Pointer Events so a single code path handles all of them.
+* Keep the project self-contained enough to be opened by double-clicking `index.html` or served by the repo's static dev server.
 
 ## Folder Structure
 
 ```text
-projects/instruments/
+projects/instruments/violin/
 ├── index.html          # Accessible page shell and instrument markup
 ├── style.css           # Mini-specific layout, violin illustration and responsive styles
 ├── script.js           # Audio engine, interaction controller and UI state
 ├── ARCHITECTURE.md     # Project architecture and design decisions
-└── README.md           # Run instructions and feature overview
+├── README.md           # Run instructions and feature overview
+└── thumbnail.svg       # Showcase card thumbnail (auto-generated)
+
 ```
 
-## Application Flow
+## System / Project Architecture Overview
+
+The mini follows a single-file vanilla architecture: `index.html` declares the semantic structure and the CSS-rendered violin markup, `style.css` owns all presentation (the violin illustration itself, responsive layout, theme support, pointer-friendly targets), and `script.js` owns all behaviour — the Web Audio engine, keyboard and pointer handlers, and UI state.
+
+There is no framework, no module loader, and no build step. The `AudioContext` is created lazily on the first user interaction, in line with browser autoplay policies.
+
+```text
+User opens index.html
+        ↓
+Browser loads style.css → script.js
+        ↓
+UI is rendered; selected string defaults to G
+        ↓
+User presses A/S/D/F, clicks a string, or drags on the fingerboard
+        ↓
+script.js resolves the string + semitone offset → frequency
+        ↓
+AudioContext is lazily created on first interaction
+        ↓
+Two oscillators (sawtooth + triangle) → low-pass filter → gain envelope → master gain
+        ↓
+Note plays; selected-string and note readouts update
+
+```
+
+## Component Breakdown
+
+| File | Responsibility |
+| --- | --- |
+| `index.html` | Page header, Cradle navigation, CSS-rendered violin, four string hit targets, keyboard controls, string selector, volume control, status/live regions for accessible feedback |
+| `style.css` | Cradle-compatible custom properties, light/dark theme support, CSS-only violin illustration, responsive layouts, pointer-friendly targets, focus-visible states, reduced-motion support |
+| `script.js` | Web Audio engine (oscillators, filter, gain envelope), keyboard and pointer event handling, semitone-to-frequency conversion, UI state (selected string, volume), `localStorage` persistence of volume and theme |
+| `thumbnail.svg` | Showcase card thumbnail used by the repo's project index (auto-generated, not edited by hand) |
+
+## Data Flow / Execution Flow
 
 ```text
 Open index.html
@@ -40,162 +81,116 @@ Convert semitone offset to frequency
 Create short Web Audio tone
       ↓
 Update note/status UI
+
 ```
 
-## Core Modules
+## Key Features
+
+* **Four Playable Strings:** G, D, A, and E with correct open-string frequencies.
+* **Keyboard Shortcuts:** `A` / `S` / `D` / `F` map to the G / D / A / E strings respectively.
+* **Unified Input Support:** Mouse and touch support via Pointer Events — the same code path works on desktop and mobile.
+* **Simplified Fingerboard:** Vertical pointer position on a string maps to a semitone offset from the open string, allowing higher notes to be played.
+* **Bowed-String Synthesis:** Lightweight tone generation using two oscillators (sawtooth + triangle) feeding a low-pass filter and an exponential gain envelope.
+* **Persistent Settings:** Volume control and Light/Dark themes persist across sessions via `localStorage`.
+* **Accessibility First:** Semantic headings, `aria-labels` on string targets, `aria-pressed` on selected strings, live status messaging (`aria-live`), visible `:focus-visible` states, touch-friendly control sizes, and reduced-motion support.
+
+## Technologies Used
+
+| Technology | Purpose |
+| --- | --- |
+| **HTML5** | Semantic page structure, accessible controls, live regions |
+| **CSS3** (Custom Properties, `:focus-visible`, `prefers-reduced-motion`) | Violin illustration, layout, themes, accessibility states |
+| **Vanilla JavaScript** (ES6+) | Web Audio engine, pointer/keyboard handlers, UI state |
+| **Web Audio API** (`AudioContext`, `OscillatorNode`, `GainNode`, `BiquadFilterNode`) | Tone synthesis |
+| **Pointer Events API** | Unified mouse + touch input |
+| **`localStorage`** | Persisting volume and theme preferences |
+
+## File Responsibilities
 
 ### `index.html`
 
-Owns the semantic application structure:
-
-- Page header and Cradle navigation.
-- CSS-rendered violin structure.
-- Four string hit targets.
-- Keyboard controls.
-- String selector.
-- Volume control.
-- Status/live regions for accessible feedback.
-
-The page has no framework dependency and loads only the mini's local JavaScript.
-
-### `style.css`
-
-Contains presentation only:
-
-- Cradle-compatible CSS custom properties.
-- Dark/light theme support using the same `light-theme` convention.
-- CSS-only violin illustration.
-- Responsive layouts for desktop, tablet and mobile.
-- Pointer-friendly string targets.
-- Focus-visible states.
-- Reduced-motion support.
-
-The violin does not depend on an image or SVG asset, which keeps the mini portable and avoids additional network requests.
+* Page header and Cradle navigation.
+* CSS-rendered violin structure (neck, body, four strings).
+* Four string hit targets, each with an enlarged invisible pointer overlay for easier interaction.
+* Keyboard controls hint (`A` / `S` / `D` / `F`).
+* String selector control.
+* Volume control slider.
+* Status / live regions for accessible feedback (`aria-live`).
 
 ### `script.js`
 
-Contains the interaction and audio controller.
+* Defines the immutable `STRINGS` catalogue (open-string frequencies for G, D, A, E).
+* Maps keyboard keys to strings.
+* Lazily creates the `AudioContext` on the first user interaction.
+* Generates short bowed-string-like tones using two oscillators (sawtooth + triangle), a low-pass filter, and an exponential gain envelope, all routed through a shared master gain node.
+* Maps fingerboard pointer position to semitone offsets from the selected open string.
+* Handles mouse and touch through Pointer Events (single handler for both).
+* Updates selected-string and note readouts.
+* Persists volume and theme preferences when browser storage is available.
 
-Responsibilities:
+### `style.css`
 
-- Defines the four violin strings and their frequencies.
-- Maps keyboard keys to strings.
-- Lazily creates the `AudioContext`.
-- Generates short bowed-string-like tones using oscillators, gain envelopes and a low-pass filter.
-- Maps fingerboard pointer position to semitone offsets.
-- Handles mouse and touch through Pointer Events.
-- Updates selected-string and note readouts.
-- Persists volume and theme preferences when browser storage is available.
+* Cradle-compatible CSS custom properties (inherits from the shared `tokens.css`).
+* Dark/light theme support using the repo-wide light-theme convention.
+* CSS-only violin illustration (no image asset).
+* Responsive layouts for desktop, tablet, and mobile.
+* Pointer-friendly string targets with enlarged hit areas.
+* `:focus-visible` states for keyboard users.
+* `@media (prefers-reduced-motion: reduce)` support.
 
-## State Model
+## Design Decisions
 
-The mini deliberately keeps state small:
+* **CSS-only violin illustration:** The violin is rendered entirely with CSS rather than an image or SVG. This keeps the mini portable (no asset to ship) and avoids an additional network request.
+* **Web Audio synthesis instead of audio samples:** Generating tones on the fly with oscillators + filter + envelope avoids bundling audio files while still producing a recognizable bowed-string timbre. This is intentionally a lightweight approximation, not a physical model.
+* **Pointer Events instead of separate mouse/touch handlers:** Using the unified Pointer Events API means a single code path handles desktop mice, touchpads, and touchscreens — no duplicate `mousedown` / `touchstart` handlers to keep in sync.
+* **Lazy `AudioContext` creation:** The `AudioContext` is created on the first user interaction, not at page load, to comply with browser autoplay policies.
+* **Data-driven string catalogue:** The `STRINGS` catalogue is an immutable array; adding a new string (e.g. a fifth string for a viola tuning) would be a one-line change rather than touching the audio engine.
+* **Shared master gain:** All notes route through one `masterGain` node so the volume control affects every voice without per-note gain arithmetic.
 
-| State | Purpose |
-| --- | --- |
-| `selectedString` | Current string selected in the control panel |
-| `audioContext` | Lazily-created browser audio context |
-| `masterGain` | Shared output volume node |
-| `activePointerId` | Current touch/mouse gesture |
-| `lastPointerNote` | Prevents duplicate notes during a drag |
-| `volume` | User-controlled output level |
-| Theme | Stored through the Cradle `theme` convention |
+## Dependencies
 
-The string catalogue is immutable and can be extended by adding string metadata rather than changing the audio engine.
+| Dependency | Version | How loaded | Purpose |
+| --- | --- | --- | --- |
+| **Cradle shared tokens.css** | — | `<link>` from `../../../src/components/ui/tokens.css` | Design tokens (colours, spacing, typography) |
+| **Web Audio API** | — | Native | Tone synthesis |
+| **Pointer Events API** | — | Native | Unified mouse + touch input |
+| **`localStorage`** | — | Native | Persisting volume and theme preferences |
 
-## Audio Design
+*No external libraries, CDNs, fonts, or runtime packages are required.*
 
-The Web Audio implementation uses two oscillators:
+## Future Improvements
 
-1. A sawtooth oscillator provides the bright bowed-string harmonic content.
-2. A triangle oscillator reinforces the fundamental/body resonance.
+* Additional finger positions or scales (e.g. first-position, third-position fingering guides).
+* Bow direction and pressure simulation.
+* More realistic envelope/filter modelling (e.g. a physical-modeling bowed-string source).
+* Note labels or pitch indicators on the fingerboard.
+* Recording and playback of short performances.
+* Alternate tunings (e.g. viola, cello).
+* MIDI input/output for hardware controllers.
+* A reusable Instrument abstraction for future Cradle instrument minis.
 
-Both feed a low-pass filter and an exponential gain envelope before reaching the shared master gain.
+## Known Limitations
 
-This is intentionally a lightweight approximation rather than a physical violin model. It avoids shipping large audio samples while keeping the mini immediately playable.
+* **Simplified Sound Model:** The bowed-string sound is a lightweight approximation — it does not model bow direction, bow pressure, or body resonance in detail.
+* **No Recording:** No recording or playback capability.
+* **Fixed Key Mapping:** Keyboard layout is fixed to `A` / `S` / `D` / `F`; it is not user-configurable.
+* **Linear Fingerboard Mapping:** The simplified fingerboard uses a single linear semitone mapping rather than modelling actual hand positions.
+* **First-Note Latency:** Audio is started lazily in response to user interaction to comply with browser autoplay policies, so the very first note may have a tiny startup latency.
 
-## Interaction Design
+## Development Notes
 
-### Keyboard
+* Open `projects/instruments/violin/index.html` directly in a browser, or serve the repository root with any static file server. No build step is required.
+* The shared `tokens.css` is loaded via a relative path; if you move the project folder, update the `<link href>` in `index.html`.
+* Because the `AudioContext` is created on first user interaction, audio will not play until the user clicks a string or presses a key — this is intentional and required by browser autoplay policies.
+* Theme changes persist via `localStorage` under the repo-wide Cradle theme convention key.
 
-- `A` → G string
-- `S` → D string
-- `D` → A string
-- `F` → E string
+## License & Attribution
 
-Keyboard interaction plays the corresponding open string.
-
-### Mouse and Touch
-
-Each visible string has an enlarged invisible pointer target for easier interaction.
-
-The vertical pointer position on the fingerboard maps to a semitone offset from the selected open string. Moving the pointer while pressed creates a simple playable pitch progression.
-
-Pointer Events are used instead of separate mouse/touch handlers so the same implementation works across desktop and mobile browsers.
-
-## Accessibility
-
-The mini includes:
-
-- Semantic headings and controls.
-- `aria-label` values for instrument targets.
-- `aria-pressed` state for selected strings.
-- Live status messaging.
-- Keyboard operation.
-- Visible `:focus-visible` states.
-- Touch-friendly control sizes.
-- Reduced-motion support.
-
-Audio is started lazily in response to user interaction to comply with browser autoplay policies.
-
-## Responsive Strategy
-
-Desktop uses a two-column instrument/control layout.
-
-At smaller widths:
-
-- The workspace becomes a single column.
-- Controls move below the instrument.
-- The violin scales with viewport width.
-- Horizontal overflow is explicitly prevented.
-- Pointer targets remain large enough for touch interaction.
-
-## Scalability
-
-The implementation is intentionally data-driven around the `STRINGS` catalogue. Future enhancements can be added without replacing the interaction model:
-
-- Additional finger positions or scales.
-- Bow direction and pressure simulation.
-- More realistic envelope/filter modelling.
-- Note labels or pitch indicators.
-- Recording/playback.
-- Alternate tunings.
-- MIDI input/output.
-- A reusable `Instrument` abstraction for future Cradle instrument minis.
-
-No framework or dependency is required for these extensions.
-
-## Testing Checklist
-
-Manual verification should cover:
-
-- Open `projects/instruments/index.html`.
-- Click each visible string.
-- Drag on each string/fingerboard on desktop.
-- Tap each string on a touch device.
-- Press `A`, `S`, `D`, `F`.
-- Confirm volume changes affect playback.
-- Confirm theme changes persist after refresh.
-- Confirm no horizontal scrolling at mobile widths.
-- Confirm keyboard focus is visible.
-- Confirm the page remains usable when Web Audio is unavailable.
-
-## Repository Integration
-
-The mini should be registered in `data/projects.json` using the repository's existing project metadata format. The project path should be:
-
-```text
-projects/instruments/
-```
-
-If the repository's current category vocabulary contains `instruments`, use that category; otherwise use the closest existing category defined by `data/projects.json` rather than introducing an unregistered category.
+* **Project License:** MIT, consistent with the rest of the Cradle repository.
+* **Third-Party Assets:** None. All visuals are CSS; all audio is synthesized at runtime. No images, fonts, or audio files are bundled.
+* **References:**
+* [MDN Web Docs — Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+* [MDN Web Docs — Pointer Events](https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events)
+* [MDN Web Docs — prefers-reduced-motion](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion)
+* [Violin family tunings — Wikipedia](https://en.wikipedia.org/wiki/Violin_tuning)
+* Other Cradle `projects/instruments/` mini-projects — file-convention reference
