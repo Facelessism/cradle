@@ -1,17 +1,15 @@
 // @ts-check
 const { defineConfig, devices } = require("@playwright/test");
 
-/**
- * Playwright configuration for Cradle.
- * Issue #265 — Automated visual regression and accessibility testing pipeline.
- *
- * Visual baselines live in tests/e2e/**/*.spec.js-snapshots/ and are
- * committed to the repo. Run `npm run test:e2e -- --update-snapshots`
- * after intentionally changing UI to refresh them.
- *
- * The webServer hook starts `npx serve` on port 4173 so the suite works
- * the same on dev laptops and CI runners without manual setup.
- */
+// Playwright configuration for Cradle.
+// Issue #265 — Automated visual regression and accessibility testing pipeline.
+//
+// Visual baselines live in tests/e2e/ (one snapshots folder per spec file)
+// and are committed to the repo. Run `npm run test:e2e -- --update-snapshots`
+// after intentionally changing UI to refresh them.
+//
+// The webServer hook starts `npx serve` on port 4173 so the suite works
+// the same on dev laptops and CI runners without manual setup.
 module.exports = defineConfig({
   testDir: "./tests/e2e",
   testMatch: /.*\.spec\.js$/,
