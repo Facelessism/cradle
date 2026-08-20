@@ -146,7 +146,8 @@ async function loadProjects() {
     renderProjects(allProjects);
   } catch (error) {
     console.error(error);
-    projectsGrid.innerHTML = "<p>Failed to load projects.</p>";
+    projectsGrid.innerHTML =
+      '<p data-testid="error-message">Failed to load projects.</p>';
   }
 }
 
@@ -174,6 +175,8 @@ function renderCategories() {
     });
 
     btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+    btn.setAttribute("data-testid", "filter-chip");
+    btn.setAttribute("data-category", category);
 
     categoriesContainer.appendChild(btn);
   });
@@ -321,6 +324,7 @@ function createProjectCard(project, options = {}) {
     footer: [openButton, copyButton],
     footerAlign: "left",
     className: recent ? "recent-project-card" : "",
+    testId: "project-card",
   });
 
   // Wire keyboard/role affordances for the main catalog grid (index provided).
