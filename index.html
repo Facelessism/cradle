@@ -32,13 +32,13 @@
 
 <body>
   <header class="hero">
-    <h1>Cradle</h1>
+    <h1 data-testid="hero-title">Cradle</h1>
 
-    <p class="hero-tagline">A curated archive of experiments...</p>
+    <p class="hero-tagline" data-testid="hero-tagline">A curated archive of experiments...</p>
 
     <div class="hero-actions">
       <!-- Upgraded: CradleThemeToggle component (replaces hardcoded emoji button) -->
-      <button id="themeToggle" data-cradle-theme-toggle data-size="md" class="theme-toggle"
+      <button id="themeToggle" data-cradle-theme-toggle data-size="md" data-testid="theme-toggle" class="theme-toggle"
         aria-label="Toggle theme"></button>
     </div>
 
@@ -51,14 +51,30 @@
         </svg>
 
         <div class="search-box">
-          <input type="text" id="search" placeholder="Search projects... (Press '/' to focus)" autocomplete="off"
+          <input type="text" id="search" data-testid="search-input" placeholder="Search projects... (Press '/' to focus)" autocomplete="off"
             role="combobox" aria-label="Search projects" aria-autocomplete="list" aria-controls="search-suggestions"
             aria-expanded="false" />
-          <button type="button" id="clearSearch" class="clear-search" aria-label="Clear search" title="Clear search"
+          <button type="button" id="clearSearch" data-testid="search-clear" class="clear-search" aria-label="Clear search" title="Clear search"
             hidden>
             ×
           </button>
         </div>
+
+        <span class="search-kbd-hint" title="Press '/' or Ctrl+K to search"><kbd>×</kbd></span>
+        <div id="search-suggestions" class="search-suggestions" role="listbox" aria-label="Search suggestions" hidden>
+        </div>
+      </div>
+
+      <button id="clear-filters" data-cradle-btn data-variant="ghost" data-size="sm" data-testid="clear-filters" hidden
+        aria-label="Clear all filters">
+        ✕ Clear Filters
+      </button>
+
+      <button id="shortcuts-btn" data-cradle-btn data-variant="ghost" data-size="sm" aria-label="Keyboard Shortcuts"
+        title="Keyboard Shortcuts (?)">
+        ⌨️ Shortcuts
+      </button>
+    </div>
 
         <span class="search-kbd-hint" title="Press '/' or Ctrl+K to search"><kbd>×</kbd></span>
         <div id="search-suggestions" class="search-suggestions" role="listbox" aria-label="Search suggestions" hidden>
@@ -140,13 +156,13 @@
 
     <section>
       <div class="section-header">
-        <h2>Projects</h2>
+        <h2 data-testid="projects-heading">Projects</h2>
 
-        <span id="project-count"> 0 projects </span>
+        <span id="project-count" data-testid="project-count"> 0 projects </span>
       </div>
 
-      <div id="projects-grid" class="projects-grid" aria-live="polite" aria-atomic="true"></div>
-      <p id="copy-status" class="sr-only" role="status" aria-live="polite"></p>
+      <div id="projects-grid" class="projects-grid" data-testid="project-grid" aria-live="polite" aria-atomic="true"></div>
+      <p id="copy-status" class="sr-only" role="status" aria-live="polite" data-testid="copy-status"></p>
     </section>
   </main>
 
