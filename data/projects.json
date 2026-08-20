@@ -223,5 +223,10 @@
     "title": "Sudoku Solver",
     "category": "games",
     "path": "projects/games/sudoku-solver/"
+  },
+  {
+    "title": "Wordle Clone",
+    "category": "games",
+    "path": "projects/games/wordle-clone/"
   }
 ]

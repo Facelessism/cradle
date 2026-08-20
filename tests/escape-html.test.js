@@ -25,3 +25,8 @@ test("escapeHtml coerces non-string values via String()", () => {
   assert.equal(escapeHtml(0), "0");
   assert.equal(escapeHtml(true), "true");
 });
+
+test("escapeHtml escapes already-escaped HTML entities", () => {
+  assert.equal(escapeHtml("&amp;"), "&amp;amp;");
+  assert.equal(escapeHtml("&lt;script&gt;"), "&amp;lt;script&amp;gt;");
+});
