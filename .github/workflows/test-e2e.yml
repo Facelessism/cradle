@@ -1,0 +1,140 @@
+name: E2E & Visual Regression
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  e2e:
+    name: Playwright e2e + a11y + visual regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Full history so `npm run generate` can read git dates for the
+          # "New" badge on project cards.
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline || npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox
+
+      - name: Regenerate project catalog (npm run generate)
+        run: npm run build
+
+      - name: Run unit tests (regression guard)
+        run: npm test
+
+      - name: Run Playwright e2e suite
+        run: npm run test:e2e
+        env:
+          CI: "true"
+
+      - name: Run accessibility audit only (fast path)
+        if: always()
+        run: npm run test:accessibility
+        env:
+          CI: "true"
+
+      - name: Upload snapshot diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-diffs
+          path: tests/e2e/__diff_output__/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload accessibility + test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: tests/e2e/report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload Playwright traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Summarize results on PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const reportPath = path.join('tests', 'e2e', 'report', 'results.json');
+            let unitPass = 0;
+            let projectsRendered = 0;
+            let visualDiffs = 0;
+            let a11yViolations = 0;
+            let consoleErrors = 0;
+            let totalTests = 0;
+            let passedTests = 0;
+
+            try {
+              const raw = fs.readFileSync(reportPath, 'utf8');
+              const report = JSON.parse(raw);
+              for (const suite of report.suites || []) {
+                for (const spec of suite.specs || []) {
+                  totalTests++;
+                  const ok = (spec.tests || []).some(t =>
+                    (t.results || []).some(r => r.status === 'passed' || r.status === 'expected')
+                  );
+                  if (ok) passedTests++;
+                  const title = spec.title || '';
+                  if (/project page|page loads/.test(title)) projectsRendered++;
+                  if (/visual snapshot|hero snapshot/.test(title) && !ok) visualDiffs++;
+                  if (/WCAG|accessibility/.test(title) && !ok) a11yViolations++;
+                  if (/console\.error|no console/.test(title) && !ok) consoleErrors++;
+                }
+              }
+            } catch (e) {
+              core.warning('Could not parse e2e report: ' + e.message);
+            }
+
+            const icon = (ok) => ok ? '✅' : '❌';
+            const warn = (n) => n > 0 ? `⚠️ ${n}` : '✅ 0';
+
+            const summary = [
+              `## E2E & Visual Regression Report`,
+              ``,
+              `| Check | Result |`,
+              `|---|---|`,
+              `| Unit tests | ${icon(process.env.UNIT_TESTS_PASS === 'true')} (see test.yml) |`,
+              `| E2E tests passed | ${icon(passedTests === totalTests)} ${passedTests}/${totalTests} |`,
+              `| Projects rendered | ${icon(projectsRendered > 0)} ${projectsRendered} |`,
+              `| Visual diffs | ${visualDiffs > 0 ? '❌ ' + visualDiffs : '✅ 0'} |`,
+              `| Accessibility violations | ${warn(a11yViolations)} |`,
+              `| Console errors | ${warn(consoleErrors)} |`,
+              ``,
+              `Artifacts: [snapshot-diffs](https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}) | e2e-report | playwright-traces`,
+            ].join('\n');
+
+            await core.summary.addRaw(summary).write();
