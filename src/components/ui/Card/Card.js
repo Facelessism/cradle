@@ -322,6 +322,7 @@
         onClick = null,
         className = "",
         ariaLabel = null,
+        testId = null,
       } = options;
 
       const card = document.createElement("article");
@@ -334,6 +335,7 @@
         .join(" ");
 
       if (ariaLabel) card.setAttribute("aria-label", ariaLabel);
+      if (testId) card.setAttribute("data-testid", testId);
       if (clickable) {
         card.setAttribute("role", "button");
         card.setAttribute("tabindex", "0");
