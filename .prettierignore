@@ -4,3 +4,9 @@ package-lock.json
 data/projects.json
 projects/**/*.svg
 .git
+# Playwright artifacts — generated, not source
+tests/e2e/__snapshots__/
+tests/e2e/__diff_output__/
+tests/e2e/report/
+test-results/
+playwright-report/
