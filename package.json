@@ -16,9 +16,17 @@
     "build": "npm run generate",
     "format": "prettier --write .",
     "check-format": "prettier --check .",
-    "validate:project-order": "node scripts/validate-project-order.js"
+    "validate:project-order": "node scripts/validate-project-order.js",
+    "test:e2e": "npx playwright test --config=playwright.config.js",
+    "test:visual": "npx playwright test --config=playwright.config.js --grep \"visual snapshot|hero snapshot\"",
+    "test:accessibility": "npx playwright test --config=playwright.config.js --grep \"WCAG|accessibility\"",
+    "test:console": "npx playwright test --config=playwright.config.js --grep \"console\"",
+    "test:projects": "npx playwright test --config=playwright.config.js --grep \"Project pages\"",
+    "test:update-baselines": "npx playwright test --config=playwright.config.js --update-snapshots"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.1",
+    "@playwright/test": "^1.49.1",
     "prettier": "^3.0.0"
   },
   "repository": {
