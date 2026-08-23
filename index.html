@@ -3,16 +3,12 @@
 
 <head>
   <meta charset="UTF-8" />
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>Cradle</title>
-
   <meta name="description" content="Cradle — A curated archive of experiments." />
 
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&display=swap"
-    rel="stylesheet" />
-
+  <!-- Fonts & Stylesheets -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="src/components/ui/tokens.css" />
 
@@ -33,11 +29,10 @@
 <body>
   <header class="hero">
     <h1>Cradle</h1>
-
     <p class="hero-tagline">A curated archive of experiments...</p>
 
     <div class="hero-actions">
-      <!-- Upgraded: CradleThemeToggle component (replaces hardcoded emoji button) -->
+      <!-- Upgraded: CradleThemeToggle component -->
       <button id="themeToggle" data-cradle-theme-toggle data-size="md" class="theme-toggle"
         aria-label="Toggle theme"></button>
     </div>
@@ -60,10 +55,16 @@
           </button>
         </div>
 
-        <span class="search-kbd-hint" title="Press '/' or Ctrl+K to search"><kbd>×</kbd></span>
+        <span class="search-kbd-hint" title="Press '/' or Ctrl+K to search"><kbd>/</kbd></span>
         <div id="search-suggestions" class="search-suggestions" role="listbox" aria-label="Search suggestions" hidden>
         </div>
       </div>
+
+      <!-- Surprise Me Project Button (#651) -->
+      <button id="surprise-me-btn" data-cradle-btn data-variant="primary" data-size="sm"
+        aria-label="Surprise me with a random project" title="Discover a random project">
+        🎲 Surprise Me
+      </button>
 
       <button id="clear-filters" data-cradle-btn data-variant="ghost" data-size="sm" hidden
         aria-label="Clear all filters">
@@ -173,12 +174,13 @@
   <footer>
     <p>
       Enjoying Cradle?
-
       <a href="https://github.com/Facelessism/cradle" target="_blank" rel="noopener noreferrer" class="footer-link">
         ★ Star the repository on GitHub
       </a>
     </p>
   </footer>
+
+  <!-- Scripts -->
   <script src="src/components/ui/Button/Button.js"></script>
   <script src="src/components/ui/Card/Card.js"></script>
   <script src="src/components/ui/ThemeToggle/ThemeToggle.js"></script>
