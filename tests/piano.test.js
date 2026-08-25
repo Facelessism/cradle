@@ -14,32 +14,32 @@ test("getFrequency returns null for an invalid note", () => {
 });
 
 test("getNoteFromKey returns the correct note for keyboard mappings", () => {
-  assert.equal(PianoEngine.getNoteFromKey("a"), "C4");
-  assert.equal(PianoEngine.getNoteFromKey("s"), "D4");
-  assert.equal(PianoEngine.getNoteFromKey("d"), "E4");
-  assert.equal(PianoEngine.getNoteFromKey("f"), "F4");
-  assert.equal(PianoEngine.getNoteFromKey("w"), "C#4");
-  assert.equal(PianoEngine.getNoteFromKey("t"), "F#4");
+  assert.equal(PianoEngine.getNoteFromKey("a"), "C3");
+  assert.equal(PianoEngine.getNoteFromKey("s"), "D3");
+  assert.equal(PianoEngine.getNoteFromKey("d"), "E3");
+  assert.equal(PianoEngine.getNoteFromKey("f"), "F3");
+  assert.equal(PianoEngine.getNoteFromKey("1"), "C#3");
+  assert.equal(PianoEngine.getNoteFromKey("w"), "F5");
 });
 
 test("getNoteFromKey handles uppercase keyboard input", () => {
-  assert.equal(PianoEngine.getNoteFromKey("A"), "C4");
-  assert.equal(PianoEngine.getNoteFromKey("S"), "D4");
-  assert.equal(PianoEngine.getNoteFromKey("W"), "C#4");
+  assert.equal(PianoEngine.getNoteFromKey("A"), "C3");
+  assert.equal(PianoEngine.getNoteFromKey("S"), "D3");
+  assert.equal(PianoEngine.getNoteFromKey("W"), "F5");
 });
 
 test("getNoteFromKey returns null for an unmapped key", () => {
-  assert.equal(PianoEngine.getNoteFromKey("x"), null);
+  assert.equal(PianoEngine.getNoteFromKey("p"), null);
   assert.equal(PianoEngine.getNoteFromKey("Enter"), null);
   assert.equal(PianoEngine.getNoteFromKey(""), null);
 });
 
 test("getKeyFromNote returns the correct keyboard key", () => {
-  assert.equal(PianoEngine.getKeyFromNote("C4"), "a");
-  assert.equal(PianoEngine.getKeyFromNote("D4"), "s");
-  assert.equal(PianoEngine.getKeyFromNote("A4"), "h");
-  assert.equal(PianoEngine.getKeyFromNote("C#4"), "w");
-  assert.equal(PianoEngine.getKeyFromNote("A#4"), "u");
+  assert.equal(PianoEngine.getKeyFromNote("C3"), "a");
+  assert.equal(PianoEngine.getKeyFromNote("D3"), "s");
+  assert.equal(PianoEngine.getKeyFromNote("A4"), "v");
+  assert.equal(PianoEngine.getKeyFromNote("C#4"), "6");
+  assert.equal(PianoEngine.getKeyFromNote("A#4"), "0");
 });
 
 test("getKeyFromNote returns null for an invalid note", () => {
@@ -86,19 +86,14 @@ test("getNotes includes all black keys", () => {
 test("getKeyboardMap returns the expected keyboard mapping", () => {
   const map = PianoEngine.getKeyboardMap();
 
-  assert.equal(map.a, "C4");
-  assert.equal(map.w, "C#4");
-  assert.equal(map.s, "D4");
-  assert.equal(map.e, "D#4");
-  assert.equal(map.d, "E4");
-  assert.equal(map.f, "F4");
-  assert.equal(map.t, "F#4");
-  assert.equal(map.g, "G4");
-  assert.equal(map.y, "G#4");
-  assert.equal(map.h, "A4");
-  assert.equal(map.u, "A#4");
-  assert.equal(map.j, "B4");
-  assert.equal(map.k, "C5");
+  assert.equal(map.a, "C3");
+  assert.equal(map.s, "D3");
+  assert.equal(map.d, "E3");
+  assert.equal(map.f, "F3");
+  assert.equal(map.k, "C4");
+  assert.equal(map.l, "D4");
+  assert.equal(map.n, "C5");
+  assert.equal(map.y, "C6");
 });
 
 test("note to keyboard mapping is reversible", () => {

@@ -8,19 +8,120 @@ const activePointers = new Map();
 const pressedKeyboardKeys = new Set();
 
 const KEY_CODES = {
-  KeyA: "C4",
-  KeyW: "C#4",
-  KeyS: "D4",
-  KeyE: "D#4",
-  KeyD: "E4",
-  KeyF: "F4",
-  KeyT: "F#4",
-  KeyG: "G4",
-  KeyY: "G#4",
-  KeyH: "A4",
-  KeyU: "A#4",
-  KeyJ: "B4",
-  KeyK: "C5"
+  // Octave 3 - White Keys
+  KeyA: "C3",
+  a: "C3",
+  A: "C3",
+  KeyS: "D3",
+  s: "D3",
+  S: "D3",
+  KeyD: "E3",
+  d: "E3",
+  D: "E3",
+  KeyF: "F3",
+  f: "F3",
+  F: "F3",
+  KeyG: "G3",
+  g: "G3",
+  G: "G3",
+  KeyH: "A3",
+  h: "A3",
+  H: "A3",
+  KeyJ: "B3",
+  j: "B3",
+  J: "B3",
+
+  // Octave 4 - White Keys
+  KeyK: "C4",
+  k: "C4",
+  K: "C4",
+  KeyL: "D4",
+  l: "D4",
+  L: "D4",
+  KeyZ: "E4",
+  z: "E4",
+  Z: "E4",
+  KeyX: "F4",
+  x: "F4",
+  X: "F4",
+  KeyC: "G4",
+  c: "G4",
+  C: "G4",
+  KeyV: "A4",
+  v: "A4",
+  V: "A4",
+  KeyB: "B4",
+  b: "B4",
+  B: "B4",
+
+  // Octave 5 - White Keys
+  KeyN: "C5",
+  n: "C5",
+  N: "C5",
+  KeyM: "D5",
+  m: "D5",
+  M: "D5",
+  KeyQ: "E5",
+  q: "E5",
+  Q: "E5",
+  KeyW: "F5",
+  w: "F5",
+  W: "F5",
+  KeyE: "G5",
+  e: "G5",
+  E: "G5",
+  KeyR: "A5",
+  r: "A5",
+  R: "A5",
+  KeyT: "B5",
+  t: "B5",
+  T: "B5",
+
+  // Octave 6 - White Keys
+  KeyY: "C6",
+  y: "C6",
+  Y: "C6",
+  KeyU: "D6",
+  u: "D6",
+  U: "D6",
+  KeyI: "E6",
+  i: "E6",
+  I: "E6",
+
+  // Octave 3 - Black Keys
+  Digit1: "C#3",
+  "1": "C#3",
+  Digit2: "D#3",
+  "2": "D#3",
+  Digit3: "F#3",
+  "3": "F#3",
+  Digit4: "G#3",
+  "4": "G#3",
+  Digit5: "A#3",
+  "5": "A#3",
+
+  // Octave 4 - Black Keys
+  Digit6: "C#4",
+  "6": "C#4",
+  Digit7: "D#4",
+  "7": "D#4",
+  Digit8: "F#4",
+  "8": "F#4",
+  Digit9: "G#4",
+  "9": "G#4",
+  Digit0: "A#4",
+  "0": "A#4",
+
+  // Octave 5 - Black Keys
+  "!": "C#5",
+  "@": "D#5",
+  "#": "F#5",
+  "$": "G#5",
+  "%": "A#5",
+
+  // Octave 6 - Black Keys
+  "^": "C#6",
+  "&": "D#6"
 };
 
 function getAudioContext() {
@@ -251,7 +352,7 @@ keys.forEach(key => {
 });
 
 document.addEventListener("keydown", event => {
-  const note = KEY_CODES[event.code];
+  const note = KEY_CODES[event.key] || KEY_CODES[event.code];
 
   if (!note || pressedKeyboardKeys.has(event.code)) {
     return;
@@ -267,7 +368,7 @@ document.addEventListener("keydown", event => {
 });
 
 document.addEventListener("keyup", event => {
-  const note = KEY_CODES[event.code];
+  const note = KEY_CODES[event.key] || KEY_CODES[event.code];
 
   if (!note) {
     return;
