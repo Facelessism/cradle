@@ -41,8 +41,8 @@ cradle/
 │           ├── tokens.css        # Design tokens (colors, spacing) shared by all components
 │           ├── escapeHtml.js     # Shared HTML escaping utility (window.CradleEscape)
 │           ├── index.js          # Barrel loader exposing window.CradleUI, lazy-loads components
-│           ├── demo.html         # Standalone demo/preview page for the component library
-│           ├── README.md         # Component library usage docs
+│           ├── README.md         # Standalone demo/preview page for the component library
+                                  # Component library usage docs
 │           ├── Button/Button.js
 │           ├── Card/Card.js
 │           ├── ThemeToggle/ThemeToggle.js
