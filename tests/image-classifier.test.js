@@ -2,6 +2,9 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const {
+  IMAGE_SIZE_LIMITS,
+  validateImageSize,
+  validateFileSize,
   canPredictCustom,
   formatConfidence,
   formatCustomPredictions,
@@ -109,6 +112,79 @@ test("validateClassName rejects duplicate class names", () => {
     valid: false,
     error: "Class name already exists.",
   });
+});
+
+// IMAGE SIZE LIMITS
+
+test("IMAGE_SIZE_LIMITS has sensible defaults", () => {
+  assert.ok(IMAGE_SIZE_LIMITS.maxDimension > 0);
+  assert.ok(IMAGE_SIZE_LIMITS.maxFileSize > 0);
+  assert.equal(IMAGE_SIZE_LIMITS.maxDimension, 1024);
+  assert.equal(IMAGE_SIZE_LIMITS.maxFileSize, 10 * 1024 * 1024);
+});
+
+// validateImageSize
+
+test("validateImageSize returns no warning for small images", () => {
+  const result = validateImageSize(800, 600);
+  assert.equal(result.valid, true);
+  assert.equal(result.warning, null);
+});
+
+test("validateImageSize returns warning for oversized images", () => {
+  const result = validateImageSize(4000, 3000);
+  assert.equal(result.valid, true);
+  assert.ok(result.warning.includes("4000×3000px"));
+  assert.ok(result.warning.includes("1024px"));
+});
+
+test("validateImageSize returns warning when width exceeds limit", () => {
+  const result = validateImageSize(2000, 500);
+  assert.equal(result.valid, true);
+  assert.ok(result.warning);
+});
+
+test("validateImageSize returns warning when height exceeds limit", () => {
+  const result = validateImageSize(500, 2000);
+  assert.equal(result.valid, true);
+  assert.ok(result.warning);
+});
+
+test("validateImageSize returns no warning at exact limit", () => {
+  const result = validateImageSize(1024, 1024);
+  assert.equal(result.valid, true);
+  assert.equal(result.warning, null);
+});
+
+// validateFileSize
+
+test("validateFileSize accepts files within limit", () => {
+  const file = { size: 1024 * 1024 }; // 1 MB
+  const result = validateFileSize(file);
+  assert.equal(result.valid, true);
+  assert.equal(result.error, null);
+});
+
+test("validateFileSize rejects files exceeding limit", () => {
+  const file = { size: 15 * 1024 * 1024 }; // 15 MB
+  const result = validateFileSize(file);
+  assert.equal(result.valid, false);
+  assert.ok(result.error.includes("15.0MB"));
+  assert.ok(result.error.includes("10MB"));
+});
+
+test("validateFileSize accepts files at exact limit", () => {
+  const file = { size: 10 * 1024 * 1024 }; // exactly 10 MB
+  const result = validateFileSize(file);
+  assert.equal(result.valid, true);
+  assert.equal(result.error, null);
+});
+
+test("validateFileSize accepts small files", () => {
+  const file = { size: 500 }; // 500 bytes
+  const result = validateFileSize(file);
+  assert.equal(result.valid, true);
+  assert.equal(result.error, null);
 });
 
 test("custom class rendering does not interpolate user input into innerHTML", () => {

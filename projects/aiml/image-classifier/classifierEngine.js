@@ -4,6 +4,83 @@
  */
 
 /**
+ * Maximum allowed image dimensions and file size.
+ */
+const IMAGE_SIZE_LIMITS = {
+  maxDimension: 1024,       // Max width or height in pixels
+  maxFileSize: 10 * 1024 * 1024, // 10 MB
+};
+
+/**
+ * Validates image dimensions against size limits.
+ *
+ * @param {number} width  - Image width in pixels.
+ * @param {number} height - Image height in pixels.
+ * @returns {{ valid: boolean, warning: string|null }}
+ */
+function validateImageSize(width, height) {
+  const { maxDimension } = IMAGE_SIZE_LIMITS;
+  if (width > maxDimension || height > maxDimension) {
+    return {
+      valid: true,
+      warning: `Image is ${width}×${height}px. It will be resized to fit within ${maxDimension}px for faster inference.`,
+    };
+  }
+  return { valid: true, warning: null };
+}
+
+/**
+ * Checks whether a file exceeds the size limit.
+ *
+ * @param {File} file - The uploaded file object.
+ * @returns {{ valid: boolean, error: string|null }}
+ */
+function validateFileSize(file) {
+  if (file.size > IMAGE_SIZE_LIMITS.maxFileSize) {
+    const maxMB = IMAGE_SIZE_LIMITS.maxFileSize / (1024 * 1024);
+    const fileMB = (file.size / (1024 * 1024)).toFixed(1);
+    return {
+      valid: false,
+      error: `File is ${fileMB}MB, which exceeds the ${maxMB}MB limit.`,
+    };
+  }
+  return { valid: true, error: null };
+}
+
+/**
+ * Clamps an image to the maximum dimensions by resizing via an offscreen canvas.
+ * Returns the original image if no resize is needed.
+ *
+ * @param {HTMLImageElement} img - The loaded image element.
+ * @returns {HTMLImageElement} The (possibly resized) image.
+ */
+function clampImageToLimits(img) {
+  const { maxDimension } = IMAGE_SIZE_LIMITS;
+  if (img.naturalWidth <= maxDimension && img.naturalHeight <= maxDimension) {
+    return img;
+  }
+
+  let w = img.naturalWidth;
+  let h = img.naturalHeight;
+  if (w > h) {
+    h = Math.round((h / w) * maxDimension);
+    w = maxDimension;
+  } else {
+    w = Math.round((w / h) * maxDimension);
+    h = maxDimension;
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, w, h);
+  const resized = new Image();
+  resized.src = canvas.toDataURL("image/png");
+  return resized;
+}
+
+/**
  * Formats KNN confidence results into prediction objects.
  *
  * @param {Object} confidences - Map of class IDs to confidence values.
@@ -119,6 +196,10 @@ function formatConfidence(probability) {
 
 (function (root) {
   const api = {
+    IMAGE_SIZE_LIMITS,
+    validateImageSize,
+    validateFileSize,
+    clampImageToLimits,
     formatCustomPredictions,
     canPredictCustom,
     hasLowConfidence,

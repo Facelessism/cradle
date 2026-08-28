@@ -1,4 +1,7 @@
 const {
+  validateImageSize,
+  validateFileSize,
+  clampImageToLimits,
   formatCustomPredictions,
   canPredictCustom,
   hasLowConfidence,
@@ -95,30 +98,61 @@ customModeBtn.addEventListener("click", () => {
 // Standard Image Upload
 imageUpload.addEventListener("change", event => {
   const file = event.target.files[0];
-  if (file) {
-    if (previewObjectURL) {
-      URL.revokeObjectURL(previewObjectURL);
-    }
-    previewObjectURL = URL.createObjectURL(file);
-    preview.src = previewObjectURL;
-    preview.style.display = "block";
-    uploadContent.style.display = "none";
+  if (!file) return;
+
+  const sizeCheck = validateFileSize(file);
+  if (!sizeCheck.valid) {
+    showToast(sizeCheck.error);
+    event.target.value = "";
+    return;
   }
+
+  if (previewObjectURL) {
+    URL.revokeObjectURL(previewObjectURL);
+  }
+  previewObjectURL = URL.createObjectURL(file);
+  preview.src = previewObjectURL;
+  preview.style.display = "block";
+  uploadContent.style.display = "none";
+
+  preview.addEventListener("load", function onLoad() {
+    preview.removeEventListener("load", onLoad);
+    const result = validateImageSize(preview.naturalWidth, preview.naturalHeight);
+    if (result.warning) {
+      showToast(result.warning);
+    }
+  }, { once: true });
 });
 
 // Custom Test Image Upload
 customImageUpload.addEventListener("change", event => {
   const file = event.target.files[0];
-  if (file) {
-    if (customTestImageURL) {
-      URL.revokeObjectURL(customTestImageURL);
-    }
-    customTestImageURL = URL.createObjectURL(file);
-    customTestImage = new Image();
-    customTestImage.src = customTestImageURL;
-    // Check if we can enable predict button
-    updateCustomPredictState();
+  if (!file) return;
+
+  const sizeCheck = validateFileSize(file);
+  if (!sizeCheck.valid) {
+    showToast(sizeCheck.error);
+    event.target.value = "";
+    return;
   }
+
+  if (customTestImageURL) {
+    URL.revokeObjectURL(customTestImageURL);
+  }
+  customTestImageURL = URL.createObjectURL(file);
+  customTestImage = new Image();
+  customTestImage.src = customTestImageURL;
+
+  customTestImage.addEventListener("load", function onLoad() {
+    customTestImage.removeEventListener("load", onLoad);
+    const result = validateImageSize(customTestImage.naturalWidth, customTestImage.naturalHeight);
+    if (result.warning) {
+      showToast(result.warning);
+    }
+    // Clamp oversized images to prevent memory issues during inference
+    customTestImage = clampImageToLimits(customTestImage);
+    updateCustomPredictState();
+  }, { once: true });
 });
 
 function updateCustomPredictState() {
@@ -250,6 +284,12 @@ async function addImageToClass(event, id) {
   const addBtn = imagesContainer.querySelector(".add-image-btn");
 
   for (let file of files) {
+    const sizeCheck = validateFileSize(file);
+    if (!sizeCheck.valid) {
+      showToast(sizeCheck.error);
+      continue;
+    }
+
     const img = new Image();
     const objectUrl = URL.createObjectURL(file);
     img.src = objectUrl;
@@ -257,7 +297,8 @@ async function addImageToClass(event, id) {
 
     await new Promise(resolve => {
       img.addEventListener("load", () => {
-        const activation = model.infer(img, true);
+        const imgToInfer = clampImageToLimits(img);
+        const activation = model.infer(imgToInfer, true);
         knn.addExample(activation, id);
 
         classObj.count++;
@@ -302,7 +343,8 @@ async function performPrediction() {
         resetPredictions();
         return;
       }
-      const predictions = await model.classify(preview);
+      const imageToClassify = clampImageToLimits(preview);
+      const predictions = await model.classify(imageToClassify);
       renderPredictions(
         predictions.map(p => ({
           className: p.className,
