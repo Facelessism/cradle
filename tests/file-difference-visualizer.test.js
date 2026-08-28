@@ -50,3 +50,36 @@ test("DiffEngine generateUnifiedPatch outputs valid git patch format", () => {
   assert.ok(patch.includes("-const x = 1;"));
   assert.ok(patch.includes("+const x = 2;"));
 });
+
+test("DiffEngine SIZE_LIMITS has expected defaults", () => {
+  assert.ok(DiffEngine.SIZE_LIMITS.maxLines > 0);
+  assert.ok(DiffEngine.SIZE_LIMITS.maxFileSize > 0);
+  assert.ok(DiffEngine.SIZE_LIMITS.maxCharCount > 0);
+});
+
+test("DiffEngine computeLineDiff rejects inputs exceeding maxLines", () => {
+  const bigA = Array.from({ length: 30000 }, (_, i) => `line-a-${i}`).join("\n");
+  const bigB = Array.from({ length: 30000 }, (_, i) => `line-b-${i}`).join("\n");
+
+  const result = DiffEngine.computeLineDiff(bigA, bigB, { maxLines: 50000 });
+  assert.ok(result.error, "should return error for oversized input");
+  assert.ok(result.message.includes("too large"));
+});
+
+test("DiffEngine computeLineDiff respects custom maxLines option", () => {
+  const textA = "a\nb\nc";
+  const textB = "a\nb\nd";
+
+  // 3 lines total, limit of 2 — should reject
+  const result = DiffEngine.computeLineDiff(textA, textB, { maxLines: 2 });
+  assert.ok(result.error, "should reject when total lines exceed custom limit");
+});
+
+test("DiffEngine computeLineDiff accepts inputs within limits", () => {
+  const textA = "apple\nbanana";
+  const textB = "apple\norange";
+
+  const result = DiffEngine.computeLineDiff(textA, textB);
+  assert.ok(!result.error, "should not error for small input");
+  assert.ok(Array.isArray(result), "should return alignment array");
+});

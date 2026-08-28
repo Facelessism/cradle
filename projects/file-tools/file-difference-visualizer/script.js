@@ -74,12 +74,35 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // Check character count limit for inline input
+    const totalChars = textA.length + textB.length;
+    if (totalChars > DiffEngine.SIZE_LIMITS.maxCharCount) {
+      originalContent.innerHTML = "";
+      modifiedContent.innerHTML = "";
+      unifiedContent.innerHTML = "";
+      diffStatus.textContent = `Input too large (${(totalChars / 1024 / 1024).toFixed(1)} MB). Limit: ${(DiffEngine.SIZE_LIMITS.maxCharCount / 1024 / 1024).toFixed(0)} MB.`;
+      diffStatus.style.color = "#e74c3c";
+      return;
+    }
+
     const options = {
       ignoreWhitespace: ignoreWhitespace.checked,
       ignoreCase: ignoreCase.checked,
     };
 
     const alignment = DiffEngine.computeLineDiff(textA, textB, options);
+
+    // Handle size limit error from the engine
+    if (alignment.error) {
+      originalContent.innerHTML = "";
+      modifiedContent.innerHTML = "";
+      unifiedContent.innerHTML = "";
+      diffStatus.textContent = alignment.message;
+      diffStatus.style.color = "#e74c3c";
+      return;
+    }
+
+    diffStatus.style.color = "";
     const stats = DiffEngine.computeDiffStats(alignment);
 
     diffStatus.textContent = `Differences: +${stats.additions} additions, -${stats.deletions} deletions`;
@@ -120,7 +143,13 @@ document.addEventListener("DOMContentLoaded", () => {
   fileInputA.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > DiffEngine.SIZE_LIMITS.maxFileSize) {
+        fileInfoA.textContent = `${file.name} — too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Limit: ${(DiffEngine.SIZE_LIMITS.maxFileSize / 1024 / 1024).toFixed(0)} MB.`;
+        fileInfoA.style.color = "#e74c3c";
+        return;
+      }
       fileInfoA.textContent = `${file.name} (${file.size} bytes)`;
+      fileInfoA.style.color = "";
       const reader = new FileReader();
       reader.onload = (evt) => {
         textInputA.value = evt.target.result;
@@ -133,7 +162,13 @@ document.addEventListener("DOMContentLoaded", () => {
   fileInputB.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > DiffEngine.SIZE_LIMITS.maxFileSize) {
+        fileInfoB.textContent = `${file.name} — too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Limit: ${(DiffEngine.SIZE_LIMITS.maxFileSize / 1024 / 1024).toFixed(0)} MB.`;
+        fileInfoB.style.color = "#e74c3c";
+        return;
+      }
       fileInfoB.textContent = `${file.name} (${file.size} bytes)`;
+      fileInfoB.style.color = "";
       const reader = new FileReader();
       reader.onload = (evt) => {
         textInputB.value = evt.target.result;

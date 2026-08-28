@@ -14,6 +14,18 @@
   }
 })(typeof self !== "undefined" ? self : this, function () {
   /**
+   * Configurable size limits to protect against expensive diffs.
+   */
+  const SIZE_LIMITS = {
+    /** Maximum combined line count before rejecting the diff. */
+    maxLines: 50000,
+    /** Maximum file size in bytes before rejecting the upload. */
+    maxFileSize: 5 * 1024 * 1024, // 5 MB
+    /** Maximum character count for inline text input. */
+    maxCharCount: 2 * 1024 * 1024, // 2 MB
+  };
+
+  /**
    * Split string into normalized line array.
    */
   function splitLines(text) {
@@ -72,9 +84,20 @@
   function computeLineDiff(textA, textB, options = {}) {
     const ignoreWhitespace = !!options.ignoreWhitespace;
     const ignoreCase = !!options.ignoreCase;
+    const maxLines = options.maxLines || SIZE_LIMITS.maxLines;
 
     const rawLinesA = splitLines(textA);
     const rawLinesB = splitLines(textB);
+
+    const totalLines = rawLinesA.length + rawLinesB.length;
+    if (totalLines > maxLines) {
+      return {
+        error: true,
+        message: `Files too large for diff (${totalLines.toLocaleString()} lines, limit: ${maxLines.toLocaleString()}). Reduce file size or increase the limit.`,
+        totalLines,
+        maxLines,
+      };
+    }
 
     const norm = (line) => {
       let s = line;
@@ -187,5 +210,6 @@
     computeLineDiff,
     computeDiffStats,
     generateUnifiedPatch,
+    SIZE_LIMITS,
   };
 });
