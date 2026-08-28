@@ -363,10 +363,31 @@ function triggerAI() {
   if (!aiWorker) {
     aiWorker = new Worker("ai-worker.js");
     aiWorker.onmessage = function (e) {
-      isComputerThinking = false;
-      const bestMove = e.data;
-      if (bestMove) {
-        makeMove(bestMove);
+      const msg = e.data;
+
+      if (msg.type === "progress") {
+        setStatus(
+          `Computer is thinking... (${msg.nodesSearched} positions, ${msg.elapsedMs}ms)`
+        );
+        return;
+      }
+
+      if (msg.type === "result") {
+        isComputerThinking = false;
+        if (msg.cancelled) {
+          setStatus("AI cancelled.");
+          return;
+        }
+        if (msg.timedOut) {
+          setStatus(
+            `AI search timed out after ${msg.elapsedMs}ms (${msg.nodesSearched} positions). Playing best found.`
+          );
+        }
+        if (msg.move) {
+          makeMove(msg.move);
+        } else {
+          setStatus("AI has no moves. Game over.");
+        }
       }
     };
     aiWorker.onerror = function () {
@@ -378,6 +399,7 @@ function triggerAI() {
 
   const depth = parseInt(document.getElementById("aiDifficulty").value, 10);
   aiWorker.postMessage({
+    type: "search",
     board: board,
     color: turn,
     depth: depth,
@@ -387,8 +409,15 @@ function triggerAI() {
 
 function cancelAI() {
   if (aiWorker) {
-    aiWorker.terminate();
-    aiWorker = null;
+    aiWorker.postMessage({ type: "cancel" });
+    // Give the worker a moment to respond, then force-terminate
+    setTimeout(() => {
+      if (isComputerThinking) {
+        aiWorker.terminate();
+        aiWorker = null;
+        isComputerThinking = false;
+      }
+    }, 100);
   }
   isComputerThinking = false;
 }

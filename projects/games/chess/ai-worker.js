@@ -9,6 +9,32 @@ const PIECE_VALUES = {
   king: 9000,
 };
 
+const DEFAULT_TIMEOUT_MS = 5000;
+const PROGRESS_INTERVAL_MS = 200;
+
+// ── Cancellation / timeout state ───────────────────────────────
+let cancelled = false;
+let startTime = 0;
+let timeoutMs = DEFAULT_TIMEOUT_MS;
+let nodesSearched = 0;
+let lastProgressTime = 0;
+
+function isExpired() {
+  return cancelled || performance.now() - startTime > timeoutMs;
+}
+
+function maybeReportProgress() {
+  const now = performance.now();
+  if (now - lastProgressTime >= PROGRESS_INTERVAL_MS) {
+    lastProgressTime = now;
+    postMessage({
+      type: "progress",
+      nodesSearched,
+      elapsedMs: Math.round(now - startTime),
+    });
+  }
+}
+
 // Basic piece-square tables (PST) to encourage central control.
 // The tables are defined from White's perspective. We mirror them for Black.
 const pstCenter = [
@@ -48,7 +74,10 @@ function evaluateBoard(board, color) {
 }
 
 function minimax(board, depth, alpha, beta, isMaximizing, color) {
-  if (depth === 0) {
+  nodesSearched++;
+  maybeReportProgress();
+
+  if (depth === 0 || isExpired()) {
     return evaluateBoard(board, color);
   }
 
@@ -66,6 +95,7 @@ function minimax(board, depth, alpha, beta, isMaximizing, color) {
   if (isMaximizing) {
     let maxEval = -Infinity;
     for (const move of moves) {
+      if (isExpired()) break;
       const copy = cloneBoard(board);
       applyMove(copy, move);
       const ev = minimax(copy, depth - 1, alpha, beta, false, color);
@@ -77,6 +107,7 @@ function minimax(board, depth, alpha, beta, isMaximizing, color) {
   } else {
     let minEval = Infinity;
     for (const move of moves) {
+      if (isExpired()) break;
       const copy = cloneBoard(board);
       applyMove(copy, move);
       const ev = minimax(copy, depth - 1, alpha, beta, true, color);
@@ -89,11 +120,25 @@ function minimax(board, depth, alpha, beta, isMaximizing, color) {
 }
 
 onmessage = function (e) {
-  const { board, color, depth, enPassantTarget } = e.data;
+  const { type, board, color, depth, enPassantTarget, timeout } = e.data;
+
+  // Handle cancellation command
+  if (type === "cancel") {
+    cancelled = true;
+    return;
+  }
+
+  // Reset state for a new search
+  cancelled = false;
+  startTime = performance.now();
+  timeoutMs = timeout || DEFAULT_TIMEOUT_MS;
+  nodesSearched = 0;
+  lastProgressTime = 0;
+
   const moves = getAllLegalMoves(board, color, enPassantTarget);
 
   if (moves.length === 0) {
-    postMessage(null);
+    postMessage({ type: "result", move: null });
     return;
   }
 
@@ -106,6 +151,7 @@ onmessage = function (e) {
   moves.sort(() => Math.random() - 0.5);
 
   for (const move of moves) {
+    if (isExpired()) break;
     const copy = cloneBoard(board);
     applyMove(copy, move);
     const boardValue = minimax(copy, depth - 1, alpha, beta, false, color);
@@ -117,5 +163,12 @@ onmessage = function (e) {
     alpha = Math.max(alpha, boardValue);
   }
 
-  postMessage(bestMove);
+  postMessage({
+    type: "result",
+    move: bestMove,
+    timedOut: isExpired() && !cancelled,
+    cancelled,
+    nodesSearched,
+    elapsedMs: Math.round(performance.now() - startTime),
+  });
 };
