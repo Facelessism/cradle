@@ -279,6 +279,11 @@ function trainStep() {
   const inputs = state.data.map(d => [d[0], d[1]]);
   const targets = state.data.map(d => d[2]);
 
+  // Cooperative scheduling: run a small chunk per frame, then yield
+  // so the browser can handle input, paint, and garbage-collect.
+  const CHUNK_SIZE = Math.min(state.speed, 4);
+  const startTime = performance.now();
+
   for (let s = 0; s < state.speed; s++) {
     const { loss, accuracy } = state.net.train(
       inputs,
@@ -294,6 +299,13 @@ function trainStep() {
       if (state.lossHistory.length > 500) state.lossHistory.shift();
     }
     updateStats(state.epoch, loss, accuracy);
+
+    // Yield if we've spent more than ~8ms (budget for 60fps is ~16ms)
+    if (s < state.speed - 1 && (s + 1) % CHUNK_SIZE === 0 && performance.now() - startTime > 8) {
+      renderAll();
+      state.animId = setTimeout(trainStep, 0);
+      return;
+    }
   }
 
   renderAll();
@@ -313,7 +325,11 @@ function startTraining() {
 
 function pauseTraining() {
   state.training = false;
-  if (state.animId) cancelAnimationFrame(state.animId);
+  if (state.animId) {
+    cancelAnimationFrame(state.animId);
+    clearTimeout(state.animId);
+    state.animId = null;
+  }
   $("btnTrain").disabled = false;
   $("btnPause").disabled = true;
   $("btnTrain").innerHTML = '<i class="fas fa-play"></i> Resume';
