@@ -93,31 +93,87 @@
     setStatus("Idle", "Ready to render", "Upload an image or start camera.");
   }
 
-  async function startCamera() {
-    try {
-      stopCamera();
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }
-      });
-      state.stream = stream;
-      state.mode = "camera";
-      els.video.srcObject = stream;
-      await els.video.play();
+async function startCamera() {
+  try {
+    stopCamera();
 
-      els.video.style.display = "block";
-      els.sourceCanvas.style.display = "none";
-      els.emptyPreview.style.display = "none";
-
-      els.cameraBtn.disabled = true;
-      els.stopCameraBtn.disabled = false;
-
-      setStatus("Camera Active", "Live Streaming", "Streaming live webcam feed.");
-      scheduleNextFrame();
-    } catch (err) {
-      setStatus("Camera Error", "Access Denied", "Camera access denied or unavailable: " + err.message);
-      setEmptyState();
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error("Camera access is not supported by this browser.");
     }
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 640 },
+        height: { ideal: 480 },
+        facingMode: "user"
+      }
+    });
+
+    state.stream = stream;
+    state.mode = "camera";
+
+    els.video.srcObject = stream;
+    await els.video.play();
+
+    els.video.style.display = "block";
+    els.sourceCanvas.style.display = "none";
+    els.emptyPreview.style.display = "none";
+
+    els.cameraBtn.disabled = true;
+    els.stopCameraBtn.disabled = false;
+
+    setStatus(
+      "Camera Active",
+      "Live Streaming",
+      "Streaming live webcam feed."
+    );
+
+    scheduleNextFrame();
+  } catch (err) {
+    stopCamera();
+
+    state.mode = "empty";
+    state.sourceImage = null;
+
+    els.video.srcObject = null;
+    els.video.style.display = "none";
+    els.sourceCanvas.style.display = "none";
+    els.emptyPreview.style.display = "flex";
+
+    els.cameraBtn.disabled = false;
+    els.stopCameraBtn.disabled = true;
+
+    let message =
+      "Camera access was denied. You can upload an image instead.";
+
+    if (err && err.name === "NotAllowedError") {
+      message =
+        "Camera permission was denied. Allow camera access in your browser settings, or upload an image instead.";
+    } else if (err && err.name === "NotFoundError") {
+      message =
+        "No camera was found on this device. You can upload an image instead.";
+    } else if (err && err.name === "NotReadableError") {
+      message =
+        "The camera is already being used by another application. Close it and try again, or upload an image instead.";
+    } else if (err && err.name === "SecurityError") {
+      message =
+        "Camera access is blocked by the browser or page security settings. Try using a secure connection, or upload an image instead.";
+    } else if (err && err.message) {
+      message = `${err.message} You can upload an image instead.`;
+    }
+
+    setStatus(
+      "Camera Unavailable",
+      "Using fallback mode",
+      message
+    );
+
+    els.emptyPreview.innerHTML = `
+      <strong>Camera unavailable</strong>
+      <span>${message}</span>
+    `;
   }
+}
 
   function stopCamera() {
     if (state.stream) {

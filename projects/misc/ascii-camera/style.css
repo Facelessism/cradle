@@ -284,17 +284,26 @@ h1 {
 
 .empty-preview {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   place-items: center;
   width: 100%;
   min-height: 260px;
+  padding: 24px;
   color: var(--ascii-muted);
   border: 1px dashed var(--ascii-line);
   border-radius: 12px;
+  text-align: center;
 }
 
 .empty-preview strong {
   color: var(--ascii-text);
+  font-size: 1rem;
+}
+
+.empty-preview span {
+  max-width: 420px;
+  color: var(--ascii-muted);
+  line-height: 1.6;
 }
 
 .ascii-panel {

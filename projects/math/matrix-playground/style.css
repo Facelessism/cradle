@@ -831,3 +831,20 @@ input[type="range"]::-webkit-slider-thumb:hover {
     width: 100%;
   }
 }
+
+/* Accessibility: Respect user's reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable infinite pulse on active cell — static highlight remains via box-shadow */
+  .cell-highlight-active {
+    animation: none !important;
+  }
+}

@@ -1,75 +1,115 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Monopoly</title>
-    <meta name="description" content="Turn-based Monopoly board game simulation supporting multiple local players and roll mechanics." />
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Monopoly</title>
+    <meta
+      name="description"
+      content="Turn-based Monopoly board game simulation supporting multiple local players and roll mechanics."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/games/monopoly/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Monopoly" />
+    <meta property="og:description" content="Turn-based Monopoly board game simulation supporting multiple local players and roll mechanics." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/games/monopoly/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+  </head>
 
-<h1>Monopoly</h1>
-
-<main class="app">
-  <div class="board" id="board">
-    <div class="center">MONOPOLY</div>
-  </div>
-
-  <div class="panel">
-    <div class="box">
-      <h3>Players</h3>
-      <div id="playersList"></div>
-    </div>
-
-    <div class="box">
-      <h3>Turn</h3>
-      <div class="dice-area">
-        <div class="die" id="die1" data-v="1"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div>
-        <div class="die" id="die2" data-v="1"><span class="pip p1"></span><span class="pip p2"></span><span class="pip p3"></span><span class="pip p4"></span><span class="pip p5"></span><span class="pip p6"></span><span class="pip p7"></span><span class="pip p8"></span><span class="pip p9"></span></div>
-        <div id="diceSum" style="font-size:13px;color:#555;"></div>
-      </div>
-      <div class="status-msg" id="statusMsg">Roll the dice to begin.</div>
-      <div class="btn-row">
-        <button id="rollBtn">Roll Dice</button>
-        <button id="buyBtn" class="secondary" style="display:none;">Buy Property</button>
-        <button id="endTurnBtn" class="secondary" disabled>End Turn</button>
-      </div>
-    </div>
-
-    <div class="box">
-      <h3>Game Log</h3>
-      <div class="log" id="log"></div>
-    </div>
-  </div>
-</main>
-
-<div class="setup-overlay" id="setupOverlay">
-  <div class="setup-card">
+  <body>
     <h1>Monopoly</h1>
-    <div class="sub">New Game Setup</div>
-    <div class="setup-row">
-      <label>Number of Players</label>
-      <div class="num-picker" id="numPicker">
-        <button data-n="2" class="sel" aria-label="Select 2 players">2</button>
-        <button data-n="3" aria-label="Select 3 players">3</button>
-        <button data-n="4" aria-label="Select 4 players">4</button>
+
+    <main class="app">
+      <div class="board" id="board">
+        <div class="center">MONOPOLY</div>
+      </div>
+
+      <div class="panel">
+        <div class="box">
+          <h2>Players</h2>
+          <div id="playersList"></div>
+        </div>
+
+        <div class="box">
+          <h2>Turn</h2>
+          <div class="dice-area">
+            <div class="die" id="die1" data-v="1">
+              <span class="pip p1"></span><span class="pip p2"></span
+              ><span class="pip p3"></span><span class="pip p4"></span
+              ><span class="pip p5"></span><span class="pip p6"></span
+              ><span class="pip p7"></span><span class="pip p8"></span
+              ><span class="pip p9"></span>
+            </div>
+            <div class="die" id="die2" data-v="1">
+              <span class="pip p1"></span><span class="pip p2"></span
+              ><span class="pip p3"></span><span class="pip p4"></span
+              ><span class="pip p5"></span><span class="pip p6"></span
+              ><span class="pip p7"></span><span class="pip p8"></span
+              ><span class="pip p9"></span>
+            </div>
+            <div id="diceSum" style="font-size: 13px; color: #555"></div>
+          </div>
+          <div
+            class="status-msg"
+            id="statusMsg"
+            role="status"
+            aria-live="polite"
+          >
+            Roll the dice to begin.
+          </div>
+          <div class="btn-row">
+            <button id="rollBtn">Roll Dice</button>
+            <button id="buyBtn" class="secondary" style="display: none">
+              Buy Property
+            </button>
+            <button id="endTurnBtn" class="secondary" disabled>End Turn</button>
+          </div>
+        </div>
+        <div class="box">
+          <h2>Game Log</h2>
+          <div class="log" id="log"></div>
+        </div>
+      </div>
+    </main>
+
+    <div class="setup-overlay" id="setupOverlay">
+      <div class="setup-card">
+        <h1>Monopoly</h1>
+        <div class="sub">New Game Setup</div>
+        <div class="setup-row">
+          <label>Number of Players</label>
+          <div class="num-picker" id="numPicker">
+            <button data-n="2" class="sel" aria-label="Select 2 players">
+              2
+            </button>
+            <button data-n="3" aria-label="Select 3 players">3</button>
+            <button data-n="4" aria-label="Select 4 players">4</button>
+          </div>
+        </div>
+        <div class="setup-row">
+          <label>Player Names</label>
+          <div class="name-inputs" id="nameInputs"></div>
+        </div>
+        <div class="btn-row">
+          <button
+            id="startGameBtn"
+            aria-label="Start game with selected players"
+          >
+            Start Game
+          </button>
+        </div>
       </div>
     </div>
-    <div class="setup-row">
-      <label>Player Names</label>
-      <div class="name-inputs" id="nameInputs"></div>
-    </div>
-    <div class="btn-row">
-      <button id="startGameBtn" aria-label="Start game with selected players">Start Game</button>
-    </div>
-  </div>
-</div>
 
-<div class="modal-overlay" id="modalOverlay" style="display:none;">
-  <div class="modal" id="modalBox"></div>
-</div>
+    <div class="modal-overlay" id="modalOverlay" style="display: none">
+      <div class="modal" id="modalBox"></div>
+    </div>
 
-<script src="script.js"></script>
-</body>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
 </html>

@@ -91,3 +91,31 @@ test("exportCsv pads short rows to header length", () => {
 
   assert.equal(exported, "Name,Email,Role\nAsha,asha@example.com,");
 });
+
+test("parseCsv throws on empty or whitespace-only CSV input", () => {
+  assert.throws(() => CsvCleaner.parseCsv(""), /CSV input is empty\./);
+  assert.throws(() => CsvCleaner.parseCsv("   \n  \n"), /CSV input is empty\./);
+});
+
+test("parseCsv throws on unclosed quote", () => {
+  assert.throws(() => CsvCleaner.parseCsv('Name,Email\n"Asha,asha@example.com'), /The CSV contains malformed quoting\./);
+  assert.throws(() => CsvCleaner.parseCsv('Name,Email\nAsha,"asha@example.com'), /The CSV contains malformed quoting\./);
+});
+
+test("parseCsv throws on malformed quote inside field", () => {
+  assert.throws(() => CsvCleaner.parseCsv('Name,Email\nAsha "Dev" Rao,asha@example.com'), /The CSV contains malformed quoting\./);
+  assert.throws(() => CsvCleaner.parseCsv('Name,Email\n"Asha" Rao,asha@example.com'), /The CSV contains malformed quoting\./);
+});
+
+test("parseCsv detects column count mismatch warnings", () => {
+  const result = CsvCleaner.analyzeCsv("Name,Email\nAsha,asha@example.com,Developer\nMira,mira@example.com\nPatel");
+  
+  assert.deepEqual(result.dataset.rows, [
+    ["Asha", "asha@example.com"],
+    ["Mira", "mira@example.com"],
+    ["Patel", ""],
+  ]);
+  assert.equal(result.summary.warnings.length, 2);
+  assert.match(result.summary.warnings[0], /Row 2 has an unexpected number of columns/);
+  assert.match(result.summary.warnings[1], /Row 4 has an unexpected number of columns/);
+});

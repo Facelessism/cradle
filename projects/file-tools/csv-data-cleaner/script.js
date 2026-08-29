@@ -97,7 +97,13 @@ function cleanCsv() {
     cleanedDataset = result.dataset;
     updateStats(result.summary);
     renderTable(result.dataset, result.summary.missingValues);
-    setMessage("CSV cleaned successfully.", "success");
+    if (result.summary.warnings && result.summary.warnings.length > 0) {
+      const remainingCount = result.summary.warnings.length - 1;
+      const extraText = remainingCount > 0 ? ` (and ${remainingCount} more)` : "";
+      setMessage(`CSV cleaned with warnings: ${result.summary.warnings[0]}${extraText}`, "success");
+    } else {
+      setMessage("CSV cleaned successfully.", "success");
+    }
   } catch (error) {
     cleanedDataset = null;
     setMessage(error.message || "Unable to clean CSV.", "error");

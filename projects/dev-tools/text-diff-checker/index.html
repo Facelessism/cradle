@@ -1,70 +1,117 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Text Difference Checker</title>
-    <meta name="description" content="Side-by-side text comparison tool highlighting insertions, deletions, and line changes." />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Text Difference Checker</title>
+    <meta
+      name="description"
+      content="Side-by-side text comparison tool highlighting insertions, deletions, and line changes."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/dev-tools/text-diff-checker/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Text Difference Checker" />
+    <meta property="og:description" content="Side-by-side text comparison tool highlighting insertions, deletions, and line changes." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/dev-tools/text-diff-checker/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
 <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <main class="app">
-    <header class="app-header">
-      <h1>Text Difference Checker</h1>
-      <p>Compare two blocks of text and see additions, removals and modifications, side by side.</p>
-    </header>
+  </head>
+  <body>
+    <main class="app">
+      <header class="app-header">
+        <h1>Text Difference Checker</h1>
+        <p>
+          Compare two blocks of text and see additions, removals and
+          modifications, side by side.
+        </p>
+      </header>
 
-    <section class="controls">
-      <div class="mode-toggle" role="tablist" aria-label="Diff mode">
-        <button id="lineModeBtn" class="mode-btn active" data-mode="line" role="tab" aria-selected="true">
-          Line Mode
-        </button>
-        <button id="wordModeBtn" class="mode-btn" data-mode="word" role="tab" aria-selected="false">
-          Word Mode
-        </button>
-      </div>
+      <section class="controls">
+        <div class="mode-toggle" role="tablist" aria-label="Diff mode">
+          <button
+            id="lineModeBtn"
+            class="mode-btn active"
+            data-mode="line"
+            role="tab"
+            aria-selected="true"
+          >
+            Line Mode
+          </button>
+          <button
+            id="wordModeBtn"
+            class="mode-btn"
+            data-mode="word"
+            role="tab"
+            aria-selected="false"
+          >
+            Word Mode
+          </button>
+        </div>
 
-      <div class="action-buttons">
-        <button id="compareBtn" class="btn btn-primary">Compare</button>
-        <button id="swapBtn" class="btn btn-secondary" title="Swap original and modified text">⇄ Swap</button>
-        <button id="clearBtn" class="btn btn-secondary">Clear</button>
-      </div>
-    </section>
+        <div class="action-buttons">
+          <button id="compareBtn" class="btn btn-primary">Compare</button>
+          <button
+            id="swapBtn"
+            class="btn btn-secondary"
+            title="Swap original and modified text"
+          >
+            ⇄ Swap
+          </button>
+          <button id="clearBtn" class="btn btn-secondary">Clear</button>
+        </div>
+      </section>
 
-    <section class="input-grid">
-      <div class="input-panel">
-        <label for="originalText">Original</label>
-        <textarea id="originalText" spellcheck="false" placeholder="Paste the original text here..."></textarea>
-      </div>
-      <div class="input-panel">
-        <label for="modifiedText">Modified</label>
-        <textarea id="modifiedText" spellcheck="false" placeholder="Paste the modified text here..."></textarea>
-      </div>
-    </section>
+      <section class="input-grid">
+        <div class="input-panel">
+          <label for="originalText">Original</label>
+          <textarea
+            id="originalText"
+            spellcheck="false"
+            placeholder="Paste the original text here..."
+          ></textarea>
+        </div>
+        <div class="input-panel">
+          <label for="modifiedText">Modified</label>
+          <textarea
+            id="modifiedText"
+            spellcheck="false"
+            placeholder="Paste the modified text here..."
+          ></textarea>
+        </div>
+      </section>
 
-    <section id="statsBar" class="stats-bar" hidden>
-      <span class="stat stat-add">+<span id="statAdd">0</span> additions</span>
-      <span class="stat stat-del">−<span id="statDel">0</span> removals</span>
-      <span class="stat stat-mod"><span id="statMod">0</span> modified lines</span>
-    </section>
+      <section id="statsBar" class="stats-bar" hidden>
+        <span class="stat stat-add"
+          >+<span id="statAdd">0</span> additions</span
+        >
+        <span class="stat stat-del">−<span id="statDel">0</span> removals</span>
+        <span class="stat stat-mod"
+          ><span id="statMod">0</span> modified lines</span
+        >
+      </section>
 
-    <section id="diffOutput" class="diff-output" hidden>
-      <div class="diff-column">
-        <div class="diff-column-header">Original</div>
-        <div id="leftPane" class="diff-pane"></div>
-      </div>
-      <div class="diff-column">
-        <div class="diff-column-header">Modified</div>
-        <div id="rightPane" class="diff-pane"></div>
-      </div>
-    </section>
+      <section id="diffOutput" class="diff-output" hidden>
+        <div class="diff-column">
+          <div class="diff-column-header">Original</div>
+          <div id="leftPane" class="diff-pane"></div>
+        </div>
+        <div class="diff-column">
+          <div class="diff-column-header">Modified</div>
+          <div id="rightPane" class="diff-pane"></div>
+        </div>
+      </section>
 
-    <p id="emptyState" class="empty-state">
-      Enter text on both sides and click <strong>Compare</strong> to see the difference.
-    </p>
-  </main>
-   <script src="../../../src/components/ui/escapeHtml.js"></script>
-  <script src="diffEngine.js"></script>
-  <script src="script.js"></script>
-</body>
+      <p id="emptyState" class="empty-state">
+        Enter text on both sides and click <strong>Compare</strong> to see the
+        difference.
+      </p>
+    </main>
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="diffEngine.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
 </html>

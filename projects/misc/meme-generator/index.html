@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Meme Generator Studio</title>
     <meta name="description" content="Create, edit, caption, and download custom visual memes directly in your browser." />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/misc/meme-generator/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Meme Generator Studio" />
+    <meta property="og:description" content="Create, edit, caption, and download custom visual memes directly in your browser." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/misc/meme-generator/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
@@ -15,14 +21,14 @@
   <body>
     <div class="meme-studio-container">
       <header class="studio-header">
-        <h2>Meme Generator Studio</h2>
+        <h1>Meme Generator Studio</h1>
         <p>Create, customize, and export high-quality custom memes</p>
       </header>
 
       <main class="studio-workspace">
         <!-- Control Panel -->
         <section class="controls-card">
-          <h3>Meme Customization Controls</h3>
+          <h2>Meme Customization Controls</h2>
 
           <div class="form-group">
             <label for="inputTopText">Top Header Text</label>
@@ -104,7 +110,7 @@
 
         <!-- Canvas Preview Area -->
         <section class="preview-card">
-          <h3>Live Canvas Preview</h3>
+          <h2>Live Canvas Preview</h2>
           <div class="canvas-wrapper">
             <canvas id="memeCanvas"></canvas>
             <img
@@ -118,7 +124,7 @@
 
       <!-- Saved Presets Gallery -->
       <section class="presets-section">
-        <h3>Saved Meme Presets</h3>
+        <h2>Saved Meme Presets</h2>
         <div id="presetsList" class="presets-grid">
           <p class="empty-presets">
             No saved presets yet. Customize text and click "Save Preset".

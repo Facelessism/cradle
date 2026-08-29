@@ -20,7 +20,6 @@ ASCII Camera Studio is a client-side web application that transforms webcam vide
 ```text
 projects/misc/ascii-camera/
 ├── ARCHITECTURE.md   # System architecture and data flow specifications
-├── README.md         # Documentation, feature highlights, and controls
 ├── index.html        # HTML layout, controls panel, source preview, ASCII output
 ├── asciiEngine.js    # Core image processing, Sobel edge detection, palette mapping
 ├── asciiExporter.js  # Format serializers for TXT, HTML document, and SVG vector

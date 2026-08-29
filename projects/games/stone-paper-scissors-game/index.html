@@ -2,14 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RPS Arena | Rock Paper Scissors</title>
-    <meta name="description" content="Classic and extended Rock-Paper-Scissors-Lizard-Spock game with pattern-tracking AI." />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;600;700&display=swap"
-      rel="stylesheet"
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/games/stone-paper-scissors-game/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="RPS Arena | Rock Paper Scissors" />
+    <meta property="og:description" content="Classic and extended Rock-Paper-Scissors-Lizard-Spock game with pattern-tracking AI." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/games/stone-paper-scissors-game/" />
+    <meta
+      name="description"
+      content="Classic and extended Rock-Paper-Scissors-Lizard-Spock game with pattern-tracking AI."
     />
-    <link rel="stylesheet" href="style.css" />
+
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
   </head>
   <body>
@@ -24,28 +30,26 @@
         <h1 class="title">BATTLE <span>ARENA</span></h1>
         <p class="subtitle">Choose your weapon and defeat the machine</p>
 
-    <div class="game-box">
-      <h1 class="title">BATTLE <span>ARENA</span></h1>
-      <p class="subtitle">Choose your weapon and defeat the machine</p>
+        <div class="rules-mode-selector">
+          <label for="rulesMode">Rules Mode:</label>
+          <select id="rulesMode" class="form-select">
+            <option value="classic">Classic Rock-Paper-Scissors</option>
+            <option value="lizard-spock">
+              Rock-Paper-Scissors-Lizard-Spock
+            </option>
+          </select>
+          <label for="aiDifficulty" style="margin-left: 1rem">Bot AI:</label>
+          <select id="aiDifficulty" class="form-select">
+            <option value="adaptive">Smart Markov Bot</option>
+            <option value="random">Random Bot</option>
+          </select>
+        </div>
 
-      <div class="rules-mode-selector">
-        <label for="rulesMode">Rules Mode:</label>
-        <select id="rulesMode" class="form-select">
-          <option value="classic">Classic Rock-Paper-Scissors</option>
-          <option value="lizard-spock">Rock-Paper-Scissors-Lizard-Spock</option>
-        </select>
-        <label for="aiDifficulty" style="margin-left: 1rem;">Bot AI:</label>
-        <select id="aiDifficulty" class="form-select">
-          <option value="adaptive">Smart Markov Bot</option>
-          <option value="random">Random Bot</option>
-        </select>
-      </div>
-
-      <div class="mode-selector" id="modeSelector">
-        <button class="mode-btn active" data-mode="1">Single Round</button>
-        <button class="mode-btn" data-mode="3">Best of 3</button>
-        <button class="mode-btn" data-mode="5">Best of 5</button>
-      </div>
+        <div class="mode-selector" id="modeSelector">
+          <button class="mode-btn active" data-mode="1">Single Round</button>
+          <button class="mode-btn" data-mode="3">Best of 3</button>
+          <button class="mode-btn" data-mode="5">Best of 5</button>
+        </div>
 
         <div class="score-board">
           <div class="score-card">
@@ -87,7 +91,9 @@
           <div class="fighter" id="computerPick">❓</div>
         </div>
 
-        <p class="result-text" id="resultText">Choose your weapon!</p>
+        <p class="result-text" id="resultText" role="status" aria-live="polite">
+          Choose your weapon!
+        </p>
 
         <div class="choices" id="choices">
           <button class="choice-btn" data-choice="rock">
@@ -160,33 +166,37 @@
     <div class="modal-overlay hidden" id="victoryModal">
       <div class="modal-box">
         <h2 id="modalTitle">Tournament Complete</h2>
-        <p id="modalMessage">You defeated the machine!</p>
+        <p id="modalMessage" role="status" aria-live="polite">
+          You defeated the machine!
+        </p>
         <button class="modal-btn" id="playAgainBtn">Play Again</button>
       </div>
     </div>
-  </div>
-<script src="../../../src/components/ui/Navbar/Navbar.js"></script>
-<script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
-<script src="game-engine.js"></script>
-<script src="rpsAiEngine.js"></script>
-<script src="../../../src/components/ui/storage.js"></script>
-<script src="rpsStorage.js"></script>
-<script src="script.js"></script>
-  <script>
-    (function () {
-      const nav = CradleNavbar.create({
-        logo: { text: '⚔️ RPS ARENA', href: '#game' },
-        links: [
-          { label: 'Play', href: '#game' },
-          { label: 'How To Play', href: '#how' },
-          { label: 'About', href: '#footer' },
-        ],
-        currentRoute: window.location.hash || '#game',
-      });
-      const mount = document.getElementById('navbar-mount');
-      mount.replaceWith(nav);
-      nav.insertAdjacentElement('afterend', nav._drawer);
-    })();
-  </script>
-</body>
+    <script src="../../../src/components/ui/Navbar/Navbar.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+    <script src="game-engine.js"></script>
+    <script src="rpsAiEngine.js"></script>
+    <script src="../../../src/components/ui/storage.js"></script>
+    <script src="rpsStorage.js"></script>
+    <script src="script.js"></script>
+    <script>
+      (function () {
+        const nav = CradleNavbar.create({
+          logo: { text: "⚔️ RPS ARENA", href: "#game" },
+          links: [
+            { label: "Play", href: "#game" },
+            { label: "How To Play", href: "#how" },
+            { label: "About", href: "#footer" },
+          ],
+          currentRoute: window.location.hash || "#game",
+        });
+        const mount = document.getElementById("navbar-mount");
+        mount.replaceWith(nav);
+        nav.insertAdjacentElement("afterend", nav._drawer);
+      })();
+    </script>
+  </body>
 </html>

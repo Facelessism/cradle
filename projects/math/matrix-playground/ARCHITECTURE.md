@@ -24,7 +24,6 @@ The **Matrix Operations & Decomposition Playground** is an interactive linear al
 ```text
 projects/math/matrix-playground/
 ├── ARCHITECTURE.md    # Architectural documentation and specifications
-├── README.md          # Usage instructions, formula descriptions, and project features
 ├── index.html         # HTML layout, controls, grid placeholders, and export modal
 ├── matrixEngine.js    # Linear algebra calculations (LU, QR, Eigenvalues, Inverses)
 ├── matrixStorage.js   # Matrix presets catalog, LocalStorage persistence, LaTeX/CSV export

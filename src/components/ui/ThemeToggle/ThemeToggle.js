@@ -4,7 +4,7 @@
  * A reusable light/dark theme toggle.
  *
  * Features:
- *  - Detects saved preference from localStorage (key: "theme")
+ *  - Detects saved preference through CradleStorage (key: "theme")
  *  - Falls back to OS-level prefers-color-scheme
  *  - Toggles <html class="light-theme"> — same convention as the homepage
  *  - Animated icon transition (moon ↔ sun)
@@ -105,20 +105,19 @@
   }
 
   /* ── Theme helpers ────────────────────────────────────── */
+  /* Theme persistence is deliberately delegated to the shared storage helper.
+     CradleStorage itself handles unavailable/blocked browser storage by falling
+     back to memory, so this component never touches localStorage directly. */
   function getStoredTheme() {
-    try {
-      return localStorage.getItem(STORAGE_KEY);
-    } catch {
-      return null;
-    }
+    const storage = global.CradleStorage;
+    if (!storage || typeof storage.getRaw !== "function") return null;
+    return storage.getRaw(STORAGE_KEY);
   }
 
   function storeTheme(theme) {
-    try {
-      localStorage.setItem(STORAGE_KEY, theme);
-    } catch {
-      /* ignore */
-    }
+    const storage = global.CradleStorage;
+    if (!storage || typeof storage.setRaw !== "function") return false;
+    return storage.setRaw(STORAGE_KEY, theme);
   }
 
   function getSystemTheme() {

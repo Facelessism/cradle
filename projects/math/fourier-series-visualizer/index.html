@@ -8,11 +8,17 @@
       name="description"
       content="Visualise how complex waveforms are constructed from harmonic sine waves using Fourier series decomposition."
     />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/math/fourier-series-visualizer/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Fourier Series Visualizer" />
+    <meta property="og:description" content="Visualise how complex waveforms are constructed from harmonic sine waves using Fourier series decomposition." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/math/fourier-series-visualizer/" />
 
     <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
@@ -212,7 +218,7 @@
               aria-label="Individual harmonic waveforms"
             ></canvas>
           </div>
-          <div class="status-bar">
+          <div class="status-bar" role="status" aria-live="polite">
             <span id="statusLeft">Drag sliders to adjust parameters</span>
             <span id="statusRight">Fourier Series: f(t) = Σ aₙ·sin(nωt)</span>
           </div>

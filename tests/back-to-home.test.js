@@ -313,12 +313,12 @@ test("autoInject() mounts a pill link on non-home pages", () => {
   assert.ok(document.body.children[0].classList.contains("cradle-back-home"));
 });
 
-test("rendered links are keyboard-navigable through native anchor semantics", () => {
+test("rendered links are keyboard-navigable with button role", () => {
   const { api } = loadBackToHome();
   const link = api.create({ to: "/" });
 
   assert.equal(link.tagName, "A");
   assert.equal(link.href, "/");
   assert.equal(link.getAttribute("aria-label"), "Back to Home");
-  assert.equal(link.getAttribute("role"), null);
+  assert.equal(link.getAttribute("role"), "button");
 });

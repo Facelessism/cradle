@@ -224,6 +224,15 @@
       link.href = href;
       link.title = label;
       link.setAttribute("aria-label", label);
+      link.setAttribute("role", "button");
+      link.tabIndex = 0;
+
+      link.addEventListener("keydown", (e) => {
+        if (e.key === " " || e.key === "Enter") {
+          e.preventDefault();
+          link.click();
+        }
+      });
 
       /* Icon wrapper */
       const iconWrapper = document.createElement("span");

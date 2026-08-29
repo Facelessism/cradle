@@ -8,7 +8,13 @@
       name="description"
       content="Record microphone input and visualize waveform, frequency spectrum and spectrogram in real time with FFT analysis and recording playback."
     />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/misc/sound-wave-visualizer/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Sound Wave Visualizer | Cradle" />
+    <meta property="og:description" content="Record microphone input and visualize waveform, frequency spectrum and spectrogram in real time with FFT analysis and recording playback." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/misc/sound-wave-visualizer/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -16,6 +22,7 @@
       rel="stylesheet"
     />
   </head>
+
   <body>
     <div class="app-container">
       <!-- Header -->
@@ -29,13 +36,19 @@
           </p>
         </div>
         <div class="header-right">
-          <div class="status-pill" id="status-pill" role="status" aria-live="polite">
+          <div
+            class="status-pill"
+            id="status-pill"
+            role="status"
+            aria-live="polite"
+          >
             <span class="status-dot" id="status-dot"></span>
             <span id="status-text">Ready</span>
           </div>
         </div>
       </header>
 
+      <script src="visualizerEngine.js"></script>
       <!-- Control Bar -->
       <div class="control-bar">
         <div class="controls-left">
@@ -166,5 +179,9 @@
 
     <script src="../../../src/components/ui/escapeHtml.js"></script>
     <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
   </body>
 </html>

@@ -641,3 +641,25 @@ h1 {
 .fen-buttons button:hover {
   opacity: 0.9;
 }
+
+/* Accessibility: Respect user's reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable decorative modal scale-in animation */
+  .modal-content {
+    animation: none !important;
+  }
+
+  /* Disable hover transforms on promotion buttons */
+  .promotion-options button:hover {
+    transform: none !important;
+  }
+}

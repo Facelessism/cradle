@@ -4,8 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Interactive Periodic Table | Cradle</title>
-    <meta name="description" content="Interactive periodic table of elements with search, detail modals, and physical properties." />
-    <link rel="stylesheet" href="style.css" />
+    <meta
+      name="description"
+      content="Interactive periodic table of elements with search, detail modals, and physical properties."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/misc/periodic-table/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Interactive Periodic Table | Cradle" />
+    <meta property="og:description" content="Interactive periodic table of elements with search, detail modals, and physical properties." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/misc/periodic-table/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,6 +22,7 @@
       rel="stylesheet"
     />
   </head>
+
   <body>
     <div class="app-container">
       <!-- Header -->
@@ -53,6 +63,8 @@
               ✕
             </button>
           </div>
+
+          <script src="periodicEngine.js"></script>
 
           <div class="display-mode-selector">
             <label>View Mode:</label>
@@ -125,7 +137,7 @@
             ✕
           </button>
           <div class="modal-header" id="modal-header">
-            <!-- Dynamic element title & category badge -->
+            <h2>Element Details</h2>
           </div>
 
           <div class="modal-body">
@@ -139,7 +151,7 @@
               </div>
 
               <div class="bohr-model-container">
-                <h4>Bohr Model (Electron Shells)</h4>
+                <h3>Bohr Model (Electron Shells)</h3>
                 <div class="bohr-canvas-wrapper">
                   <canvas id="bohr-canvas" width="220" height="220"></canvas>
                 </div>
@@ -207,5 +219,9 @@
 
     <script src="elements.js"></script>
     <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
   </body>
 </html>

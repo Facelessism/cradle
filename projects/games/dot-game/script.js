@@ -1,10 +1,4 @@
-const {
-  createBoard,
-  getCapacity,
-  getRandomMove,
-  getValidMoves,
-  hasPieces,
-} = DotGameEngine;
+
 const boardElement = document.getElementById("board");
 const playerCountElement = document.getElementById("playerCount");
 const gridPresetElement = document.getElementById("gridPreset");
@@ -16,86 +10,149 @@ const analyticsContainer = document.getElementById("analyticsContainer");
 const gameModeElement = document.getElementById("gameMode");
 const hintBtnElement = document.getElementById("hintBtn");
 const difficultyElement = document.getElementById("difficulty");
+const difficultyGroup = document.getElementById("difficultyGroup");
+const themeToggle = document.getElementById("themeToggle");
+const newGameButton = document.getElementById("newGame");
 
 const COLORS = ["red", "blue", "green", "yellow"];
-
-gameModeElement.addEventListener("change", e => {
-  document.getElementById("difficultyGroup").style.display =
-    e.target.value === "pvai" ? "flex" : "none";
-});
-document.getElementById("difficultyGroup").style.display =
-  gameModeElement.value === "pvai" ? "flex" : "none";
 
 let boardSize = 8;
 let state = {};
 let matchHistory = [];
+
 try {
-  matchHistory = JSON.parse(localStorage.getItem("cradle_dot_game_history") || localStorage.getItem("dotGameHistory")) || [];
+  matchHistory =
+    JSON.parse(
+      localStorage.getItem("cradle_dot_game_history") ||
+      localStorage.getItem("dotGameHistory") ||
+      "[]"
+    ) || [];
 } catch {
   matchHistory = [];
 }
+
 function updateGridValue(size) {
   gridValueElement.textContent = `${size} × ${size}`;
 }
 
-gridPresetElement.addEventListener("change", e => {
-  if (e.target.value === "custom") {
-    gridCustomElement.style.display = "inline-block";
-    handleSizeChange(+gridCustomElement.value);
-  } else {
-    gridCustomElement.style.display = "none";
-    handleSizeChange(+e.target.value);
-  }
-});
+function updateDifficultyVisibility() {
+  difficultyGroup.style.display =
+    gameModeElement.value === "pvai" ? "flex" : "none";
+}
 
-gridCustomElement.addEventListener("input", e => {
-  let val = +e.target.value;
-  if (val < 2) val = 2;
-  if (val > 12) val = 12;
-  handleSizeChange(val);
-});
+gameModeElement.addEventListener("change", () => {
+  const previousMode = state.gameMode;
 
-function handleSizeChange(size) {
-  if (state.isActive && state.analytics && state.analytics.moves > 0) {
-    if (
-      !confirm(
-        "Are you sure you want to change board size and reset the active match?"
-      )
-    ) {
-      // Revert UI to match actual size
-      if (boardSize === 3 || boardSize === 5 || boardSize === 8) {
-        gridPresetElement.value = boardSize;
-        gridCustomElement.style.display = "none";
-      } else {
-        gridPresetElement.value = "custom";
-        gridCustomElement.style.display = "inline-block";
-        gridCustomElement.value = boardSize;
-      }
+  if (
+    state.isActive &&
+    state.analytics &&
+    state.analytics.moves > 0 &&
+    previousMode !== gameModeElement.value
+  ) {
+    const confirmed = confirm(
+      "Changing the game mode will reset the current match. Continue?"
+    );
+
+    if (!confirmed) {
+      gameModeElement.value = previousMode;
+      updateDifficultyVisibility();
       return;
     }
   }
+
+  updateDifficultyVisibility();
+
+  if (state.isActive) {
+    startGame();
+  }
+});
+
+gridPresetElement.addEventListener("change", event => {
+  if (event.target.value === "custom") {
+    gridCustomElement.style.display = "block";
+    handleSizeChange(Number(gridCustomElement.value));
+    return;
+  }
+
+  gridCustomElement.style.display = "none";
+  handleSizeChange(Number(event.target.value));
+});
+
+gridCustomElement.addEventListener("input", event => {
+  let value = Number(event.target.value);
+
+  if (value < 2) value = 2;
+  if (value > 12) value = 12;
+
+  event.target.value = value;
+  handleSizeChange(value);
+});
+
+function handleSizeChange(size) {
+  if (!Number.isInteger(size) || size < 2 || size > 12) {
+    return;
+  }
+
+  if (
+    state.isActive &&
+    state.analytics &&
+    state.analytics.moves > 0
+  ) {
+    const confirmed = confirm(
+      "Are you sure you want to change the board size and reset the active match?"
+    );
+
+    if (!confirmed) {
+      restoreGridControls();
+      return;
+    }
+  }
+
   boardSize = size;
   updateGridValue(size);
+
   if (state.isActive) {
     startGame();
   }
 }
 
+function restoreGridControls() {
+  if ([3, 5, 8].includes(boardSize)) {
+    gridPresetElement.value = boardSize;
+    gridCustomElement.style.display = "none";
+  } else {
+    gridPresetElement.value = "custom";
+    gridCustomElement.style.display = "block";
+    gridCustomElement.value = boardSize;
+  }
 
-
+  updateGridValue(boardSize);
+}
 
 function renderBoard() {
   boardElement.innerHTML = "";
-  boardElement.style.gridTemplateColumns = `repeat(${boardSize}, 1fr)`;
+  boardElement.style.gridTemplateColumns =
+    `repeat(${boardSize}, minmax(0, 1fr))`;
 
   for (let row = 0; row < boardSize; row++) {
     for (let col = 0; col < boardSize; col++) {
       const data = state.board[row][col];
-
       const cell = document.createElement("button");
-      cell.className = `cell ${data.owner || ""}`;
+
+      cell.type = "button";
+      cell.className =
+        `cell${data.owner ? ` ${data.owner}` : ""}`;
+
       cell.textContent = data.dots || "";
-      cell.onclick = () => addDot(row, col);
+
+      cell.setAttribute(
+        "aria-label",
+        `${data.owner || "Empty"} cell, ${data.dots} dots`
+      );
+
+      cell.addEventListener("click", () => {
+        addDot(row, col);
+      });
 
       boardElement.appendChild(cell);
     }
@@ -103,46 +160,67 @@ function renderBoard() {
 }
 
 function initTheme() {
-  const savedTheme = localStorage.getItem("cradle_theme") || localStorage.getItem("neuralforge_theme") || "dark";
+  const savedTheme =
+    localStorage.getItem("cradle_theme") ||
+    localStorage.getItem("neuralforge_theme") ||
+    localStorage.getItem("theme") ||
+    "dark";
+
   setTheme(savedTheme);
 }
 
 function setTheme(theme) {
+  const isLight = theme === "light";
   const html = document.documentElement;
-  const themeBtn = document.getElementById("themeToggle");
 
-  if (theme === "light") {
-    html.classList.add("light-theme");
-    if (themeBtn)
-      themeBtn.innerHTML = '<i class="fas fa-sun text-orange-400"></i>';
-    localStorage.setItem("theme", "light");
+  html.classList.toggle("light-theme", isLight);
 
-    localStorage.setItem("cradle_theme", "light");
-  } else {
-    html.classList.remove("light-theme");
-    if (themeBtn)
-      themeBtn.innerHTML = '<i class="fas fa-moon text-yellow-400"></i>';
-    localStorage.setItem("theme", "dark");
-    localStorage.setItem("cradle_theme", "dark");
+  if (themeToggle) {
+    themeToggle.innerHTML = isLight
+      ? '<i class="fas fa-sun"></i>'
+      : '<i class="fas fa-moon"></i>';
+
+    themeToggle.setAttribute(
+      "aria-label",
+      isLight
+        ? "Switch to dark theme"
+        : "Switch to light theme"
+    );
   }
+
+  localStorage.setItem(
+    "theme",
+    isLight ? "light" : "dark"
+  );
+
+  localStorage.setItem(
+    "cradle_theme",
+    isLight ? "light" : "dark"
+  );
 }
 
 function toggleTheme() {
-  const html = document.documentElement;
-  const isLight = html.classList.contains("light-theme");
+  const isLight =
+    document.documentElement.classList.contains("light-theme");
+
   setTheme(isLight ? "dark" : "light");
 }
 
-function clearHint() {
-  for (let r = 0; r < boardSize; r++) {
-    for (let c = 0; c < boardSize; c++) {
-      const cellEl = boardElement.children[r * boardSize + c];
-      if (cellEl) cellEl.classList.remove("hint");
-    }
-  }
+if (themeToggle) {
+  themeToggle.addEventListener("click", toggleTheme);
 }
 
-function getBestMove(board, player, difficulty = "medium") {
+function clearHint() {
+  Array.from(boardElement.children).forEach(cell => {
+    cell.classList.remove("hint");
+  });
+}
+
+function getBestMove(
+  board,
+  player,
+  difficulty = "medium"
+) {
   const validMoves = getValidMoves(board, player);
 
   if (validMoves.length === 0) {
@@ -153,27 +231,29 @@ function getBestMove(board, player, difficulty = "medium") {
     return getRandomMove(board, player);
   }
 
-  // Score each valid move.
   const scoredMoves = validMoves.map(move => {
     const cell = board[move.r][move.c];
-    const capacity = getCapacity(move.r, move.c, board.length);
+    const capacity = getCapacity(
+      move.r,
+      move.c,
+      board.length
+    );
 
     let score = 0;
 
-    // Prefer moves that are close to exploding.
     if (cell.dots === capacity - 1) {
       score += 10;
     }
 
-    // Prefer corners because they have the lowest capacity.
     if (
-      (move.r === 0 || move.r === board.length - 1) &&
-      (move.c === 0 || move.c === board.length - 1)
+      (move.r === 0 ||
+        move.r === board.length - 1) &&
+      (move.c === 0 ||
+        move.c === board.length - 1)
     ) {
       score += 5;
     }
 
-    // Prefer edges.
     if (
       move.r === 0 ||
       move.r === board.length - 1 ||
@@ -185,7 +265,7 @@ function getBestMove(board, player, difficulty = "medium") {
 
     return {
       move,
-      score,
+      score
     };
   });
 
@@ -204,119 +284,170 @@ function getBestMove(board, player, difficulty = "medium") {
 
 function countPlayerCells(player) {
   let count = 0;
+
   for (let row = 0; row < boardSize; row++) {
     for (let col = 0; col < boardSize; col++) {
-      if (state.board[row][col].owner === player) count++;
+      if (
+        state.board[row][col].owner === player
+      ) {
+        count++;
+      }
     }
   }
+
   return count;
 }
 
-// Advance to the next player. Once every player has had an opening move,
-// skip any player who has been eliminated (owns no cells).
 function nextTurn() {
-  const total = state.players.length;
-  const openingDone = state.analytics.moves > total;
-  for (let step = 1; step <= total; step++) {
-    const idx = (state.currentPlayer + step) % total;
-    if (!openingDone || countPlayerCells(state.players[idx]) > 0) {
-      state.currentPlayer = idx;
+  const totalPlayers = state.players.length;
+  const openingComplete =
+    state.analytics.moves > totalPlayers;
+
+  for (
+    let step = 1;
+    step <= totalPlayers;
+    step++
+  ) {
+    const nextIndex =
+      (state.currentPlayer + step) %
+      totalPlayers;
+
+    if (
+      !openingComplete ||
+      countPlayerCells(
+        state.players[nextIndex]
+      ) > 0
+    ) {
+      state.currentPlayer = nextIndex;
       return;
     }
   }
-  state.currentPlayer = (state.currentPlayer + 1) % total;
+
+  state.currentPlayer =
+    (state.currentPlayer + 1) %
+    totalPlayers;
 }
 
-// Play the AI's move in Player-vs-AI mode. Setting isAiTurnProcessing lets
-// addDot's "human click during AI turn" guard allow this move through.
 function handleAiTurn() {
   if (!state.isActive) return;
   if (state.gameMode !== "pvai") return;
-  if (state.players[state.currentPlayer] === COLORS[0]) return;
+
+  const player =
+    state.players[state.currentPlayer];
+
+  if (player === COLORS[0]) return;
 
   state.isAiTurnProcessing = true;
+
   const move = getBestMove(
     state.board,
-    state.players[state.currentPlayer],
-    difficultyElement.value,
+    player,
+    difficultyElement.value
   );
-  state.isAiTurnProcessing = false;
 
-  if (move) addDot(move.row, move.col);
+  if (move) {
+    addDot(move.r, move.c);
+  }
+
+  state.isAiTurnProcessing = false;
 }
 
 function addDot(row, col) {
   if (!state.isActive) return;
 
-  const player = state.players[state.currentPlayer];
+  if (
+    row < 0 ||
+    row >= boardSize ||
+    col < 0 ||
+    col >= boardSize
+  ) {
+    return;
+  }
+
+  const player =
+    state.players[state.currentPlayer];
+
   if (
     state.gameMode === "pvai" &&
     player !== COLORS[0] &&
     !state.isAiTurnProcessing
   ) {
-    return; // Prevent human click during AI turn
+    return;
   }
 
   const cell = state.board[row][col];
 
-  if (cell.owner && cell.owner !== player) return;
+  if (
+    cell.owner &&
+    cell.owner !== player
+  ) {
+    return;
+  }
 
   clearHint();
 
-  // Analytics: Record move
   state.analytics.moves++;
-  const moveDuration = Date.now() - state.lastMoveTime;
-  state.analytics.moveTimes[player].push(moveDuration);
+
+  const moveDuration =
+    Date.now() - state.lastMoveTime;
+
+  state.analytics.moveTimes[player].push(
+    moveDuration
+  );
+
   state.lastMoveTime = Date.now();
 
   cell.owner = player;
   cell.dots++;
 
-  // Show the dot landing immediately, before any chain reaction plays out
   render(false);
 
-  // Kick off the (possibly multi-step, async) chain reaction.
-  // This never blocks the browser, no matter how long the chain runs.
-  resolveBoardStep([{ row, col }], didExplode => {
-    if (state.isActive) {
-      checkGameOver();
-    }
+  resolveBoardStep(
+    [{ row, col }],
+    didExplode => {
+      if (state.isActive) {
+        checkGameOver();
+      }
 
-    if (state.isActive) {
-      // If we strictly follow the prompt's "extra turn after box completion" mapped to "extra turn after explosion"
-      if (didExplode) {
-        // Player gets another turn
-        currentPlayerElement.textContent =
-          state.players[state.currentPlayer] + " (Extra Turn!)";
-      } else {
+      if (!state.isActive) {
+        render();
+        return;
+      }
+
+      state.extraTurn = didExplode;
+
+      if (!didExplode) {
         nextTurn();
       }
+
+      render();
     }
-    render();
-  });
+  );
 }
 
-
-
-// Async, step-by-step chain reaction resolver.
-// Instead of rescanning the WHOLE board every round (slow) and running
-// fully synchronously (freezes the tab on long chains), this only
-// re-checks cells adjacent to a recent explosion, and yields control
-// back to the browser between each wave via setTimeout.
-function resolveBoardStep(queue, onDone, explodedAny = false) {
+function resolveBoardStep(
+  queue,
+  onDone,
+  explodedAny = false
+) {
   if (queue.length === 0) {
     onDone(explodedAny);
     return;
   }
 
-  let next = [];
+  const next = [];
 
   for (const { row, col } of queue) {
     const cell = state.board[row][col];
-    const capacity = getCapacity(row, col, boardSize);
 
-    while (state.board[row][col].dots >= capacity) {
-      const owner = state.board[row][col].owner;
+    const capacity = getCapacity(
+      row,
+      col,
+      boardSize
+    );
+
+    while (cell.dots >= capacity) {
+      const owner = cell.owner;
 
       explode(row, col, owner);
       explodedAny = true;
@@ -325,24 +456,36 @@ function resolveBoardStep(queue, onDone, explodedAny = false) {
         [-1, 0],
         [1, 0],
         [0, -1],
-        [0, 1],
+        [0, 1]
       ]) {
-        const nr = row + dr;
-        const nc = col + dc;
+        const nextRow = row + dr;
+        const nextCol = col + dc;
 
-        if (nr >= 0 && nr < boardSize && nc >= 0 && nc < boardSize) {
-          next.push({ row: nr, col: nc });
+        if (
+          nextRow >= 0 &&
+          nextRow < boardSize &&
+          nextCol >= 0 &&
+          nextCol < boardSize
+        ) {
+          next.push({
+            row: nextRow,
+            col: nextCol
+          });
         }
       }
     }
   }
 
-  // Show this wave of explosions before moving to the next one.
-  // `false` = don't trigger AI turn / game-over side effects mid-chain.
   render(false);
 
   if (next.length > 0) {
-    setTimeout(() => resolveBoardStep(next, onDone, explodedAny), 0);
+    setTimeout(() => {
+      resolveBoardStep(
+        next,
+        onDone,
+        explodedAny
+      );
+    }, 0);
   } else {
     onDone(explodedAny);
   }
@@ -350,7 +493,12 @@ function resolveBoardStep(queue, onDone, explodedAny = false) {
 
 function explode(row, col, owner) {
   const cell = state.board[row][col];
- const capacity = getCapacity(row, col, boardSize);
+
+  const capacity = getCapacity(
+    row,
+    col,
+    boardSize
+  );
 
   cell.dots -= capacity;
 
@@ -359,22 +507,33 @@ function explode(row, col, owner) {
     cell.dots = 0;
   }
 
-  state.analytics.totalExplosions++; // Analytics
+  state.analytics.totalExplosions++;
 
   for (const [dr, dc] of [
     [-1, 0],
     [1, 0],
     [0, -1],
-    [0, 1],
+    [0, 1]
   ]) {
-    const nr = row + dr;
-    const nc = col + dc;
+    const nextRow = row + dr;
+    const nextCol = col + dc;
 
-    if (nr < 0 || nc < 0 || nr >= boardSize || nc >= boardSize) continue;
+    if (
+      nextRow < 0 ||
+      nextCol < 0 ||
+      nextRow >= boardSize ||
+      nextCol >= boardSize
+    ) {
+      continue;
+    }
 
-    const neighbor = state.board[nr][nc];
+    const neighbor =
+      state.board[nextRow][nextCol];
 
-    if (neighbor.owner !== owner && neighbor.owner !== null) {
+    if (
+      neighbor.owner &&
+      neighbor.owner !== owner
+    ) {
       state.analytics.captures[owner]++;
     }
 
@@ -384,27 +543,38 @@ function explode(row, col, owner) {
 }
 
 function checkGameOver() {
-  // Only check if everyone has had at least one turn
-  if (state.analytics.moves <= state.players.length) return;
+  if (
+    state.analytics.moves <=
+    state.players.length
+  ) {
+    return;
+  }
 
   const activePlayers = new Set();
+
   for (let row = 0; row < boardSize; row++) {
     for (let col = 0; col < boardSize; col++) {
-      if (state.board[row][col].owner) {
-        activePlayers.add(state.board[row][col].owner);
+      const owner =
+        state.board[row][col].owner;
+
+      if (owner) {
+        activePlayers.add(owner);
       }
     }
   }
 
   if (activePlayers.size <= 1) {
     state.isActive = false;
+
     state.winner =
-      activePlayers.size === 1 ? Array.from(activePlayers)[0] : "draw";
+      activePlayers.size === 1
+        ? [...activePlayers][0]
+        : "draw";
+
     saveMatchHistory();
     renderAnalytics();
   }
 }
-
 
 function renderStats() {
   playerStatsElement.innerHTML = "";
@@ -412,135 +582,155 @@ function renderStats() {
   state.players.forEach(player => {
     const count = state.board
       .flat()
-      .filter(cell => cell.owner === player).length;
+      .filter(cell => cell.owner === player)
+      .length;
 
-    const div = document.createElement("div");
-    div.className = `player-card ${player}`;
+    const card =
+      document.createElement("div");
 
-    if (!state.isActive && state.winner === player) {
-      div.textContent = `${player.toUpperCase()} : ${count}`;
-    } else {
-      div.textContent = `${player.toUpperCase()} : ${count}`;
+    card.className =
+      `player-card ${player}`;
+
+    card.textContent =
+      `${player.toUpperCase()} : ${count}`;
+
+    if (
+      !state.isActive &&
+      state.winner === player
+    ) {
+      card.setAttribute(
+        "data-winner",
+        "true"
+      );
     }
 
-    playerStatsElement.appendChild(div);
+    playerStatsElement.appendChild(card);
   });
 }
 
-// `triggerAiTurn` defaults to true. Pass false for intermediate renders
-// during a chain reaction, so the AI turn / game-over logic only ever
-// fires once, from the final render after the chain fully resolves.
 function render(triggerAiTurn = true) {
   if (state.isActive) {
-    if (!currentPlayerElement.textContent.includes("Extra Turn!")) {
-      currentPlayerElement.textContent = state.players[state.currentPlayer];
-    } else {
-      // Update the text but keep the Extra Turn suffix
-      currentPlayerElement.textContent =
-        state.players[state.currentPlayer] + " (Extra Turn!)";
-    }
+    const player =
+      state.players[state.currentPlayer];
 
-    // Trigger AI turn if needed
+    currentPlayerElement.textContent =
+      state.extraTurn
+        ? `${player} (Extra Turn!)`
+        : player;
+
     if (
       triggerAiTurn &&
       state.gameMode === "pvai" &&
-      state.players[state.currentPlayer] !== COLORS[0]
+      player !== COLORS[0]
     ) {
-      // Wait slightly so render happens before AI blocking
-      setTimeout(handleAiTurn, 50);
+      setTimeout(handleAiTurn, 250);
     }
   } else {
     currentPlayerElement.textContent =
-      state.winner === "draw" ? "Draw!" : `${state.winner.toUpperCase()} Wins!`;
+      state.winner === "draw"
+        ? "Draw!"
+        : `${state.winner.toUpperCase()} Wins!`;
   }
 
   renderBoard();
   renderStats();
 
   if (
+    hintBtnElement &&
     state.isActive &&
-    state.gameMode === "pvai" &&
-    state.players[state.currentPlayer] !== COLORS[0]
+    !(
+      state.gameMode === "pvai" &&
+      state.players[state.currentPlayer] !== COLORS[0]
+    )
   ) {
-    hintBtnElement.disabled = true;
-  } else if (state.isActive) {
     hintBtnElement.disabled = false;
-  } else {
+  } else if (hintBtnElement) {
     hintBtnElement.disabled = true;
   }
 }
 
 function startGame() {
-  const count = +playerCountElement.value;
-  const players = COLORS.slice(0, count);
+  const playerCount =
+    Number(playerCountElement.value);
 
-  let moveTimes = {};
-  let captures = {};
-  players.forEach(p => {
-    moveTimes[p] = [];
-    captures[p] = 0;
+  const players =
+    COLORS.slice(0, playerCount);
+
+  const moveTimes = {};
+  const captures = {};
+
+  players.forEach(player => {
+    moveTimes[player] = [];
+    captures[player] = 0;
   });
 
   state = {
     isActive: true,
     winner: null,
     currentPlayer: 0,
-    players: players,
+    players,
     board: createBoard(boardSize),
     lastMoveTime: Date.now(),
     gameMode: gameModeElement.value,
     isAiTurnProcessing: false,
+    extraTurn: false,
     analytics: {
       moves: 0,
-      moveTimes: moveTimes,
+      moveTimes,
       totalExplosions: 0,
-      captures: captures,
-      gridSize: `${boardSize}x${boardSize}`,
-    },
+      captures,
+      gridSize: `${boardSize}x${boardSize}`
+    }
   };
 
-  // Set UI dropdown correctly
-  if (boardSize === 3 || boardSize === 5 || boardSize === 8) {
-    gridPresetElement.value = boardSize;
-    gridCustomElement.style.display = "none";
-  } else {
-    gridPresetElement.value = "custom";
-    gridCustomElement.style.display = "inline-block";
-    gridCustomElement.value = boardSize;
-  }
-  updateGridValue(boardSize);
-
+  restoreGridControls();
   render();
 }
 
 function saveMatchHistory() {
-  const pCount = state.players.length;
   const historyEntry = {
     date: new Date().toLocaleString(),
     gridSize: state.analytics.gridSize,
-    players: pCount,
+    players: state.players.length,
     winner: state.winner,
     moves: state.analytics.moves,
-    explosions: state.analytics.totalExplosions,
-    stats: {},
+    explosions:
+      state.analytics.totalExplosions,
+    stats: {}
   };
 
-  state.players.forEach(p => {
-    const times = state.analytics.moveTimes[p];
-    const avgTime = times.length
-      ? (times.reduce((a, b) => a + b, 0) / times.length / 1000).toFixed(1)
-      : 0;
+  state.players.forEach(player => {
+    const times =
+      state.analytics.moveTimes[player];
 
-    historyEntry.stats[p] = {
-      captures: state.analytics.captures[p],
-      avgMoveTime: avgTime,
+    const averageTime = times.length
+      ? (
+          times.reduce(
+            (sum, time) => sum + time,
+            0
+          ) /
+          times.length /
+          1000
+        ).toFixed(1)
+      : "0.0";
+
+    historyEntry.stats[player] = {
+      captures:
+        state.analytics.captures[player],
+      avgMoveTime: averageTime
     };
   });
 
-  matchHistory.unshift(historyEntry); // Add to beginning
-  if (matchHistory.length > 10) matchHistory.pop(); // Keep last 10
+  matchHistory.unshift(historyEntry);
 
-  localStorage.setItem("cradle_dot_game_history", JSON.stringify(matchHistory));
+  if (matchHistory.length > 10) {
+    matchHistory.pop();
+  }
+
+  localStorage.setItem(
+    "cradle_dot_game_history",
+    JSON.stringify(matchHistory)
+  );
 }
 
 function renderAnalytics() {
@@ -552,121 +742,286 @@ function renderAnalytics() {
 
   analyticsContainer.innerHTML = "";
 
-  matchHistory.forEach((match, idx) => {
-    const card = document.createElement("div");
-    card.className = "analytics-card";
+  matchHistory.forEach(match => {
+    const card =
+      document.createElement("div");
 
-    card.innerHTML = `
-            <h3>Match on ${match.date} (${match.gridSize})</h3>
-            <div class="stats-grid">
-                <div class="stat-item"><span class="stat-label">Winner</span><span class="stat-val" style="color: ${match.winner === "draw" ? "inherit" : match.winner}">${match.winner}</span></div>
-                <div class="stat-item"><span class="stat-label">Total Moves</span><span class="stat-val">${match.moves}</span></div>
-                <div class="stat-item"><span class="stat-label">Total Explosions</span><span class="stat-val">${match.explosions}</span></div>
-            </div>
-            <h4>Captures per Player</h4>
-        `;
+    card.className =
+      "analytics-card";
 
-    const chartCont = document.createElement("div");
-    let maxCap = 0;
-    for (const p in match.stats) {
-      if (match.stats[p].captures > maxCap) maxCap = match.stats[p].captures;
-    }
+    const title =
+      document.createElement("h3");
 
-    for (const p in match.stats) {
-      const data = match.stats[p];
-      const pct = maxCap > 0 ? (data.captures / maxCap) * 100 : 0;
+    title.textContent =
+      `Match on ${match.date} (${match.gridSize})`;
 
-      const bar = document.createElement("div");
-      bar.className = "chart-bar";
-      bar.innerHTML = `
-                <div class="chart-label" style="color: ${p}">${p}</div>
-                <div class="chart-bar-bg">
-                    <div class="chart-bar-fill" style="width: ${pct}%; background-color: ${p}"></div>
-                </div>
-                <div class="chart-value">${data.captures}</div>
-            `;
-      chartCont.appendChild(bar);
-    }
+    card.appendChild(title);
 
-    card.appendChild(chartCont);
+    const statsGrid =
+      document.createElement("div");
 
-    const timeHeader = document.createElement("h4");
-    timeHeader.textContent = "Avg Move Time (s)";
-    card.appendChild(timeHeader);
+    statsGrid.className =
+      "stats-grid";
 
-    const timeCont = document.createElement("div");
-    let maxTime = 0;
-    for (const p in match.stats) {
-      if (parseFloat(match.stats[p].avgMoveTime) > maxTime)
-        maxTime = parseFloat(match.stats[p].avgMoveTime);
-    }
+    addStat(
+      statsGrid,
+      "Winner",
+      match.winner
+    );
 
-    for (const p in match.stats) {
-      const data = match.stats[p];
-      const pct = maxTime > 0 ? (data.avgMoveTime / maxTime) * 100 : 0;
+    addStat(
+      statsGrid,
+      "Total Moves",
+      match.moves
+    );
 
-      const bar = document.createElement("div");
-      bar.className = "chart-bar";
-      bar.innerHTML = `
-                <div class="chart-label" style="color: ${p}">${p}</div>
-                <div class="chart-bar-bg">
-                    <div class="chart-bar-fill" style="width: ${pct}%; background-color: ${p}"></div>
-                </div>
-                <div class="chart-value">${data.avgMoveTime}s</div>
-            `;
-      timeCont.appendChild(bar);
-    }
+    addStat(
+      statsGrid,
+      "Total Explosions",
+      match.explosions
+    );
 
-    card.appendChild(timeCont);
+    card.appendChild(statsGrid);
+
+    const captureHeading =
+      document.createElement("h4");
+
+    captureHeading.textContent =
+      "Captures per Player";
+
+    card.appendChild(captureHeading);
+
+    card.appendChild(
+      createChart(
+        match.stats,
+        "captures"
+      )
+    );
+
+    const timeHeading =
+      document.createElement("h4");
+
+    timeHeading.textContent =
+      "Avg Move Time (s)";
+
+    card.appendChild(timeHeading);
+
+    card.appendChild(
+      createChart(
+        match.stats,
+        "avgMoveTime"
+      )
+    );
 
     analyticsContainer.appendChild(card);
   });
 }
 
-document.getElementById("newGame").addEventListener("click", () => {
-  if (state.isActive && state.analytics && state.analytics.moves > 0) {
-    if (!confirm("Are you sure you want to start a new game?")) return;
-  }
-  startGame();
-});
+function addStat(
+  container,
+  label,
+  value
+) {
+  const item =
+    document.createElement("div");
 
-if (hintBtnElement) {
-  hintBtnElement.addEventListener("click", () => {
-    if (!state.isActive) return;
-    const player = state.players[state.currentPlayer];
-    if (state.gameMode === "pvai" && player !== COLORS[0]) return; // Not human's turn
+  item.className =
+    "stat-item";
 
-    clearHint();
-   const bestMove = getBestMove(state.board,player,difficultyElement.value);
-    if (bestMove) {
-      const cellIdx = bestMove.r * boardSize + bestMove.c;
-      const cellEl = boardElement.children[cellIdx];
-      if (cellEl) cellEl.classList.add("hint");
-    }
-  });
+  const labelElement =
+    document.createElement("span");
+
+  labelElement.className =
+    "stat-label";
+
+  labelElement.textContent =
+    label;
+
+  const valueElement =
+    document.createElement("span");
+
+  valueElement.className =
+    "stat-val";
+
+  valueElement.textContent =
+    value;
+
+  item.appendChild(labelElement);
+  item.appendChild(valueElement);
+
+  container.appendChild(item);
 }
 
+function createChart(stats, property) {
+  const container =
+    document.createElement("div");
+
+  const values =
+    Object.values(stats).map(
+      data => Number(data[property]) || 0
+    );
+
+  const maxValue =
+    Math.max(...values, 0);
+
+  Object.entries(stats).forEach(
+    ([player, data]) => {
+      const value =
+        Number(data[property]) || 0;
+
+      const percentage =
+        maxValue > 0
+          ? (value / maxValue) * 100
+          : 0;
+
+      const row =
+        document.createElement("div");
+
+      row.className =
+        "chart-bar";
+
+      const label =
+        document.createElement("div");
+
+      label.className =
+        `chart-label ${player}`;
+
+      label.textContent =
+        player;
+
+      const background =
+        document.createElement("div");
+
+      background.className =
+        "chart-bar-bg";
+
+      const fill =
+        document.createElement("div");
+
+      fill.className =
+        `chart-bar-fill ${player}`;
+
+      fill.style.width =
+        `${percentage}%`;
+
+      background.appendChild(fill);
+
+      const valueElement =
+        document.createElement("div");
+
+      valueElement.className =
+        "chart-value";
+
+      valueElement.textContent =
+        property === "avgMoveTime"
+          ? `${value}s`
+          : value;
+
+      row.appendChild(label);
+      row.appendChild(background);
+      row.appendChild(valueElement);
+
+      container.appendChild(row);
+    }
+  );
+
+  return container;
+}
+
+newGameButton.addEventListener(
+  "click",
+  () => {
+    if (
+      state.isActive &&
+      state.analytics &&
+      state.analytics.moves > 0
+    ) {
+      if (
+        !confirm(
+          "Are you sure you want to start a new game?"
+        )
+      ) {
+        return;
+      }
+    }
+
+    startGame();
+  }
+);
+
+if (hintBtnElement) {
+  hintBtnElement.addEventListener(
+    "click",
+    () => {
+      if (!state.isActive) return;
+
+      const player =
+        state.players[state.currentPlayer];
+
+      if (
+        state.gameMode === "pvai" &&
+        player !== COLORS[0]
+      ) {
+        return;
+      }
+
+      clearHint();
+
+      const bestMove = getBestMove(
+        state.board,
+        player,
+        difficultyElement.value
+      );
+
+      if (!bestMove) return;
+
+      const index =
+        bestMove.r * boardSize +
+        bestMove.c;
+
+      const cell =
+        boardElement.children[index];
+
+      if (cell) {
+        cell.classList.add("hint");
+      }
+    }
+  );
+}
+
+updateDifficultyVisibility();
+initTheme();
 renderAnalytics();
 startGame();
 
-//Testing Explosion
-window.testExtreme = function () {
-  // Reset board
+window.testExtreme = function() {
   state.board = createBoard(boardSize);
 
-  // Center cell with many dots
-  const row = Math.floor(boardSize / 2);
-  const col = Math.floor(boardSize / 2);
+  const row =
+    Math.floor(boardSize / 2);
+
+  const col =
+    Math.floor(boardSize / 2);
 
   state.board[row][col].owner = "red";
   state.board[row][col].dots = 10;
 
-  console.log("Before:", state.board[row][col]);
+  console.log(
+    "Before:",
+    state.board[row][col]
+  );
 
   render();
 
-  resolveBoardStep([{ row, col }], () => {
-    console.log("After:", state.board[row][col]);
-    render();
-  });
+  resolveBoardStep(
+    [{ row, col }],
+    () => {
+      console.log(
+        "After:",
+        state.board[row][col]
+      );
+
+      render();
+    }
+  );
 };

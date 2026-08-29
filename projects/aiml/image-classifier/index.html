@@ -6,14 +6,32 @@
 
     <title>AI Image Classifier</title>
     <meta name="description" content="Client-side image classification tool powered by browser-based machine learning models." />
-    <link
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/aiml/image-classifier/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="AI Image Classifier" />
+    <meta property="og:description" content="Client-side image classification tool powered by browser-based machine learning models." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/aiml/image-classifier/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0"
+      integrity="sha384-vE8hbVJ4lezako5rlvE7bY0BVzWlFhZncPlckrqNwcUQpVtgbENTgZ8TBbnPjZre"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1"
+      integrity="sha384-oBAqwJ0tv9zzKlbIZyBhhXlEvU/PMrSMqDyOHlEZVC8xWHx4yPySuS7vRikRcYFq"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier@1.2.6"
+      integrity="sha384-QX5hO7OKW55Yg3mgMQWqTFoY7F2+KqUVUtYQj5Stb1s0eFhCVewoJBaaJEXVbzLI"
+      crossorigin="anonymous"
+    ></script>
   </head>
   <body>
     <div class="bg-blur blur1"></div>
@@ -65,7 +83,7 @@
             />
             <div class="upload-content" id="uploadContent">
               <div class="upload-icon">📸</div>
-              <h3>Upload Your Image</h3>
+              <h2>Upload Your Image</h2>
               <p>Choose any image to analyze</p>
             </div>
           </div>

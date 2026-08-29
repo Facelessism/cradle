@@ -1,51 +1,52 @@
-const boardElement = document.getElementById("board");
+const isBrowser = typeof document !== "undefined";
+
+const boardElement =
+    isBrowser ? document.getElementById("board") : null;
 
 const difficultySelect =
-    document.getElementById("difficulty");
+    isBrowser ? document.getElementById("difficulty") : null;
 
 const newGameButton =
-    document.getElementById("newGame");
+    isBrowser ? document.getElementById("newGame") : null;
 
 const solveButton =
-    document.getElementById("solveBtn");
+    isBrowser ? document.getElementById("solveBtn") : null;
 
 const hintButton =
-    document.getElementById("hintBtn");
+    isBrowser ? document.getElementById("hintBtn") : null;
 
 const resetButton =
-    document.getElementById("resetBtn");
+    isBrowser ? document.getElementById("resetBtn") : null;
 
 const timerElement =
-    document.getElementById("timer");
+    isBrowser ? document.getElementById("timer") : null;
 
 const messageElement =
-    document.getElementById("message");
+    isBrowser ? document.getElementById("message") : null;
 
 const headerStatus =
-    document.getElementById("headerStatus");
+    isBrowser ? document.getElementById("headerStatus") : null;
 
 const filledStat =
-    document.getElementById("filledStat");
+    isBrowser ? document.getElementById("filledStat") : null;
 
 const hintStat =
-    document.getElementById("hintStat");
+    isBrowser ? document.getElementById("hintStat") : null;
 
 const difficultyStat =
-    document.getElementById("difficultyStat");
+    isBrowser ? document.getElementById("difficultyStat") : null;
 
 const difficultyDisplay =
-    document.getElementById("difficultyDisplay");
+    isBrowser ? document.getElementById("difficultyDisplay") : null;
 
 const filledDisplay =
-    document.getElementById("filledDisplay");
+    isBrowser ? document.getElementById("filledDisplay") : null;
 
 const puzzleState =
-    document.getElementById("puzzleState");
+    isBrowser ? document.getElementById("puzzleState") : null;
 
 const numberButtons =
-    document.querySelectorAll(
-        ".number-pad button"
-    );
+    isBrowser ? document.querySelectorAll(".number-pad button") : [];
 
 
 /* =========================================
@@ -766,27 +767,112 @@ function giveHint() {
 
 
 /* =========================================
+   VALIDATION LOGIC
+========================================= */
+
+function validateBoard(board) {
+    if (!Array.isArray(board) || board.length !== 9) {
+        throw new Error("Board must have exactly 9 rows.");
+    }
+    for (let r = 0; r < 9; r++) {
+        const row = board[r];
+        if (!Array.isArray(row) || row.length !== 9) {
+            throw new Error(`Row ${r + 1} must have exactly 9 columns.`);
+        }
+        for (let c = 0; c < 9; c++) {
+            const val = row[c];
+            if (!Number.isInteger(val) || val < 0 || val > 9) {
+                throw new Error(`Invalid value ${val} at row ${r + 1}, column ${c + 1}.`);
+            }
+        }
+    }
+
+    // Check duplicate rows
+    for (let r = 0; r < 9; r++) {
+        const seen = new Set();
+        for (let c = 0; c < 9; c++) {
+            const val = board[r][c];
+            if (val !== 0) {
+                if (seen.has(val)) {
+                    throw new Error(`Row ${r + 1} has duplicate value ${val}.`);
+                }
+                seen.add(val);
+            }
+        }
+    }
+
+    // Check duplicate columns
+    for (let c = 0; c < 9; c++) {
+        const seen = new Set();
+        for (let r = 0; r < 9; r++) {
+            const val = board[r][c];
+            if (val !== 0) {
+                if (seen.has(val)) {
+                    throw new Error(`Column ${c + 1} has duplicate value ${val}.`);
+                }
+                seen.add(val);
+            }
+        }
+    }
+
+    // Check duplicate 3x3 subgrids
+    for (let boxRow = 0; boxRow < 3; boxRow++) {
+        for (let boxCol = 0; boxCol < 3; boxCol++) {
+            const seen = new Set();
+            const startRow = boxRow * 3;
+            const startCol = boxCol * 3;
+            for (let r = startRow; r < startRow + 3; r++) {
+                for (let c = startCol; c < startCol + 3; c++) {
+                    const val = board[r][c];
+                    if (val !== 0) {
+                        if (seen.has(val)) {
+                            throw new Error(`Subgrid starting at row ${startRow + 1}, column ${startCol + 1} has duplicate value ${val}.`);
+                        }
+                        seen.add(val);
+                    }
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+function solveSudoku(board) {
+    validateBoard(board);
+    const boardCopy = board.map(row => [...row]);
+    const solved = fillBoard(boardCopy);
+    if (!solved) {
+        throw new Error("Puzzle is unsolvable.");
+    }
+    return boardCopy;
+}
+
+
+/* =========================================
    SOLVE
 ========================================= */
 
 function solvePuzzle() {
+    try {
+        validateBoard(currentBoard);
 
-    currentBoard =
-        solution.map(row => [...row]);
-
-    renderBoard();
-
-    updateStats();
-
-    puzzleState.textContent =
-        "Solved";
-
-    updateStatus(
-        "Puzzle solved!"
-    );
-
-    stopTimer();
-
+        const boardCopy = currentBoard.map(row => [...row]);
+        if (fillBoard(boardCopy)) {
+            currentBoard = boardCopy;
+            renderBoard();
+            updateStats();
+            if (puzzleState) {
+                puzzleState.textContent = "Solved";
+            }
+            updateStatus("Puzzle solved!");
+            stopTimer();
+        } else {
+            updateStatus("Puzzle is unsolvable.");
+        }
+    } catch (error) {
+        updateStatus(error.message || "Invalid board input.");
+    }
 }
 
 
@@ -811,8 +897,10 @@ function resetPuzzle() {
         "Puzzle reset."
     );
 
-    puzzleState.textContent =
-        "In Progress";
+    if (puzzleState) {
+        puzzleState.textContent =
+            "In Progress";
+    }
 
 }
 
@@ -858,11 +946,15 @@ function checkCompletion() {
     }
 
 
-    puzzleState.textContent =
-        "Completed";
+    if (puzzleState) {
+        puzzleState.textContent =
+            "Completed";
+    }
 
-    headerStatus.textContent =
-        "Puzzle Complete";
+    if (headerStatus) {
+        headerStatus.textContent =
+            "Puzzle Complete";
+    }
 
     updateStatus(
         "🎉 Congratulations! Puzzle completed."
@@ -899,25 +991,32 @@ function updateStats() {
 
     }
 
-    const difficulty =
-        capitalize(
-            difficultySelect.value
-        );
+    if (isBrowser) {
+        const difficulty =
+            capitalize(
+                difficultySelect.value
+            );
 
-    difficultyStat.textContent =
-        difficulty;
+        if (difficultyStat) {
+            difficultyStat.textContent = difficulty;
+        }
 
-    difficultyDisplay.textContent =
-        difficulty;
+        if (difficultyDisplay) {
+            difficultyDisplay.textContent = difficulty;
+        }
 
-    filledStat.textContent =
-        filled;
+        if (filledStat) {
+            filledStat.textContent = filled;
+        }
 
-    filledDisplay.textContent =
-        `${filled} / 81`;
+        if (filledDisplay) {
+            filledDisplay.textContent = `${filled} / 81`;
+        }
 
-    hintStat.textContent =
-        hintsUsed;
+        if (hintStat) {
+            hintStat.textContent = hintsUsed;
+        }
+    }
 
 }
 
@@ -928,11 +1027,15 @@ function updateStats() {
 
 function updateStatus(message) {
 
-    messageElement.textContent =
-        message;
+    if (isBrowser) {
+        if (messageElement) {
+            messageElement.textContent = message;
+        }
 
-    headerStatus.textContent =
-        message;
+        if (headerStatus) {
+            headerStatus.textContent = message;
+        }
+    }
 
 }
 
@@ -980,8 +1083,10 @@ function updateTimer() {
     const secs =
         seconds % 60;
 
-    timerElement.textContent =
-        `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    if (timerElement) {
+        timerElement.textContent =
+            `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    }
 
 }
 
@@ -999,99 +1104,48 @@ function capitalize(value) {
 
 
 /* =========================================
-   NUMBER PAD EVENTS
+   SETUP AND INITIALIZATION
 ========================================= */
 
-numberButtons.forEach(button => {
-
-    button.addEventListener(
-        "click",
-        () => {
-
-            const number =
-                Number(
-                    button.dataset.number
-                );
-
+if (isBrowser) {
+    numberButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            const number = Number(button.dataset.number);
             enterNumber(number);
+        });
+    });
 
+    document.addEventListener("keydown", event => {
+        const key = event.key;
+        if (/^[1-9]$/.test(key)) {
+            enterNumber(Number(key));
         }
-    );
-
-});
-
-
-/* =========================================
-   KEYBOARD INPUT
-========================================= */
-
-document.addEventListener(
-    "keydown",
-    event => {
-
-        const key =
-            event.key;
-
-        if (
-            /^[1-9]$/.test(key)
-        ) {
-
-            enterNumber(
-                Number(key)
-            );
-
-        }
-
-        if (
-            key === "Backspace" ||
-            key === "Delete" ||
-            key === "0"
-        ) {
-
+        if (key === "Backspace" || key === "Delete" || key === "0") {
             enterNumber(0);
-
         }
+    });
 
-    }
-);
-
-
-/* =========================================
-   BUTTON EVENTS
-========================================= */
-
-newGameButton.addEventListener(
-    "click",
-    startNewGame
-);
-
-solveButton.addEventListener(
-    "click",
-    solvePuzzle
-);
-
-hintButton.addEventListener(
-    "click",
-    giveHint
-);
-
-resetButton.addEventListener(
-    "click",
-    resetPuzzle
-);
-
-difficultySelect.addEventListener(
-    "change",
-    () => {
-
+    newGameButton.addEventListener("click", startNewGame);
+    solveButton.addEventListener("click", solvePuzzle);
+    hintButton.addEventListener("click", giveHint);
+    resetButton.addEventListener("click", resetPuzzle);
+    difficultySelect.addEventListener("change", () => {
         startNewGame();
+    });
 
-    }
-);
+    startNewGame();
+}
 
 
 /* =========================================
-   INITIALIZE
+   MODULE EXPORTS
 ========================================= */
 
-startNewGame();
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = {
+        isValidMove,
+        fillBoard,
+        validateBoard,
+        solveSudoku,
+    };
+}

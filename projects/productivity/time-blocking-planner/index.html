@@ -4,8 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Time Blocking Planner | Cradle</title>
-    <meta name="description" content="Time blocking schedule planner for organizing daily tasks, deep work, and category stats." />
-    <link rel="stylesheet" href="style.css" />
+    <meta
+      name="description"
+      content="Time blocking schedule planner for organizing daily tasks, deep work, and category stats."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/productivity/time-blocking-planner/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Time Blocking Planner | Cradle" />
+    <meta property="og:description" content="Time blocking schedule planner for organizing daily tasks, deep work, and category stats." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/productivity/time-blocking-planner/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -38,7 +47,7 @@
         class="alert-container"
         role="status"
         aria-live="polite"
-        style="display: none;"
+        style="display: none"
       >
         <span class="alert-icon">⚠️</span>
         <span id="alertMessage"></span>
@@ -90,7 +99,7 @@
       <main class="planner-workspace">
         <!-- Sidebar / Preset Activity Palette -->
         <aside class="sidebar">
-          <h3>Activity Palette</h3>
+          <h2>Activity Palette</h2>
           <p class="sidebar-help">
             Drag preset activities onto the timeline or click to add.
           </p>
@@ -179,7 +188,7 @@
           </div>
 
           <div class="legend-card">
-            <h4>Tip: Timeline Dragging</h4>
+            <h3>Tip: Timeline Dragging</h3>
             <ul>
               <li>Click & drag any block by its header to move time.</li>
               <li>Drag top or bottom edge handles to resize duration.</li>
@@ -218,8 +227,14 @@
       <div class="modal-backdrop" id="block-modal" hidden>
         <div class="modal-card">
           <div class="modal-header">
-            <h3 id="modal-title-text">Add Time Block</h3>
-            <button class="modal-close" id="modal-close" aria-label="Close modal dialog">✕</button>
+            <h2 id="modal-title-text">Add Time Block</h2>
+            <button
+              class="modal-close"
+              id="modal-close"
+              aria-label="Close modal dialog"
+            >
+              ✕
+            </button>
           </div>
           <form id="block-form" class="modal-form">
             <input type="hidden" id="block-id" />
@@ -303,10 +318,14 @@
       </div>
     </div>
 
-  <script src="plannerEngine.js"></script>
-  <script src="../../../src/components/ui/storage.js"></script>
-  <script src="plannerStorage.js"></script>
-  <script src="../../../src/components/ui/escapeHtml.js"></script>
-  <script src="script.js"></script>
-</body>
+    <script src="plannerEngine.js"></script>
+    <script src="../../../src/components/ui/storage.js"></script>
+    <script src="plannerStorage.js"></script>
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
 </html>

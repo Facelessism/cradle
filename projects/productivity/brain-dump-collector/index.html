@@ -4,8 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Brain Dump Collector | Cradle</title>
-    <meta name="description" content="Quick-note brain dump collector for categorizing, tagging, and organizing ideas." />
-    <link rel="stylesheet" href="style.css" />
+    <meta
+      name="description"
+      content="Quick-note brain dump collector for categorizing, tagging, and organizing ideas."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/productivity/brain-dump-collector/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Brain Dump Collector | Cradle" />
+    <meta property="og:description" content="Quick-note brain dump collector for categorizing, tagging, and organizing ideas." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/productivity/brain-dump-collector/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <main class="app-shell">
@@ -60,7 +69,7 @@
           class="alert-container"
           role="status"
           aria-live="polite"
-          style="display: none;"
+          style="display: none"
         >
           <span class="alert-icon">⚠️</span>
           <span id="alertMessage"></span>
@@ -154,7 +163,9 @@
         <div class="board-header">
           <div>
             <h2 id="boardTitle">Grouped Thoughts</h2>
-            <p id="resultMeta">No thoughts captured yet.</p>
+            <p id="resultMeta" role="status" aria-live="polite">
+              No thoughts captured yet.
+            </p>
           </div>
           <button id="sortBtn" class="secondary" type="button">
             Newest First
@@ -191,5 +202,9 @@
     <script src="brainDumpEngine.js"></script>
     <script src="../../../src/components/ui/escapeHtml.js"></script>
     <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
   </body>
 </html>

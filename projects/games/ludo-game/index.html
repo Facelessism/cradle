@@ -8,9 +8,15 @@
       name="description"
       content="A premium digital Ludo board game with Canvas rendering, smooth animations, and 3D dice."
     />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/games/ludo-game/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Ludo — Premium Board Game" />
+    <meta property="og:description" content="A premium digital Ludo board game with Canvas rendering, smooth animations, and 3D dice." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/games/ludo-game/" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
@@ -22,14 +28,16 @@
         <span class="logo-icon">🎲</span>
         <h1>Ludo</h1>
       </div>
-      <p id="status" class="status-badge">Red's turn</p>
+      <p id="status" class="status-badge" role="status" aria-live="polite">
+        Red's turn
+      </p>
     </header>
 
     <main class="game-layout">
       <!-- LEFT PANEL -->
       <aside class="side-panel left-panel">
         <div class="panel-section">
-          <h3 class="panel-title">Controls</h3>
+          <h2 class="panel-title">Controls</h2>
           <button id="rollDice" class="btn btn-roll">
             <span class="btn-icon">🎯</span> Roll Dice
           </button>
@@ -53,7 +61,7 @@
         </div>
 
         <div class="panel-section">
-          <h3 class="panel-title">Players</h3>
+          <h2 class="panel-title">Players</h2>
           <div class="player-list">
             <div class="player-row active" data-color="red">
               <div class="player-dot red"></div>
@@ -87,7 +95,7 @@
       <!-- RIGHT PANEL -->
       <aside class="side-panel right-panel">
         <div class="panel-section">
-          <h3 class="panel-title">Dashboard</h3>
+          <h2 class="panel-title">Dashboard</h2>
           <div class="stat-card">
             <span class="stat-label">Current Turn</span>
             <span class="stat-value" id="turnLabel">Red</span>
@@ -99,7 +107,7 @@
         </div>
 
         <div class="panel-section">
-          <h3 class="panel-title">📜 Move History</h3>
+          <h2 class="panel-title">📜 Move History</h2>
           <ol id="moveList"></ol>
         </div>
       </aside>

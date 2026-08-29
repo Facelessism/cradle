@@ -368,3 +368,170 @@ test("Issue #305: no mini project has both a README.md and an ARCHITECTURE.md", 
       offenders.join("\n  ")
   );
 });
+
+// ---------------------------------------------------------------------------
+// File Reference Validation Tests
+// ---------------------------------------------------------------------------
+
+test("validateArchitectureStructure flags nonexistent file references", () => {
+  const root = fs.mkdtempSync(
+    path.join(os.tmpdir(), "cradle-arch-file-refs-")
+  );
+  const projectDir = path.join(root, "broken-refs-mini");
+  fs.mkdirSync(projectDir, { recursive: true });
+
+  const requiredSections = ["## Overview"];
+  const content = [
+    "# Project Architecture",
+    "",
+    "## Overview",
+    "We use [index.html](index.html) and [missing.js](missing.js).",
+    "Check <a href=\"nonexistent.css\">style</a>.",
+    "Ignore [Google](https://google.com) and [Anchor](#overview).",
+  ].join("\n");
+
+  fs.writeFileSync(path.join(projectDir, "index.html"), "<html></html>");
+  fs.writeFileSync(path.join(projectDir, "ARCHITECTURE.md"), content);
+
+  const issues = validateArchitectureStructure([projectDir], requiredSections);
+
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].projectDir, projectDir);
+  assert.equal(issues[0].brokenReferences.length, 2);
+  assert.equal(issues[0].brokenReferences[0].target, "missing.js");
+  assert.equal(issues[0].brokenReferences[0].lineNumber, 4);
+  assert.equal(issues[0].brokenReferences[1].target, "nonexistent.css");
+  assert.equal(issues[0].brokenReferences[1].lineNumber, 5);
+});
+
+test("validateArchitectureStructure passes when all local file references exist on disk", () => {
+  const root = fs.mkdtempSync(
+    path.join(os.tmpdir(), "cradle-arch-valid-refs-")
+  );
+  const projectDir = path.join(root, "valid-refs-mini");
+  fs.mkdirSync(projectDir, { recursive: true });
+
+  const requiredSections = ["## Overview"];
+  const content = [
+    "# Project Architecture",
+    "",
+    "## Overview",
+    "Source: [script.js](script.js), stylesheet: [style.css](style.css).",
+    "HTML entry: <a href=\"index.html\">index.html</a>.",
+    "External links are ignored: [MDN](https://developer.mozilla.org) and [#top](#top).",
+  ].join("\n");
+
+  fs.writeFileSync(path.join(projectDir, "script.js"), "console.log('hi');");
+  fs.writeFileSync(path.join(projectDir, "style.css"), "body {}");
+  fs.writeFileSync(path.join(projectDir, "index.html"), "<html></html>");
+  fs.writeFileSync(path.join(projectDir, "ARCHITECTURE.md"), content);
+
+  const issues = validateArchitectureStructure([projectDir], requiredSections);
+
+  assert.deepEqual(issues, []);
+});
+
+test("validateArchitectureStructure flags broken img src and script src HTML attributes", () => {
+  const root = fs.mkdtempSync(
+    path.join(os.tmpdir(), "cradle-arch-html-attrs-")
+  );
+  const projectDir = path.join(root, "html-attrs-mini");
+  fs.mkdirSync(projectDir, { recursive: true });
+
+  const requiredSections = ["## Overview"];
+  const content = [
+    "# Project Architecture",
+    "",
+    "## Overview",
+    "Embed: <img src=\"missing-icon.png\" alt=\"icon\" />.",
+    "Script: <script src=\"missing-lib.js\"></script>.",
+    "Valid: <img src=\"logo.svg\" alt=\"logo\" />.",
+  ].join("\n");
+
+  // Only logo.svg exists — missing-icon.png and missing-lib.js do not.
+  fs.writeFileSync(path.join(projectDir, "logo.svg"), "<svg></svg>");
+  fs.writeFileSync(path.join(projectDir, "ARCHITECTURE.md"), content);
+
+  const issues = validateArchitectureStructure([projectDir], requiredSections);
+
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].projectDir, projectDir);
+  assert.equal(issues[0].brokenReferences.length, 2);
+  assert.equal(issues[0].brokenReferences[0].target, "missing-icon.png");
+  assert.equal(issues[0].brokenReferences[0].lineNumber, 4);
+  assert.equal(issues[0].brokenReferences[1].target, "missing-lib.js");
+  assert.equal(issues[0].brokenReferences[1].lineNumber, 5);
+});
+
+test("validateArchitectureStructure reports broken references only for the affected project", () => {
+  const root = fs.mkdtempSync(
+    path.join(os.tmpdir(), "cradle-arch-multi-")
+  );
+  const cleanDir = path.join(root, "clean-mini");
+  const brokenDir = path.join(root, "broken-mini");
+  fs.mkdirSync(cleanDir, { recursive: true });
+  fs.mkdirSync(brokenDir, { recursive: true });
+
+  const requiredSections = ["## Overview"];
+
+  // Clean project — all references resolve.
+  const cleanContent = [
+    "# Project Architecture",
+    "",
+    "## Overview",
+    "Uses [script.js](script.js).",
+  ].join("\n");
+  fs.writeFileSync(path.join(cleanDir, "script.js"), "");
+  fs.writeFileSync(path.join(cleanDir, "ARCHITECTURE.md"), cleanContent);
+
+  // Broken project — script.js is referenced but absent.
+  const brokenContent = [
+    "# Project Architecture",
+    "",
+    "## Overview",
+    "Uses [script.js](script.js) and <img src=\"thumbnail.png\" />.",
+  ].join("\n");
+  fs.writeFileSync(path.join(brokenDir, "ARCHITECTURE.md"), brokenContent);
+  // Neither script.js nor thumbnail.png is created in brokenDir.
+
+  const issues = validateArchitectureStructure(
+    [cleanDir, brokenDir],
+    requiredSections
+  );
+
+  assert.equal(issues.length, 1, "only the broken project should produce an issue");
+  assert.equal(issues[0].projectDir, brokenDir);
+  assert.equal(issues[0].brokenReferences.length, 2);
+  assert.equal(issues[0].brokenReferences[0].target, "script.js");
+  assert.equal(issues[0].brokenReferences[1].target, "thumbnail.png");
+});
+
+test("validateArchitectureStructure ignores external URLs while flagging missing local assets", () => {
+  const root = fs.mkdtempSync(
+    path.join(os.tmpdir(), "cradle-arch-ext-vs-local-")
+  );
+  const projectDir = path.join(root, "mixed-refs-mini");
+  fs.mkdirSync(projectDir, { recursive: true });
+
+  const requiredSections = ["## Overview"];
+  const content = [
+    "# Project Architecture",
+    "",
+    "## Overview",
+    "CDN: <script src=\"https://cdn.example.com/lib.js\"></script>",
+    "Mail: <a href=\"mailto:dev@example.com\">Contact</a>",
+    "Data URI: <img src=\"data:image/png;base64,abc\" />",
+    "Protocol-relative: <script src=\"//unpkg.com/pkg\"></script>",
+    "Local missing: <script src=\"app.js\"></script>",
+  ].join("\n");
+
+  fs.writeFileSync(path.join(projectDir, "ARCHITECTURE.md"), content);
+  // app.js is deliberately not created.
+
+  const issues = validateArchitectureStructure([projectDir], requiredSections);
+
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].brokenReferences.length, 1,
+    "only the local missing asset should be flagged, not external URLs");
+  assert.equal(issues[0].brokenReferences[0].target, "app.js");
+});

@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta
+      name="description"
+      content="A playable virtual guitar with keyboard, mouse, and touch interaction."
+    />
+
+    <title>Virtual Guitar | Cradle Mini</title>
+
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <main class="guitar-app">
+      <header class="guitar-header">
+        <div class="header-content">
+          <p class="eyebrow">CRADLE MINI • INSTRUMENTS</p>
+
+          <h1>Virtual Guitar</h1>
+
+          <p>Play the strings with your keyboard, mouse, or touch.</p>
+        </div>
+
+        <div class="status" id="status" data-status aria-live="polite">
+          Ready
+        </div>
+      </header>
+
+      <section class="guitar-card" aria-label="Virtual guitar">
+        <div class="guitar" id="guitar">
+          <div class="guitar-head">
+            <div class="guitar-brand">CRADLE</div>
+
+            <div class="tuning-pegs" aria-hidden="true">
+              <span class="tuning-peg"></span>
+              <span class="tuning-peg"></span>
+              <span class="tuning-peg"></span>
+              <span class="tuning-peg"></span>
+              <span class="tuning-peg"></span>
+              <span class="tuning-peg"></span>
+            </div>
+          </div>
+
+          <div
+            class="guitar-viewport"
+            id="guitarViewport"
+            aria-label="Guitar fretboard"
+          >
+            <div class="guitar-neck" id="guitarNeck">
+              <div class="frets" id="frets" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+
+              <div class="fret-markers" aria-hidden="true">
+                <span class="fret-marker" data-fret="3"></span>
+                <span class="fret-marker" data-fret="5"></span>
+                <span class="fret-marker" data-fret="7"></span>
+                <span class="fret-marker" data-fret="9"></span>
+                <span class="fret-marker double" data-fret="12"></span>
+              </div>
+
+              <div
+                class="strings"
+                id="strings"
+                role="group"
+                aria-label="Guitar strings"
+              >
+                <button
+                  type="button"
+                  class="string string-low-e"
+                  data-string="0"
+                  data-note="E2"
+                  aria-label="Low E string, E2"
+                >
+                  <span class="string-label">E</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="string string-a"
+                  data-string="1"
+                  data-note="A2"
+                  aria-label="A string, A2"
+                >
+                  <span class="string-label">A</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="string string-d"
+                  data-string="2"
+                  data-note="D3"
+                  aria-label="D string, D3"
+                >
+                  <span class="string-label">D</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="string string-g"
+                  data-string="3"
+                  data-note="G3"
+                  aria-label="G string, G3"
+                >
+                  <span class="string-label">G</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="string string-b"
+                  data-string="4"
+                  data-note="B3"
+                  aria-label="B string, B3"
+                >
+                  <span class="string-label">B</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="string string-high-e"
+                  data-string="5"
+                  data-note="E4"
+                  aria-label="High E string, E4"
+                >
+                  <span class="string-label">E</span>
+                </button>
+              </div>
+
+              <!-- Fret controls -->
+              <div
+                class="fret-controls"
+                id="fretControls"
+                aria-label="Guitar frets"
+              >
+                <button
+                  type="button"
+                  class="fret-button"
+                  data-fret="0"
+                  aria-label="Open string"
+                >
+                  <span class="fret-number">0</span>
+                </button>
+                <button
+                  type="button"
+                  class="fret-button"
+                  data-fret="1"
+                  aria-label="Fret 1"
+                >
+                  <span class="fret-number">1</span>
+                </button>
+                <button
+                  type="button"
+                  class="fret-button"
+                  data-fret="2"
+                  aria-label="Fret 2"
+                >
+                  <span class="fret-number">2</span>
+                </button>
+                <button
+                  type="button"
+                  class="fret-button"
+                  data-fret="3"
+                  aria-label="Fret 3"
+                >
+                  <span class="fret-number">3</span>
+                </button>
+                <button
+                  type="button"
+                  class="fret-button"
+                  data-fret="4"
+                  aria-label="Fret 4"
+                >
+                  <span class="fret-number">4</span>
+                </button>
+                <button
+                  type="button"
+                  class="fret-button"
+                  data-fret="5"
+                  aria-label="Fret 5"
+                >
+                  <span class="fret-number">5</span>
+                </button>
+                <button
+                  type="button"
+                  class="fret-button"
+                  data-fret="6"
+                  aria-label="Fret 6"
+                >
+                  <span class="fret-number">6</span>
+                </button>
+                <button
+                  type="button"
+                  class="fret-button"
+                  data-fret="7"
+                  aria-label="Fret 7"
+                >
+                  <span class="fret-number">7</span>
+                </button>
+                <button
+                  type="button"
+                  class="fret-button"
+                  data-fret="8"
+                  aria-label="Fret 8"
+                >
+                  <span class="fret-number">8</span>
+                </button>
+                <button
+                  type="button"
+                  class="fret-button"
+                  data-fret="9"
+                  aria-label="Fret 9"
+                >
+                  <span class="fret-number">9</span>
+                </button>
+                <button
+                  type="button"
+                  class="fret-button"
+                  data-fret="10"
+                  aria-label="Fret 10"
+                >
+                  <span class="fret-number">10</span>
+                </button>
+                <button
+                  type="button"
+                  class="fret-button"
+                  data-fret="11"
+                  aria-label="Fret 11"
+                >
+                  <span class="fret-number">11</span>
+                </button>
+                <button
+                  type="button"
+                  class="fret-button"
+                  data-fret="12"
+                  aria-label="Fret 12"
+                >
+                  <span class="fret-number">12</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Guitar body -->
+          <div class="guitar-body">
+            <svg
+              class="guitar-body-shape"
+              viewBox="0 0 450 320"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <defs>
+                <radialGradient id="woodGrad" cx="20%" cy="43%" r="82%">
+                  <stop offset="0%" stop-color="#e3aa75" />
+                  <stop offset="20%" stop-color="#d99a61" />
+                  <stop offset="48%" stop-color="#ad6335" />
+                  <stop offset="80%" stop-color="#71341e" />
+                  <stop offset="100%" stop-color="#3b180d" />
+                </radialGradient>
+              </defs>
+
+              <path
+                d="M0,160 L0,208
+                 C4,246 28,260 60,265
+                 C85,270 110,268 140,258
+                 C160,250 175,248 190,250
+                 C205,252 215,258 230,268
+                 C248,280 270,288 300,290
+                 C330,292 365,288 395,275
+                 C420,262 440,230 447,200
+                 C449,185 450,172 450,160
+                 C450,148 449,135 447,120
+                 C440,90 420,58 395,45
+                 C365,32 330,28 300,30
+                 C270,32 248,40 230,52
+                 C215,62 205,68 190,70
+                 C175,72 160,70 140,62
+                 C110,52 85,50 60,55
+                 C28,60 4,74 0,112
+                 Z"
+                fill="url(#woodGrad)"
+                stroke="#3b190e"
+                stroke-width="6"
+              />
+            </svg>
+
+            <div class="sound-hole">
+              <div class="sound-hole-ring"></div>
+            </div>
+
+            <div class="bridge" aria-hidden="true">
+              <div class="bridge-saddle"></div>
+
+              <div class="bridge-pins" id="bridgePins">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          </div>
+          <svg
+            class="string-overlay"
+            id="stringOverlay"
+            aria-hidden="true"
+          ></svg>
+        </div>
+      </section>
+
+      <section class="controls" aria-label="Playback controls">
+        <button
+          type="button"
+          class="strum-button"
+          data-strum="down"
+          aria-label="Strum down"
+        >
+          ↓ Strum
+        </button>
+
+        <button
+          type="button"
+          class="strum-button"
+          data-strum="up"
+          aria-label="Strum up"
+        >
+          ↑ Strum
+        </button>
+
+        <div class="note-display" aria-live="polite">
+          <strong data-note>—</strong>
+          <span data-tuning>Pluck a string</span>
+        </div>
+
+        <div class="volume-control">
+          <label for="volumeRange">Volume</label>
+          <input
+            type="range"
+            id="volumeRange"
+            min="0"
+            max="1"
+            step="0.01"
+            value="0.45"
+            data-volume
+          />
+        </div>
+      </section>
+
+      <section class="instructions">
+        <article class="instruction">
+          <strong>Mouse</strong>
+          <span> Click a string to pluck it. </span>
+        </article>
+
+        <article class="instruction">
+          <strong>Keyboard</strong>
+          <span> Use A, S, D, F, G, and H to play the strings. </span>
+        </article>
+
+        <article class="instruction">
+          <strong>Touch</strong>
+          <span> Tap or swipe across the strings on your phone. </span>
+        </article>
+      </section>
+
+      <div class="keyboard-hint">
+        <span>Strings:</span>
+
+        <kbd>A</kbd>
+        <kbd>S</kbd>
+        <kbd>D</kbd>
+        <kbd>F</kbd>
+        <kbd>G</kbd>
+        <kbd>H</kbd>
+      </div>
+    </main>
+
+    <script src="guitarEngine.js"></script>
+    <script src="script.js"></script>
+    <script src="stringOverlay.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

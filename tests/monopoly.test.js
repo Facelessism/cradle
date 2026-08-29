@@ -76,3 +76,13 @@ test("returns correct utility rent when both utilities are owned", () => {
     70
   );
 });
+
+test("player names are rendered as text instead of HTML", () => {
+  const source = require("fs").readFileSync(
+    require.resolve("../projects/games/monopoly/script.js"),
+    "utf8"
+  );
+
+  assert.doesNotMatch(source, /innerHTML\\s*=.*\\$\\{p\\.name\\}/);
+  assert.match(source, /createTextNode\(p\.name\)/);
+});

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+    <linearGradient id="track" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#a855f7"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg)" rx="16"/>
+  <!-- Track lines -->
+  <rect x="30" y="120" width="340" height="6" fill="#334155" rx="3"/>
+  <rect x="30" y="170" width="340" height="6" fill="#334155" rx="3"/>
+  <rect x="30" y="160" width="240" height="4" fill="url(#track)" rx="2"/>
+  <!-- Player car -->
+  <text x="260" y="138" font-size="28">🏎️</text>
+  <!-- Opponent car -->
+  <text x="180" y="188" font-size="28" opacity="0.6">🚗</text>
+  <!-- Title -->
+  <text x="200" y="60" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="800" font-size="28">Typing Speed Racer</text>
+  <text x="200" y="85" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="14">Type fast, race faster</text>
+  <!-- Stats -->
+  <rect x="30" y="220" width="85" height="50" fill="#16213e" rx="8"/>
+  <text x="72" y="240" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="10">WPM</text>
+  <text x="72" y="258" text-anchor="middle" fill="#6366f1" font-family="sans-serif" font-weight="800" font-size="18">85</text>
+  <rect x="125" y="220" width="85" height="50" fill="#16213e" rx="8"/>
+  <text x="167" y="240" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="10">ACCURACY</text>
+  <text x="167" y="258" text-anchor="middle" fill="#10b981" font-family="sans-serif" font-weight="800" font-size="18">96%</text>
+  <rect x="220" y="220" width="85" height="50" fill="#16213e" rx="8"/>
+  <text x="262" y="240" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="10">STREAK</text>
+  <text x="262" y="258" text-anchor="middle" fill="#f59e0b" font-family="sans-serif" font-weight="800" font-size="18">🔥 12</text>
+  <rect x="315" y="220" width="55" height="50" fill="#16213e" rx="8"/>
+  <text x="342" y="240" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="10">TIME</text>
+  <text x="342" y="258" text-anchor="middle" fill="#ef4444" font-family="sans-serif" font-weight="800" font-size="18">45s</text>
+  <!-- Word being typed -->
+  <rect x="100" y="280" width="200" height="10" fill="#334155" rx="5"/>
+  <rect x="100" y="280" width="130" height="10" fill="#6366f1" rx="5"/>
+</svg>

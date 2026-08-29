@@ -104,6 +104,22 @@
         return { options, errors };
     }
 
+    /** Fetch with timeout support using AbortController. */
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            return await fetch(url, { ...options, signal: controller.signal });
+        } catch (err) {
+            if (err.name === "AbortError") {
+                throw new Error(`Request timed out (limit: ${timeoutMs}ms)`);
+            }
+            throw err;
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
+
     return {
         parseHeadersText,
         formatResponseHeaders,
@@ -112,5 +128,6 @@
         formatResponseBody,
         statusTone,
         buildRequestOptions,
+        fetchWithTimeout,
     };
 });

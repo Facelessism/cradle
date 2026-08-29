@@ -2,8 +2,66 @@ const fs = require("fs");
 const path = require("path");
 
 const PROJECTS_DIR = path.join(__dirname, "..", "projects");
+const REPO_ROOT = path.join(__dirname, "..");
 const TEMPLATE_PATH = path.join(__dirname, "..", "ARCHITECTURE_TEMPLATE.md");
 const REQUIRED_FILE = "ARCHITECTURE.md";
+
+const EXTERNAL_PREFIXES = [
+  "http://",
+  "https://",
+  "//",
+  "mailto:",
+  "javascript:",
+  "data:",
+  "tel:",
+  "#"
+];
+
+function isExternal(link) {
+  if (!link) return true;
+  const trimmed = link.trim().toLowerCase();
+  return EXTERNAL_PREFIXES.some(prefix => trimmed.startsWith(prefix));
+}
+
+function sanitizePath(link) {
+  let cleaned = link.split("#")[0].split("?")[0].trim();
+  try {
+    cleaned = decodeURIComponent(cleaned);
+  } catch (e) {
+    // Keep un-decoded if URI decode fails
+  }
+  return cleaned;
+}
+
+function parseMarkdownLinks(content) {
+  const links = [];
+  const lines = content.split(/\r?\n/);
+  const mdLinkRegex = /!?\[.*?\]\(([^)\s]+)(?:\s+".*?")?\)/g;
+
+  lines.forEach((line, index) => {
+    let match;
+    while ((match = mdLinkRegex.exec(line)) !== null) {
+      links.push({ target: match[1], lineNumber: index + 1 });
+    }
+  });
+
+  return links;
+}
+
+function parseHtmlLinks(content) {
+  const links = [];
+  const lines = content.split(/\r?\n/);
+  const htmlLinkRegex = /(?:href|src)=["']([^"']+)["']/gi;
+
+  lines.forEach((line, index) => {
+    let match;
+    while ((match = htmlLinkRegex.exec(line)) !== null) {
+      links.push({ target: match[1], lineNumber: index + 1 });
+    }
+  });
+
+  return links;
+}
 
 /**
  * Extract all `## Heading` lines from the template file.
@@ -128,8 +186,34 @@ function validateArchitectureStructure(
 
     const noticeBlock = hasTemplateNoticeBlock(content);
 
-    if (missingSections.length > 0 || noticeBlock) {
-      issues.push({ projectDir, missingSections, hasNoticeBlock: noticeBlock });
+    const rawLinks = [...parseMarkdownLinks(content), ...parseHtmlLinks(content)];
+    const brokenReferences = [];
+
+    for (const { target, lineNumber } of rawLinks) {
+      if (!target || isExternal(target)) continue;
+
+      const cleanLink = sanitizePath(target);
+      if (!cleanLink) continue;
+
+      let resolvedPath;
+      if (cleanLink.startsWith("/")) {
+        resolvedPath = path.join(REPO_ROOT, cleanLink);
+      } else {
+        resolvedPath = path.resolve(projectDir, cleanLink);
+      }
+
+      if (!fs.existsSync(resolvedPath)) {
+        brokenReferences.push({ target, lineNumber });
+      }
+    }
+
+    if (missingSections.length > 0 || noticeBlock || brokenReferences.length > 0) {
+      issues.push({
+        projectDir,
+        missingSections,
+        hasNoticeBlock: noticeBlock,
+        brokenReferences,
+      });
     }
   }
 
@@ -163,7 +247,7 @@ function validateArchitectureDocs() {
       `\nStructure issues found in ${structureIssues.length} ${REQUIRED_FILE} file(s):`
     );
 
-    for (const { projectDir, missingSections, hasNoticeBlock } of structureIssues) {
+    for (const { projectDir, missingSections, hasNoticeBlock, brokenReferences } of structureIssues) {
       const relPath = formatRelativePaths([projectDir])[0];
       console.error(`\n  ${relPath}/${REQUIRED_FILE}`);
 
@@ -175,6 +259,12 @@ function validateArchitectureDocs() {
 
       for (const section of missingSections) {
         console.error(`    ✗ Missing required section: ${section}`);
+      }
+
+      if (brokenReferences && brokenReferences.length > 0) {
+        for (const ref of brokenReferences) {
+          console.error(`    ✗ Nonexistent file referenced: "${ref.target}" on line ${ref.lineNumber}`);
+        }
       }
     }
 

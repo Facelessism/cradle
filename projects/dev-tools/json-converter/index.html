@@ -1,84 +1,134 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JSON Converter — YAML / CSV / XML</title>
-    <meta name="description" content="Convert JSON data seamlessly to CSV, XML, YAML, and formatted tabular outputs." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <div class="app">
-    <main class="card">
-      <div class="header">
-        <h1>JSON Converter</h1>
-        <p>Validate, format &amp; convert JSON to YAML &bull; CSV &bull; XML</p>
-      </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JSON Converter — YAML / CSV / XML</title>
+    <meta
+      name="description"
+      content="Convert JSON data seamlessly to CSV, XML, YAML, and formatted tabular outputs."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/dev-tools/json-converter/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="JSON Converter — YAML / CSV / XML" />
+    <meta property="og:description" content="Convert JSON data seamlessly to CSV, XML, YAML, and formatted tabular outputs." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/dev-tools/json-converter/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <main class="card">
+        <div class="header">
+          <h1>JSON Converter</h1>
+          <p>
+            Validate, format &amp; convert JSON to YAML &bull; CSV &bull; XML
+          </p>
+        </div>
 
-      <!-- Split Pane -->
-      <div class="split-pane">
-        <!-- Input Pane -->
-        <div class="pane">
-          <div class="pane-header">
-            <label for="jsonInput">JSON Input</label>
-            <span class="error-badge" id="errorBadge">⚠ Error</span>
+        <!-- Split Pane -->
+        <div class="split-pane">
+          <!-- Input Pane -->
+          <div class="pane">
+            <div class="pane-header">
+              <label for="jsonInput">JSON Input</label>
+              <span class="error-badge" id="errorBadge">⚠ Error</span>
+            </div>
+            <div class="editor-wrapper">
+              <div class="highlight-layer" id="highlightLayer"></div>
+              <textarea
+                id="jsonInput"
+                placeholder='Paste or type JSON here…&#10;&#10;Example:&#10;{"name":"Alice","age":30,"skills":["JS","CSS"]}'
+                spellcheck="false"
+                autofocus
+              ></textarea>
+            </div>
           </div>
-          <div class="editor-wrapper">
-            <div class="highlight-layer" id="highlightLayer"></div>
-            <textarea id="jsonInput" placeholder='Paste or type JSON here…&#10;&#10;Example:&#10;{"name":"Alice","age":30,"skills":["JS","CSS"]}' spellcheck="false" autofocus></textarea>
+
+          <!-- Output Pane -->
+          <div class="pane">
+            <div class="pane-header">
+              <label id="outputLabel">Output</label>
+            </div>
+            <pre
+              class="output-content"
+              id="outputContent"
+            ><span class="empty-hint">Converted output appears here…</span></pre>
           </div>
         </div>
 
-        <!-- Output Pane -->
-        <div class="pane">
-          <div class="pane-header">
-            <label id="outputLabel">Output</label>
+        <!-- Controls -->
+        <div class="controls">
+          <div class="format-toggles">
+            <button class="format-btn active" data-format="yaml">YAML</button>
+            <button class="format-btn" data-format="csv">CSV</button>
+            <button class="format-btn" data-format="xml">XML</button>
           </div>
-          <pre class="output-content" id="outputContent"><span class="empty-hint">Converted output appears here…</span></pre>
+
+          <div class="actions" style="margin-left: auto">
+            <button class="action-btn" id="formatBtn" title="Pretty-print JSON">
+              <svg viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Format
+            </button>
+            <button class="action-btn" id="minifyBtn" title="Minify JSON">
+              <svg viewBox="0 0 24 24">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+              Minify
+            </button>
+            <button
+              class="action-btn"
+              id="copyBtn"
+              title="Copy output to clipboard"
+            >
+              <svg viewBox="0 0 24 24">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path
+                  d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                />
+              </svg>
+              Copy
+            </button>
+            <button
+              class="action-btn"
+              id="downloadBtn"
+              title="Download output file"
+            >
+              <svg viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Download
+            </button>
+          </div>
         </div>
-      </div>
 
-      <!-- Controls -->
-      <div class="controls">
-        <div class="format-toggles">
-          <button class="format-btn active" data-format="yaml">YAML</button>
-          <button class="format-btn" data-format="csv">CSV</button>
-          <button class="format-btn" data-format="xml">XML</button>
+        <!-- Error Panel -->
+        <div class="error-panel" id="errorPanel">
+          <div class="error-line" id="errorLine"></div>
+          <div class="error-msg" id="errorMsg"></div>
         </div>
+      </main>
+    </div>
 
-        <div class="actions" style="margin-left:auto">
-          <button class="action-btn" id="formatBtn" title="Pretty-print JSON">
-            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Format
-          </button>
-          <button class="action-btn" id="minifyBtn" title="Minify JSON">
-            <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            Minify
-          </button>
-          <button class="action-btn" id="copyBtn" title="Copy output to clipboard">
-            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            Copy
-          </button>
-          <button class="action-btn" id="downloadBtn" title="Download output file">
-            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download
-          </button>
-        </div>
-      </div>
-
-      <!-- Error Panel -->
-      <div class="error-panel" id="errorPanel">
-        <div class="error-line" id="errorLine"></div>
-        <div class="error-msg" id="errorMsg"></div>
-      </div>
-    </main>
-  </div>
-
-  <script src="../../../src/components/ui/escapeHtml.js"></script>
-  <script src="logic.js"></script>
-  <script src="script.js"></script>
-</body>
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="logic.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
 </html>

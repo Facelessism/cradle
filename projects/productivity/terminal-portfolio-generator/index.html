@@ -4,16 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Terminal Portfolio Generator</title>
-    <meta name="description" content="Generate interactive CLI terminal portfolios with custom command suites." />
+    <meta
+      name="description"
+      content="Generate interactive CLI terminal portfolios with custom command suites."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/productivity/terminal-portfolio-generator/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Terminal Portfolio Generator" />
+    <meta property="og:description" content="Generate interactive CLI terminal portfolios with custom command suites." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/productivity/terminal-portfolio-generator/" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <h1 class="sr-only" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">Terminal Portfolio Generator</h1>
     <main class="app">
       <div class="pane" id="formPanel">
         <div class="pane-titlebar">
@@ -140,17 +150,6 @@
 
     <footer class="site-footer">
       <span>Terminal Portfolio Generator</span>
-      <span class="site-footer-sep">·</span>
-      <span
-        >built by
-        <a
-          href="https://github.com/Thebinary-bard"
-          target="_blank"
-          rel="noopener"
-          aria-label="Thebinary-bard GitHub profile"
-          >@Thebinary-bard</a
-        ></span
-      >
     </footer>
 
     <template id="projectTemplate">
@@ -287,5 +286,9 @@
     <script src="../../../src/components/ui/escapeHtml.js"></script>
     <script src="exportHtml.js"></script>
     <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
   </body>
 </html>

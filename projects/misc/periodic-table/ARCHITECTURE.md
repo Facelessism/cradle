@@ -29,7 +29,6 @@ projects/misc/periodic-table/
 ├── periodicEngine.js   # Core engine for thermal phase calculations, temperature conversion, shell parsing
 ├── periodicStorage.js  # Persistence handler for element bookmarks and filter settings
 ├── script.js           # Table grid rendering, filter handlers, modal interaction, canvas Bohr model
-├── README.md           # Project overview and usage guidelines
 └── ARCHITECTURE.md     # Project architecture documentation
 ```
 

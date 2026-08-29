@@ -166,7 +166,7 @@ class MockStorage {
   }
 }
 
-function loadThemeToggle({ storedTheme = null, systemLight = false } = {}) {
+function loadThemeToggle({ storedTheme = null, systemLight = false, storageApi = null, includeStorageApi = true } = {}) {
   const document = new MockDocument();
   const storage = new MockStorage(storedTheme ? { theme: storedTheme } : {});
   let systemMatches = systemLight;
@@ -192,6 +192,15 @@ function loadThemeToggle({ storedTheme = null, systemLight = false } = {}) {
   const window = {
     document,
     localStorage: storage,
+    ...(includeStorageApi ? {
+      CradleStorage: storageApi || {
+        getRaw: key => storage.getItem(key),
+        setRaw: (key, value) => {
+          storage.setItem(key, value);
+          return true;
+        },
+      },
+    } : {}),
     matchMedia,
     CustomEvent: MockCustomEvent,
     setTimeout,
@@ -220,6 +229,22 @@ function loadThemeToggle({ storedTheme = null, systemLight = false } = {}) {
   };
 }
 
+
+
+test("ThemeToggle falls back safely when the shared storage helper is unavailable", () => {
+  const { api, document } = loadThemeToggle({
+    storedTheme: null,
+    systemLight: true,
+    storageApi: null,
+    includeStorageApi: false,
+  });
+
+  // The component must remain usable even when persistence is unavailable.
+  assert.equal(api.currentTheme(), "light");
+  assert.equal(document.documentElement.classList.contains("light-theme"), true);
+  assert.doesNotThrow(() => api.toggleTheme());
+  assert.equal(api.currentTheme(), "dark");
+});
 test("ThemeToggle initializes from a stored theme and applies the html class", () => {
   const { api, document } = loadThemeToggle({ storedTheme: "light", systemLight: false });
 

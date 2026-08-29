@@ -116,11 +116,63 @@
     };
   }
 
+  function validateSVG(content, size, mimeType, fileName, maxSize = 100 * 1024) {
+    if (size > maxSize) {
+      throw new Error("SVG file size exceeds the maximum limit of 100 KB.");
+    }
+
+    if (fileName) {
+      const ext = fileName.split(".").pop().toLowerCase();
+      if (ext !== "svg") {
+        throw new Error("Unsupported file extension. Only .svg files are allowed.");
+      }
+    }
+
+    if (mimeType && mimeType !== "image/svg+xml") {
+      throw new Error("Unsupported file MIME type. Only image/svg+xml is allowed.");
+    }
+
+    if (!content || content.trim() === "") {
+      throw new Error("SVG content is empty.");
+    }
+
+    if (typeof DOMParser !== "undefined") {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(content, "image/svg+xml");
+      const parserError = doc.querySelector("parsererror");
+      if (parserError) {
+        throw new Error("Malformed SVG content.");
+      }
+      if (doc.documentElement.nodeName.toLowerCase() !== "svg") {
+        throw new Error("Uploaded file is not a valid SVG.");
+      }
+    } else {
+      const trimmed = content.trim();
+      const cleanContent = trimmed
+        .replace(/^<\?xml[^>]*\?>/i, "")
+        .replace(/^<!--[\s\S]*?-->/i, "")
+        .trim();
+
+      if (!cleanContent.toLowerCase().startsWith("<svg") || !cleanContent.toLowerCase().endsWith("</svg>")) {
+        throw new Error("Uploaded file is not a valid SVG.");
+      }
+
+      const openBrackets = (cleanContent.match(/</g) || []).length;
+      const closeBrackets = (cleanContent.match(/>/g) || []).length;
+      if (openBrackets !== closeBrackets) {
+        throw new Error("Malformed SVG content.");
+      }
+    }
+
+    return true;
+  }
+
   return {
     GRID_SIZE,
     CANVAS_SIZE,
     PIXEL_SIZE,
     generateAvatarSVG,
     generateRandomOptions,
+    validateSVG,
   };
 });

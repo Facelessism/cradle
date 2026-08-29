@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pomodoro Infinity Timer</title>
+  <meta name="description"
+    content="A beautiful Pomodoro timer with infinity loop visual, ambient sounds, and session tracking." />
+  <link rel="canonical" href="https://facelessism.github.io/cradle/projects/productivity/pomodoro-infinity-timer/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Pomodoro Infinity Timer" />
+  <meta property="og:description"
+    content="A beautiful Pomodoro timer with infinity loop visual, ambient sounds, and session tracking." />
+  <meta property="og:url" content="https://facelessism.github.io/cradle/projects/productivity/pomodoro-infinity-timer/" />
+  <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+</head>
+
+<body>
+  <main class="timer-shell">
+    <!-- Mode Tabs -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-mode="focus">🎯 Focus</button>
+      <button class="mode-tab" data-mode="short">☕ Short Break</button>
+      <button class="mode-tab" data-mode="long">🌿 Long Break</button>
+    </div>
+
+    <!-- Infinity Visual -->
+    <div class="infinity-container" id="infinityContainer">
+      <svg class="infinity-svg" viewBox="0 0 300 180" id="infinitySvg">
+        <defs>
+          <linearGradient id="infinityGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#ff00ff" />
+            <stop offset="50%" style="stop-color:#6366f1" />
+            <stop offset="100%" style="stop-color:#00ffff" />
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        <!-- Background infinity path -->
+        <path id="infinityPathBg" d="M150,90 C150,40 80,40 80,90 C80,140 150,140 150,90 C150,40 220,40 220,90 C220,140 150,140 150,90"
+          fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8" />
+        <!-- Progress infinity path -->
+        <path id="infinityPath" d="M150,90 C150,40 80,40 80,90 C80,140 150,140 150,90 C150,40 220,40 220,90 C220,140 150,140 150,90"
+          fill="none" stroke="url(#infinityGrad)" stroke-width="8" stroke-linecap="round"
+          filter="url(#glow)" stroke-dasharray="400" stroke-dashoffset="400" />
+        <!-- Moving dot -->
+        <circle id="infinityDot" cx="150" cy="90" r="8" fill="#fff" filter="url(#glow)" opacity="0" />
+      </svg>
+      <!-- Timer Display -->
+      <div class="timer-display" id="timerDisplay">
+        <span class="timer-minutes" id="timerMinutes">25</span>
+        <span class="timer-separator">:</span>
+        <span class="timer-seconds" id="timerSeconds">00</span>
+      </div>
+      <div class="timer-label" id="timerLabel">Focus Time</div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button id="startBtn" class="btn-main">▶ Start</button>
+      <button id="pauseBtn" class="btn-main btn-secondary" hidden>⏸ Pause</button>
+      <button id="resetBtn" class="btn-icon" title="Reset">🔄</button>
+      <button id="skipBtn" class="btn-icon" title="Skip to next">⏭️</button>
+    </div>
+
+    <!-- Session Counter -->
+    <div class="session-bar">
+      <div class="session-dots" id="sessionDots"></div>
+      <span class="session-text" id="sessionText">Session 1 of 4</span>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="stat-icon">🔥</span>
+        <span class="stat-val" id="statStreak">0</span>
+        <span class="stat-name">Streak</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">⏱️</span>
+        <span class="stat-val" id="statTotal">0h</span>
+        <span class="stat-name">Today</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">✅</span>
+        <span class="stat-val" id="statSessions">0</span>
+        <span class="stat-name">Sessions</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">🏆</span>
+        <span class="stat-val" id="statBest">0</span>
+        <span class="stat-name">Best Streak</span>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <details class="settings-panel">
+      <summary class="settings-toggle">⚙️ Settings</summary>
+      <div class="settings-grid">
+        <div class="setting">
+          <label for="focusTime">Focus (min)</label>
+          <input type="number" id="focusTime" value="25" min="1" max="120" class="setting-input" />
+        </div>
+        <div class="setting">
+          <label for="shortBreak">Short Break (min)</label>
+          <input type="number" id="shortBreak" value="5" min="1" max="30" class="setting-input" />
+        </div>
+        <div class="setting">
+          <label for="longBreak">Long Break (min)</label>
+          <input type="number" id="longBreak" value="15" min="1" max="60" class="setting-input" />
+        </div>
+        <div class="setting">
+          <label for="sessionsBeforeLong">Sessions before long</label>
+          <input type="number" id="sessionsBeforeLong" value="4" min="2" max="8" class="setting-input" />
+        </div>
+        <div class="setting">
+          <label for="ambientSound">Ambient Sound</label>
+          <select id="ambientSound" class="setting-input">
+            <option value="none">None</option>
+            <option value="rain">🌧️ Rain</option>
+            <option value="forest">🌲 Forest</option>
+            <option value="cafe">☕ Café</option>
+            <option value="fire">🔥 Fireplace</option>
+            <option value="waves">🌊 Waves</option>
+          </select>
+        </div>
+        <div class="setting">
+          <label for="volume">Volume</label>
+          <input type="range" id="volume" min="0" max="100" value="50" class="setting-range" />
+        </div>
+      </div>
+      <div class="setting-toggle-row">
+        <label class="toggle-label">
+          <input type="checkbox" id="autoStart" checked />
+          <span>Auto-start next session</span>
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" id="soundEnabled" checked />
+          <span>Sound notifications</span>
+        </label>
+      </div>
+    </details>
+
+    <!-- Log -->
+    <details class="log-panel">
+      <summary class="log-toggle">📋 Today's Log</summary>
+      <div class="log-list" id="logList">
+        <p class="log-empty">No sessions yet today. Start your first focus!</p>
+      </div>
+    </details>
+  </main>
+
+  <!-- Notification sound (generated via Web Audio) -->
+  <script type="module" src="script.js"></script>
+</body>
+
+</html>

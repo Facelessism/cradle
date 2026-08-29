@@ -9,6 +9,25 @@
   <title>Cradle</title>
 
   <meta name="description" content="Cradle — A curated archive of experiments." />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://cradle.example.com/" />
+  <meta property="og:title" content="Cradle — A curated archive of experiments" />
+  <meta property="og:description"
+    content="Browse and play a growing collection of mini-projects, experiments, and builds." />
+  <meta property="og:image" content="https://cradle.example.com/assets/social-preview.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://cradle.example.com/" />
+  <meta name="twitter:title" content="Cradle — A curated archive of experiments" />
+  <meta name="twitter:description"
+    content="Browse and play a growing collection of mini-projects, experiments, and builds." />
+  <meta name="twitter:image" content="https://cradle.example.com/assets/social-preview.png" />
 
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&display=swap"
     rel="stylesheet" />
@@ -16,11 +35,15 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="src/components/ui/tokens.css" />
 
+  <!-- Safe storage helper must load before the anti-flash theme bootstrap. -->
+  <script src="src/components/ui/storage.js"></script>
+
   <!-- Prevent flash of wrong theme before CSS loads -->
   <script>
     (function () {
+      var storedTheme = window.CradleStorage.getRaw("theme");
       var t =
-        localStorage.getItem("theme") ||
+        storedTheme ||
         (window.matchMedia("(prefers-color-scheme: light)").matches
           ? "light"
           : "dark");
@@ -142,7 +165,19 @@
       <div class="section-header">
         <h2>Projects</h2>
 
-        <span id="project-count"> 0 projects </span>
+        <div class="section-controls">
+          <label for="sort-projects" class="sr-only">Sort projects</label>
+          <select id="sort-projects">
+            <option value="default">Default</option>
+            <option value="name-asc">Name: A–Z</option>
+            <option value="name-desc">Name: Z–A</option>
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="category">Category</option>
+          </select>
+
+          <span id="project-count">0 projects</span>
+        </div>
       </div>
 
       <div id="projects-grid" class="projects-grid" aria-live="polite" aria-atomic="true"></div>

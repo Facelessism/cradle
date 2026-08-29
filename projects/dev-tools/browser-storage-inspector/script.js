@@ -210,25 +210,50 @@ function seedDemoData() {
 }
 
 function exportJSON() {
-  if (!exporter) return;
-  const payload = exporter.exportToJSON(storageState.local, "localStorage");
-  downloadFile("storage-export.json", payload, "application/json");
+  if (!exporter) {
+    setStatus("Export failed: Storage exporter is unavailable.");
+    return;
+  }
+
+  try {
+    const payload = exporter.exportToJSON(storageState.local, "localStorage");
+    downloadFile("storage-export.json", payload, "application/json");
+    setStatus("JSON export downloaded successfully.");
+  } catch (error) {
+    console.error("JSON export error:", error);
+    setStatus(`JSON export failed: ${error.message || "Unable to create export."}`);
+  }
 }
 
 function exportCSV() {
-  if (!exporter) return;
-  const payload = exporter.exportToCSV(storageState.local);
-  downloadFile("storage-export.csv", payload, "text/csv");
+  if (!exporter) {
+    setStatus("Export failed: Storage exporter is unavailable.");
+    return;
+  }
+
+  try {
+    const payload = exporter.exportToCSV(storageState.local);
+    downloadFile("storage-export.csv", payload, "text/csv");
+    setStatus("CSV export downloaded successfully.");
+  } catch (error) {
+    console.error("CSV export error:", error);
+    setStatus(`CSV export failed: ${error.message || "Unable to create export."}`);
+  }
 }
 
 function downloadFile(filename, content, mimeType) {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  try {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("File download error:", error);
+    throw new Error("Unable to download the exported file.");
+  }
 }

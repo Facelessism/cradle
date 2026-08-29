@@ -411,3 +411,33 @@ body {
   color: #4cd137;
   font-family: "Outfit", sans-serif;
 }
+
+/* Accessibility: Respect user's reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Cannon aiming transitions — game mechanic, shorten to instant */
+  .computer-col .cannon,
+  .computer-col .cannon .pipe,
+  .computer-col .cannon .wheel {
+    transition: none !important;
+  }
+
+  /* Fire animation — game mechanic, snap to result instantly */
+  .fire {
+    -webkit-animation: none !important;
+    animation: none !important;
+  }
+
+  /* Explosion opacity reveal — functional state, snap to instant */
+  .defended .fire .ball:before {
+    transition: none !important;
+  }
+}

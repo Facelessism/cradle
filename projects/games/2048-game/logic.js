@@ -14,7 +14,12 @@
       random = size;
       size = 4;
     }
-    const board = Array.from({ length: size }, () => Array(size).fill(0));
+
+    const board = Array.from(
+      { length: size },
+      () => Array(size).fill(0)
+    );
+
     const state = {
       board,
       score: 0,
@@ -22,20 +27,25 @@
       won: false,
       over: false,
       moved: false,
-      size: size,
+      size,
     };
 
     addRandomTile(state, random);
     addRandomTile(state, random);
+
     return state;
   }
 
   function addRandomTile(state, random = Math.random) {
     const emptyCells = [];
+
     state.board.forEach((row, rowIndex) => {
       row.forEach((value, columnIndex) => {
         if (value === 0) {
-          emptyCells.push({ row: rowIndex, col: columnIndex });
+          emptyCells.push({
+            row: rowIndex,
+            col: columnIndex,
+          });
         }
       });
     });
@@ -44,8 +54,12 @@
       return false;
     }
 
-    const target = emptyCells[Math.floor(random() * emptyCells.length)];
-    state.board[target.row][target.col] = random() < 0.9 ? 2 : 4;
+    const target =
+      emptyCells[Math.floor(random() * emptyCells.length)];
+
+    state.board[target.row][target.col] =
+      random() < 0.9 ? 2 : 4;
+
     return true;
   }
 
@@ -53,9 +67,20 @@
     return board.map(row => [...row]);
   }
 
-  function collapseLine(line, size = 4) {
+  /**
+   * Collapse one line toward its beginning.
+   *
+   * Tiles are processed from the side they are moving toward.
+   * Each pair can merge at most once during a move.
+   *
+   * Examples:
+   *   [2, 2, 2, 0] -> [4, 2, 0, 0]
+   *   [2, 2, 2, 2] -> [4, 4, 0, 0]
+   *   [4, 4, 4, 4] -> [8, 8, 0, 0]
+   */
+  function collapseLine(line, size = line.length) {
     const compacted = line.filter(value => value !== 0);
-    const merged = [];
+    const result = [];
     let scoreGain = 0;
 
     for (let index = 0; index < compacted.length; index += 1) {
@@ -64,78 +89,126 @@
 
       if (current === next) {
         const mergedValue = current * 2;
-        merged.push(mergedValue);
+
+        result.push(mergedValue);
         scoreGain += mergedValue;
+
+        // Consume both source tiles. The newly-created tile
+        // cannot merge again during the same move.
         index += 1;
       } else {
-        merged.push(current);
+        result.push(current);
       }
     }
 
-    while (merged.length < size) {
-      merged.push(0);
+    while (result.length < size) {
+      result.push(0);
     }
 
-    return { line: merged, scoreGain };
+    return {
+      line: result,
+      scoreGain,
+    };
   }
 
+  /**
+   * Move the board in a deterministic order.
+   *
+   * Every row or column is processed independently using the
+   * same collapse rules, ensuring movement and scoring remain
+   * consistent across all four directions.
+   */
   function moveBoard(board, direction) {
     const rows = board.length;
     const cols = board[0].length;
-    const nextBoard = Array.from({ length: rows }, () => Array(cols).fill(0));
+
+    const nextBoard = Array.from(
+      { length: rows },
+      () => Array(cols).fill(0)
+    );
+
     let scoreGain = 0;
     let moved = false;
 
+    function processLine(sourceLine, originalLine) {
+      const {
+        line,
+        scoreGain: lineScore,
+      } = collapseLine(sourceLine, sourceLine.length);
+
+      scoreGain += lineScore;
+
+      if (line.join(",") !== originalLine.join(",")) {
+        moved = true;
+      }
+
+      return line;
+    }
+
     if (direction === "left" || direction === "right") {
       for (let row = 0; row < rows; row += 1) {
-        const sourceLine =
-          direction === "left" ? board[row] : [...board[row]].reverse();
-        const { line: mergedLine, scoreGain: lineScore } = collapseLine(
-          sourceLine,
-          cols
-        );
-        scoreGain += lineScore;
-        const targetLine =
-          direction === "left" ? mergedLine : mergedLine.reverse();
+        const originalLine = [...board[row]];
 
-        if (targetLine.join(",") !== board[row].join(",")) {
-          moved = true;
-        }
+        const sourceLine =
+          direction === "left"
+            ? [...originalLine]
+            : [...originalLine].reverse();
+
+        const collapsed = processLine(
+          sourceLine,
+          originalLine
+        );
+
+        const targetLine =
+          direction === "left"
+            ? collapsed
+            : [...collapsed].reverse();
 
         nextBoard[row] = targetLine;
       }
 
-      return { board: nextBoard, scoreGain, moved };
+      return {
+        board: nextBoard,
+        scoreGain,
+        moved,
+      };
     }
 
     for (let col = 0; col < cols; col += 1) {
+      const originalLine = board.map(row => row[col]);
+
       const sourceLine =
         direction === "up"
-          ? board.map(currentRow => currentRow[col])
-          : board.map(currentRow => currentRow[col]).reverse();
-      const { line: mergedLine, scoreGain: lineScore } = collapseLine(
+          ? [...originalLine]
+          : [...originalLine].reverse();
+
+      const collapsed = processLine(
         sourceLine,
-        rows
+        originalLine
       );
-      scoreGain += lineScore;
-      const targetLine = direction === "up" ? mergedLine : mergedLine.reverse();
 
-      if (
-        targetLine.join(",") !==
-        board.map(currentRow => currentRow[col]).join(",")
-      ) {
-        moved = true;
-      }
+      const targetLine =
+        direction === "up"
+          ? collapsed
+          : [...collapsed].reverse();
 
-      targetLine.forEach((value, index) => {
-        nextBoard[index][col] = value;
+      targetLine.forEach((value, row) => {
+        nextBoard[row][col] = value;
       });
     }
 
-    return { board: nextBoard, scoreGain, moved };
+    return {
+      board: nextBoard,
+      scoreGain,
+      moved,
+    };
   }
 
-  function moveGameState(state, direction, random = Math.random) {
+  function moveGameState(
+    state,
+    direction,
+    random = Math.random
+  ) {
     const next = {
       board: cloneBoard(state.board),
       score: state.score,
@@ -151,28 +224,39 @@
       scoreGain,
       moved,
     } = moveBoard(next.board, direction);
+
     next.board = movedBoard;
+
+    // Every merge contributes its value exactly once.
     next.score += scoreGain;
-    next.bestScore = Math.max(next.bestScore, next.score);
+    next.bestScore = Math.max(
+      next.bestScore,
+      next.score
+    );
     next.moved = moved;
 
+    // A new tile is added only after a successful move.
     if (moved) {
       addRandomTile(next, random);
     }
 
     next.won = hasWon(next.board);
     next.over = !canMove(next.board);
+
     return next;
   }
 
   function hasWon(board) {
-    return board.some(row => row.some(value => value >= 2048));
+    return board.some(row =>
+      row.some(value => value >= 2048)
+    );
   }
 
   function canMove(board) {
     for (let row = 0; row < board.length; row += 1) {
       for (let col = 0; col < board[row].length; col += 1) {
         const value = board[row][col];
+
         if (value === 0) {
           return true;
         }

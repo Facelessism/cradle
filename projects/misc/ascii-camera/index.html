@@ -1,140 +1,259 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ASCII Camera Studio | Cradle</title>
-  <meta name="description" content="Convert a webcam feed or uploaded image into real-time ASCII art with density controls, Sobel edge detection, and multi-format exports." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <main class="app-shell">
-    <header class="hero">
-      <div class="hero-copy">
-        <a class="back-link" href="../../../index.html">Back to Cradle</a>
-        <p class="eyebrow">Misc Mini</p>
-        <h1>ASCII Camera Studio</h1>
-        <p class="subtitle">
-          Turn your webcam or uploaded images into live ASCII art, tune density & Sobel edge detection, and export as TXT, HTML, SVG, or PNG.
-        </p>
-      </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ASCII Camera Studio | Cradle</title>
+    <meta
+      name="description"
+      content="Convert a webcam feed or uploaded image into real-time ASCII art with density controls, Sobel edge detection, and multi-format exports."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/misc/ascii-camera/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="ASCII Camera Studio | Cradle" />
+    <meta property="og:description" content="Convert a webcam feed or uploaded image into real-time ASCII art with density controls, Sobel edge detection, and multi-format exports." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/misc/ascii-camera/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <a class="back-link" href="../../../index.html">Back to Cradle</a>
+          <p class="eyebrow">Misc Mini</p>
+          <h1>ASCII Camera Studio</h1>
+          <p class="subtitle">
+            Turn your webcam or uploaded images into live ASCII art, tune
+            density & Sobel edge detection, and export as TXT, HTML, SVG, or
+            PNG.
+          </p>
+        </div>
 
-      <section class="status-card" aria-label="ASCII camera status" role="status" aria-live="polite">
-        <span id="sourceStatus">Upload mode</span>
-        <strong id="frameMeta">80 cols</strong>
-        <small id="exportMeta">Ready to render</small>
+        <section
+          class="status-card"
+          aria-label="ASCII camera status"
+          role="status"
+          aria-live="polite"
+        >
+          <span id="sourceStatus">Upload mode</span>
+          <strong id="frameMeta">80 cols</strong>
+          <small id="exportMeta">Ready to render</small>
+        </section>
+      </header>
+
+      <section class="controls-panel" aria-label="ASCII camera controls">
+        <div class="control-group source-actions">
+          <button
+            id="cameraBtn"
+            data-cradle-btn
+            data-variant="primary"
+            data-size="sm"
+            type="button"
+          >
+            Start Camera
+          </button>
+          <button
+            id="stopCameraBtn"
+            data-cradle-btn
+            data-variant="secondary"
+            data-size="sm"
+            type="button"
+            disabled
+          >
+            Stop Camera
+          </button>
+          <label class="file-button" for="imageUpload">Upload Image</label>
+          <input id="imageUpload" type="file" accept="image/*" />
+        </div>
+
+        <label>
+          Density Palette
+          <select id="densitySelect">
+            <option value="standard" selected>Standard</option>
+            <option value="detailed">Detailed (70 Chars)</option>
+            <option value="blocks">Blocks</option>
+            <option value="binary">Binary (0/1)</option>
+            <option value="minimal">Minimal</option>
+          </select>
+        </label>
+
+        <label>
+          Columns
+          <input
+            id="columnRange"
+            type="range"
+            min="48"
+            max="180"
+            step="4"
+            value="96"
+          />
+          <span id="columnValue">96</span>
+        </label>
+
+        <label>
+          Contrast
+          <input
+            id="contrastRange"
+            type="range"
+            min="60"
+            max="180"
+            step="5"
+            value="115"
+          />
+          <span id="contrastValue">115%</span>
+        </label>
+
+        <label>
+          Brightness
+          <input
+            id="brightnessRange"
+            type="range"
+            min="-60"
+            max="60"
+            step="5"
+            value="0"
+          />
+          <span id="brightnessValue">0</span>
+        </label>
+
+        <label>
+          FPS
+          <input
+            id="fpsRange"
+            type="range"
+            min="4"
+            max="24"
+            step="1"
+            value="12"
+          />
+          <span id="fpsValue">12</span>
+        </label>
+
+        <div class="toggle-row" aria-label="ASCII rendering options">
+          <label class="toggle">
+            <input id="invertToggle" type="checkbox" />
+            <span>Invert</span>
+          </label>
+          <label class="toggle">
+            <input id="edgeToggle" type="checkbox" />
+            <span>Sobel Edges</span>
+          </label>
+          <label class="toggle">
+            <input id="colorToggle" type="checkbox" checked />
+            <span>Color ASCII</span>
+          </label>
+        </div>
+
+        <div class="export-actions">
+          <button
+            id="copyBtn"
+            data-cradle-btn
+            data-variant="outline"
+            data-size="sm"
+            type="button"
+          >
+            Copy Text
+          </button>
+          <button
+            id="downloadTxtBtn"
+            data-cradle-btn
+            data-variant="secondary"
+            data-size="sm"
+            type="button"
+          >
+            Download TXT
+          </button>
+          <button
+            id="downloadHtmlBtn"
+            data-cradle-btn
+            data-variant="secondary"
+            data-size="sm"
+            type="button"
+          >
+            Download HTML
+          </button>
+          <button
+            id="downloadSvgBtn"
+            data-cradle-btn
+            data-variant="secondary"
+            data-size="sm"
+            type="button"
+          >
+            Download SVG
+          </button>
+          <button
+            id="downloadPngBtn"
+            data-cradle-btn
+            data-variant="primary"
+            data-size="sm"
+            type="button"
+          >
+            Export PNG
+          </button>
+        </div>
       </section>
-    </header>
 
-    <section class="controls-panel" aria-label="ASCII camera controls">
-      <div class="control-group source-actions">
-        <button id="cameraBtn" data-cradle-btn data-variant="primary" data-size="sm" type="button">Start Camera</button>
-        <button id="stopCameraBtn" data-cradle-btn data-variant="secondary" data-size="sm" type="button" disabled>Stop Camera</button>
-        <label class="file-button" for="imageUpload">Upload Image</label>
-        <input id="imageUpload" type="file" accept="image/*" />
-      </div>
-
-      <label>
-        Density Palette
-        <select id="densitySelect">
-          <option value="standard" selected>Standard</option>
-          <option value="detailed">Detailed (70 Chars)</option>
-          <option value="blocks">Blocks</option>
-          <option value="binary">Binary (0/1)</option>
-          <option value="minimal">Minimal</option>
-        </select>
-      </label>
-
-      <label>
-        Columns
-        <input id="columnRange" type="range" min="48" max="180" step="4" value="96" />
-        <span id="columnValue">96</span>
-      </label>
-
-      <label>
-        Contrast
-        <input id="contrastRange" type="range" min="60" max="180" step="5" value="115" />
-        <span id="contrastValue">115%</span>
-      </label>
-
-      <label>
-        Brightness
-        <input id="brightnessRange" type="range" min="-60" max="60" step="5" value="0" />
-        <span id="brightnessValue">0</span>
-      </label>
-
-      <label>
-        FPS
-        <input id="fpsRange" type="range" min="4" max="24" step="1" value="12" />
-        <span id="fpsValue">12</span>
-      </label>
-
-      <div class="toggle-row" aria-label="ASCII rendering options">
-        <label class="toggle">
-          <input id="invertToggle" type="checkbox" />
-          <span>Invert</span>
-        </label>
-        <label class="toggle">
-          <input id="edgeToggle" type="checkbox" />
-          <span>Sobel Edges</span>
-        </label>
-        <label class="toggle">
-          <input id="colorToggle" type="checkbox" checked />
-          <span>Color ASCII</span>
-        </label>
-      </div>
-
-      <div class="export-actions">
-        <button id="copyBtn" data-cradle-btn data-variant="outline" data-size="sm" type="button">Copy Text</button>
-        <button id="downloadTxtBtn" data-cradle-btn data-variant="secondary" data-size="sm" type="button">Download TXT</button>
-        <button id="downloadHtmlBtn" data-cradle-btn data-variant="secondary" data-size="sm" type="button">Download HTML</button>
-        <button id="downloadSvgBtn" data-cradle-btn data-variant="secondary" data-size="sm" type="button">Download SVG</button>
-        <button id="downloadPngBtn" data-cradle-btn data-variant="primary" data-size="sm" type="button">Export PNG</button>
-      </div>
-    </section>
-
-    <section class="workspace" aria-label="ASCII camera workspace">
-      <article class="preview-panel">
-        <div class="panel-header">
-          <div>
-            <h2>Source Preview</h2>
-            <p id="sourceHelp">Upload an image or start the camera to render ASCII.</p>
+      <section class="workspace" aria-label="ASCII camera workspace">
+        <article class="preview-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Source Preview</h2>
+              <p id="sourceHelp">
+                Upload an image or start the camera to render ASCII.
+              </p>
+            </div>
           </div>
-        </div>
-        <div class="media-frame">
-          <video id="cameraVideo" playsinline muted></video>
-          <canvas id="sourceCanvas"></canvas>
-          <div id="emptyPreview" class="empty-preview">
-            <strong>No source yet</strong>
-            <span>Choose an image or enable webcam access.</span>
+          <div class="media-frame">
+            <video id="cameraVideo" playsinline muted></video>
+            <canvas id="sourceCanvas"></canvas>
+            <div id="emptyPreview" class="empty-preview">
+              <strong>No source yet</strong>
+              <span>Choose an image or enable webcam access.</span>
+            </div>
           </div>
-        </div>
-      </article>
+        </article>
 
-      <article class="ascii-panel">
-        <div class="panel-header">
-          <div>
-            <h2>ASCII Output</h2>
-            <p id="renderStats">Waiting for a source.</p>
+        <article class="ascii-panel">
+          <div class="panel-header">
+            <div>
+              <h2>ASCII Output</h2>
+              <p id="renderStats" role="status" aria-live="polite">
+                Waiting for a source.
+              </p>
+            </div>
+            <button
+              id="sampleBtn"
+              data-cradle-btn
+              data-variant="ghost"
+              data-size="sm"
+              type="button"
+            >
+              Load Sample
+            </button>
           </div>
-          <button id="sampleBtn" data-cradle-btn data-variant="ghost" data-size="sm" type="button">Load Sample</button>
-        </div>
-        <div class="ascii-frame">
-          <pre id="asciiOutput" aria-live="polite"></pre>
-        </div>
-      </article>
-    </section>
-  </main>
+          <div class="ascii-frame">
+            <pre id="asciiOutput" aria-live="polite"></pre>
+          </div>
+        </article>
+      </section>
+    </main>
 
-  <canvas id="analysisCanvas" aria-hidden="true"></canvas>
-  <script src="../../../src/components/ui/Button/Button.js"></script>
-  <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
-  <script src="asciiEngine.js"></script>
-  <script src="asciiExporter.js"></script>
-  <script src="script.js"></script>
-</body>
+    <canvas id="analysisCanvas" aria-hidden="true"></canvas>
+    <script src="../../../src/components/ui/Button/Button.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+    <script src="asciiEngine.js"></script>
+    <script src="asciiExporter.js"></script>
+    <script src="script.js"></script>
+  </body>
 </html>

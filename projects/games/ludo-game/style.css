@@ -592,3 +592,45 @@ h1 {
   font-size: 1.1rem;
   opacity: 0.8;
 }
+
+/* Accessibility: Respect user's reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable purely decorative floating dice logo */
+  .logo-icon {
+    animation: none !important;
+  }
+
+  /* Dice rolling animation — snap to result instantly */
+  .cube.rolling {
+    animation: none !important;
+  }
+
+  /* Dice face transition — show result without 3D spin */
+  .cube {
+    transition: none !important;
+  }
+
+  /* Button hover lift — disable transform */
+  .btn-roll:hover {
+    transform: none !important;
+  }
+
+  /* Player dot scale on active — disable transform */
+  .player-row.active .player-dot {
+    transform: none !important;
+  }
+
+  /* Modal overlay fade */
+  .modal-overlay {
+    transition: none !important;
+  }
+}

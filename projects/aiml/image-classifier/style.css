@@ -217,7 +217,7 @@ h1 {
   margin-bottom: 14px;
 }
 
-.upload-content h3 {
+.upload-content h2 {
   font-size: 24px;
   margin-bottom: 8px;
 }
@@ -667,5 +667,50 @@ button:disabled,
   to {
     opacity: 1;
     transform: translate(-50%, 0);
+  }
+}
+
+/* Accessibility: Respect user's reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .main-layout,
+  .prediction-panel,
+  .prediction,
+  .upload-area,
+  .upload-btn,
+  button,
+  .add-image-btn {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+
+  .prediction-panel.active {
+    transform: none !important;
+  }
+
+  .prediction:hover,
+  .upload-area:hover,
+  .upload-btn:hover,
+  button:hover,
+  .add-image-btn:hover,
+  .remove-class-btn:hover {
+    transform: none !important;
+  }
+
+  .fill {
+    animation: none !important;
+  }
+
+  .status-toast {
+    animation: none !important;
   }
 }

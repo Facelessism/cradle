@@ -21,7 +21,6 @@ reading-progress-tracker/
 ├── style.css          # Full dark-theme styling and responsive layout
 ├── tracker-logic.js   # Pure business logic — UMD module testable in Node.js
 ├── script.js          # UI wiring, localStorage persistence, rendering
-├── README.md          # User-facing documentation
 └── ARCHITECTURE.md    # This file
 ```
 

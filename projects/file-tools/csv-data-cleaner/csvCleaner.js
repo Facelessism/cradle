@@ -10,41 +10,85 @@
       throw new Error("CSV input must be a string.");
     }
 
+    if (!text || text.trim() === "") {
+      throw new Error("CSV input is empty.");
+    }
+
     const rows = [];
     let field = "";
     let row = [];
     let insideQuotes = false;
+    let startOfField = true;
+    const warnings = [];
 
-    for (let index = 0; index < text.length; index += 1) {
-      const char = text[index];
-      const next = text[index + 1];
+    try {
+      for (let index = 0; index < text.length; index += 1) {
+        const char = text[index];
+        const next = text[index + 1];
 
-      if (char === '"') {
-        if (insideQuotes && next === '"') {
-          field += '"';
-          index += 1;
+        if (startOfField) {
+          startOfField = false;
+          if (char === '"') {
+            insideQuotes = true;
+            continue;
+          }
+        }
+
+        if (char === '"') {
+          if (insideQuotes) {
+            if (next === '"') {
+              field += '"';
+              index += 1;
+            } else {
+              insideQuotes = false;
+              // Validate that characters after the closing quote are only whitespace until next delimiter/newline
+              let lookAhead = index + 1;
+              while (lookAhead < text.length) {
+                const nextChar = text[lookAhead];
+                if (nextChar === "," || nextChar === "\n" || nextChar === "\r") {
+                  break;
+                }
+                if (nextChar !== " " && nextChar !== "\t") {
+                  throw new Error("The CSV contains malformed quoting.");
+                }
+                lookAhead += 1;
+              }
+            }
+          } else {
+            // Unquoted field has a quote inside it - malformed quoting!
+            throw new Error("The CSV contains malformed quoting.");
+          }
+        } else if (char === "," && !insideQuotes) {
+          row.push(field);
+          field = "";
+          startOfField = true;
+        } else if ((char === "\n" || char === "\r") && !insideQuotes) {
+          if (char === "\r" && next === "\n") {
+            index += 1;
+          }
+          row.push(field);
+          rows.push(row);
+          row = [];
+          field = "";
+          startOfField = true;
         } else {
-          insideQuotes = !insideQuotes;
+          field += char;
         }
-      } else if (char === "," && !insideQuotes) {
-        row.push(field);
-        field = "";
-      } else if ((char === "\n" || char === "\r") && !insideQuotes) {
-        if (char === "\r" && next === "\n") {
-          index += 1;
-        }
+      }
+
+      if (insideQuotes) {
+        throw new Error("The CSV contains malformed quoting.");
+      }
+
+      if (field.length > 0 || row.length > 0 || text.endsWith(",")) {
         row.push(field);
         rows.push(row);
-        row = [];
-        field = "";
-      } else {
-        field += char;
       }
-    }
-
-    if (field.length > 0 || row.length > 0 || text.endsWith(",")) {
-      row.push(field);
-      rows.push(row);
+    } catch (err) {
+      if (err.message && err.message.includes("The CSV contains malformed quoting")) {
+        throw err;
+      }
+      throw new Error("The CSV could not be parsed.");
     }
 
     const headerIndex = rows.findIndex(cells =>
@@ -52,7 +96,7 @@
     );
 
     if (headerIndex === -1) {
-      return { headers: [], rows: [] };
+      throw new Error("CSV input is empty.");
     }
 
     const headers = rows[headerIndex].map((header, index) => {
@@ -60,11 +104,16 @@
       return trimmed || `Column ${index + 1}`;
     });
 
-    const dataRows = rows.slice(headerIndex + 1).map(cells =>
-      normalizeRowLength(cells, headers.length)
-    );
+    const dataRows = rows.slice(headerIndex + 1).map((cells, index) => {
+      const rowIndex = index + headerIndex + 2;
+      const isEmpty = cells.every(cell => String(cell).trim() === "");
+      if (!isEmpty && cells.length !== headers.length) {
+        warnings.push(`Row ${rowIndex} has an unexpected number of columns (expected ${headers.length}, got ${cells.length}).`);
+      }
+      return normalizeRowLength(cells, headers.length);
+    });
 
-    return { headers, rows: dataRows };
+    return { headers, rows: dataRows, warnings };
   }
 
   function normalizeRowLength(row, length) {
@@ -155,6 +204,7 @@
     }
 
     const missingValues = detectMissingValues(cleaned);
+    const warnings = dataset.warnings || [];
 
     return {
       dataset: cleaned,
@@ -165,6 +215,7 @@
         duplicateRowsRemoved,
         missingValueCount: missingValues.length,
         missingValues,
+        warnings,
       },
     };
   }

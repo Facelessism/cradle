@@ -107,7 +107,7 @@
     border-radius: 6px;
     padding: 14px 16px;
   }
-  .box h3 { margin: 0 0 10px; font-size: 14px; text-transform: uppercase; color: #555; }
+  .box h2 { margin: 0 0 10px; font-size: 14px; text-transform: uppercase; color: #555; }
 
   .player-row {
     display: flex;

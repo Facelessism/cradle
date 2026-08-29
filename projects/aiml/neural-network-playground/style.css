@@ -116,6 +116,7 @@ body {
   align-items: center;
   gap: 10px;
   font-size: 1.15rem;
+  font-weight: 400;
   color: var(--text-primary);
   letter-spacing: -0.02em;
 }
@@ -559,7 +560,7 @@ input[type="range"]::-webkit-slider-thumb {
   background: rgba(255, 255, 255, 0.01);
 }
 
-.viz-card-header h3 {
+.viz-card-header h2 {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-secondary);
@@ -568,7 +569,7 @@ input[type="range"]::-webkit-slider-thumb {
   gap: 8px;
 }
 
-.viz-card-header h3 i {
+.viz-card-header h2 i {
   color: var(--accent-primary);
 }
 
@@ -741,4 +742,27 @@ input[type="range"]::-webkit-slider-thumb {
   opacity: 0.35;
   pointer-events: none;
   transition: opacity var(--transition-normal);
+}
+
+/* Accessibility: Respect user's reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable decorative/infinite pulse on training button */
+  .training-active .btn-primary {
+    animation: none !important;
+  }
+
+  /* Disable opacity transitions on disabled state elements */
+  .disabled-row,
+  .disabled-btn {
+    transition: none !important;
+  }
 }

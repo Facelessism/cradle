@@ -513,3 +513,31 @@ body {
     width: 80px;
   }
 }
+
+/* Accessibility: Respect user's reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable pulsing on status dots — color still changes to indicate state */
+  .status-dot.recording,
+  .status-dot.playing {
+    animation: none !important;
+  }
+
+  /* Disable back-link hover slide */
+  .back-link {
+    transition: none !important;
+  }
+
+  /* Disable canvas peak glow transition */
+  .canvas-peak-active {
+    transition: none !important;
+  }
+}

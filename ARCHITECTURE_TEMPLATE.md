@@ -92,7 +92,7 @@ graph TD
     B --> C[localStorage]
     B --> D[DOM Updates]
 
-```
+````
 -->
 
 ---
@@ -145,7 +145,8 @@ State updates
 ↓
 DOM re-renders
 
-```
+````
+
 -->
 
 ```text
@@ -202,10 +203,10 @@ Example:
 | Chart.js 4.x (CDN) | Rendering the attendance pie chart |
 -->
 
-| Technology | Purpose |
-|---|---|
-| HTML5 | <!-- describe --> |
-| CSS3 | <!-- describe --> |
+| Technology | Purpose           |
+| ---------- | ----------------- |
+| HTML5      | <!-- describe --> |
+| CSS3       | <!-- describe --> |
 | JavaScript | <!-- describe --> |
 
 ---
@@ -264,7 +265,7 @@ Example:
   via a script tag and imported in Node.js for unit testing.
 - **No framework** — kept vanilla to minimize the learning curve for contributors
   and avoid a build step.
--->
+  -->
 
 - <!-- Decision 1 and the reason for it -->
 - <!-- Decision 2 and the reason for it -->
@@ -273,22 +274,21 @@ Example:
 
 ## Dependencies
 
-<!--
-List external dependencies. For projects with none, say so explicitly.
-
 Example with dependencies:
-| Dependency | Version | How loaded | Purpose |
-|---|---|---|---|
-| Chart.js | 4.x | CDN (`<script>` tag) | Pie chart rendering |
-| jQuery | 3.4.1 | CDN (`<script>` tag) | DOM events and animation |
-| Outfit (font) | — | Google Fonts CDN | UI typography |
 
-Example with no dependencies:
-None. This project uses only native browser APIs — no external libraries are required.
+| Dependency             | Version | How loaded           | Purpose                        |
+| ---------------------- | ------- | -------------------- | ------------------------------ |
+| Chart.js               | 4.x     | CDN (`<script>` tag) | Pie chart rendering            |
+| jQuery                 | 3.4.1   | CDN (`<script>` tag) | DOM events and animation       |
+| Outfit (font)          | —       | Google Fonts CDN     | UI typography                  |
+| Cradle `BackToHome.js` | —       | Local script tag     | Shared back-to-home navigation |
+
+Example with no external libraries:
+None (uses native browser APIs and shared Cradle UI `BackToHome.js` navigation component).
 -->
 
-| Dependency | Version | How loaded | Purpose |
-|---|---|---|---|
+| Dependency    | Version          | How loaded                 | Purpose          |
+| ------------- | ---------------- | -------------------------- | ---------------- |
 | <!-- name --> | <!-- version --> | <!-- CDN / npm / local --> | <!-- purpose --> |
 
 ---
@@ -382,4 +382,7 @@ Example:
 
 - <!-- Reference 1 -->
 - <!-- Reference 2 -->
+
+```
+
 ```

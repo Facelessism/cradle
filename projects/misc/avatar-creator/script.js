@@ -219,5 +219,44 @@ downloadBtn.addEventListener("click", () => {
   img.src = url;
 });
 
+// ---- FILE IMPORT AND VALIDATION ----
+const importSvgInput = document.getElementById("import-svg-input");
+const errorMessage = document.getElementById("error-message");
+
+if (importSvgInput) {
+  importSvgInput.addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = event => {
+      const content = event.target.result;
+      try {
+        if (typeof AvatarEngine !== "undefined" && AvatarEngine.validateSVG) {
+          AvatarEngine.validateSVG(content, file.size, file.type, file.name);
+        }
+
+        errorMessage.textContent = "";
+        errorMessage.style.display = "none";
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(content, "image/svg+xml");
+        const newSvg = doc.querySelector("svg");
+        svg.innerHTML = newSvg ? newSvg.innerHTML : "";
+      } catch (err) {
+        errorMessage.textContent = err.message || "Invalid SVG file.";
+        errorMessage.style.display = "block";
+        importSvgInput.value = ""; // reset input
+      }
+    };
+    reader.onerror = () => {
+      errorMessage.textContent = "Failed to read file.";
+      errorMessage.style.display = "block";
+      importSvgInput.value = "";
+    };
+    reader.readAsText(file);
+  });
+}
+
 // ---- INITIAL RENDER ----
 renderAvatar();
