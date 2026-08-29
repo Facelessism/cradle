@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unit Circle Explorer</title>
+  <meta name="description"
+    content="Interactive unit circle with draggable angle, trig values, and visual explanations." />
+  <link rel="canonical" href="https://facelessism.github.io/cradle/projects/math/unit-circle-explorer/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Unit Circle Explorer" />
+  <meta property="og:description"
+    content="Interactive unit circle with draggable angle, trig values, and visual explanations." />
+  <meta property="og:url" content="https://facelessism.github.io/cradle/projects/math/unit-circle-explorer/" />
+  <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+</head>
+
+<body>
+  <main class="explorer-shell">
+    <header class="explorer-header">
+      <div class="header-left">
+        <p class="eyebrow">Math visualizer</p>
+        <h1>🔵 Unit Circle Explorer</h1>
+      </div>
+      <div class="header-actions">
+        <label class="toggle-label">
+          <input type="checkbox" id="showDegrees" checked />
+          <span>Degrees</span>
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" id="showReference" checked />
+          <span>Reference Angles</span>
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" id="showLabels" />
+          <span>Key Angles</span>
+        </label>
+        <button id="snapToKey" class="btn-action">🎯 Snap to Key Angle</button>
+      </div>
+    </header>
+
+    <div class="explorer-body">
+      <!-- Canvas -->
+      <div class="canvas-panel">
+        <canvas id="unitCircle" class="unit-circle-canvas"></canvas>
+        <p class="canvas-hint">🖱️ Click or drag on the circle to set the angle</p>
+      </div>
+
+      <!-- Values Panel -->
+      <div class="values-panel">
+        <!-- Angle Display -->
+        <div class="value-card angle-card">
+          <div class="card-header">📐 Angle</div>
+          <div class="angle-display">
+            <span class="angle-deg" id="angleDeg">0°</span>
+            <span class="angle-sep">=</span>
+            <span class="angle-rad" id="angleRad">0 rad</span>
+          </div>
+          <div class="angle-input-row">
+            <label>Set angle:</label>
+            <input type="number" id="angleInput" value="0" min="0" max="360" class="angle-input" />
+            <span class="angle-unit" id="angleUnit">°</span>
+          </div>
+          <input type="range" id="angleSlider" min="0" max="360" value="0" class="angle-slider" />
+        </div>
+
+        <!-- Trig Values -->
+        <div class="value-card trig-card">
+          <div class="card-header">📊 Trigonometric Values</div>
+          <div class="trig-grid">
+            <div class="trig-row">
+              <span class="trig-label sin-label">sin θ</span>
+              <div class="trig-bar-container">
+                <div class="trig-bar sin-bar" id="sinBar"></div>
+              </div>
+              <span class="trig-value" id="sinValue">0.0000</span>
+            </div>
+            <div class="trig-row">
+              <span class="trig-label cos-label">cos θ</span>
+              <div class="trig-bar-container">
+                <div class="trig-bar cos-bar" id="cosBar"></div>
+              </div>
+              <span class="trig-value" id="cosValue">1.0000</span>
+            </div>
+            <div class="trig-row">
+              <span class="trig-label tan-label">tan θ</span>
+              <div class="trig-bar-container">
+                <div class="trig-bar tan-bar" id="tanBar"></div>
+              </div>
+              <span class="trig-value" id="tanValue">0.0000</span>
+            </div>
+            <div class="trig-row">
+              <span class="trig-label csc-label">csc θ</span>
+              <span class="trig-value" id="cscValue">—</span>
+            </div>
+            <div class="trig-row">
+              <span class="trig-label sec-label">sec θ</span>
+              <span class="trig-value" id="secValue">1.0000</span>
+            </div>
+            <div class="trig-row">
+              <span class="trig-label cot-label">cot θ</span>
+              <span class="trig-value" id="cotValue">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coordinate -->
+        <div class="value-card coord-card">
+          <div class="card-header">📍 Point on Circle</div>
+          <div class="coord-display">
+            <span class="coord-text">(</span>
+            <span class="coord-x" id="coordX">1.0000</span>
+            <span class="coord-text">,</span>
+            <span class="coord-y" id="coordY">0.0000</span>
+            <span class="coord-text">)</span>
+          </div>
+        </div>
+
+        <!-- Quadrant -->
+        <div class="value-card quadrant-card">
+          <div class="card-header">🧭 Quadrant</div>
+          <div class="quadrant-visual">
+            <div class="q-grid">
+              <div class="q-cell" id="q2">II</div>
+              <div class="q-cell" id="q1">I</div>
+              <div class="q-cell active-q" id="q-active">—</div>
+              <div class="q-cell" id="q3">III</div>
+              <div class="q-cell" id="q4">IV</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Key Angles Quick Select -->
+        <div class="value-card angles-card">
+          <div class="card-header">🎯 Key Angles</div>
+          <div class="angles-grid" id="anglesGrid"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="script.js"></script>
+</body>
+
+</html>
