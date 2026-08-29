@@ -685,6 +685,7 @@ function startGame() {
 
   restoreGridControls();
   render();
+  updateActiveBounds();
 }
 
 function saveMatchHistory() {
@@ -988,6 +989,17 @@ if (hintBtnElement) {
     }
   );
 }
+
+function updateActiveBounds() {
+  if (boardElement && typeof DotGameEngine !== "undefined" && DotGameEngine.recomputeBounds) {
+    const rect = boardElement.getBoundingClientRect();
+    const w = rect.width || boardElement.clientWidth || 0;
+    const h = rect.height || boardElement.clientHeight || 0;
+    DotGameEngine.recomputeBounds(w, h);
+  }
+}
+
+window.addEventListener("resize", updateActiveBounds);
 
 updateDifficultyVisibility();
 initTheme();
