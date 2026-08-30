@@ -1,4 +1,5 @@
 import { isFilterRequest, isFilterResult } from "./messageValidation.js";
+import { logWorkerFailure } from "./workerLogger.js";
 
 const WORKER_OPTIONS = { type: "module" };
 
@@ -13,35 +14,70 @@ const defaultWorkerFactory = () =>
  * Create a search worker and turn both startup and runtime failures into a
  * single callback. The caller decides how to recover from the failure.
  */
-export function createFilterWorker({ workerFactory, onResult, onFailure }) {
+export function createFilterWorker({
+  workerFactory,
+  onResult,
+  onFailure,
+  logger = console,
+}) {
   try {
     const worker = workerFactory ? workerFactory() : defaultWorkerFactory();
     let failed = false;
 
-    const fail = error => {
+    const fail = (
+      error,
+      context = "onerror",
+      errorType = undefined
+    ) => {
       if (failed) return;
       failed = true;
+      const resolvedErrorType =
+        errorType ||
+        (error?.name && error.name !== "Error"
+          ? error.name
+          : "WorkerRuntimeError");
+      logWorkerFailure({
+        workerName: "FilterWorker",
+        errorType: resolvedErrorType,
+        message: error?.message || String(error),
+        context,
+        logger,
+      });
       worker.terminate();
       onFailure(error);
     };
 
     worker.onmessage = event => {
       if (!isFilterResult(event.data)) {
-        fail(new Error("Worker returned an invalid search result"));
+        fail(
+          new Error("Worker returned an invalid search result"),
+          "onmessage",
+          "InvalidResultError"
+        );
         return;
       }
 
       onResult(event.data);
     };
 
-    worker.onerror = fail;
+    worker.onerror = event => {
+      const error =
+        event instanceof Error
+          ? event
+          : new Error(event?.message || "Worker runtime error");
+      fail(error, "onerror", "WorkerRuntimeError");
+    };
 
     return {
       postMessage(message) {
         if (failed) return false;
 
         if (!isFilterRequest(message)) {
-          fail(new Error("Refusing to send an invalid search request"));
+          fail(
+            new Error("Refusing to send an invalid search request"),
+            "postMessage",
+            "InvalidRequestError"
+          );
           return false;
         }
 
@@ -49,7 +85,7 @@ export function createFilterWorker({ workerFactory, onResult, onFailure }) {
           worker.postMessage(message);
           return true;
         } catch (error) {
-          fail(error);
+          fail(error, "postMessage", "PostMessageError");
           return false;
         }
       },
@@ -61,6 +97,13 @@ export function createFilterWorker({ workerFactory, onResult, onFailure }) {
       },
     };
   } catch (error) {
+    logWorkerFailure({
+      workerName: "FilterWorker",
+      errorType: error?.name || "WorkerInstantiationError",
+      message: error?.message || String(error),
+      context: "instantiation",
+      logger,
+    });
     onFailure(error);
     return null;
   }
