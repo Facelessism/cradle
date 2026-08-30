@@ -8,6 +8,12 @@ It provides a playable violin surface with four visible strings, open-string not
 
 The implementation intentionally keeps the project as a small static application so it can be opened directly from its `index.html` or served by the same lightweight local server used by Cradle.
 
+## Purpose & Goals
+
+- Provide a playable 4-string violin with open strings and a simplified fingerboard
+- Keep the mini dependency-light and framework-free, matching the rest of `projects/instruments/`
+- Support keyboard, mouse, and touch interaction equally on desktop and mobile
+
 ## Folder Structure
 
 ```text
@@ -15,8 +21,7 @@ projects/instruments/
 ├── index.html          # Accessible page shell and instrument markup
 ├── style.css           # Mini-specific layout, violin illustration and responsive styles
 ├── script.js           # Audio engine, interaction controller and UI state
-├── ARCHITECTURE.md     # Project architecture and design decisions
-└── README.md           # Run instructions and feature overview
+└── ARCHITECTURE.md     # Project architecture and design decisions
 ```
 
 ## Application Flow
@@ -199,3 +204,87 @@ projects/instruments/
 ```
 
 If the repository's current category vocabulary contains `instruments`, use that category; otherwise use the closest existing category defined by `data/projects.json` rather than introducing an unregistered category.
+
+## System / Project Architecture Overview
+
+The project follows a simple separation of concerns: `index.html` defines
+the structure, `style.css` handles all presentation, and `script.js` owns
+the audio engine, pointer/keyboard interaction, and UI state. There is no
+build step — the browser loads the files directly. See "Application Flow"
+and "Core Modules" above for the detailed breakdown.
+
+## Component Breakdown
+
+| File | Responsibility |
+|---|---|
+| `index.html` | Page shell, violin markup, string/fingerboard hit targets, controls |
+| `script.js` | Audio engine, pointer/keyboard interaction, and UI state |
+| `style.css` | Violin illustration, layout, and responsive styling |
+
+## Data Flow / Execution Flow
+
+See "Application Flow" above for the full interaction sequence, from page
+load through string/fingerboard resolution to Web Audio playback.
+
+## Key Features
+
+See "Interaction Design" above for keyboard (`A`/`S`/`D`/`F`) and
+mouse/touch string-and-fingerboard details. In summary:
+- Four open strings (G, D, A, E) playable via keyboard shortcuts
+- Simplified fingerboard for higher notes via pointer position
+- Volume control and persisted theme
+- Pointer Events power both mouse and touch from a single implementation
+
+## Technologies Used
+
+| Technology | Purpose |
+|---|---|
+| HTML5 | Page structure and semantic markup |
+| CSS3 | Violin illustration, layout, and responsive design |
+| Vanilla JavaScript (ES6+) | Audio engine and interaction logic |
+| Web Audio API | Live bowed-string tone synthesis (see "Audio Design" above) |
+
+## File Responsibilities
+
+See "Core Modules" above for a full breakdown of `index.html`, `style.css`,
+and `script.js`.
+
+## Design Decisions
+
+See "Audio Design" and "Interaction Design" above — key decisions include
+using a sawtooth + triangle oscillator pair for the bowed-string timbre
+(rather than sampled audio) and using Pointer Events for a single
+mouse/touch implementation.
+
+## Dependencies
+
+None. Uses only native browser APIs (Web Audio API, Pointer Events) and the
+Cradle theme convention for persisted theme state.
+
+## Future Improvements
+
+See "Scalability" above for the full list (finger positions, bow simulation,
+MIDI I/O, alternate tunings, and a reusable `Instrument` abstraction).
+
+## Known Limitations
+
+- No physical bow-pressure or bow-direction modeling — sound is a lightweight
+  oscillator approximation, not a physical violin model
+- Fingerboard note resolution is simplified, not a full continuous pitch model
+
+## Development Notes
+
+See "Testing Checklist" and "Repository Integration" above for manual
+verification steps and how this mini should be registered in
+`data/projects.json`.
+
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:** None — no third-party assets used.
+
+## References
+
+- [MDN Web Docs — Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+- [MDN Web Docs — Pointer Events](https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events)
+- [Violin — Wikipedia](https://en.wikipedia.org/wiki/Violin)

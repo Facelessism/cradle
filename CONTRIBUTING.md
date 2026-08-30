@@ -43,6 +43,7 @@ Every contribution, no matter how small, is valuable.
 
 Before working on an issue:
 
+- Ensure you are running a supported Node.js version (`>=20.0.0`, `v24.x` recommended / declared in `.nvmrc` and `package.json`).
 - Search existing issues to avoid duplicate work.
 - Read the project documentation before starting.
 - Wait until an issue has been assigned to you (if required by the maintainers).
@@ -83,7 +84,7 @@ project-name/
 ├── index.html
 ├── style.css
 ├── script.js
-├── README.md
+├── ARCHITECTURE.md
 ├── preview.png
 └── assets/
     ├── images/
@@ -93,10 +94,10 @@ project-name/
 
 Use this as a guideline rather than a strict requirement:
 
-- `index.html` — the entry point for browser-based projects.
+- `index.html` — the entry point for browser-based projects (should include the shared `<link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />` favicon tag and `<script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>` component for standardized navigation).
 - `style.css` — project-specific styling where applicable.
 - `script.js` — project behavior and logic where applicable.
-- `README.md` — short documentation covering what the project does, how to use it, and any relevant controls or credits.
+- `ARCHITECTURE.md` — project architecture documentation covering what the project does, its structure, and how to use or run it.
 - `preview.png` — a preview image when it helps the project feel complete and easier to recognize.
 - `assets/` — project-specific images, icons, fonts, or other supporting resources.
 
@@ -110,33 +111,18 @@ Keep the project self-contained whenever possible. Avoid adding unrelated global
 
 ### Documentation requirements
 
-Every new project should include a `README.md` inside its own folder.
+Every new project should include an `ARCHITECTURE.md` inside its own folder based on `ARCHITECTURE_TEMPLATE.md`.
 
-A useful README usually includes:
+A useful architecture document usually includes:
 
-- A short description of the project
+- A short overview and purpose of the project
 - Key features or gameplay
+- Folder structure and component breakdown
 - How to open or run it locally
 - Controls or interaction details if relevant
-- Any credits or dependencies used
+- Licensing details and attribution for external assets/libraries
 
-Every new project should also include an `ARCHITECTURE.md` inside its own folder, following the standardized template. See [Architecture Documentation](#architecture-documentation) for full instructions.
-
-### Assets and static files
-
-- Store project-specific assets inside the project's own folder.
-- Keep the asset layout simple and predictable.
-- Avoid referencing remote assets unless they are already used elsewhere in the repository and are appropriate for the project.
-
-### Code organization
-
-- Keep the project-specific code isolated within its own folder.
-- Use clear and descriptive file names.
-- Keep the implementation readable and maintainable.
-- Avoid unnecessary global styles or scripts that affect other projects.
-- Add comments for non-obvious logic when helpful.
-
-### Licensing and Third-Party Assets
+### Licensing and Asset Attribution
 
 - Every project must clearly specify its licensing (e.g., MIT) inside its `ARCHITECTURE.md` file.
 - If you use any third-party assets (images, icons, fonts, audio, code snippets), you must provide explicit attribution in the same section, including links to the source and stating the asset's license.
@@ -150,8 +136,8 @@ Before opening a Pull Request, review the following checklist:
 - [ ] The project folder has a clear and descriptive name.
 - [ ] Project-specific files are organized within the project folder.
 - [ ] Assets are stored in an appropriate location.
+- [ ] `index.html` includes the shared `BackToHome.js` navigation component.
 - [ ] The project explicitly specifies its licensing and includes attribution for any third-party assets.
-- [ ] `README.md` has been added inside the project folder.
 - [ ] `ARCHITECTURE.md` has been added following the [standardized template](ARCHITECTURE_TEMPLATE.md).
 - [ ] The project works correctly locally.
 - [ ] Existing projects and unrelated files were not unnecessarily modified.

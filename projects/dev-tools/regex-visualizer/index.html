@@ -1,129 +1,206 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RegEx Visualizer & Tester</title>
-    <meta name="description" content="Visual regex generator, syntax breakdown engine, and real-time pattern tester." />
-  <link rel="stylesheet" href="style.css">
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RegEx Visualizer & Tester</title>
+    <meta
+      name="description"
+      content="Visual regex generator, syntax breakdown engine, and real-time pattern tester."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/dev-tools/regex-visualizer/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="RegEx Visualizer &amp; Tester" />
+    <meta property="og:description" content="Visual regex generator, syntax breakdown engine, and real-time pattern tester." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/dev-tools/regex-visualizer/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="glow-bg"></div>
 
-<div class="glow-bg"></div>
-
-<div class="app-container">
-  <header class="app-header">
-    <div class="logo">
-      <span class="icon">🔍</span>
-      <h1>RegEx Visualizer</h1>
-    </div>
-    <p class="subtitle">Design, test, and understand regular expressions with real-time match highlighting and semantic explanations</p>
-  </header>
-
-  <main class="main-content">
-    <div class="workspace-grid">
-      <!-- Left Column: Input, Flags, Explanation -->
-      <section class="control-column">
-        <!-- Templates Card -->
-        <div class="card templates-card">
-          <h2>⚡ Common Templates</h2>
-          <div class="template-buttons">
-            <button class="btn btn-template" data-regex="^([a-zA-Z0-9._%-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,6})$" data-flags="g" data-text="hello@cradle.dev, test.user_123@domain-name.co.in, invalid@email@com">Email</button>
-            <button class="btn btn-template" data-regex="https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&amp;//=]*)" data-flags="g" data-text="Visit https://cradle.dev/projects or http://www.google.com?q=regex to see it work.">URL</button>
-            <button class="btn btn-template" data-regex="^\+?(\d{1,3})?[-. ]?\(?(\d{3})\)?[-. ]?(\d{3})[-. ]?(\d{4})$" data-flags="g" data-text="+1 (555) 019-2834, 555-321-4321, +91-9876543210">Phone Number</button>
-            <button class="btn btn-template" data-regex="\b\d{4}-\d{2}-\d{2}\b" data-flags="g" data-text="The system launched on 2026-07-24 and updates are due by 2026-12-31.">Date (YYYY-MM-DD)</button>
-            <button class="btn btn-template" data-regex="\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b" data-flags="g" data-text="Local router is at 192.168.1.1, external DNS is at 8.8.8.8, and broadcast is 255.255.255.255.">IPv4 Address</button>
-          </div>
+    <div class="app-container">
+      <header class="app-header">
+        <div class="logo">
+          <span class="icon">🔍</span>
+          <h1>RegEx Visualizer</h1>
         </div>
+        <p class="subtitle">
+          Design, test, and understand regular expressions with real-time match
+          highlighting and semantic explanations
+        </p>
+      </header>
 
-        <!-- Pattern Builder Card -->
-        <div class="card pattern-card">
-          <h2>🔧 Regex Pattern</h2>
-          <div class="regex-input-row">
-            <span class="regex-slash">/</span>
-            <input type="text" id="regexInput" placeholder="Enter regular expression pattern..." value="^([a-zA-Z0-9._%-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,6})$" />
-            <span class="regex-slash">/</span>
-            <div class="flag-picker">
-              <input type="text" id="flagsInput" placeholder="flags" value="g" maxlength="5" />
+      <main class="main-content">
+        <div class="workspace-grid">
+          <!-- Left Column: Input, Flags, Explanation -->
+          <section class="control-column">
+            <!-- Templates Card -->
+            <div class="card templates-card">
+              <h2>⚡ Common Templates</h2>
+              <div class="template-buttons">
+                <button
+                  class="btn btn-template"
+                  data-regex="^([a-zA-Z0-9._%-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,6})$"
+                  data-flags="g"
+                  data-text="hello@cradle.dev, test.user_123@domain-name.co.in, invalid@email@com"
+                >
+                  Email
+                </button>
+                <button
+                  class="btn btn-template"
+                  data-regex="https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&amp;//=]*)"
+                  data-flags="g"
+                  data-text="Visit https://cradle.dev/projects or http://www.google.com?q=regex to see it work."
+                >
+                  URL
+                </button>
+                <button
+                  class="btn btn-template"
+                  data-regex="^\+?(\d{1,3})?[-. ]?\(?(\d{3})\)?[-. ]?(\d{3})[-. ]?(\d{4})$"
+                  data-flags="g"
+                  data-text="+1 (555) 019-2834, 555-321-4321, +91-9876543210"
+                >
+                  Phone Number
+                </button>
+                <button
+                  class="btn btn-template"
+                  data-regex="\b\d{4}-\d{2}-\d{2}\b"
+                  data-flags="g"
+                  data-text="The system launched on 2026-07-24 and updates are due by 2026-12-31."
+                >
+                  Date (YYYY-MM-DD)
+                </button>
+                <button
+                  class="btn btn-template"
+                  data-regex="\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
+                  data-flags="g"
+                  data-text="Local router is at 192.168.1.1, external DNS is at 8.8.8.8, and broadcast is 255.255.255.255."
+                >
+                  IPv4 Address
+                </button>
+              </div>
             </div>
-          </div>
-          
-          <div class="flags-checkboxes">
-            <label class="flag-label" title="Global search">
-              <input type="checkbox" id="flagG" checked> <span>g (global)</span>
-            </label>
-            <label class="flag-label" title="Case-insensitive search">
-              <input type="checkbox" id="flagI"> <span>i (case)</span>
-            </label>
-            <label class="flag-label" title="Multiline search">
-              <input type="checkbox" id="flagM"> <span>m (multi)</span>
-            </label>
-            <label class="flag-label" title="Unicode search">
-              <input type="checkbox" id="flagU"> <span>u (unicode)</span>
-            </label>
-          </div>
-          <div class="error-banner hidden" id="regexError">Invalid Regular Expression</div>
-        </div>
 
-        <!-- Explanation Card -->
-        <div class="card explanation-card">
-          <h2>📖 Semantic Breakdown</h2>
-          <div class="explanation-content" id="regexExplanation">
-            <!-- Explained tokens list -->
-            <p class="placeholder-text">Enter a valid regex to see character breakdown.</p>
-          </div>
-        </div>
-      </section>
+            <!-- Pattern Builder Card -->
+            <div class="card pattern-card">
+              <h2>🔧 Regex Pattern</h2>
+              <div class="regex-input-row">
+                <span class="regex-slash">/</span>
+                <input
+                  type="text"
+                  id="regexInput"
+                  placeholder="Enter regular expression pattern..."
+                  value="^([a-zA-Z0-9._%-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,6})$"
+                />
+                <span class="regex-slash">/</span>
+                <div class="flag-picker">
+                  <input
+                    type="text"
+                    id="flagsInput"
+                    placeholder="flags"
+                    value="g"
+                    maxlength="5"
+                  />
+                </div>
+              </div>
 
-      <!-- Right Column: Tester area & Match details -->
-      <section class="tester-column">
-        <!-- Tester Card -->
-        <div class="card tester-card">
-          <div class="tester-header">
-            <h2>🧪 Test String</h2>
-            <div id="matchCountBadge" class="badge">0 Matches</div>
-          </div>
-          
-          <div class="interactive-textarea-container">
-            <!-- Overlay that displays highlighted text matches -->
-            <div class="highlights-overlay code-font" id="highlightsOverlay"></div>
-            <!-- The actual interactive typing textarea -->
-            <textarea id="testStringInput" placeholder="Enter text to test your regex against..."></textarea>
-          </div>
-        </div>
+              <div class="flags-checkboxes">
+                <label class="flag-label" title="Global search">
+                  <input type="checkbox" id="flagG" checked />
+                  <span>g (global)</span>
+                </label>
+                <label class="flag-label" title="Case-insensitive search">
+                  <input type="checkbox" id="flagI" /> <span>i (case)</span>
+                </label>
+                <label class="flag-label" title="Multiline search">
+                  <input type="checkbox" id="flagM" /> <span>m (multi)</span>
+                </label>
+                <label class="flag-label" title="Unicode search">
+                  <input type="checkbox" id="flagU" /> <span>u (unicode)</span>
+                </label>
+              </div>
+              <div class="error-banner hidden" id="regexError">
+                Invalid Regular Expression
+              </div>
+            </div>
 
-        <!-- Matches & Capture Groups Card -->
-        <div class="card matches-card">
-          <h2>📊 Captured Details</h2>
-          <div class="matches-list-container">
-            <table class="matches-table" id="matchesTable">
-              <thead>
-                <tr>
-                  <th>Match</th>
-                  <th>Range</th>
-                  <th>Value</th>
-                  <th>Capture Groups</th>
-                </tr>
-              </thead>
-              <tbody id="matchesTableBody">
-                <tr>
-                  <td colspan="4" class="table-placeholder">No matches detected.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+            <!-- Explanation Card -->
+            <div class="card explanation-card">
+              <h2>📖 Semantic Breakdown</h2>
+              <div class="explanation-content" id="regexExplanation">
+                <!-- Explained tokens list -->
+                <p class="placeholder-text">
+                  Enter a valid regex to see character breakdown.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Right Column: Tester area & Match details -->
+          <section class="tester-column">
+            <!-- Tester Card -->
+            <div class="card tester-card">
+              <div class="tester-header">
+                <h2>🧪 Test String</h2>
+                <div id="matchCountBadge" class="badge">0 Matches</div>
+              </div>
+
+              <div class="interactive-textarea-container">
+                <!-- Overlay that displays highlighted text matches -->
+                <div
+                  class="highlights-overlay code-font"
+                  id="highlightsOverlay"
+                ></div>
+                <!-- The actual interactive typing textarea -->
+                <textarea
+                  id="testStringInput"
+                  placeholder="Enter text to test your regex against..."
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Matches & Capture Groups Card -->
+            <div class="card matches-card">
+              <h2>📊 Captured Details</h2>
+              <div class="matches-list-container">
+                <table class="matches-table" id="matchesTable">
+                  <thead>
+                    <tr>
+                      <th>Match</th>
+                      <th>Range</th>
+                      <th>Value</th>
+                      <th>Capture Groups</th>
+                    </tr>
+                  </thead>
+                  <tbody id="matchesTableBody">
+                    <tr>
+                      <td colspan="4" class="table-placeholder">
+                        No matches detected.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
+      </main>
     </div>
-  </main>
-</div>
 
-<script src="regexEngine.js"></script>
-<script src="../../../src/components/ui/escapeHtml.js"></script>
-<script src="script.js"></script>
-</body>
+    <script src="regexEngine.js"></script>
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
 </html>

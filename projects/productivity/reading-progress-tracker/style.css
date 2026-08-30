@@ -795,7 +795,7 @@ body {
   align-items: center;
   margin-bottom: 1.25rem;
 }
-.modal-header h3 {
+.modal-header h2 {
   font-size: 1.1rem;
   font-weight: 700;
 }
@@ -926,4 +926,26 @@ body {
 }
 .alert-container .alert-icon {
   flex-shrink: 0;
+}
+
+/* Accessibility: Respect user's reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable modal entry animation — modal still appears */
+  .modal-card {
+    animation: none !important;
+  }
+
+  /* Disable close button color transition */
+  .modal-close {
+    transition: none !important;
+  }
 }

@@ -156,7 +156,7 @@ body {
   overflow-y: auto;
 }
 
-.hardware-section h3 {
+.hardware-section h2 {
   font-size: 0.9rem;
   color: var(--text-bright);
   margin-bottom: 12px;
@@ -344,4 +344,26 @@ body {
 #preset-selector option {
   background-color: #1e1e24;
   color: #ffffff;
+}
+
+/* Accessibility: Respect user's reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Shorten data-packet SVG movement transition */
+  .data-packet {
+    transition: none !important;
+  }
+
+  /* UI element transitions */
+  .pipeline-stage {
+    transition: none !important;
+  }
 }

@@ -24,6 +24,7 @@ body {
 }
 
 .meme-studio-container {
+  width: 100%;
   max-width: 1100px;
   margin: 0 auto;
   display: flex;
@@ -35,7 +36,7 @@ body {
   text-align: center;
 }
 
-.studio-header h2 {
+.studio-header h1 {
   font-size: 1.8rem;
   color: var(--accent);
 }
@@ -47,7 +48,7 @@ body {
 
 .studio-workspace {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 24px;
 }
 
@@ -60,15 +61,16 @@ body {
 .controls-card,
 .preview-card,
 .presets-section {
+  min-width: 0;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 20px;
 }
 
-.controls-card h3,
-.preview-card h3,
-.presets-section h3 {
+.controls-card h2,
+.preview-card h2,
+.presets-section h2 {
   font-size: 1.1rem;
   margin-bottom: 16px;
   color: var(--accent);
@@ -90,6 +92,7 @@ body {
 
 .form-group input[type="text"],
 .form-group input[type="file"] {
+  width: 100%;
   background: var(--bg-input);
   border: 1px solid var(--border-color);
   color: var(--text-light);
@@ -99,23 +102,50 @@ body {
   outline: none;
 }
 
+.form-group input[type="text"]:focus,
+.form-group input[type="file"]:focus {
+  border-color: var(--accent);
+}
+
 .form-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(70px, 0.75fr) minmax(70px, 0.75fr);
   gap: 12px;
+  align-items: end;
 }
 
 .flex-1 {
-  flex: 1;
+  min-width: 0;
+}
+
+.form-row .form-group {
+  margin-bottom: 14px;
+}
+
+.form-row input[type="range"] {
+  width: 100%;
+}
+
+.form-row input[type="color"] {
+  width: 100%;
+  height: 40px;
+  padding: 3px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
 }
 
 .actions-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-top: 10px;
 }
 
 .btn {
+  width: 100%;
+  min-height: 42px;
   padding: 10px 14px;
   border-radius: 6px;
   border: none;
@@ -125,10 +155,16 @@ body {
   transition: all 0.2s ease;
 }
 
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .btn-primary {
   background: var(--accent);
   color: #0f172a;
 }
+
 .btn-primary:hover {
   background: var(--accent-hover);
   color: white;
@@ -138,6 +174,7 @@ body {
   background: #6366f1;
   color: white;
 }
+
 .btn-secondary:hover {
   background: #4f46e5;
 }
@@ -147,22 +184,25 @@ body {
   border: 1px solid var(--accent);
   color: var(--accent);
 }
+
 .btn-outline:hover {
   background: rgba(56, 189, 248, 0.1);
 }
 
 .canvas-wrapper {
+  width: 100%;
+  min-height: 300px;
   display: flex;
   justify-content: center;
   align-items: center;
   background: #000;
   border-radius: 8px;
   overflow: hidden;
-  min-height: 300px;
 }
 
 #memeCanvas {
   max-width: 100%;
+  max-height: 600px;
   height: auto;
   display: block;
 }
@@ -180,12 +220,28 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 
 .preset-info {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   font-size: 0.75rem;
+}
+
+.preset-info strong,
+.preset-info span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preset-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .empty-presets {
@@ -207,6 +263,42 @@ body {
   gap: 8px;
   line-height: 1.4;
 }
+
 .error-container .error-icon {
   flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 14px;
+  }
+
+  .meme-studio-container {
+    gap: 16px;
+  }
+
+  .controls-card,
+  .preview-card,
+  .presets-section {
+    padding: 16px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .canvas-wrapper {
+    min-height: 220px;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 950px) {
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
 }

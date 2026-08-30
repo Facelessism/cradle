@@ -355,3 +355,43 @@ h2 {
         width: 100%;
     }
 }
+
+/* Accessibility: Respect user's reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+
+    .back-link {
+        transition: none;
+    }
+
+    .back-link:hover {
+        transform: none;
+    }
+
+    .cradle-btn {
+        transition: none;
+    }
+
+    .cradle-btn:hover {
+        transform: none;
+    }
+
+    .cradle-btn:disabled {
+        transform: none;
+    }
+
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+.back-link {
+    transition: none;
+}
+
+.back-link:hover {
+    transform: none;
+}
+
+.cradle-btn:hover {
+    transform: translateY(-2px);
+}

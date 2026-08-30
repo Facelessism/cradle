@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JSON Tree Viewer</title>
+  <meta name="description"
+    content="Interactive JSON viewer with collapsible tree, syntax highlighting, search, and path copying." />
+  <link rel="canonical" href="https://facelessism.github.io/cradle/projects/dev-tools/json-tree-viewer/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="JSON Tree Viewer" />
+  <meta property="og:description"
+    content="Interactive JSON viewer with collapsible tree, syntax highlighting, search, and path copying." />
+  <meta property="og:url" content="https://facelessism.github.io/cradle/projects/dev-tools/json-tree-viewer/" />
+  <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+</head>
+
+<body>
+  <main class="viewer-shell">
+    <header class="viewer-header">
+      <div class="header-left">
+        <p class="eyebrow">Developer tool</p>
+        <h1>📋 JSON Tree Viewer</h1>
+      </div>
+      <div class="header-actions">
+        <button id="expandAll" class="btn-action" title="Expand all nodes">🔽 Expand All</button>
+        <button id="collapseAll" class="btn-action" title="Collapse all nodes">🔼 Collapse All</button>
+        <button id="copyPath" class="btn-action" title="Copy selected path">📋 Copy Path</button>
+        <button id="copyJson" class="btn-action" title="Copy formatted JSON">📥 Copy JSON</button>
+        <button id="loadSample" class="btn-action" title="Load sample data">🎲 Sample</button>
+      </div>
+    </header>
+
+    <div class="viewer-body">
+      <!-- Input Panel -->
+      <div class="panel input-panel">
+        <div class="panel-header">
+          <h2>📝 Input</h2>
+          <div class="panel-actions">
+            <button id="formatBtn" class="btn-small">✨ Format</button>
+            <button id="minifyBtn" class="btn-small">📦 Minify</button>
+            <button id="clearBtn" class="btn-small btn-danger">🗑️ Clear</button>
+          </div>
+        </div>
+        <textarea id="jsonInput" class="json-input" placeholder='Paste your JSON here...\n\nExample:\n{\n  "name": "Cradle",\n  "version": "1.0",\n  "features": ["viewer", "editor"]\n}' spellcheck="false"></textarea>
+        <div class="input-footer">
+          <span id="inputStatus" class="status-badge status-idle">Waiting for input</span>
+          <span id="inputSize" class="input-size"></span>
+        </div>
+      </div>
+
+      <!-- Tree Panel -->
+      <div class="panel tree-panel">
+        <div class="panel-header">
+          <h2>🌳 Tree View</h2>
+          <div class="panel-actions">
+            <div class="search-box">
+              <input type="text" id="searchInput" placeholder="Search keys or values..." class="search-input" />
+              <button id="clearSearch" class="search-clear" hidden>✕</button>
+            </div>
+            <span id="searchCount" class="search-count" hidden></span>
+          </div>
+        </div>
+        <div class="tree-container" id="treeContainer">
+          <p class="tree-placeholder">Parse JSON to see the tree view</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <span class="stat-label">Type</span>
+        <span class="stat-value" id="statType">—</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Keys</span>
+        <span class="stat-value" id="statKeys">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Depth</span>
+        <span class="stat-value" id="statDepth">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Size</span>
+        <span class="stat-value" id="statSize">0 B</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Path</span>
+        <span class="stat-value stat-path" id="statPath" title="Click to copy">—</span>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast" hidden></div>
+  </main>
+
+  <script type="module" src="script.js"></script>
+</body>
+
+</html>

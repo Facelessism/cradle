@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A playable 40-key virtual piano with keyboard, mouse, and touch interaction."
+    />
+    <title>Virtual Piano | Cradle Mini</title>
+    <link rel="stylesheet" href="style.css" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+</head>
+
+  <body>
+    <main class="piano-app">
+      <header class="piano-header">
+        <div class="header-content">
+          <p class="eyebrow">CRADLE MINI</p>
+          <h1>Virtual Piano</h1>
+          <p>Play piano notes with your keyboard, mouse, or touch.</p>
+        </div>
+
+        <div class="status" id="status" aria-live="polite">Ready</div>
+      </header>
+
+      <section class="piano-card" aria-label="Virtual piano">
+        <div
+          class="piano"
+          role="group"
+          aria-label="40-key playable piano keyboard"
+        >
+          <!-- =========================
+             24 WHITE KEYS
+             C3 → E6
+             ========================= -->
+
+          <div class="white-keys">
+            <button
+              class="key white-key"
+              type="button"
+              data-note="C3"
+              data-key="a"
+              aria-label="C3"
+              aria-pressed="false"
+            >
+              <span class="note">C3</span>
+              <kbd>A</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="D3"
+              data-key="s"
+              aria-label="D3"
+              aria-pressed="false"
+            >
+              <span class="note">D3</span>
+              <kbd>S</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="E3"
+              data-key="d"
+              aria-label="E3"
+              aria-pressed="false"
+            >
+              <span class="note">E3</span>
+              <kbd>D</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="F3"
+              data-key="f"
+              aria-label="F3"
+              aria-pressed="false"
+            >
+              <span class="note">F3</span>
+              <kbd>F</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="G3"
+              data-key="g"
+              aria-label="G3"
+              aria-pressed="false"
+            >
+              <span class="note">G3</span>
+              <kbd>G</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="A3"
+              data-key="h"
+              aria-label="A3"
+              aria-pressed="false"
+            >
+              <span class="note">A3</span>
+              <kbd>H</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="B3"
+              data-key="j"
+              aria-label="B3"
+              aria-pressed="false"
+            >
+              <span class="note">B3</span>
+              <kbd>J</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="C4"
+              data-key="k"
+              aria-label="C4"
+              aria-pressed="false"
+            >
+              <span class="note">C4</span>
+              <kbd>K</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="D4"
+              data-key="l"
+              aria-label="D4"
+              aria-pressed="false"
+            >
+              <span class="note">D4</span>
+              <kbd>L</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="E4"
+              data-key="z"
+              aria-label="E4"
+              aria-pressed="false"
+            >
+              <span class="note">E4</span>
+              <kbd>Z</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="F4"
+              data-key="x"
+              aria-label="F4"
+              aria-pressed="false"
+            >
+              <span class="note">F4</span>
+              <kbd>X</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="G4"
+              data-key="c"
+              aria-label="G4"
+              aria-pressed="false"
+            >
+              <span class="note">G4</span>
+              <kbd>C</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="A4"
+              data-key="v"
+              aria-label="A4"
+              aria-pressed="false"
+            >
+              <span class="note">A4</span>
+              <kbd>V</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="B4"
+              data-key="b"
+              aria-label="B4"
+              aria-pressed="false"
+            >
+              <span class="note">B4</span>
+              <kbd>B</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="C5"
+              data-key="n"
+              aria-label="C5"
+              aria-pressed="false"
+            >
+              <span class="note">C5</span>
+              <kbd>N</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="D5"
+              data-key="m"
+              aria-label="D5"
+              aria-pressed="false"
+            >
+              <span class="note">D5</span>
+              <kbd>M</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="E5"
+              data-key="q"
+              aria-label="E5"
+              aria-pressed="false"
+            >
+              <span class="note">E5</span>
+              <kbd>Q</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="F5"
+              data-key="w"
+              aria-label="F5"
+              aria-pressed="false"
+            >
+              <span class="note">F5</span>
+              <kbd>W</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="G5"
+              data-key="e"
+              aria-label="G5"
+              aria-pressed="false"
+            >
+              <span class="note">G5</span>
+              <kbd>E</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="A5"
+              data-key="r"
+              aria-label="A5"
+              aria-pressed="false"
+            >
+              <span class="note">A5</span>
+              <kbd>R</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="B5"
+              data-key="t"
+              aria-label="B5"
+              aria-pressed="false"
+            >
+              <span class="note">B5</span>
+              <kbd>T</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="C6"
+              data-key="y"
+              aria-label="C6"
+              aria-pressed="false"
+            >
+              <span class="note">C6</span>
+              <kbd>Y</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="D6"
+              data-key="u"
+              aria-label="D6"
+              aria-pressed="false"
+            >
+              <span class="note">D6</span>
+              <kbd>U</kbd>
+            </button>
+
+            <button
+              class="key white-key"
+              type="button"
+              data-note="E6"
+              data-key="i"
+              aria-label="E6"
+              aria-pressed="false"
+            >
+              <span class="note">E6</span>
+              <kbd>I</kbd>
+            </button>
+          </div>
+
+          <!-- =========================
+             16 BLACK KEYS
+             C#3 → D#6
+             ========================= -->
+
+          <div class="black-keys">
+            <button
+              class="key black-key"
+              type="button"
+              data-note="C#3"
+              data-key="1"
+              aria-label="C sharp 3"
+              aria-pressed="false"
+            >
+              <span class="note">C♯3</span>
+              <kbd>1</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="D#3"
+              data-key="2"
+              aria-label="D sharp 3"
+              aria-pressed="false"
+            >
+              <span class="note">D♯3</span>
+              <kbd>2</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="F#3"
+              data-key="3"
+              aria-label="F sharp 3"
+              aria-pressed="false"
+            >
+              <span class="note">F♯3</span>
+              <kbd>3</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="G#3"
+              data-key="4"
+              aria-label="G sharp 3"
+              aria-pressed="false"
+            >
+              <span class="note">G♯3</span>
+              <kbd>4</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="A#3"
+              data-key="5"
+              aria-label="A sharp 3"
+              aria-pressed="false"
+            >
+              <span class="note">A♯3</span>
+              <kbd>5</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="C#4"
+              data-key="6"
+              aria-label="C sharp 4"
+              aria-pressed="false"
+            >
+              <span class="note">C♯4</span>
+              <kbd>6</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="D#4"
+              data-key="7"
+              aria-label="D sharp 4"
+              aria-pressed="false"
+            >
+              <span class="note">D♯4</span>
+              <kbd>7</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="F#4"
+              data-key="8"
+              aria-label="F sharp 4"
+              aria-pressed="false"
+            >
+              <span class="note">F♯4</span>
+              <kbd>8</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="G#4"
+              data-key="9"
+              aria-label="G sharp 4"
+              aria-pressed="false"
+            >
+              <span class="note">G♯4</span>
+              <kbd>9</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="A#4"
+              data-key="0"
+              aria-label="A sharp 4"
+              aria-pressed="false"
+            >
+              <span class="note">A♯4</span>
+              <kbd>0</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="C#5"
+              data-key="!"
+              aria-label="C sharp 5"
+              aria-pressed="false"
+            >
+              <span class="note">C♯5</span>
+              <kbd>!</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="D#5"
+              data-key="@"
+              aria-label="D sharp 5"
+              aria-pressed="false"
+            >
+              <span class="note">D♯5</span>
+              <kbd>@</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="F#5"
+              data-key="#"
+              aria-label="F sharp 5"
+              aria-pressed="false"
+            >
+              <span class="note">F♯5</span>
+              <kbd>#</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="G#5"
+              data-key="$"
+              aria-label="G sharp 5"
+              aria-pressed="false"
+            >
+              <span class="note">G♯5</span>
+              <kbd>$</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="A#5"
+              data-key="%"
+              aria-label="A sharp 5"
+              aria-pressed="false"
+            >
+              <span class="note">A♯5</span>
+              <kbd>%</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="C#6"
+              data-key="^"
+              aria-label="C sharp 6"
+              aria-pressed="false"
+            >
+              <span class="note">C♯6</span>
+              <kbd>^</kbd>
+            </button>
+
+            <button
+              class="key black-key"
+              type="button"
+              data-note="D#6"
+              data-key="&amp;"
+              aria-label="D sharp 6"
+              aria-pressed="false"
+            >
+              <span class="note">D♯6</span>
+              <kbd>&amp;</kbd>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="instructions" aria-label="How to play">
+        <div class="instruction">
+          <strong>⌨ Keyboard</strong>
+          <span>Use the displayed keyboard shortcuts</span>
+        </div>
+
+        <div class="instruction">
+          <strong>🖱 Mouse</strong>
+          <span>Click and hold any key</span>
+        </div>
+
+        <div class="instruction">
+          <strong>☝ Touch</strong>
+          <span>Tap or hold any key</span>
+        </div>
+      </section>
+    </main>
+
+    <script src="pianoEngine.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

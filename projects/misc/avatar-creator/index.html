@@ -2,9 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pixel Avatar Creator</title>
-    <meta name="description" content="Generate custom SVG user avatars with background colors, features, and export options." />
-    <link rel="stylesheet" href="style.css" />
+    <meta
+      name="description"
+      content="Generate custom SVG user avatars with background colors, features, and export options."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/misc/avatar-creator/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Pixel Avatar Creator" />
+    <meta property="og:description" content="Generate custom SVG user avatars with background colors, features, and export options." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/misc/avatar-creator/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <h1>Pixel Avatar Creator</h1>
@@ -47,10 +57,20 @@
 
         <button id="randomize-btn">🎲 Randomize</button>
         <button id="download-btn">Download Avatar</button>
+
+        <label>
+          Import SVG Avatar:
+          <input type="file" id="import-svg-input" accept=".svg,image/svg+xml" />
+        </label>
+        <p id="error-message" class="error-message"></p>
       </div>
     </main>
 
     <script src="avatarEngine.js"></script>
     <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
   </body>
 </html>

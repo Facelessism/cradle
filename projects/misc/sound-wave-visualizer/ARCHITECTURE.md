@@ -38,7 +38,6 @@ sound-wave-visualizer/
 ├── visualizerEngine.js   # Canvas frequency spectrum calculations and peak detection
 ├── audioPresetsEngine.js # Synth audio presets and frequency calculations
 ├── script.js             # All logic: audio graph, canvas rendering, recording, playback
-├── README.md             # User-facing documentation
 └── ARCHITECTURE.md       # This file
 ```
 

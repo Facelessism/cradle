@@ -1,4 +1,8 @@
 const {
+  MAX_IMAGE_DIMENSION,
+  calculateClampedDimensions,
+  validateAndClampImage,
+  resizeImage,
   formatCustomPredictions,
   canPredictCustom,
   hasLowConfidence,
@@ -45,6 +49,8 @@ let isModelLoaded = false;
 let isCustomMode = false;
 let customClasses = []; // { id, name, count }
 let customTestImage = null; // img element
+let previewObjectURL = null;
+let customTestImageURL = null;
 let Engine = null;
 
 async function loadModel() {
@@ -94,7 +100,11 @@ customModeBtn.addEventListener("click", () => {
 imageUpload.addEventListener("change", event => {
   const file = event.target.files[0];
   if (file) {
-    preview.src = URL.createObjectURL(file);
+    if (previewObjectURL) {
+      URL.revokeObjectURL(previewObjectURL);
+    }
+    previewObjectURL = URL.createObjectURL(file);
+    preview.src = previewObjectURL;
     preview.style.display = "block";
     uploadContent.style.display = "none";
   }
@@ -104,9 +114,12 @@ imageUpload.addEventListener("change", event => {
 customImageUpload.addEventListener("change", event => {
   const file = event.target.files[0];
   if (file) {
-    const url = URL.createObjectURL(file);
+    if (customTestImageURL) {
+      URL.revokeObjectURL(customTestImageURL);
+    }
+    customTestImageURL = URL.createObjectURL(file);
     customTestImage = new Image();
-    customTestImage.src = url;
+    customTestImage.src = customTestImageURL;
     // Check if we can enable predict button
     updateCustomPredictState();
   }
@@ -135,6 +148,7 @@ addClassBtn.addEventListener("click", () => {
     id: Date.now().toString(),
     name: className.trim(),
     count: 0,
+    urls: [],
   };
 
   customClasses.push(classObj);
@@ -143,45 +157,85 @@ addClassBtn.addEventListener("click", () => {
   updateCustomPredictState();
 });
 
+function createElementWithText(tagName, className, text) {
+  const element = document.createElement(tagName);
+  if (className) {
+    element.className = className;
+  }
+  element.textContent = text;
+  return element;
+}
+
 function renderClasses() {
   classesContainer.innerHTML = "";
+
   customClasses.forEach(c => {
     const card = document.createElement("div");
     card.className = "class-card";
 
-    card.innerHTML = `
-            <div class="class-header">
-                <div class="class-title">${c.name} <span class="class-count" id="count-${c.id}">${c.count} images</span></div>
-                <button class="remove-class-btn">✕</button>
-            </div>
-            <div class="class-images" id="images-${c.id}">
-                <label class="add-image-btn">
-                    +
-                    <input type="file" accept="image/*" hidden multiple>
-                </label>
-            </div>
-        `;
+    const header = document.createElement("div");
+    header.className = "class-header";
 
-    card.querySelector(".remove-class-btn").addEventListener("click", () => {
+    const title = document.createElement("div");
+    title.className = "class-title";
+    title.appendChild(document.createTextNode(`${c.name} `));
+
+    const count = createElementWithText(
+      "span",
+      "class-count",
+      `${c.count} images`
+    );
+    count.id = `count-${c.id}`;
+    title.appendChild(count);
+
+    const removeButton = createElementWithText(
+      "button",
+      "remove-class-btn",
+      "✕"
+    );
+    removeButton.type = "button";
+
+    header.appendChild(title);
+    header.appendChild(removeButton);
+
+    const imagesContainer = document.createElement("div");
+    imagesContainer.className = "class-images";
+    imagesContainer.id = `images-${c.id}`;
+
+    const addImageLabel = createElementWithText("label", "add-image-btn", "+");
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.multiple = true;
+    input.hidden = true;
+    addImageLabel.appendChild(input);
+    imagesContainer.appendChild(addImageLabel);
+
+    card.appendChild(header);
+    card.appendChild(imagesContainer);
+
+    removeButton.addEventListener("click", () => {
       removeClass(c.id);
     });
 
-    card
-      .querySelector('input[type="file"]')
-      .addEventListener("change", event => {
-        addImageToClass(event, c.id);
-      });
+    input.addEventListener("change", event => {
+      addImageToClass(event, c.id);
+    });
 
     classesContainer.appendChild(card);
   });
 }
 
 function removeClass(id) {
+  const classObj = customClasses.find(c => c.id === id);
+  if (classObj) {
+    classObj.urls.forEach(url => URL.revokeObjectURL(url));
+  }
   customClasses = customClasses.filter(c => c.id !== id);
   if (knn.getNumClasses() > 0) {
     try {
       knn.clearClass(id);
-    } catch (e) {}
+    } catch (e) { }
   }
   renderClasses();
   updateCustomPredictState();
@@ -201,11 +255,22 @@ async function addImageToClass(event, id) {
 
   for (let file of files) {
     const img = new Image();
-    img.src = URL.createObjectURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    img.src = objectUrl;
+    classObj.urls.push(objectUrl);
 
     await new Promise(resolve => {
       img.addEventListener("load", () => {
-        const activation = model.infer(img, true);
+        const resizeResult = resizeImage(img, MAX_IMAGE_DIMENSION);
+        if (!resizeResult.valid) {
+          showToast("Invalid training image.");
+          resolve();
+          return;
+        }
+        if (resizeResult.resized && resizeResult.warning) {
+          showToast(resizeResult.warning);
+        }
+        const activation = model.infer(resizeResult.element, true);
         knn.addExample(activation, id);
 
         classObj.count++;
@@ -214,11 +279,18 @@ async function addImageToClass(event, id) {
 
         const wrapper = document.createElement("div");
         wrapper.className = "thumb-wrapper";
-        wrapper.innerHTML = `
-                    <img src="${img.src}">
-                `;
-        // Add before the "+" button
+
+        const thumbnail = document.createElement("img");
+        thumbnail.src = objectUrl;
+        thumbnail.alt = `Training image for ${classObj.name}`;
+        wrapper.appendChild(thumbnail);
+
+        // Add before the "+" button.
         imagesContainer.insertBefore(wrapper, addBtn);
+        resolve();
+      });
+      img.addEventListener("error", () => {
+        showToast("Failed to load training image.");
         resolve();
       });
     });
@@ -247,7 +319,16 @@ async function performPrediction() {
         resetPredictions();
         return;
       }
-      const predictions = await model.classify(preview);
+      const resizeResult = resizeImage(preview, MAX_IMAGE_DIMENSION);
+      if (!resizeResult.valid) {
+        showToast("Invalid image provided!");
+        resetPredictions();
+        return;
+      }
+      if (resizeResult.resized && resizeResult.warning) {
+        showToast(resizeResult.warning);
+      }
+      const predictions = await model.classify(resizeResult.element);
       renderPredictions(
         predictions.map(p => ({
           className: p.className,
@@ -261,14 +342,23 @@ async function performPrediction() {
         resetPredictions();
         return;
       }
-      const activation = model.infer(customTestImage, true);
+      const resizeResult = resizeImage(customTestImage, MAX_IMAGE_DIMENSION);
+      if (!resizeResult.valid) {
+        showToast("Invalid test image provided!");
+        resetPredictions();
+        return;
+      }
+      if (resizeResult.resized && resizeResult.warning) {
+        showToast(resizeResult.warning);
+      }
+      const activation = model.infer(resizeResult.element, true);
       const result = await knn.predictClass(activation);
 
       // Format for rendering
       const formatted = formatCustomPredictions(
-  result.confidences,
-  customClasses
-);
+        result.confidences,
+        customClasses
+      );
 
 
       renderPredictions(formatted);
@@ -281,29 +371,69 @@ async function performPrediction() {
 
 function renderPredictions(predictions) {
   resultDiv.innerHTML = "";
-  if (predictions[0].probability < 0.1) {
-    resultDiv.innerHTML = `<p class="loading">Low confidence prediction. Try providing more training data or a clearer image.</p>`;
+
+  if (predictions.length > 0 && predictions[0].probability < 0.1) {
+    resultDiv.appendChild(
+      createElementWithText(
+        "p",
+        "loading",
+        "Low confidence prediction. Try providing more training data or a clearer image."
+      )
+    );
   }
+
   predictions.forEach((prediction, index) => {
     if (prediction.probability === 0) return; // Hide 0% in custom mode
 
-   const confidence = formatConfidence(prediction.probability);
+    const confidence = formatConfidence(prediction.probability);
     const predictionCard = document.createElement("div");
     predictionCard.className = "prediction";
     predictionCard.style.animationDelay = `${index * 0.08}s`;
 
-    predictionCard.innerHTML = `
-            <div class="prediction-top">
-                <div class="class-name">${prediction.className}</div>
-                <div class="confidence">${confidence}%</div>
-            </div>
-            <div class="bar">
-                <div class="fill" style="width: ${confidence}%"></div>
-            </div>
-        `;
+    const predictionTop = document.createElement("div");
+    predictionTop.className = "prediction-top";
+    predictionTop.appendChild(
+      createElementWithText("div", "class-name", prediction.className)
+    );
+    predictionTop.appendChild(
+      createElementWithText("div", "confidence", `${confidence}%`)
+    );
+
+    const bar = document.createElement("div");
+    bar.className = "bar";
+
+    const fill = document.createElement("div");
+    fill.className = "fill";
+    fill.style.width = `${confidence}%`;
+    bar.appendChild(fill);
+
+    predictionCard.appendChild(predictionTop);
+    predictionCard.appendChild(bar);
     resultDiv.appendChild(predictionCard);
   });
 }
 
 classifyBtn.addEventListener("click", performPrediction);
 customClassifyBtn.addEventListener("click", performPrediction);
+
+function cleanupObjectUrls() {
+  if (previewObjectURL) {
+    URL.revokeObjectURL(previewObjectURL);
+    previewObjectURL = null;
+  }
+  if (customTestImageURL) {
+    URL.revokeObjectURL(customTestImageURL);
+    customTestImageURL = null;
+  }
+  if (customClasses) {
+    customClasses.forEach(c => {
+      if (c.urls) {
+        c.urls.forEach(url => URL.revokeObjectURL(url));
+        c.urls = [];
+      }
+    });
+  }
+}
+
+window.addEventListener("beforeunload", cleanupObjectUrls);
+

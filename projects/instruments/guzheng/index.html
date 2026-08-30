@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A playable 21-string virtual guzheng with keyboard, mouse, and touch plucking."
+    />
+    <title>Virtual Guzheng | Cradle Mini</title>
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <main class="guzheng-app">
+      <header class="guzheng-header">
+        <div class="header-content">
+          <p class="eyebrow">CRADLE MINI</p>
+          <h1>Virtual Guzheng</h1>
+          <p>
+            Pluck strings with your keyboard, mouse, or touch. Drag across
+            strings to glissando.
+          </p>
+        </div>
+
+        <div class="status" id="status" aria-live="polite">Ready</div>
+      </header>
+
+      <section class="guzheng-card" aria-label="Virtual guzheng">
+        <div
+          class="strings"
+          role="group"
+          aria-label="21-string playable guzheng, low to high"
+        >
+          <button
+            class="string"
+            type="button"
+            data-note="D3"
+            data-key="1"
+            aria-label="D3"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">D3</span>
+            <kbd>1</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="E3"
+            data-key="2"
+            aria-label="E3"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">E3</span>
+            <kbd>2</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="F#3"
+            data-key="3"
+            aria-label="F sharp 3"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">F♯3</span>
+            <kbd>3</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="A3"
+            data-key="4"
+            aria-label="A3"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">A3</span>
+            <kbd>4</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="B3"
+            data-key="5"
+            aria-label="B3"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">B3</span>
+            <kbd>5</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="D4"
+            data-key="6"
+            aria-label="D4"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">D4</span>
+            <kbd>6</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="E4"
+            data-key="7"
+            aria-label="E4"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">E4</span>
+            <kbd>7</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="F#4"
+            data-key="8"
+            aria-label="F sharp 4"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">F♯4</span>
+            <kbd>8</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="A4"
+            data-key="9"
+            aria-label="A4"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">A4</span>
+            <kbd>9</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="B4"
+            data-key="0"
+            aria-label="B4"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">B4</span>
+            <kbd>0</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="D5"
+            data-key="q"
+            aria-label="D5"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">D5</span>
+            <kbd>Q</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="E5"
+            data-key="w"
+            aria-label="E5"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">E5</span>
+            <kbd>W</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="F#5"
+            data-key="e"
+            aria-label="F sharp 5"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">F♯5</span>
+            <kbd>E</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="A5"
+            data-key="r"
+            aria-label="A5"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">A5</span>
+            <kbd>R</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="B5"
+            data-key="t"
+            aria-label="B5"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">B5</span>
+            <kbd>T</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="D6"
+            data-key="y"
+            aria-label="D6"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">D6</span>
+            <kbd>Y</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="E6"
+            data-key="u"
+            aria-label="E6"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">E6</span>
+            <kbd>U</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="F#6"
+            data-key="i"
+            aria-label="F sharp 6"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">F♯6</span>
+            <kbd>I</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="A6"
+            data-key="o"
+            aria-label="A6"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">A6</span>
+            <kbd>O</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="B6"
+            data-key="p"
+            aria-label="B6"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">B6</span>
+            <kbd>P</kbd>
+          </button>
+
+          <button
+            class="string"
+            type="button"
+            data-note="D7"
+            data-key="["
+            aria-label="D7"
+          >
+            <span class="string-line" aria-hidden="true"></span>
+            <span class="note">D7</span>
+            <kbd>[</kbd>
+          </button>
+        </div>
+      </section>
+
+      <section class="instructions" aria-label="How to play">
+        <div class="instruction">
+          <strong>⌨ Keyboard</strong>
+          <span>Use the displayed keyboard shortcuts</span>
+        </div>
+
+        <div class="instruction">
+          <strong>🖱 Mouse</strong>
+          <span>Click a string, or drag across several to glissando</span>
+        </div>
+
+        <div class="instruction">
+          <strong>☝ Touch</strong>
+          <span>Tap or swipe across the strings</span>
+        </div>
+      </section>
+    </main>
+
+    <script src="guzhengEngine.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

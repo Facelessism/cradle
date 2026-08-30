@@ -6,6 +6,7 @@ const {
     formatDuration,
     formatResponseBody,
     statusTone,
+    fetchWithTimeout,
 } = window.APIEngine;
 
 const methodSelect = document.getElementById("methodSelect");
@@ -67,17 +68,23 @@ async function sendRequest() {
     const startedAt = performance.now();
 
     try {
-        const response = await fetch(url.toString(), options);
+        const response = await fetchWithTimeout(url.toString(), options, 10000);
         const elapsed = performance.now() - startedAt;
         const text = await response.text();
 
         renderResult(response, text, elapsed);
     } catch (err) {
-        showError(
-            "Request failed. This is often caused by the API not allowing " +
-            "cross-origin requests (CORS), an invalid URL, or a network issue.\n\n" +
-            `Details: ${err.message}`
-        );
+        if (err.message && err.message.includes("timed out")) {
+            showError(
+                "Request timed out. The server took too long to respond (timeout limit: 10s)."
+            );
+        } else {
+            showError(
+                "Request failed. This is often caused by the API not allowing " +
+                "cross-origin requests (CORS), an invalid URL, or a network issue.\n\n" +
+                `Details: ${err.message}`
+            );
+        }
     } finally {
         setLoading(false);
     }

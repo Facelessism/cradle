@@ -8,7 +8,13 @@
       name="description"
       content="Interactive tone generator with real-time waveform visualization and on-screen piano keyboard using the Web Audio API."
     />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/misc/audio-waveform-generator/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Audio Waveform &amp;amp; Tone Generator | Cradle" />
+    <meta property="og:description" content="Interactive tone generator with real-time waveform visualization and on-screen piano keyboard using the Web Audio API." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/misc/audio-waveform-generator/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -31,7 +37,7 @@
       </header>
 
       <!-- Controls -->
-      <main>
+      <main role="main">
         <section class="controls-panel">
           <!-- Wave Type Selector -->
           <div class="control-row">
@@ -51,10 +57,18 @@
               <button class="wave-btn" data-wave="square" aria-pressed="false">
                 Square
               </button>
-              <button class="wave-btn" data-wave="sawtooth" aria-pressed="false">
+              <button
+                class="wave-btn"
+                data-wave="sawtooth"
+                aria-pressed="false"
+              >
                 Sawtooth
               </button>
-              <button class="wave-btn" data-wave="triangle" aria-pressed="false">
+              <button
+                class="wave-btn"
+                data-wave="triangle"
+                aria-pressed="false"
+              >
                 Triangle
               </button>
             </div>
@@ -108,7 +122,13 @@
           <div class="control-row">
             <div class="play-row">
               <button class="btn btn-play" id="playBtn">▶ Play</button>
-              <span class="status-text mono" id="statusText">Stopped</span>
+              <span
+                class="status-text mono"
+                id="statusText"
+                role="status"
+                aria-live="polite"
+                >Stopped</span
+              >
             </div>
           </div>
         </section>
@@ -144,5 +164,9 @@
 
     <script src="waveformEngine.js"></script>
     <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
   </body>
 </html>

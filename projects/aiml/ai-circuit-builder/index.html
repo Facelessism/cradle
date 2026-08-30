@@ -4,11 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NeuralForge - AI Chip Design Assistant</title>
-    <meta name="description" content="Interactive AI logic circuit simulator for building, evaluating, and visualizing neural network components." />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link
+    <meta
+      name="description"
+      content="Interactive AI logic circuit simulator for building, evaluating, and visualizing neural network components."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/aiml/ai-circuit-builder/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="NeuralForge - AI Chip Design Assistant" />
+    <meta property="og:description" content="Interactive AI logic circuit simulator for building, evaluating, and visualizing neural network components." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/aiml/ai-circuit-builder/" />
+    <script
+      src="https://cdn.tailwindcss.com/3.4.17"
+      integrity="sha384-igm5BeiBt36UU4gqwWS7imYmelpTsZlQ45FZf+XBn9MuJbn4nQr7yx1yFydocC/K"
+      crossorigin="anonymous"
+    ></script>
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+      integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+      crossorigin="anonymous"
     />
     <link rel="stylesheet" href="style.css" />
   </head>
@@ -47,7 +62,12 @@
               🌙
             </button>
           </div>
-          <p class="text-xs text-emerald-400 font-mono" id="storageStatus">
+          <p
+            class="text-xs text-emerald-400 font-mono"
+            id="storageStatus"
+            role="status"
+            aria-live="polite"
+          >
             LocalStorage Synced
           </p>
         </div>

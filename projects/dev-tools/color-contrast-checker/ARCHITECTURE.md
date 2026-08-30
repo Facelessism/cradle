@@ -24,7 +24,6 @@ color-contrast-checker/
 ├── script.js           # DOM events, rendering, clipboard, and palette interactions
 ├── contrastEngine.js   # Pure WCAG contrast logic and exports for tests
 ├── ARCHITECTURE.md     # Project architecture documentation
-├── README.md           # User-facing run and test notes
 └── thumbnail.svg       # Generated project thumbnail
 ```
 
@@ -54,7 +53,6 @@ graph TD
 | `style.css` | Defines the dark dev-tools layout, responsive grid, controls, status cards, suggestions, and palette buttons. |
 | `script.js` | Connects DOM events to the engine, syncs color picker and text input values, renders WCAG results, applies palettes, and copies CSS variables. |
 | `contrastEngine.js` | Normalizes hex colors, converts hex to RGB, calculates relative luminance and contrast ratio, evaluates WCAG thresholds, and suggests accessible alternatives. |
-| `README.md` | Explains features, local running instructions, and the direct test command. |
 
 ---
 

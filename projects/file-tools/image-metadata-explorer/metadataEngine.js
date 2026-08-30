@@ -233,7 +233,8 @@ function readValue(
   type,
   count,
   valueFieldOffset,
-  littleEndian
+  littleEndian,
+  tiffStart = 0
 ) {
   const size = TYPE_SIZES[type];
 
@@ -255,7 +256,7 @@ function readValue(
       return null;
     }
 
-    valueOffset = view.getUint32(
+    valueOffset = tiffStart + view.getUint32(
       valueFieldOffset,
       littleEndian
     );
@@ -264,7 +265,7 @@ function readValue(
   if (
     valueOffset < 0 ||
     valueOffset + totalSize >
-      view.byteLength
+    view.byteLength
   ) {
     return null;
   }
@@ -410,7 +411,8 @@ function readIFD(
   view,
   offset,
   littleEndian,
-  tagMap
+  tagMap,
+  tiffStart = 0
 ) {
   const metadata = {};
 
@@ -465,7 +467,8 @@ function readIFD(
       type,
       count,
       entryOffset + 8,
-      littleEndian
+      littleEndian,
+      tiffStart
     );
 
     if (value !== null) {
@@ -536,19 +539,19 @@ function findExifSegment(view) {
 
       if (
         exifStart + 6 <=
-          view.byteLength &&
+        view.byteLength &&
         view.getUint8(exifStart) ===
-          0x45 &&
+        0x45 &&
         view.getUint8(exifStart + 1) ===
-          0x78 &&
+        0x78 &&
         view.getUint8(exifStart + 2) ===
-          0x69 &&
+        0x69 &&
         view.getUint8(exifStart + 3) ===
-          0x66 &&
+        0x66 &&
         view.getUint8(exifStart + 4) ===
-          0x00 &&
+        0x00 &&
         view.getUint8(exifStart + 5) ===
-          0x00
+        0x00
       ) {
         return exifStart + 6;
       }
@@ -618,7 +621,8 @@ function parseTIFF(view, tiffStart) {
     view,
     ifdOffset,
     littleEndian,
-    TAGS
+    TAGS,
+    tiffStart
   );
 
   if (metadata.exifOffset) {
@@ -626,9 +630,10 @@ function parseTIFF(view, tiffStart) {
       readIFD(
         view,
         tiffStart +
-          metadata.exifOffset,
+        metadata.exifOffset,
         littleEndian,
-        TAGS
+        TAGS,
+        tiffStart
       );
 
     Object.assign(
@@ -642,9 +647,10 @@ function parseTIFF(view, tiffStart) {
       readIFD(
         view,
         tiffStart +
-          metadata.gpsOffset,
+        metadata.gpsOffset,
         littleEndian,
-        GPS_TAGS
+        GPS_TAGS,
+        tiffStart
       );
 
     Object.assign(
@@ -654,6 +660,286 @@ function parseTIFF(view, tiffStart) {
   }
 
   return metadata;
+}
+
+/* --------------------------------
+   Format Detection
+-------------------------------- */
+
+function detectFormat(view) {
+  if (
+    view.byteLength >= 3 &&
+    view.getUint8(0) === 0xff &&
+    view.getUint8(1) === 0xd8
+  ) {
+    return "jpeg";
+  }
+
+  if (
+    view.byteLength >= 8 &&
+    view.getUint8(0) === 0x89 &&
+    view.getUint8(1) === 0x50 &&
+    view.getUint8(2) === 0x4e &&
+    view.getUint8(3) === 0x47 &&
+    view.getUint8(4) === 0x0d &&
+    view.getUint8(5) === 0x0a &&
+    view.getUint8(6) === 0x1a &&
+    view.getUint8(7) === 0x0a
+  ) {
+    return "png";
+  }
+
+  if (
+    view.byteLength >= 12 &&
+    view.getUint8(0) === 0x52 &&
+    view.getUint8(1) === 0x49 &&
+    view.getUint8(2) === 0x46 &&
+    view.getUint8(3) === 0x46 &&
+    view.getUint8(8) === 0x57 &&
+    view.getUint8(9) === 0x45 &&
+    view.getUint8(10) === 0x42 &&
+    view.getUint8(11) === 0x50
+  ) {
+    return "webp";
+  }
+
+  return "unknown";
+}
+
+/* --------------------------------
+   PNG Parser
+-------------------------------- */
+
+const PNG_TEXT_KEY_MAP = {
+  Author: "artist",
+  Software: "software",
+  "Creation Time": "dateTime",
+  Description: "imageDescription",
+  Copyright: "copyright",
+  Title: "title",
+  Comment: "comment",
+  Source: "source",
+  Disclaimer: "disclaimer",
+  Warning: "warning",
+};
+
+function mapPNGKeyword(keyword) {
+  return PNG_TEXT_KEY_MAP[keyword] || keyword;
+}
+
+function readLatin1(view, start, length) {
+  let value = "";
+  for (let i = 0; i < length; i++) {
+    value += String.fromCharCode(view.getUint8(start + i));
+  }
+  return value;
+}
+
+function readPNGtEXt(view, start, length) {
+  let nullPos = -1;
+  for (let i = 0; i < length; i++) {
+    if (view.getUint8(start + i) === 0) {
+      nullPos = i;
+      break;
+    }
+  }
+  if (nullPos === -1) return null;
+
+  const keyword = readLatin1(view, start, nullPos);
+  const text = readLatin1(
+    view,
+    start + nullPos + 1,
+    length - nullPos - 1
+  );
+
+  if (!keyword) return null;
+
+  return { key: mapPNGKeyword(keyword), value: cleanString(text) };
+}
+
+function readPNGiTXt(view, start, length) {
+  let nullPos = -1;
+  for (let i = 0; i < length; i++) {
+    if (view.getUint8(start + i) === 0) {
+      nullPos = i;
+      break;
+    }
+  }
+  if (nullPos === -1) return null;
+
+  const keyword = readLatin1(view, start, nullPos);
+  let pos = nullPos + 1;
+
+  if (pos + 2 > length) return null;
+  const compressionFlag = view.getUint8(start + pos);
+  pos += 2;
+
+  let langEnd = -1;
+  for (let i = pos; i < length; i++) {
+    if (view.getUint8(start + i) === 0) {
+      langEnd = i;
+      break;
+    }
+  }
+  if (langEnd === -1) return null;
+  pos = langEnd + 1;
+
+  let translatedEnd = -1;
+  for (let i = pos; i < length; i++) {
+    if (view.getUint8(start + i) === 0) {
+      translatedEnd = i;
+      break;
+    }
+  }
+  if (translatedEnd === -1) return null;
+  pos = translatedEnd + 1;
+
+  if (compressionFlag === 1) {
+    return null;
+  }
+
+  const textBytes = [];
+  for (let i = pos; i < length; i++) {
+    textBytes.push(view.getUint8(start + i));
+  }
+
+  let text;
+  try {
+    text = new TextDecoder("utf-8").decode(new Uint8Array(textBytes));
+  } catch {
+    text = readLatin1(view, start + pos, length - pos);
+  }
+
+  if (!keyword) return null;
+
+  return { key: mapPNGKeyword(keyword), value: cleanString(text) };
+}
+
+function parsePNG(view) {
+  const metadata = {};
+  let dimensions = null;
+
+  let offset = 8;
+
+  while (offset + 8 <= view.byteLength) {
+    const length = view.getUint32(offset, false);
+    const type = String.fromCharCode(
+      view.getUint8(offset + 4),
+      view.getUint8(offset + 5),
+      view.getUint8(offset + 6),
+      view.getUint8(offset + 7)
+    );
+
+    const dataStart = offset + 8;
+
+    if (dataStart + length > view.byteLength) {
+      break;
+    }
+
+    if (type === "IHDR" && length >= 8) {
+      dimensions = {
+        width: view.getUint32(dataStart, false),
+        height: view.getUint32(dataStart + 4, false),
+      };
+    } else if (type === "tEXt") {
+      const entry = readPNGtEXt(view, dataStart, length);
+      if (entry && entry.value) metadata[entry.key] = entry.value;
+    } else if (type === "iTXt") {
+      const entry = readPNGiTXt(view, dataStart, length);
+      if (entry && entry.value) metadata[entry.key] = entry.value;
+    } else if (type === "eXIf") {
+      const exifMetadata = parseTIFF(view, dataStart);
+      Object.assign(metadata, exifMetadata);
+    } else if (type === "IEND") {
+      break;
+    }
+
+    offset = dataStart + length + 4;
+  }
+
+  return { metadata, dimensions };
+}
+
+/* --------------------------------
+   WebP Parser
+-------------------------------- */
+
+function parseWebP(view) {
+  const metadata = {};
+  let dimensions = null;
+
+  if (view.byteLength < 12) {
+    return { metadata, dimensions };
+  }
+
+  let offset = 12;
+
+  while (offset + 8 <= view.byteLength) {
+    const fourCC = String.fromCharCode(
+      view.getUint8(offset),
+      view.getUint8(offset + 1),
+      view.getUint8(offset + 2),
+      view.getUint8(offset + 3)
+    );
+
+    const chunkSize = view.getUint32(offset + 4, true);
+    const dataStart = offset + 8;
+
+    if (dataStart + chunkSize > view.byteLength) {
+      break;
+    }
+
+    if (fourCC === "VP8X" && chunkSize >= 10) {
+      const width =
+        1 +
+        (view.getUint8(dataStart + 4) |
+          (view.getUint8(dataStart + 5) << 8) |
+          (view.getUint8(dataStart + 6) << 16));
+      const height =
+        1 +
+        (view.getUint8(dataStart + 7) |
+          (view.getUint8(dataStart + 8) << 8) |
+          (view.getUint8(dataStart + 9) << 16));
+      dimensions = { width, height };
+    } else if (fourCC === "VP8 " && !dimensions && chunkSize >= 10) {
+      const w = view.getUint16(dataStart + 6, true) & 0x3fff;
+      const h = view.getUint16(dataStart + 8, true) & 0x3fff;
+      dimensions = { width: w, height: h };
+    } else if (fourCC === "VP8L" && !dimensions && chunkSize >= 5) {
+      const b0 = view.getUint8(dataStart + 1);
+      const b1 = view.getUint8(dataStart + 2);
+      const b2 = view.getUint8(dataStart + 3);
+      const b3 = view.getUint8(dataStart + 4);
+      const width = 1 + (((b1 & 0x3f) << 8) | b0);
+      const height =
+        1 + (((b3 & 0x0f) << 10) | (b2 << 2) | ((b1 & 0xc0) >> 6));
+      dimensions = { width, height };
+    } else if (fourCC === "EXIF") {
+      let exifStart = dataStart;
+      if (
+        chunkSize >= 6 &&
+        view.getUint8(dataStart) === 0x45 &&
+        view.getUint8(dataStart + 1) === 0x78 &&
+        view.getUint8(dataStart + 2) === 0x69 &&
+        view.getUint8(dataStart + 3) === 0x66 &&
+        view.getUint8(dataStart + 4) === 0x00 &&
+        view.getUint8(dataStart + 5) === 0x00
+      ) {
+        exifStart = dataStart + 6;
+      }
+      const exifMetadata = parseTIFF(view, exifStart);
+      Object.assign(metadata, exifMetadata);
+    } else if (fourCC === "XMP ") {
+      const xmp = readLatin1(view, dataStart, chunkSize);
+      if (xmp && xmp.trim()) {
+        metadata.xmp = "Present";
+      }
+    }
+
+    offset = dataStart + chunkSize + (chunkSize % 2);
+  }
+
+  return { metadata, dimensions };
 }
 
 function formatExposureTime(value) {
@@ -711,49 +997,49 @@ function normalizeMetadata(raw) {
     metadata.software = software;
   }
 
-if (
-  Number.isFinite(
-    Number(raw.exposureTime)
-  )
-) {
-  const formatted = formatExposureTime(raw.exposureTime);
-  if (formatted) metadata.exposureTime = formatted;
-}
+  if (
+    Number.isFinite(
+      Number(raw.exposureTime)
+    )
+  ) {
+    const formatted = formatExposureTime(raw.exposureTime);
+    if (formatted) metadata.exposureTime = formatted;
+  }
 
-const rawFNumber = raw.fNumber ?? raw.apertureValue;
-if (
-  Number.isFinite(
-    Number(rawFNumber)
-  )
-) {
-  const formatted = formatFNumber(rawFNumber);
-  if (formatted) metadata.fNumber = formatted;
-}
-
-if (
-  Number.isFinite(
-    Number(raw.iso)
-  )
-) {
-  const value =
-    Number(raw.iso);
+  const rawFNumber = raw.fNumber ?? raw.apertureValue;
+  if (
+    Number.isFinite(
+      Number(rawFNumber)
+    )
+  ) {
+    const formatted = formatFNumber(rawFNumber);
+    if (formatted) metadata.fNumber = formatted;
+  }
 
   if (
-    value > 0 &&
-    value <= 100000
+    Number.isFinite(
+      Number(raw.iso)
+    )
   ) {
-    metadata.iso = value;
-  }
-}
+    const value =
+      Number(raw.iso);
 
-if (
-  Number.isFinite(
-    Number(raw.focalLength)
-  )
-) {
-  const formatted = formatFocalLength(raw.focalLength);
-  if (formatted) metadata.focalLength = formatted;
-}
+    if (
+      value > 0 &&
+      value <= 100000
+    ) {
+      metadata.iso = value;
+    }
+  }
+
+  if (
+    Number.isFinite(
+      Number(raw.focalLength)
+    )
+  ) {
+    const formatted = formatFocalLength(raw.focalLength);
+    if (formatted) metadata.focalLength = formatted;
+  }
 
   if (
     raw.latitude &&
@@ -830,7 +1116,7 @@ if (
   ) {
     const orientation =
       orientationNames[
-        raw.orientation
+      raw.orientation
       ];
 
     if (orientation) {
@@ -850,6 +1136,25 @@ if (
       metadata.colorSpace = colorSpace;
     }
   }
+
+  const passthroughKeys = [
+    "artist",
+    "title",
+    "comment",
+    "copyright",
+    "source",
+    "disclaimer",
+    "warning",
+    "imageDescription",
+    "xmp",
+  ];
+
+  passthroughKeys.forEach((key) => {
+    const value = cleanString(raw[key]);
+    if (value) {
+      metadata[key] = value;
+    }
+  });
 
   return metadata;
 }
@@ -886,25 +1191,38 @@ async function parse(file) {
     );
   }
 
-  const view =
-    new DataView(buffer);
+  const view = new DataView(buffer);
+  const format = detectFormat(view);
 
-  const tiffStart =
-    findExifSegment(view);
+  let rawMetadata = {};
+  let dimensions = null;
 
-  if (tiffStart === -1) {
-    return {};
+  if (format === "jpeg") {
+    const tiffStart = findExifSegment(view);
+    if (tiffStart !== -1) {
+      rawMetadata = parseTIFF(view, tiffStart);
+    }
+  } else if (format === "png") {
+    const result = parsePNG(view);
+    rawMetadata = result.metadata;
+    dimensions = result.dimensions;
+  } else if (format === "webp") {
+    const result = parseWebP(view);
+    rawMetadata = result.metadata;
+    dimensions = result.dimensions;
+  } else {
+    throw new Error(
+      "Unsupported image format. Only JPEG, PNG, and WebP are supported."
+    );
   }
 
-  const rawMetadata =
-    parseTIFF(
-      view,
-      tiffStart
-    );
+  const metadata = normalizeMetadata(rawMetadata);
 
-  return normalizeMetadata(
-    rawMetadata
-  );
+  if (dimensions) {
+    metadata.dimensions = `${dimensions.width} × ${dimensions.height}`;
+  }
+
+  return metadata;
 }
 
 /* --------------------------------

@@ -63,6 +63,55 @@ body {
   line-height: 1.6;
 }
 
+#categories {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto 2rem;
+}
+
+
+.section-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+#sort-projects {
+  appearance: none;
+  padding: 0.55rem 2.25rem 0.55rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition);
+}
+
+#sort-projects:hover,
+#sort-projects:focus {
+  border-color: var(--accent-hover);
+}
+
+#sort-projects option {
+  background: var(--card);
+  color: var(--text);
+}
+
+@media (max-width: 768px) {
+  .section-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
 body,
 #search,
 footer {

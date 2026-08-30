@@ -20,6 +20,7 @@ Or load only what you need:
 ```html
 <link rel="stylesheet" href="/src/components/ui/tokens.css" />
 <script src="/src/components/ui/escapeHtml.js"></script>
+<script src="/src/components/ui/storage.js"></script>
 <script src="/src/components/ui/ThemeToggle/ThemeToggle.js" defer></script>
 <script src="/src/components/ui/Button/Button.js" defer></script>
 ```

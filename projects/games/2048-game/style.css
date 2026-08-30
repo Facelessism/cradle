@@ -32,23 +32,14 @@ body {
   box-shadow: 0 24px 70px rgba(2, 6, 23, 0.45);
 }
 
-.controls {
+/* Header */
+
+.panel__header {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
   align-items: center;
+  justify-content: space-between;
+  gap: 20px;
   margin-bottom: 20px;
-}
-
-.theme-selector {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-#undoBtn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 .eyebrow {
@@ -63,6 +54,8 @@ h1 {
   margin: 0;
   font-size: clamp(2.2rem, 3vw, 2.7rem);
 }
+
+/* Scores */
 
 .scores {
   display: flex;
@@ -85,37 +78,50 @@ h1 {
   margin-bottom: 4px;
 }
 
+.score-card strong {
+  display: block;
+  font-size: 1.25rem;
+}
+
+/* Controls */
+
 .controls {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 16px;
 }
 
-.grid-size-selector {
+.grid-size-selector,
+.theme-selector {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.grid-size-selector label {
-  font-size: 0.95rem;
+.grid-size-selector label,
+.theme-selector label {
+  font-size: 0.9rem;
   color: #cbd5e1;
   font-weight: 500;
 }
 
 .size-select {
-  padding: 8px 16px;
+  padding: 8px 14px;
   background: rgba(148, 163, 184, 0.16);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;
   color: white;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   outline: none;
   cursor: pointer;
+}
+
+.size-select:focus {
+  border-color: #60a5fa;
 }
 
 .size-select option {
@@ -123,10 +129,9 @@ h1 {
   color: white;
 }
 
-.instructions {
-  margin: 0;
-  font-size: 0.95rem;
-  color: #cbd5e1;
+#undoBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 button {
@@ -135,19 +140,21 @@ button {
   padding: 10px 15px;
   font: inherit;
   font-weight: 600;
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
   color: white;
   cursor: pointer;
 }
 
-button:hover {
+button:hover:not(:disabled) {
   filter: brightness(1.05);
 }
+
+/* Board */
 
 .board {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+  width: 100%;
   padding: 12px;
   background: rgba(30, 41, 59, 0.95);
   border-radius: 22px;
@@ -155,6 +162,7 @@ button:hover {
 
 .tile {
   aspect-ratio: 1 / 1;
+  min-width: 0;
   border-radius: 16px;
   display: grid;
   place-items: center;
@@ -175,60 +183,80 @@ button:hover {
 .tile--2 {
   background: #e0f2fe;
 }
+
 .tile--4 {
   background: #bfdbfe;
 }
+
 .tile--8 {
   background: #93c5fd;
 }
+
 .tile--16 {
   background: #60a5fa;
   color: #eff6ff;
 }
+
 .tile--32 {
   background: #3b82f6;
   color: #eff6ff;
 }
+
 .tile--64 {
   background: #2563eb;
   color: #eff6ff;
 }
+
 .tile--128 {
   background: #1d4ed8;
   color: #eff6ff;
 }
+
 .tile--256 {
   background: #1e40af;
   color: #eff6ff;
 }
+
 .tile--512 {
   background: #1e3a8a;
   color: #eff6ff;
 }
+
 .tile--1024 {
   background: #172554;
   color: #eff6ff;
 }
+
 .tile--2048 {
   background: #f59e0b;
   color: #fff7ed;
 }
 
+/* Status */
+
 .status {
   margin-top: 16px;
   min-height: 24px;
   color: #cbd5e1;
+  font-size: 0.95rem;
 }
 
+/* Mobile */
+
 @media (max-width: 640px) {
-  .panel {
-    padding: 16px;
+  .game-shell {
+    padding: 12px;
   }
 
-  .panel__header,
-  .controls {
+  .panel {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .panel__header {
     flex-direction: column;
     align-items: stretch;
+    gap: 14px;
   }
 
   .scores {
@@ -237,5 +265,34 @@ button:hover {
 
   .score-card {
     flex: 1;
+  }
+
+  .controls {
+    align-items: stretch;
+  }
+
+  .grid-size-selector,
+  .theme-selector {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .size-select {
+    flex: 1;
+  }
+
+  .controls button {
+    flex: 1;
+  }
+
+  .board {
+    gap: 7px;
+    padding: 8px;
+    border-radius: 16px;
+  }
+
+  .tile {
+    border-radius: 11px;
+    font-size: clamp(0.95rem, 7vw, 1.4rem);
   }
 }

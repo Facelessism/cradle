@@ -4,7 +4,12 @@ const path = require("path");
 const REPO_ROOT = path.resolve(__dirname, "..");
 const PROJECTS_DIR = path.join(REPO_ROOT, "projects");
 const PROJECTS_JSON = path.join(REPO_ROOT, "data", "projects.json");
-const REQUIRED_STANDARD_FILES = ["index.html", "script.js", "style.css"];
+const REQUIRED_STANDARD_FILES = [
+  "index.html",
+  "script.js",
+  "style.css",
+  "thumbnail.svg",
+];
 
 const EXTERNAL_PREFIXES = [
   "http://",
@@ -113,6 +118,83 @@ function validateProjectIndexEntries(diskProjects, projectsJsonData) {
     }));
 }
 
+function validateProjectNavigation(diskProjects) {
+  const issues = [];
+
+  for (const project of diskProjects) {
+    const htmlPath = path.join(project.absPath, "index.html");
+    if (!fs.existsSync(htmlPath)) continue;
+
+    const htmlContent = fs.readFileSync(htmlPath, "utf-8");
+    const hasBackToHomeScript = /src=["'][^"']*BackToHome\.js["']/i.test(
+      htmlContent
+    );
+    const hasUIBundle = /src=["'][^"']*components\/ui\/index\.js["']/i.test(
+      htmlContent
+    );
+    const hasDataAttr = /data-cradle-back-to-home/i.test(htmlContent);
+
+    if (!hasBackToHomeScript && !hasUIBundle && !hasDataAttr) {
+      issues.push({
+        type: "MISSING_NAVIGATION",
+        project: project.name,
+        message: `Project "${project.relPath}" does not include the shared BackToHome navigation component.`,
+      });
+    }
+  }
+
+  return issues;
+}
+
+function validateProjectFavicons(diskProjects) {
+  const issues = [];
+
+  for (const project of diskProjects) {
+    const htmlPath = path.join(project.absPath, "index.html");
+    if (!fs.existsSync(htmlPath)) continue;
+
+    const htmlContent = fs.readFileSync(htmlPath, "utf-8");
+    const iconMatch = htmlContent.match(/<link[^>]*rel=["'](?:shortcut )?icon["'][^>]*>/i);
+
+    if (!iconMatch) {
+      issues.push({
+        type: "MISSING_FAVICON",
+        project: project.name,
+        message: `Project "${project.relPath}" is missing a favicon <link rel="icon" ...> tag in index.html.`,
+      });
+      continue;
+    }
+
+    const hrefMatch = iconMatch[0].match(/href=["']([^"']+)["']/i);
+    if (!hrefMatch || !hrefMatch[1].trim() || hrefMatch[1].trim() === "data:,") {
+      issues.push({
+        type: "INVALID_FAVICON",
+        project: project.name,
+        message: `Project "${project.relPath}" has an empty or invalid favicon href in index.html.`,
+      });
+      continue;
+    }
+
+    const rawHref = hrefMatch[1].trim();
+    if (!isExternal(rawHref)) {
+      const cleanHref = sanitizePath(rawHref);
+      const resolvedPath = cleanHref.startsWith("/")
+        ? path.join(REPO_ROOT, cleanHref)
+        : path.resolve(project.absPath, cleanHref);
+
+      if (!fs.existsSync(resolvedPath)) {
+        issues.push({
+          type: "BROKEN_FAVICON",
+          project: project.name,
+          message: `Project "${project.relPath}" references favicon "${rawHref}" which does not exist on disk (Resolved: "${path.relative(REPO_ROOT, resolvedPath)}").`,
+        });
+      }
+    }
+  }
+
+  return issues;
+}
+
 /**
  * Validates that every mini project opens successfully without missing pages or load failures.
  */
@@ -140,6 +222,8 @@ function validateMiniProjects() {
   const diskProjects = getDiskProjects();
   issues.push(...validateStandardProjectFiles(diskProjects));
   issues.push(...validateProjectIndexEntries(diskProjects, projectsJsonData));
+  issues.push(...validateProjectNavigation(diskProjects));
+  issues.push(...validateProjectFavicons(diskProjects));
 
   // 3. Validate each registered project entry in projects.json
   for (const project of projectsJsonData) {
@@ -256,5 +340,7 @@ module.exports = {
   parseHtmlAssetLinks,
   validateStandardProjectFiles,
   validateProjectIndexEntries,
+  validateProjectNavigation,
+  validateProjectFavicons,
   validateMiniProjects,
 };

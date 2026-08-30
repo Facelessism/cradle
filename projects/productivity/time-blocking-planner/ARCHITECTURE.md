@@ -22,7 +22,6 @@ projects/productivity/time-blocking-planner/
 ├── plannerEngine.js  # Collision detection, category stats breakdown, and iCal generator
 ├── plannerStorage.js # Local storage provider and JSON import/export sanitizer
 ├── script.js         # Core logic, mouse drag & resize handling, storage persistence
-├── README.md         # Project overview and usage guidelines
 └── ARCHITECTURE.md   # Project architecture documentation
 ```
 

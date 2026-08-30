@@ -8,7 +8,13 @@
       name="description"
       content="Interactive neural network visualizer with live backpropagation, decision boundary heatmaps, and configurable architectures."
     />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/aiml/neural-network-playground/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Neural Network Playground" />
+    <meta property="og:description" content="Interactive neural network visualizer with live backpropagation, decision boundary heatmaps, and configurable architectures." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/aiml/neural-network-playground/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
@@ -22,10 +28,10 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-left">
-        <div class="logo">
+        <h1 class="logo">
           <i aria-hidden="true" class="fas fa-brain"></i>
           <span>Neural Network <strong>Playground</strong></span>
-        </div>
+        </h1>
       </div>
       <div class="header-right">
         <div class="epoch-display">
@@ -48,9 +54,9 @@
       <aside class="controls-panel" id="controlsPanel">
         <!-- Training Controls -->
         <section class="control-group">
-          <h3 class="control-title">
+          <h2 class="control-title">
             <i aria-hidden="true" class="fas fa-play-circle"></i> Training
-          </h3>
+          </h2>
           <div class="btn-row">
             <button
               id="btnTrain"
@@ -92,9 +98,9 @@
 
         <!-- Dataset -->
         <section class="control-group">
-          <h3 class="control-title">
+          <h2 class="control-title">
             <i aria-hidden="true" class="fas fa-database"></i> Dataset
-          </h3>
+          </h2>
           <div class="dataset-grid" id="datasetGrid">
             <button
               class="dataset-btn active"
@@ -267,10 +273,10 @@
 
         <!-- Network Architecture -->
         <section class="control-group">
-          <h3 class="control-title">
+          <h2 class="control-title">
             <i aria-hidden="true" class="fas fa-project-diagram"></i>
             Architecture
-          </h3>
+          </h2>
           <div class="layer-config" id="layerConfig">
             <div class="layer-header">
               <span>Hidden Layers</span>
@@ -301,9 +307,9 @@
 
         <!-- Hyperparameters -->
         <section class="control-group">
-          <h3 class="control-title">
+          <h2 class="control-title">
             <i aria-hidden="true" class="fas fa-sliders-h"></i> Hyperparameters
-          </h3>
+          </h2>
           <div class="form-row">
             <label>Learning Rate</label>
             <select id="learningRate">
@@ -338,9 +344,9 @@
 
         <!-- Export -->
         <section class="control-group">
-          <h3 class="control-title">
+          <h2 class="control-title">
             <i aria-hidden="true" class="fas fa-file-export"></i> Export Model
-          </h3>
+          </h2>
           <div class="btn-row" style="margin-top: 10px">
             <button
               id="btnExportJS"
@@ -376,10 +382,10 @@
           <!-- Decision Boundary -->
           <div class="viz-card" id="boundaryCard">
             <div class="viz-card-header">
-              <h3>
+              <h2>
                 <i aria-hidden="true" class="fas fa-border-all"></i> Decision
                 Boundary
-              </h3>
+              </h2>
               <div class="viz-card-actions">
                 <label class="toggle-label">
                   <input type="checkbox" id="showDataToggle" checked />
@@ -395,10 +401,10 @@
           <!-- Network Graph -->
           <div class="viz-card" id="networkCard">
             <div class="viz-card-header">
-              <h3>
+              <h2>
                 <i aria-hidden="true" class="fas fa-project-diagram"></i>
                 Network Architecture
-              </h3>
+              </h2>
               <div class="viz-card-actions">
                 <label class="toggle-label">
                   <input type="checkbox" id="showWeightsToggle" checked />
@@ -415,9 +421,9 @@
         <!-- Loss Chart -->
         <div class="viz-card viz-card-wide" id="lossCard">
           <div class="viz-card-header">
-            <h3>
+            <h2>
               <i aria-hidden="true" class="fas fa-chart-line"></i> Training Loss
-            </h3>
+            </h2>
           </div>
           <div class="canvas-wrap canvas-wrap-short">
             <canvas id="lossCanvas" width="900" height="180"></canvas>

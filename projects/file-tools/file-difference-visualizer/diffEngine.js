@@ -13,6 +13,94 @@
     root.DiffEngine = factory();
   }
 })(typeof self !== "undefined" ? self : this, function () {
+  const DEFAULT_MAX_FILE_SIZE_BYTES = 1048576; // 1 MB
+  const DEFAULT_MAX_LINE_COUNT = 5000;
+
+  /**
+   * Helper to compute byte size of a string.
+   */
+  function getByteSize(str) {
+    if (!str) return 0;
+    if (typeof Blob !== "undefined") {
+      return new Blob([str]).size;
+    }
+    if (typeof Buffer !== "undefined") {
+      return Buffer.byteLength(str, "utf8");
+    }
+    return str.length;
+  }
+
+  /**
+   * Validates input sizes against byte size and line count limits.
+   *
+   * @param {string} textA - Original text input.
+   * @param {string} textB - Modified text input.
+   * @param {Object} [options] - Options object with maxSizeBytes and maxLines.
+   * @returns {{valid: boolean, error: string|null, exceededLimit: string|null}}
+   */
+  function validateInputSize(textA = "", textB = "", options = {}) {
+    const maxSizeBytes =
+      options.maxSizeBytes != null
+        ? options.maxSizeBytes
+        : DEFAULT_MAX_FILE_SIZE_BYTES;
+    const maxLines =
+      options.maxLines != null ? options.maxLines : DEFAULT_MAX_LINE_COUNT;
+
+    const sizeA = getByteSize(textA);
+    if (sizeA > maxSizeBytes) {
+      return {
+        valid: false,
+        error: `Original file (A) size (${sizeA} bytes) exceeds maximum limit of ${maxSizeBytes} bytes.`,
+        exceededLimit: "size",
+        file: "A",
+        size: sizeA,
+        limit: maxSizeBytes,
+      };
+    }
+
+    const sizeB = getByteSize(textB);
+    if (sizeB > maxSizeBytes) {
+      return {
+        valid: false,
+        error: `Modified file (B) size (${sizeB} bytes) exceeds maximum limit of ${maxSizeBytes} bytes.`,
+        exceededLimit: "size",
+        file: "B",
+        size: sizeB,
+        limit: maxSizeBytes,
+      };
+    }
+
+    const linesA = splitLines(textA);
+    if (linesA.length > maxLines) {
+      return {
+        valid: false,
+        error: `Original file (A) line count (${linesA.length}) exceeds maximum limit of ${maxLines} lines.`,
+        exceededLimit: "lines",
+        file: "A",
+        lines: linesA.length,
+        limit: maxLines,
+      };
+    }
+
+    const linesB = splitLines(textB);
+    if (linesB.length > maxLines) {
+      return {
+        valid: false,
+        error: `Modified file (B) line count (${linesB.length}) exceeds maximum limit of ${maxLines} lines.`,
+        exceededLimit: "lines",
+        file: "B",
+        lines: linesB.length,
+        limit: maxLines,
+      };
+    }
+
+    return {
+      valid: true,
+      error: null,
+      exceededLimit: null,
+    };
+  }
+
   /**
    * Split string into normalized line array.
    */
@@ -70,6 +158,14 @@
    * Compute line-by-line diff between two texts using LCS.
    */
   function computeLineDiff(textA, textB, options = {}) {
+    const validation = validateInputSize(textA, textB, options);
+    if (!validation.valid) {
+      const emptyAlignment = [];
+      emptyAlignment.error = validation.error;
+      emptyAlignment.validation = validation;
+      return emptyAlignment;
+    }
+
     const ignoreWhitespace = !!options.ignoreWhitespace;
     const ignoreCase = !!options.ignoreCase;
 
@@ -145,6 +241,17 @@
     let deletions = 0;
     let unchanged = 0;
 
+    if (!alignment || alignment.error) {
+      return {
+        additions: 0,
+        deletions: 0,
+        unchanged: 0,
+        totalChanges: 0,
+        totalLines: 0,
+        error: alignment ? alignment.error : "Invalid alignment",
+      };
+    }
+
     for (const item of alignment) {
       if (item.type === "add") additions++;
       else if (item.type === "delete") deletions++;
@@ -164,6 +271,9 @@
    * Generate standard unified patch (.patch) text.
    */
   function generateUnifiedPatch(filenameA, filenameB, alignment) {
+    if (!alignment || alignment.error) {
+      return `# Error generating patch: ${alignment ? alignment.error : "Invalid alignment"}\n`;
+    }
     const nameA = filenameA || "a/original.txt";
     const nameB = filenameB || "b/modified.txt";
     let patch = `--- ${nameA}\n+++ ${nameB}\n@@ -1,${alignment.length} +1,${alignment.length} @@\n`;
@@ -182,6 +292,9 @@
   }
 
   return {
+    DEFAULT_MAX_FILE_SIZE_BYTES,
+    DEFAULT_MAX_LINE_COUNT,
+    validateInputSize,
     splitLines,
     computeCharDiff,
     computeLineDiff,
@@ -189,3 +302,4 @@
     generateUnifiedPatch,
   };
 });
+

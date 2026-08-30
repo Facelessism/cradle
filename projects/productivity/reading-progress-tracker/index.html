@@ -8,7 +8,13 @@
       name="description"
       content="Track your books, reading sessions, progress visualizations and estimated completion dates with statistics dashboard."
     />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/productivity/reading-progress-tracker/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Reading Progress Tracker | Cradle" />
+    <meta property="og:description" content="Track your books, reading sessions, progress visualizations and estimated completion dates with statistics dashboard." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/productivity/reading-progress-tracker/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -55,13 +61,13 @@
         class="alert-container"
         role="status"
         aria-live="polite"
-        style="display: none;"
+        style="display: none"
       >
         <span class="alert-icon">⚠️</span>
         <span id="alertMessage"></span>
       </div>
 
-      <main>
+      <main role="main">
         <!-- Stats Dashboard -->
         <section class="stats-dashboard" id="stats-dashboard">
           <div class="stat-card" id="stat-total-books">
@@ -141,6 +147,7 @@
 
         <!-- Tab: Library -->
         <section class="tab-panel active" id="panel-library" role="tabpanel">
+          <h2 class="sr-only" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">Library</h2>
           <!-- Filter Bar -->
           <div class="filter-bar">
             <div class="filter-group">
@@ -232,7 +239,9 @@
                 </div>
                 <div class="speed-item">
                   <span class="speed-label">Longest Streak</span>
-                  <span class="speed-value mono" id="longest-streak">0 days</span>
+                  <span class="speed-value mono" id="longest-streak"
+                    >0 days</span
+                  >
                 </div>
                 <div class="speed-item">
                   <span class="speed-label">Completion Rate</span>
@@ -252,7 +261,7 @@
     <div class="modal-backdrop" id="book-modal" hidden>
       <div class="modal-card">
         <div class="modal-header">
-          <h3 id="book-modal-title">Add Book</h3>
+          <h2 id="book-modal-title">Add Book</h2>
           <button class="modal-close" id="book-modal-close" aria-label="Close">
             ✕
           </button>
@@ -370,7 +379,7 @@
     <div class="modal-backdrop" id="session-modal" hidden>
       <div class="modal-card">
         <div class="modal-header">
-          <h3>Log Reading Session</h3>
+          <h2>Log Reading Session</h2>
           <button
             class="modal-close"
             id="session-modal-close"
@@ -469,7 +478,7 @@
     <div class="modal-backdrop" id="detail-modal" hidden>
       <div class="modal-card modal-card-wide">
         <div class="modal-header">
-          <h3 id="detail-book-title">Book Details</h3>
+          <h2 id="detail-book-title">Book Details</h2>
           <button
             class="modal-close"
             id="detail-modal-close"
@@ -487,5 +496,9 @@
     <script src="tracker-logic.js"></script>
     <script src="../../../src/components/ui/escapeHtml.js"></script>
     <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
   </body>
 </html>

@@ -77,7 +77,7 @@ npm install
 pip install -r requirements.txt
 ```
 
-- Check the project's own `README.md` for specific setup instructions.
+- Check the project's own `ARCHITECTURE.md` for specific setup instructions.
 
 ---
 
@@ -385,7 +385,7 @@ All Cradle projects are designed to run in modern browsers. If something looks b
 Before filing a new issue, please go through these steps:
 
 1. **Search existing issues** — your problem may already have a fix: [GitHub Issues](https://github.com/Facelessism/cradle/issues).
-2. **Read the relevant README** — both the root `README.md` and the project-level `README.md` if one exists.
+2. **Read the relevant documentation** — both the root `README.md` and the project-level `ARCHITECTURE.md`.
 3. **Check the browser console** — press `F12`, open the Console tab, and look for error messages.
 4. **Hard-refresh the browser** — `Cmd/Ctrl + Shift + R` to rule out caching.
 5. **Test with a local server** — open via `http://localhost:8000`, not `file://`.

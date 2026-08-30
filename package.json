@@ -3,29 +3,48 @@
   "version": "1.0.0",
   "description": "A personal collection of small ideas, experiments, and geeky projects.",
   "main": "script.js",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "generate": "node scripts/generate-projects.js",
     "validate:architecture": "node scripts/validate-architecture-docs.js",
     "validate:mini-projects": "node scripts/validate-mini-projects.js",
+    "validate:projects-sync": "node scripts/validate-projects-sync.js",
     "check:links": "node scripts/check-broken-links.js",
     "detect:duplicates": "node scripts/detect-duplicate-js.js",
-    "healthcheck": "npm run build && npm run validate:mini-projects && npm run validate:architecture && npm run validate:a11y-labels && npm run check:links && npm run detect:duplicates -- --fail-on-dup && npm test",
+    "healthcheck": "npm run check-format && npm run validate:projects-sync && npm run validate:mini-projects && npm run validate:architecture && npm run validate:a11y-labels && npm run check:links && npm run detect:duplicates -- --fail-on-dup && npm test",
     "validate:a11y-labels": "node scripts/validate-accessible-labels.js",
     "test": "node --test",
-    "dev": "npm run generate && npx live-server",
+    "dev": "npm run generate && live-server",
     "build": "npm run generate",
     "format": "prettier --write .",
     "check-format": "prettier --check .",
     "validate:project-order": "node scripts/validate-project-order.js"
   },
   "devDependencies": {
+    "live-server": "^1.2.2",
     "prettier": "^3.0.0"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Facelessism/cradle.git"
   },
-  "keywords": [],
-  "author": "",
+  "homepage": "https://github.com/Facelessism/cradle#readme",
+  "bugs": {
+    "url": "https://github.com/Facelessism/cradle/issues"
+  },
+  "keywords": [
+    "cradle",
+    "experiments",
+    "prototypes",
+    "demos",
+    "web-tools",
+    "games",
+    "developer-tools",
+    "javascript"
+  ],
+  "author": "Facelessism (https://github.com/Facelessism)",
   "license": "MIT"
 }

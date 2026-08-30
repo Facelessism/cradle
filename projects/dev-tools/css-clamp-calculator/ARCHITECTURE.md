@@ -24,7 +24,6 @@ css-clamp-calculator/
 ├── script.js           # DOM events, presets, clipboard, and preview updates
 ├── clampCalculator.js  # Pure clamp formula, validation, and unit conversion logic
 ├── ARCHITECTURE.md     # Project architecture documentation
-├── README.md           # Usage and test instructions
 └── thumbnail.svg       # Generated gallery thumbnail
 ```
 
@@ -54,7 +53,6 @@ graph TD
 | `style.css` | Defines the dark dev-tools layout, form controls, output panels, responsive behavior, and live preview. |
 | `script.js` | Connects input events to the engine, applies presets, copies generated CSS, converts units, and updates preview styles. |
 | `clampCalculator.js` | Validates numeric ranges, calculates preferred values, generates `clamp()` CSS, and handles px/rem conversion. |
-| `README.md` | Documents feature scope, local run instructions, and focused test command. |
 
 ---
 

@@ -5,170 +5,139 @@ const encodeBtn = document.getElementById("encodeBtn");
 const clearBtn = document.getElementById("clearBtn");
 const copyBtn = document.getElementById("copyBtn");
 const playBtn = document.getElementById("playBtn");
-
 const speedSlider = document.getElementById("speedSlider");
 const speedValue = document.getElementById("speedValue");
 
-const MORSE = {
-  A: ".-",
-  B: "-...",
-  C: "-.-.",
-  D: "-..",
-  E: ".",
-  F: "..-.",
-  G: "--.",
-  H: "....",
-  I: "..",
-  J: ".---",
-  K: "-.-",
-  L: ".-..",
-  M: "--",
-  N: "-.",
-  O: "---",
-  P: ".--.",
-  Q: "--.-",
-  R: ".-.",
-  S: "...",
-  T: "-",
-  U: "..-",
-  V: "...-",
-  W: ".--",
-  X: "-..-",
-  Y: "-.--",
-  Z: "--..",
+let audioContext = null;
+let isPlaying = false;
 
-  0: "-----",
-  1: ".----",
-  2: "..---",
-  3: "...--",
-  4: "....-",
-  5: ".....",
-  6: "-....",
-  7: "--...",
-  8: "---..",
-  9: "----.",
+function getWpm() {
+  const value = Number(speedSlider.value);
+  return Math.max(5, Math.min(60, value || 20));
+}
 
-  ".": ".-.-.-",
-  ",": "--..--",
-  "?": "..--..",
-  "!": "-.-.--",
-  ":": "---...",
-  ";": "-.-.-.",
-  "-": "-....-",
-  "/": "-..-.",
-  "@": ".--.-.",
-  "(": "-.--.",
-  ")": "-.--.-",
-
-  " ": "/",
-};
-
-const REVERSE = Object.fromEntries(
-  Object.entries(MORSE).map(([k, v]) => [v, k])
-);
-
-speedSlider.addEventListener("input", () => {
-  speedValue.textContent = `${speedSlider.value} ms`;
-});
-
-encodeBtn.addEventListener("click", encodeText);
-decodeBtn.addEventListener("click", decodeText);
-
-clearBtn.addEventListener("click", clearFields);
-copyBtn.addEventListener("click", copyOutput);
-playBtn.addEventListener("click", playMorse);
+function updateSpeed() {
+  speedValue.textContent = `${getWpm()} WPM`;
+}
 
 function encodeText() {
-  const text = inputText.value;
-  if (typeof MorseEngine !== "undefined" && typeof MorseEngine.textToMorse === "function") {
-    outputText.value = MorseEngine.textToMorse(text);
+  const text = inputText.value.trim();
+
+  if (!text) {
+    outputText.value = "";
     return;
   }
-  const morse = [];
-  for (const char of text.toUpperCase()) {
-    if (MORSE[char]) morse.push(MORSE[char]);
-  }
-  outputText.value = morse.join(" ");
+
+  outputText.value = MorseEngine.textToMorse(text);
 }
 
 function decodeText() {
   const morse = inputText.value.trim();
-  if (typeof MorseEngine !== "undefined" && typeof MorseEngine.morseToText === "function") {
-    outputText.value = MorseEngine.morseToText(morse);
-    return;
-  }
+
   if (!morse) {
     outputText.value = "";
     return;
   }
-  const words = morse.split(" / ");
-  const decoded = words.map(word => {
-    return word.split(" ").map(code => REVERSE[code] || "?").join("");
-  });
-  outputText.value = decoded.join(" ");
+
+  outputText.value = MorseEngine.morseToText(morse);
 }
 
 function clearFields() {
   inputText.value = "";
   outputText.value = "";
+  updateCopyButton("📋 Copy");
 }
 
-function copyOutput() {
-  if (!outputText.value) return;
+async function copyOutput() {
+  const value = outputText.value.trim();
 
-  navigator.clipboard.writeText(outputText.value);
+  if (!value) return;
 
-  copyBtn.textContent = "Copied!";
+  try {
+    await navigator.clipboard.writeText(value);
+    updateCopyButton("✓ Copied!");
 
-  setTimeout(() => {
-    copyBtn.textContent = "📋 Copy";
-  }, 1000);
+    setTimeout(() => {
+      updateCopyButton("📋 Copy");
+    }, 1200);
+  } catch {
+    updateCopyButton("Copy failed");
+
+    setTimeout(() => {
+      updateCopyButton("📋 Copy");
+    }, 1200);
+  }
+}
+
+function updateCopyButton(text) {
+  copyBtn.textContent = text;
 }
 
 async function playMorse() {
   const morse = outputText.value.trim();
 
-  if (!morse) return;
+  if (!morse || isPlaying) return;
 
-  const unit = Number(speedSlider.value);
+  isPlaying = true;
+  playBtn.disabled = true;
+  playBtn.textContent = "■ Playing...";
 
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-
-  for (const symbol of morse) {
-    if (symbol === ".") {
-      await beep(ctx, unit);
-
-      await wait(unit);
-    } else if (symbol === "-") {
-      await beep(ctx, unit * 3);
-
-      await wait(unit);
-    } else if (symbol === " ") {
-      await wait(unit * 2);
-    } else if (symbol === "/") {
-      await wait(unit * 6);
+  try {
+    if (!audioContext) {
+      audioContext = new (
+        window.AudioContext || window.webkitAudioContext
+      )();
     }
+
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+
+    const sequence = MorseEngine.generateAudioSequence(
+      morse,
+      getWpm(),
+      650
+    );
+
+    for (const item of sequence) {
+      if (item.type === "tone") {
+        await beep(audioContext, item.durationMs, item.frequency);
+      } else {
+        await wait(item.durationMs);
+      }
+    }
+  } finally {
+    isPlaying = false;
+    playBtn.disabled = false;
+    playBtn.textContent = "▶ Play";
   }
 }
 
-function beep(ctx, duration) {
+function beep(context, duration, frequency) {
   return new Promise(resolve => {
-    const oscillator = ctx.createOscillator();
-    const gain = ctx.createGain();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
 
-    oscillator.frequency.value = 650;
     oscillator.type = "sine";
+    oscillator.frequency.value = frequency;
+
+    gain.gain.setValueAtTime(0.0001, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(
+      0.15,
+      context.currentTime + 0.01
+    );
+    gain.gain.exponentialRampToValueAtTime(
+      0.0001,
+      context.currentTime + duration / 1000
+    );
 
     oscillator.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(context.destination);
 
     oscillator.start();
+    oscillator.stop(context.currentTime + duration / 1000);
 
-    setTimeout(() => {
-      oscillator.stop();
-
-      resolve();
-    }, duration);
+    oscillator.addEventListener("ended", resolve, { once: true });
   });
 }
 
@@ -177,3 +146,12 @@ function wait(ms) {
     setTimeout(resolve, ms);
   });
 }
+
+speedSlider.addEventListener("input", updateSpeed);
+encodeBtn.addEventListener("click", encodeText);
+decodeBtn.addEventListener("click", decodeText);
+clearBtn.addEventListener("click", clearFields);
+copyBtn.addEventListener("click", copyOutput);
+playBtn.addEventListener("click", playMorse);
+
+updateSpeed();

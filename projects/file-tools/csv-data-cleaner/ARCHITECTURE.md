@@ -24,7 +24,6 @@ csv-data-cleaner/
 ├── script.js        # DOM events, file upload, rendering, and download handling
 ├── csvCleaner.js    # Pure CSV parsing, cleaning, analysis, and export logic
 ├── ARCHITECTURE.md  # Project architecture documentation
-├── README.md        # Usage and test instructions
 └── thumbnail.svg    # Generated gallery thumbnail
 ```
 
@@ -54,7 +53,6 @@ graph TD
 | `style.css` | Defines the dark file-tools layout, responsive workspace, summary cards, and missing-value table styling. |
 | `script.js` | Wires UI controls to the cleaner engine, reads uploaded files, renders summaries and tables, and downloads cleaned CSV. |
 | `csvCleaner.js` | Parses CSV strings, trims fields, removes empty and duplicate rows, detects missing values, and exports CSV text. |
-| `README.md` | Documents local run and test steps. |
 
 ---
 

@@ -788,3 +788,31 @@ body {
     width: auto;
   }
 }
+
+/* Accessibility: Respect user's reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable decorative pulse on active shape handle */
+  .shape-handle.active {
+    animation: none !important;
+  }
+
+  /* Disable toast slide-in animation — toast still appears */
+  .toast {
+    animation: none !important;
+  }
+
+  /* Disable hover transform on shape handles */
+  .shape-handle:hover,
+  .shape-handle:active {
+    transform: translate(-50%, -50%) !important;
+  }
+}

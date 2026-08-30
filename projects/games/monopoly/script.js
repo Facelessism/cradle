@@ -87,11 +87,23 @@ const nameInputsEl = document.getElementById('nameInputs');
 
 function renderNameInputs(){
   nameInputsEl.innerHTML = '';
+
   for(let i=0;i<numPlayers;i++){
     const row = document.createElement('div');
     row.className = 'ni';
-    row.innerHTML = `<div class="swatchdot" style="background:${TOKEN_COLORS[i]}"></div>
-      <input type="text" maxlength="14" placeholder="Player ${i+1}" id="nameIn${i}">`;
+
+    const swatch = document.createElement('div');
+    swatch.className = 'swatchdot';
+    swatch.style.background = TOKEN_COLORS[i];
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.maxLength = 14;
+    input.placeholder = `Player ${i + 1}`;
+    input.id = `nameIn${i}`;
+
+    row.appendChild(swatch);
+    row.appendChild(input);
     nameInputsEl.appendChild(row);
   }
 }
@@ -204,12 +216,40 @@ function renderOwnership(){
 function renderPlayers(){
   const el = document.getElementById('playersList');
   el.innerHTML = '';
+
   players.forEach((p,idx)=>{
     const row = document.createElement('div');
-    row.className = 'player-row' + (idx===currentPlayerIdx?' active':'') + (p.bankrupt?' bankrupt':'');
-    row.innerHTML = `<div class="tok" style="background:${p.color}">${p.letter}</div>
-      <div class="info"><div class="nm">${p.name}${p.inJail?'<span class="jail-badge">JAIL</span>':''}</div>
-      <div class="cash">$${p.cash.toLocaleString()}</div></div>`;
+    row.className = 'player-row' +
+      (idx===currentPlayerIdx?' active':'') +
+      (p.bankrupt?' bankrupt':'');
+
+    const token = document.createElement('div');
+    token.className = 'tok';
+    token.style.background = p.color;
+    token.textContent = p.letter;
+
+    const info = document.createElement('div');
+    info.className = 'info';
+
+    const name = document.createElement('div');
+    name.className = 'nm';
+    name.appendChild(document.createTextNode(p.name));
+
+    if (p.inJail) {
+      const jailBadge = document.createElement('span');
+      jailBadge.className = 'jail-badge';
+      jailBadge.textContent = 'JAIL';
+      name.appendChild(jailBadge);
+    }
+
+    const cash = document.createElement('div');
+    cash.className = 'cash';
+    cash.textContent = `$${p.cash.toLocaleString()}`;
+
+    info.appendChild(name);
+    info.appendChild(cash);
+    row.appendChild(token);
+    row.appendChild(info);
     el.appendChild(row);
   });
 }

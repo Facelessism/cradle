@@ -10,7 +10,7 @@ Cradle is a repository for my small ideas, experiments and lightweight prototype
 
 ## Each project folder includes
 
-- a short `README.md` describing the goal and how to run or test it,
+- an `ARCHITECTURE.md` describing the goal, architecture, and how to run or test it,
 - minimal dependency manifest (`requirements.txt`, `package.json` etc.)
 - example usage or quick demo scripts if possible.
 
@@ -47,6 +47,14 @@ Cradle/
 
 ## Getting started
 
+### Prerequisites
+
+- **Node.js**: `v20.0.0` or higher (CI and recommended runtime is `v24.x` / see [.nvmrc](.nvmrc))
+- **npm**: `v9.0.0` or higher
+- **Python**: `3.x` (optional, for local HTTP static file serving)
+
+### Setup
+
 1. Clone the repo after forking
 
 ```bash
@@ -74,8 +82,27 @@ Then visit
 http://localhost:8000
 ```
 
-1. For Individual projects
-   - Open their `index.html` directly on browser
+### Run Individual Projects
+
+Projects that do not use browser-restricted features can be opened directly from their `index.html`.
+
+Projects that use JavaScript modules, Web Workers, or other browser features restricted under `file://` should be run through a local HTTP server.
+
+```bash
+python -m http.server 8000
+```
+
+Then visit:
+
+```text
+http://localhost:8000/projects/<category>/<project>/
+```
+
+For example:
+
+```text
+http://localhost:8000/projects/aiml/image-classifier/
+```
 
 ## ⌨️ Keyboard Shortcuts
 

@@ -1,19 +1,21 @@
 const fs = require("fs");
 const path = require("path");
-const { execSync } = require("child_process");
+const { execFileSync } = require("child_process");
 
-const REPO_ROOT = path.join(__dirname, "..");
+const REPO_ROOT = path.resolve(__dirname, "..");
+const PROJECTS_DIR = path.join(REPO_ROOT, "projects");
+const OUTPUT_FILE = path.join(REPO_ROOT, "data", "projects.json");
 
 // Date a project was first added, taken from the commit that introduced its
 // folder. This is what powers the "New" badge (isNewProject in script.js);
 // without it every project's dateAdded is undefined and the badge never shows.
 // Falls back to null when git history isn't available (e.g. running outside a
 // checkout) so generation still succeeds — the badge just stays hidden.
-function getDateAdded(absPath) {
+function getDateAdded(absPath, repoRoot = REPO_ROOT) {
   try {
-    const rel = path.relative(REPO_ROOT, absPath);
-    const out = execSync(`git log --reverse --format=%aI -- "${rel}"`, {
-      cwd: REPO_ROOT,
+    const rel = path.relative(repoRoot, absPath);
+    const out = execFileSync("git", ["log", "--reverse", "--format=%aI", "--", rel], {
+      cwd: repoRoot,
       stdio: ["ignore", "pipe", "ignore"],
     })
       .toString()
@@ -24,13 +26,52 @@ function getDateAdded(absPath) {
   }
 }
 
-const PROJECTS_DIR = path.join(__dirname, "..", "projects");
-const OUTPUT_FILE = path.join(
-  __dirname,
-  "..",
-  "data",
-  "projects.json"
-);
+// If we're in a shallow clone (e.g. actions/checkout's default fetch-depth: 1),
+// `git log -- <path>` can't see the commit that introduced most project
+// folders, so dateAdded silently comes back null for almost everything. Try
+// to deepen the clone once, up front, so getDateAdded() above has real
+// history to read. Safe to skip if there's no remote/network (e.g. local
+// dev, offline CI) — the existing-dates fallback below covers that case.
+function ensureFullHistory(repoRoot = REPO_ROOT) {
+  try {
+    const isShallow = execFileSync("git", ["rev-parse", "--is-shallow-repository"], {
+      cwd: repoRoot,
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .toString()
+      .trim();
+    if (isShallow === "true") {
+      execFileSync("git", ["fetch", "--unshallow"], {
+        cwd: repoRoot,
+        stdio: ["ignore", "ignore", "ignore"],
+      });
+    }
+  } catch {
+    // Not a git repo, no remote configured, offline, etc. — fine, we fall
+    // back to the previously recorded dateAdded for each project below.
+  }
+}
+
+// Preserve previously-generated dateAdded values across regenerations. Used
+// as a fallback whenever git history for a project can't be read (shallow
+// clone, no .git directory, etc.) so a bad environment can't erase a date
+// that was already correctly recorded.
+function loadExistingDates(outputFile = OUTPUT_FILE) {
+  const dates = new Map();
+  try {
+    const existing = JSON.parse(fs.readFileSync(outputFile, "utf8"));
+    if (Array.isArray(existing)) {
+      for (const project of existing) {
+        if (project.path && project.dateAdded) {
+          dates.set(project.path, project.dateAdded);
+        }
+      }
+    }
+  } catch {
+    // No existing data/projects.json yet, or it's malformed — start fresh.
+  }
+  return dates;
+}
 
 const CATEGORY_STYLES = {
   aiml: {
@@ -137,6 +178,7 @@ function titleCase(str) {
 
   const acronyms = {
     "Ai": "AI",
+    "Api": "API",
     "Ascii": "ASCII",
     "Cpu": "CPU",
     "Qr": "QR",
@@ -147,7 +189,7 @@ function titleCase(str) {
     "Csv": "CSV"
   };
 
-  return title.replace(/\b(Ai|Ascii|Cpu|Qr|Css|Json|Url|Html|Csv)\b/g, match => acronyms[match]);
+  return title.replace(/\b(Ai|Api|Ascii|Cpu|Qr|Css|Json|Url|Html|Csv)\b/g, match => acronyms[match]);
 }
 
 function wrapText(text, maxChars = 20) {
@@ -190,7 +232,7 @@ function generateSvgThumbnail(title, categoryName, projectAbsPath) {
   }
 
   const style = CATEGORY_STYLES[categoryName] || defaultStyle;
-  
+
   // Word wrap for title
   const lines = wrapText(title, 20);
   let textY = 280;
@@ -268,37 +310,49 @@ function generateSvgThumbnail(title, categoryName, projectAbsPath) {
   fs.writeFileSync(path.join(projectAbsPath, "thumbnail.svg"), svgContent);
 }
 
-function generateProjects() {
+function buildProjectsRegistry({
+  projectsDir = PROJECTS_DIR,
+  repoRoot = REPO_ROOT,
+  outputFile = OUTPUT_FILE,
+  generateThumbnails = false
+} = {}) {
   const projects = [];
   const errors = [];
 
-  if (!fs.existsSync(PROJECTS_DIR)) {
-    console.error(`❌ Error: Projects directory not found at ${PROJECTS_DIR}`);
-    process.exit(1);
+  if (!fs.existsSync(projectsDir)) {
+    return {
+      projects: [],
+      errors: [`Projects directory not found at ${projectsDir}`]
+    };
   }
 
+  ensureFullHistory(repoRoot);
+  const existingDates = loadExistingDates(outputFile);
+
   const categories = fs
-    .readdirSync(PROJECTS_DIR, { withFileTypes: true })
-    .filter(dirent => dirent.isDirectory());
+    .readdirSync(projectsDir, { withFileTypes: true })
+    .filter(dirent => dirent.isDirectory())
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 
   const seenPaths = new Set();
   const seenTitles = new Set();
 
   for (const category of categories) {
-    const categoryName = category.name;
-    const categoryPath = path.join(PROJECTS_DIR, categoryName);
+    const categoryName = path.basename(category.name);
+    const categoryPath = path.join(projectsDir, categoryName);
 
     const projectFolders = fs
       .readdirSync(categoryPath, {
         withFileTypes: true
       })
-      .filter(dirent => dirent.isDirectory());
+      .filter(dirent => dirent.isDirectory())
+      .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 
     for (const project of projectFolders) {
-      const projectName = project.name;
+      const projectName = path.basename(project.name);
       const title = titleCase(projectName);
       const projectPathStr = `projects/${categoryName}/${projectName}/`;
-      const fullProjectPath = path.join(__dirname, "..", projectPathStr);
+      const fullProjectPath = path.join(repoRoot, projectPathStr);
 
       // Validation checks
       if (!title || title.trim() === "") {
@@ -321,17 +375,33 @@ function generateProjects() {
         seenTitles.add(title);
       }
 
-      // Generate this project's card thumbnail if it doesn't have one yet.
-      // Only when missing, so committed thumbnails are never rewritten; wrapped
-      // so one bad project can't abort the whole build. (#471 — the thumbnail half)
-      const thumbnailPath = path.join(fullProjectPath, "thumbnail.svg");
-      if (fs.existsSync(fullProjectPath) && !fs.existsSync(thumbnailPath)) {
+      // Generate card thumbnail if requested and missing
+      if (generateThumbnails) {
+        const thumbnailPath = path.join(fullProjectPath, "thumbnail.svg");
+        if (fs.existsSync(fullProjectPath) && !fs.existsSync(thumbnailPath)) {
+          try {
+            generateSvgThumbnail(title, categoryName, fullProjectPath);
+          } catch (err) {
+            console.warn(
+              `⚠️  Could not generate thumbnail for ${projectPathStr}: ${err.message}`
+            );
+          }
+        }
+      }
+
+      let dateAdded = getDateAdded(fullProjectPath, repoRoot);
+      if (!dateAdded && existingDates.has(projectPathStr)) {
+        // git history wasn't available (shallow clone, no .git, etc.) —
+        // keep the last known-good date instead of losing it.
+        dateAdded = existingDates.get(projectPathStr);
+      }
+      if (!dateAdded && fs.existsSync(fullProjectPath)) {
+        // Last resort so a brand-new project (with no git history yet and
+        // no prior recorded date) still gets a usable dateAdded.
         try {
-          generateSvgThumbnail(title, categoryName, fullProjectPath);
-        } catch (err) {
-          console.warn(
-            `⚠️  Could not generate thumbnail for ${projectPathStr}: ${err.message}`
-          );
+          dateAdded = fs.statSync(fullProjectPath).birthtime.toISOString();
+        } catch {
+          dateAdded = null;
         }
       }
 
@@ -339,10 +409,160 @@ function generateProjects() {
         title: title,
         category: categoryName,
         path: projectPathStr,
-        dateAdded: getDateAdded(fullProjectPath)
+        dateAdded: dateAdded
       });
     }
   }
+
+  projects.sort((a, b) => {
+    const comp = a.title.localeCompare(b.title, "en", { sensitivity: "base" });
+    if (comp !== 0) return comp;
+    return a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
+  });
+
+  return { projects, errors };
+}
+
+function validateProjectsSync({
+  projectsDir = PROJECTS_DIR,
+  repoRoot = REPO_ROOT,
+  outputFile = OUTPUT_FILE
+} = {}) {
+  const issues = [];
+
+  if (!fs.existsSync(outputFile)) {
+    return {
+      inSync: false,
+      issues: [`Registry file "${path.relative(repoRoot, outputFile)}" does not exist.`]
+    };
+  }
+
+  let existingProjects;
+  let rawContent;
+  try {
+    rawContent = fs.readFileSync(outputFile, "utf-8");
+    existingProjects = JSON.parse(rawContent);
+  } catch (e) {
+    return {
+      inSync: false,
+      issues: [`Registry file "${path.relative(repoRoot, outputFile)}" contains invalid JSON: ${e.message}`]
+    };
+  }
+
+  if (!Array.isArray(existingProjects)) {
+    return {
+      inSync: false,
+      issues: [`Registry file "${path.relative(repoRoot, outputFile)}" must contain a JSON array.`]
+    };
+  }
+
+  const { projects: expectedProjects, errors } = buildProjectsRegistry({
+    projectsDir,
+    repoRoot,
+    outputFile,
+    generateThumbnails: false
+  });
+
+  if (errors.length > 0) {
+    errors.forEach(err => issues.push(`Project structure error: ${err}`));
+    return {
+      inSync: false,
+      issues,
+      expected: expectedProjects,
+      actual: existingProjects
+    };
+  }
+
+  const expectedPaths = new Set(expectedProjects.map(p => p.path));
+  const actualPaths = new Set(existingProjects.map(p => p.path));
+
+  // Check missing projects (on disk but not in json)
+  for (const expected of expectedProjects) {
+    if (!actualPaths.has(expected.path)) {
+      issues.push(
+        `Project on disk "${expected.path}" is missing from ${path.relative(repoRoot, outputFile)}.`
+      );
+    }
+  }
+
+  // Check extraneous projects (in json but not on disk)
+  for (const actual of existingProjects) {
+    if (!expectedPaths.has(actual.path)) {
+      issues.push(
+        `Project "${actual.path || actual.title}" listed in ${path.relative(repoRoot, outputFile)} does not exist on disk.`
+      );
+    }
+  }
+
+  // Check count
+  if (existingProjects.length !== expectedProjects.length) {
+    issues.push(
+      `Project count mismatch: expected ${expectedProjects.length} project(s), but found ${existingProjects.length} in registry.`
+    );
+  }
+
+  // Check project ordering and metadata property integrity
+  const minLength = Math.min(existingProjects.length, expectedProjects.length);
+  for (let i = 0; i < minLength; i++) {
+    const actual = existingProjects[i];
+    const expected = expectedProjects[i];
+
+    if (actual.path !== expected.path) {
+      issues.push(
+        `Ordering/path mismatch at index ${i}: expected "${expected.path}" ("${expected.title}"), found "${actual.path}" ("${actual.title}").`
+      );
+      continue;
+    }
+
+    if (actual.title !== expected.title) {
+      issues.push(
+        `Title mismatch for "${expected.path}": expected "${expected.title}", found "${actual.title}".`
+      );
+    }
+
+    if (actual.category !== expected.category) {
+      issues.push(
+        `Category mismatch for "${expected.path}": expected "${expected.category}", found "${actual.category}".`
+      );
+    }
+
+    if (actual.dateAdded !== expected.dateAdded) {
+      issues.push(
+        `dateAdded mismatch for "${expected.path}": expected ${JSON.stringify(expected.dateAdded)}, found ${JSON.stringify(actual.dateAdded)}.`
+      );
+    }
+  }
+
+  // Check serialized formatting match
+  const expectedOutput = JSON.stringify(expectedProjects, null, 2);
+  const normalizedActual = rawContent.replace(/\r\n/g, "\n").trim();
+  const normalizedExpected = expectedOutput.replace(/\r\n/g, "\n").trim();
+
+  if (normalizedActual !== normalizedExpected && issues.length === 0) {
+    issues.push(
+      `Formatting mismatch in "${path.relative(repoRoot, outputFile)}". Content was not generated using standard serialization.`
+    );
+  }
+
+  return {
+    inSync: issues.length === 0,
+    issues,
+    expected: expectedProjects,
+    actual: existingProjects
+  };
+}
+
+function generateProjects({
+  projectsDir = PROJECTS_DIR,
+  repoRoot = REPO_ROOT,
+  outputFile = OUTPUT_FILE
+} = {}) {
+  const { projects, errors } = buildProjectsRegistry({
+    projectsDir,
+    repoRoot,
+    outputFile,
+    generateThumbnails: true
+  });
 
   // Report validation errors and fail build if any exist
   if (errors.length > 0) {
@@ -351,16 +571,34 @@ function generateProjects() {
     process.exit(1);
   }
 
-  projects.sort((a, b) =>
-    a.title.localeCompare(b.title)
-  );
-
   const output = JSON.stringify(projects, null, 2);
-  fs.writeFileSync(OUTPUT_FILE, output);
+  fs.writeFileSync(outputFile, output);
 
   console.log(
-    `✅ Generated and validated ${projects.length} projects successfully → data/projects.json`
+    `✅ Generated and validated ${projects.length} projects successfully → ${path.relative(repoRoot, outputFile)}`
   );
+
+  return projects;
 }
 
-generateProjects();
+if (require.main === module) {
+  generateProjects();
+}
+
+module.exports = {
+  CATEGORY_STYLES,
+  defaultStyle,
+  titleCase,
+  wrapText,
+  escapeXml,
+  generateSvgThumbnail,
+  getDateAdded,
+  ensureFullHistory,
+  loadExistingDates,
+  buildProjectsRegistry,
+  validateProjectsSync,
+  generateProjects,
+  PROJECTS_DIR,
+  OUTPUT_FILE,
+  REPO_ROOT,
+};

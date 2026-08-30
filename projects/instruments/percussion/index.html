@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A playable virtual percussion set with 8 drum pads, supporting keyboard, mouse, and touch interaction."
+    />
+    <title>Virtual Percussion Set | Cradle Mini</title>
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <main class="percussion-app">
+      <header class="percussion-header">
+        <div class="header-content">
+          <p class="eyebrow">CRADLE MINI</p>
+          <h1>Virtual Percussion Set</h1>
+          <p>Play drums and cymbals with your keyboard, mouse, or touch.</p>
+        </div>
+
+        <div class="status" id="status" aria-live="polite">Ready</div>
+      </header>
+
+      <section class="pad-card" aria-label="Virtual percussion set">
+        <div
+          class="pad-grid"
+          role="group"
+          aria-label="8-pad playable percussion set"
+        >
+          <button
+            class="pad"
+            type="button"
+            data-pad="kick"
+            data-key="q"
+            aria-label="Kick"
+            aria-pressed="false"
+          >
+            <span class="pad-name">Kick</span>
+            <kbd>Q</kbd>
+          </button>
+
+          <button
+            class="pad"
+            type="button"
+            data-pad="snare"
+            data-key="w"
+            aria-label="Snare"
+            aria-pressed="false"
+          >
+            <span class="pad-name">Snare</span>
+            <kbd>W</kbd>
+          </button>
+
+          <button
+            class="pad"
+            type="button"
+            data-pad="hihatClosed"
+            data-key="e"
+            aria-label="Closed Hi-Hat"
+            aria-pressed="false"
+          >
+            <span class="pad-name">Closed Hat</span>
+            <kbd>E</kbd>
+          </button>
+
+          <button
+            class="pad"
+            type="button"
+            data-pad="hihatOpen"
+            data-key="r"
+            aria-label="Open Hi-Hat"
+            aria-pressed="false"
+          >
+            <span class="pad-name">Open Hat</span>
+            <kbd>R</kbd>
+          </button>
+
+          <button
+            class="pad"
+            type="button"
+            data-pad="tomLow"
+            data-key="a"
+            aria-label="Low Tom"
+            aria-pressed="false"
+          >
+            <span class="pad-name">Low Tom</span>
+            <kbd>A</kbd>
+          </button>
+
+          <button
+            class="pad"
+            type="button"
+            data-pad="tomHigh"
+            data-key="s"
+            aria-label="High Tom"
+            aria-pressed="false"
+          >
+            <span class="pad-name">High Tom</span>
+            <kbd>S</kbd>
+          </button>
+
+          <button
+            class="pad"
+            type="button"
+            data-pad="clap"
+            data-key="d"
+            aria-label="Clap"
+            aria-pressed="false"
+          >
+            <span class="pad-name">Clap</span>
+            <kbd>D</kbd>
+          </button>
+
+          <button
+            class="pad"
+            type="button"
+            data-pad="crash"
+            data-key="f"
+            aria-label="Crash"
+            aria-pressed="false"
+          >
+            <span class="pad-name">Crash</span>
+            <kbd>F</kbd>
+          </button>
+        </div>
+      </section>
+
+      <section class="instructions" aria-label="How to play">
+        <div class="instruction">
+          <strong>⌨ Keyboard</strong>
+          <span>Use the displayed keyboard shortcuts</span>
+        </div>
+
+        <div class="instruction">
+          <strong>🖱 Mouse</strong>
+          <span>Click any pad</span>
+        </div>
+
+        <div class="instruction">
+          <strong>☝ Touch</strong>
+          <span>Tap any pad, multiple at once</span>
+        </div>
+      </section>
+    </main>
+
+    <script src="percussionEngine.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

@@ -25,7 +25,6 @@ feature-flag-playground/
 ├── flagEngine.js      # Pure logic: storage, hashing, evaluation — no DOM access
 ├── script.js         # DOM wiring: rendering, event listeners, tab switching
 ├── ARCHITECTURE.md   # This file
-├── README.md         # Usage instructions
 └── thumbnail.svg     # Showcase card thumbnail
 ```
 

@@ -4,10 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Morse Code Studio</title>
-    <meta name="description" content="Interactive Morse code studio for encoding, decoding, audio playback, and speed tuning." />
+    <meta
+      name="description"
+      content="Interactive Morse code studio for encoding, decoding, audio playback, and speed tuning."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/misc/morse-code-studio/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Morse Code Studio" />
+    <meta property="og:description" content="Interactive Morse code studio for encoding, decoding, audio playback, and speed tuning." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/misc/morse-code-studio/" />
     <link rel="stylesheet" href="style.css" />
-    <link rel="icon" href="data:," />
-  </head>
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+</head>
   <body>
     <div class="container">
       <header>
@@ -15,44 +23,41 @@
         <p>Encode text, decode Morse code, and play Morse audio.</p>
       </header>
 
-      <!-- Editors -->
-      <main>
+      <main role="main">
         <div class="editor-grid">
-          <div class="editor">
-            <label for="textInput"> Plain Text </label>
+          <section class="editor">
+            <label for="inputText">Plain Text</label>
+            <textarea
+              id="inputText"
+              placeholder="Enter text to encode..."
+              autocomplete="off"
+              spellcheck="true"
+            ></textarea>
+          </section>
 
-            <textarea id="inputText" placeholder="Enter plain text..."></textarea>
-          </div>
-
-          <div class="editor">
-            <label for="morseOutput"> Morse Code </label>
-
+          <section class="editor">
+            <label for="outputText">Morse Code</label>
             <textarea
               id="outputText"
-              placeholder="Enter Morse code..."
+              placeholder="Enter Morse code to decode..."
+              autocomplete="off"
+              spellcheck="false"
             ></textarea>
-          </div>
+          </section>
         </div>
 
-        <!-- Main Toolbar -->
-        <div class="toolbar">
-          <button id="encodeBtn">Encode -></button>
-
-          <button id="decodeBtn"><- Decode</button>
-
-          <button id="playBtn">▶ Play</button>
-
-          <button id="copyBtn">📋 Copy</button>
-
-          <button id="clearBtn">🗑 Clear</button>
+        <div class="toolbar" aria-label="Morse code controls">
+          <button id="encodeBtn" type="button">Encode →</button>
+          <button id="decodeBtn" type="button">← Decode</button>
+          <button id="playBtn" type="button">▶ Play</button>
+          <button id="copyBtn" type="button">📋 Copy</button>
+          <button id="clearBtn" type="button">🗑 Clear</button>
         </div>
 
-        <!-- Playback Speed -->
-        <section class="card">
+        <section class="card" aria-labelledby="speed-label">
           <div class="speed-header">
-            <label for="speedSlider"> Playback Speed </label>
-
-            <span id="speedValue"> 150 ms </span>
+            <label id="speed-label" for="speedSlider">Playback Speed</label>
+            <span id="speedValue">20 WPM</span>
           </div>
 
           <input
@@ -75,5 +80,9 @@
 
     <script src="morseEngine.js"></script>
     <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
   </body>
 </html>

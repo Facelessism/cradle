@@ -4,6 +4,22 @@
 
 The Wordle Clone is a browser-based word guessing game inspired by the popular Wordle gameplay. The goal is to provide an interactive and responsive game where users guess a hidden five-letter word within a limited number of attempts.
 
+## Purpose & Goals
+
+- Recreate the core Wordle guessing loop without any external dependencies
+- Provide clear, immediate feedback on each guess via color-coded tiles
+- Support both on-screen and physical keyboard input for accessibility
+
+## Folder Structure
+
+```text
+wordle-clone/
+├── index.html      # Game structure and UI shell
+├── script.js       # Game logic, keyboard input, word validation, state
+├── style.css       # Styling, layout, tile animations, responsive design
+└── thumbnail.svg   # Auto-generated project thumbnail
+```
+
 ## System / Project Architecture Overview
 
 The application is built using HTML, CSS, and JavaScript.

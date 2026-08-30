@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cyberpunk Pixel Art Generator</title>
+  <meta name="description"
+    content="Create neon-lit cyberpunk pixel art with a built-in palette, layers, and export tools." />
+  <link rel="canonical" href="https://facelessism.github.io/cradle/projects/misc/cyberpunk-pixel-art-generator/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Cyberpunk Pixel Art Generator" />
+  <meta property="og:description"
+    content="Create neon-lit cyberpunk pixel art with a built-in palette, layers, and export tools." />
+  <meta property="og:url" content="https://facelessism.github.io/cradle/projects/misc/cyberpunk-pixel-art-generator/" />
+  <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+</head>
+
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <div class="header-left">
+        <p class="eyebrow">Neon-lit creativity</p>
+        <h1>🌃 Cyberpunk Pixel Art</h1>
+      </div>
+      <div class="header-actions">
+        <button id="exportPng" class="btn-action" title="Export as PNG">📥 PNG</button>
+        <button id="exportJson" class="btn-action" title="Export as JSON">📋 JSON</button>
+        <button id="importJson" class="btn-action" title="Import JSON">📤 Import</button>
+        <button id="clearCanvas" class="btn-action btn-danger" title="Clear canvas">🗑️ Clear</button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <!-- Grid Size -->
+        <div class="panel-section">
+          <h3 class="section-title">📐 Grid Size</h3>
+          <div class="size-controls">
+            <select id="gridSize" class="input-select">
+              <option value="8">8 × 8</option>
+              <option value="16" selected>16 × 16</option>
+              <option value="32">32 × 32</option>
+              <option value="64">64 × 64</option>
+            </select>
+            <button id="applySize" class="btn-small">Apply</button>
+          </div>
+        </div>
+
+        <!-- Tools -->
+        <div class="panel-section">
+          <h3 class="section-title">🎨 Tools</h3>
+          <div class="tool-grid">
+            <button class="tool-btn active" data-tool="brush" title="Brush (B)">🖌️</button>
+            <button class="tool-btn" data-tool="eraser" title="Eraser (E)">🧽</button>
+            <button class="tool-btn" data-tool="fill" title="Fill Bucket (F)">🪣</button>
+            <button class="tool-btn" data-tool="eyedropper" title="Eyedropper (I)">💉</button>
+            <button class="tool-btn" data-tool="line" title="Line (L)">📏</button>
+            <button class="tool-btn" data-tool="rect" title="Rectangle (R)">⬜</button>
+          </div>
+        </div>
+
+        <!-- Brush Size -->
+        <div class="panel-section">
+          <h3 class="section-title">✏️ Brush Size</h3>
+          <div class="brush-size-controls">
+            <input type="range" id="brushSize" min="1" max="4" value="1" class="range-input" />
+            <span id="brushSizeLabel" class="range-label">1px</span>
+          </div>
+        </div>
+
+        <!-- Color Palette -->
+        <div class="panel-section">
+          <h3 class="section-title">🌈 Cyberpunk Palette</h3>
+          <div class="palette" id="palette"></div>
+          <div class="color-input-row">
+            <input type="color" id="customColor" value="#ff00ff" class="color-picker" />
+            <span id="colorHex" class="color-hex">#ff00ff</span>
+          </div>
+        </div>
+
+        <!-- Layers -->
+        <div class="panel-section">
+          <h3 class="section-title">📑 Layers</h3>
+          <div class="layers-list" id="layersList"></div>
+          <div class="layer-actions">
+            <button id="addLayer" class="btn-small">+ Add Layer</button>
+            <button id="mergeLayers" class="btn-small">Merge Down</button>
+          </div>
+        </div>
+
+        <!-- Effects -->
+        <div class="panel-section">
+          <h3 class="section-title">✨ Effects</h3>
+          <div class="effect-btns">
+            <button id="effectGlow" class="btn-effect">🔮 Neon Glow</button>
+            <button id="effectScanlines" class="btn-effect">📺 Scanlines</button>
+            <button id="effectGlitch" class="btn-effect">⚡ Glitch</button>
+            <button id="effectMirror" class="btn-effect">🪞 Mirror X</button>
+          </div>
+        </div>
+
+        <!-- Undo/Redo -->
+        <div class="panel-section">
+          <h3 class="section-title">📜 History</h3>
+          <div class="history-controls">
+            <button id="undoBtn" class="btn-small">↩️ Undo</button>
+            <button id="redoBtn" class="btn-small">↪️ Redo</button>
+            <span id="historyCount" class="history-count">0 steps</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Canvas Area -->
+      <div class="canvas-area">
+        <div class="canvas-wrapper" id="canvasWrapper">
+          <canvas id="pixelCanvas" class="pixel-canvas"></canvas>
+          <canvas id="gridOverlay" class="grid-overlay"></canvas>
+          <canvas id="previewCanvas" class="preview-canvas"></canvas>
+        </div>
+        <div class="canvas-info">
+          <span id="coordDisplay">X: 0, Y: 0</span>
+          <span id="zoomDisplay">Zoom: 100%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden file input for import -->
+    <input type="file" id="fileInput" accept=".json" hidden />
+  </main>
+
+  <script type="module" src="script.js"></script>
+</body>
+
+</html>

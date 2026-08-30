@@ -27,7 +27,6 @@ text-diff-checker/
 ├── script.js
 ├── diffEngine.js
 ├── thumbnail.svg
-├── README.md
 └── ARCHITECTURE.md
 ```
 
@@ -184,7 +183,6 @@ No framework, package manager, backend service, or external runtime dependency i
 | `script.js`       | Handles application state, events, diff rendering, and statistics |
 | `diffEngine.js`   | Provides LCS comparison and word-level diff utilities             |
 | `thumbnail.svg`   | Provides project thumbnail/preview artwork                        |
-| `README.md`       | Provides project description and usage documentation              |
 | `ARCHITECTURE.md` | Documents project architecture and implementation decisions       |
 
 ## Design Decisions
