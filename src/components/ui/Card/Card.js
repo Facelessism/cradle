@@ -223,6 +223,35 @@
     document.head.appendChild(style);
   }
 
+  function createFallbackImage(title) {
+    const fallback = document.createElement("div");
+    fallback.className = "cradle-card__image cradle-card__image--fallback";
+    fallback.setAttribute("role", "img");
+    fallback.setAttribute("aria-label", title || "Thumbnail fallback");
+    const firstChar = (title || "?").trim().charAt(0) || "?";
+    fallback.textContent = firstChar.toUpperCase();
+    return fallback;
+  }
+
+  function isValidImageUrl(url) {
+    if (typeof url !== "string") return false;
+    const trimmed = url.trim();
+    if (!trimmed) return false;
+    if (
+      trimmed === "undefined" ||
+      trimmed === "null" ||
+      trimmed === "data:," ||
+      trimmed === "data:image/svg+xml;base64," ||
+      trimmed.startsWith("javascript:")
+    ) {
+      return false;
+    }
+    if (trimmed === "http://" || trimmed === "https://" || trimmed === "//") {
+      return false;
+    }
+    return true;
+  }
+
   /* ── Sub-component builders ───────────────────────────── */
 
   /** Build a CardHeader element */
@@ -356,22 +385,24 @@
       }
 
       /* Hero image */
-      if (image) {
-        const img = document.createElement("img");
-        img.className = "cradle-card__image";
-        img.src = image;
-        img.alt = title || "";
-        img.loading = "lazy";
-        // Degrade gracefully if the thumbnail is missing/fails to load.
-        img.addEventListener("error", () => {
-          const fallback = document.createElement("div");
-          fallback.className = "cradle-card__image cradle-card__image--fallback";
-          fallback.setAttribute("role", "img");
-          fallback.setAttribute("aria-label", title || "");
-          fallback.textContent = (title || "?").trim().charAt(0) || "?";
-          img.replaceWith(fallback);
-        });
-        card.appendChild(img);
+      if ("image" in options && options.image !== undefined) {
+        if (isValidImageUrl(image)) {
+          const img = document.createElement("img");
+          img.className = "cradle-card__image";
+          img.src = image.trim();
+          img.alt = title || "";
+          img.loading = "lazy";
+          let failed = false;
+          img.addEventListener("error", () => {
+            if (!failed) {
+              failed = true;
+              img.replaceWith(createFallbackImage(title));
+            }
+          });
+          card.appendChild(img);
+        } else {
+          card.appendChild(createFallbackImage(title));
+        }
       }
 
       /* Header */

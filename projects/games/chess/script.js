@@ -498,6 +498,21 @@ function checkTriggerAI() {
   }
 }
 
+function logChessWorkerFailure({ errorType, message, context }) {
+  const logEntry = {
+    workerName: "ChessAIWorker",
+    errorType: String(errorType || "WorkerError"),
+    message:
+      typeof message === "string"
+        ? message
+        : message?.message || String(message),
+    timestamp: new Date().toISOString(),
+    context: String(context || "unknown"),
+  };
+  console.error("[WorkerFailure]", logEntry);
+  return logEntry;
+}
+
 function triggerAI() {
   cancelAI();
   isComputerThinking = true;
@@ -512,7 +527,14 @@ function triggerAI() {
 
       // Ignore anything that does not match the worker's documented message
       // shape before acting on it.
-      if (getReportError(data)) {
+      const reportError = getReportError(data);
+      if (reportError) {
+        logChessWorkerFailure({
+          errorType: "InvalidReportError",
+          message: `Unexpected worker message: ${reportError}`,
+          context: "onmessage",
+        });
+
         isComputerThinking = false;
         setStatus(
           "AI error: unexpected worker message. Switching to local mode."
@@ -565,6 +587,12 @@ function triggerAI() {
       }
 
       if (data.type === "error") {
+        logChessWorkerFailure({
+          errorType: "WorkerError",
+          message: data.message || "Unknown error.",
+          context: "onmessage",
+        });
+
         isComputerThinking = false;
         setStatus(`AI error: ${data.message || "Unknown error."}`);
 
@@ -575,7 +603,11 @@ function triggerAI() {
     };
 
     aiWorker.onerror = function (error) {
-      console.error("AI worker error:", error);
+      logChessWorkerFailure({
+        errorType: "WorkerRuntimeError",
+        message: error?.message || "AI worker error",
+        context: "onerror",
+      });
 
       isComputerThinking = false;
       setStatus("AI error. Switching to manual mode.");
