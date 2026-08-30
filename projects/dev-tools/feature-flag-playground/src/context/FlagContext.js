@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import flagStorage from '../../../../client/src/utils/featureFlagStorage';
+import flagStorage from '../../../../../client/src/utils/featureFlagStorage.js';
 
 export const FlagContext = createContext();
 
