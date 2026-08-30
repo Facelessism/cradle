@@ -90,6 +90,12 @@
     "dateAdded": "2026-08-07T23:54:44+05:30"
   },
   {
+    "title": "CSS Grid Generator",
+    "category": "dev-tools",
+    "path": "projects/dev-tools/css-grid-generator/",
+    "dateAdded": "2026-08-29T10:00:00+05:30"
+  },
+  {
     "title": "CSS Shape Designer",
     "category": "editor",
     "path": "projects/editor/css-shape-designer/",
