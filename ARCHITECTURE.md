@@ -165,7 +165,7 @@ renderProjects() re-renders the grid with the filtered list
 - Responsive keyboard shortcuts (`/` search focus, `Esc` clear/close, `T` theme toggle, `?` helper modal)
 - IndexedDB caching of the project list for instant repeat loads, with background refresh
 - Light/dark theme with `localStorage` persistence and an inline pre-paint script to avoid a flash of the wrong theme
-- Shared, dependency-free UI component library (`src/components/ui`) usable by the landing page and, optionally, individual projects
+- Progressive enhancement and API fallbacks for Web Workers, IndexedDB, localStorage, Web Audio API, and Clipboard API (see [README.md](README.md#browser-compatibility--progressive-fallbacks))
 - Strict isolation between projects: each lives entirely inside its own folder and can run independently
 
 ---
