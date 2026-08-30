@@ -52,10 +52,10 @@ const RECENT_PROJECTS_KEY = "cradle:recent-projects";
 const RECENT_PROJECTS_COLLAPSED_KEY = "cradle:recent-projects-collapsed";
 const RECENT_PROJECTS_LIMIT = 5;
 const sortProjects = document.getElementById("sort-projects");
-const shortcutHint = document.querySelector('.keyboard-hint');
+const shortcutHint = document.querySelector(".keyboard-hint");
 
 if (shortcutHint) {
-  shortcutHint.textContent = '/ or Ctrl + K';
+  shortcutHint.textContent = "/ or Ctrl + K";
 }
 
 const FILTER_DEBOUNCE_DELAY = 250;
@@ -76,9 +76,9 @@ function debouncedApplyFilters() {
   }, FILTER_DEBOUNCE_DELAY);
 }
 
-if (window.Worker) {
-  filterWorker = new Worker("./scripts/worker.js");
-}
+// Worker creation is centralized in initializeFilterWorker() below, which
+// hardens the channel (payload validation + fallback) and creates a module
+// worker.
 
 function handleFilterWorkerFailure(error, reason = "Worker error") {
   console.warn(`${reason}, falling back to main thread:`, error);
@@ -864,18 +864,18 @@ document.addEventListener("DOMContentLoaded", () => {
   loadProjects();
 });
 
-document.addEventListener('keydown', (event) => {
+document.addEventListener("keydown", event => {
   // "/" shortcut
   if (
-    event.key === '/' &&
-    !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)
+    event.key === "/" &&
+    !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)
   ) {
     event.preventDefault();
     // Open/focus search
   }
 
   // Ctrl + K
-  if (event.ctrlKey && event.key.toLowerCase() === 'k') {
+  if (event.ctrlKey && event.key.toLowerCase() === "k") {
     event.preventDefault();
     // Open/focus search
   }

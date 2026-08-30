@@ -54,9 +54,35 @@ test("falls back when posting a search request fails", () => {
   const instance = FakeWorker.instances[0];
   instance.shouldThrow = true;
 
-  assert.equal(worker.postMessage({ query: "chess" }), false);
+  assert.equal(
+    worker.postMessage({
+      allProjects: [],
+      selectedCategory: "all",
+      query: "chess",
+    }),
+    false
+  );
   assert.equal(failures.length, 1);
   assert.equal(failures[0].message, "postMessage failed");
+  assert.equal(instance.terminated, true);
+});
+
+test("refuses to send malformed requests and falls back", () => {
+  const failures = [];
+  const worker = createFilterWorker({
+    WorkerCtor: FakeWorker,
+    onResult: () => {},
+    onFailure: error => failures.push(error),
+  });
+  const instance = FakeWorker.instances[0];
+
+  assert.equal(worker.postMessage({ query: "chess" }), false);
+  assert.equal(instance.messages.length, 0);
+  assert.equal(failures.length, 1);
+  assert.equal(
+    failures[0].message,
+    "Refusing to send an invalid search request"
+  );
   assert.equal(instance.terminated, true);
 });
 

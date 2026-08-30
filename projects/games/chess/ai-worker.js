@@ -31,6 +31,43 @@ let nodes = 0;
 const DEFAULT_TIME_LIMIT = 5000;
 const YIELD_INTERVAL = 500;
 
+// --- Inbound message validation -------------------------------------------
+// The search request comes from a same-origin dedicated worker URL, but we
+// still verify the payload shape before acting on it (see #787).
+const VALID_COLORS = new Set(["white", "black"]);
+
+function isValidSquare(value) {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    Number.isInteger(value.row) &&
+    value.row >= 0 &&
+    value.row <= 7 &&
+    Number.isInteger(value.col) &&
+    value.col >= 0 &&
+    value.col <= 7
+  );
+}
+
+function isValidBoard(board) {
+  return (
+    Array.isArray(board) &&
+    board.length === 8 &&
+    board.every(
+      row =>
+        Array.isArray(row) &&
+        row.length === 8 &&
+        row.every(
+          square =>
+            square === null ||
+            (typeof square === "object" &&
+              typeof square.type === "string" &&
+              VALID_COLORS.has(square.color))
+        )
+    )
+  );
+}
+
 function evaluateBoard(board, color) {
   let score = 0;
 
@@ -133,10 +170,7 @@ async function minimax(
   if (moves.length === 0) {
     const king = findKing(board, turnColor);
 
-    if (
-      king &&
-      isSquareAttacked(board, king.row, king.col, other(turnColor))
-    ) {
+    if (king && isSquareAttacked(board, king.row, king.col, other(turnColor))) {
       return {
         value: isMaximizing ? -Infinity : Infinity,
         stopped: false,
@@ -441,10 +475,30 @@ onmessage = function (event) {
     timeLimit = DEFAULT_TIME_LIMIT,
   } = data;
 
-  if (!Array.isArray(board)) {
+  if (!isValidBoard(board)) {
     postMessage({
       type: "error",
       message: "Invalid board data.",
+    });
+    return;
+  }
+
+  if (!VALID_COLORS.has(color)) {
+    postMessage({
+      type: "error",
+      message: "Invalid player color.",
+    });
+    return;
+  }
+
+  if (
+    enPassantTarget !== null &&
+    enPassantTarget !== undefined &&
+    !isValidSquare(enPassantTarget)
+  ) {
+    postMessage({
+      type: "error",
+      message: "Invalid en passant target.",
     });
     return;
   }

@@ -1,3 +1,5 @@
+import { isFilterRequest, isFilterResult } from "./messageValidation.js";
+
 const WORKER_URL = "./scripts/worker.js";
 
 /**
@@ -17,7 +19,7 @@ export function createFilterWorker({ WorkerCtor, onResult, onFailure }) {
     };
 
     worker.onmessage = event => {
-      if (!Array.isArray(event.data)) {
+      if (!isFilterResult(event.data)) {
         fail(new Error("Worker returned an invalid search result"));
         return;
       }
@@ -30,6 +32,11 @@ export function createFilterWorker({ WorkerCtor, onResult, onFailure }) {
     return {
       postMessage(message) {
         if (failed) return false;
+
+        if (!isFilterRequest(message)) {
+          fail(new Error("Refusing to send an invalid search request"));
+          return false;
+        }
 
         try {
           worker.postMessage(message);

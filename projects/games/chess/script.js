@@ -185,7 +185,9 @@ function handleSquareClick(row, col) {
   if (piece && piece.color === turn) {
     selected = { row, col };
     legalTargets = getLegalMoves(board, row, col, turn, enPassantTarget);
-    setStatus(`${capitalize(turn)} selected ${piece.type} on ${squareName(row, col)}.`);
+    setStatus(
+      `${capitalize(turn)} selected ${piece.type} on ${squareName(row, col)}.`
+    );
   } else {
     selected = null;
     legalTargets = [];
@@ -235,8 +237,7 @@ function makeMove(move) {
   }
 
   const isPromotion =
-    movingPiece.type === "pawn" &&
-    (move.to.row === 0 || move.to.row === 7);
+    movingPiece.type === "pawn" && (move.to.row === 0 || move.to.row === 7);
 
   if (isPromotion && !move.promoteTo) {
     showPromotionModal(move);
@@ -319,7 +320,9 @@ function completeMove(move, movingPiece) {
   applyMove(board, move, move.promoteTo);
 
   if (captured) {
-    (movingPiece.color === WHITE ? capturedByWhite : capturedByBlack).push(captured);
+    (movingPiece.color === WHITE ? capturedByWhite : capturedByBlack).push(
+      captured
+    );
   }
 
   enPassantTarget = null;
@@ -414,6 +417,79 @@ function updateGameState() {
   checkTriggerAI();
 }
 
+// --- Inbound worker message validation -------------------------------------
+// `ai-worker.js` is a same-origin dedicated worker created from a hardcoded
+// URL, so the origin is trusted by the browser. We still verify the shape of
+// every reported message before acting on it (see #787).
+const REPORT_TYPES = new Set([
+  "progress",
+  "depthComplete",
+  "complete",
+  "timeout",
+  "cancelled",
+  "error",
+]);
+
+function isWholeNumber(value) {
+  return Number.isInteger(value) && value >= 0;
+}
+
+function isValidSquare(value) {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    isWholeNumber(value.row) &&
+    value.row <= 7 &&
+    isWholeNumber(value.col) &&
+    value.col <= 7
+  );
+}
+
+function isValidMoveShape(move) {
+  if (move === null || typeof move !== "object") return false;
+  if (!isValidSquare(move.from) || !isValidSquare(move.to)) return false;
+  if (move.promoteTo !== undefined && typeof move.promoteTo !== "string")
+    return false;
+  if (move.castle !== undefined && typeof move.castle !== "boolean")
+    return false;
+  return true;
+}
+
+function getReportError(report) {
+  if (report === null || typeof report !== "object") return "message";
+  if (!REPORT_TYPES.has(report.type)) return `type "${String(report.type)}"`;
+  if (
+    report.type === "progress" &&
+    (!isWholeNumber(report.depth) ||
+      !isWholeNumber(report.maxDepth) ||
+      !isWholeNumber(report.completed) ||
+      !isWholeNumber(report.total))
+  )
+    return "progress counters";
+  if (
+    report.type === "depthComplete" &&
+    (!isWholeNumber(report.depth) || !isWholeNumber(report.maxDepth))
+  )
+    return "depth counters";
+  if (report.type === "error" && typeof report.message !== "string")
+    return "error message";
+  if (
+    report.type === "complete" ||
+    report.type === "timeout" ||
+    report.type === "cancelled"
+  ) {
+    if (
+      report.move !== null &&
+      report.move !== undefined &&
+      !isValidMoveShape(report.move)
+    )
+      return "move";
+    if (!isWholeNumber(report.depth) || !isWholeNumber(report.nodes))
+      return "depth/nodes";
+  }
+  return null;
+}
+
 function checkTriggerAI() {
   const mode = document.getElementById("gameMode").value;
 
@@ -433,6 +509,21 @@ function triggerAI() {
 
     aiWorker.onmessage = function (e) {
       const data = e.data || {};
+
+      // Ignore anything that does not match the worker's documented message
+      // shape before acting on it.
+      if (getReportError(data)) {
+        isComputerThinking = false;
+        setStatus(
+          "AI error: unexpected worker message. Switching to local mode."
+        );
+
+        document.getElementById("gameMode").value = "local";
+        document.getElementById("aiDifficulty").classList.add("hidden");
+
+        render();
+        return;
+      }
 
       if (data.type === "progress") {
         setStatus(
@@ -499,10 +590,7 @@ function triggerAI() {
     };
   }
 
-  const depth = parseInt(
-    document.getElementById("aiDifficulty").value,
-    10
-  );
+  const depth = parseInt(document.getElementById("aiDifficulty").value, 10);
 
   aiSearchId++;
 
@@ -624,9 +712,7 @@ function redoMove() {
   turn = next.turn;
   capturedByWhite = next.capturedByWhite.map(piece => ({ ...piece }));
   capturedByBlack = next.capturedByBlack.map(piece => ({ ...piece }));
-  enPassantTarget = next.enPassantTarget
-    ? { ...next.enPassantTarget }
-    : null;
+  enPassantTarget = next.enPassantTarget ? { ...next.enPassantTarget } : null;
   halfMoveClock = next.halfMoveClock;
   fullMoveNumber = next.fullMoveNumber;
 
@@ -650,9 +736,7 @@ function redoMove() {
     turn = next.turn;
     capturedByWhite = next.capturedByWhite.map(piece => ({ ...piece }));
     capturedByBlack = next.capturedByBlack.map(piece => ({ ...piece }));
-    enPassantTarget = next.enPassantTarget
-      ? { ...next.enPassantTarget }
-      : null;
+    enPassantTarget = next.enPassantTarget ? { ...next.enPassantTarget } : null;
     halfMoveClock = next.halfMoveClock;
     fullMoveNumber = next.fullMoveNumber;
   }
@@ -777,8 +861,7 @@ function boardToFEN() {
           empty = 0;
         }
 
-        const char =
-          piece.type === "knight" ? "n" : piece.type.charAt(0);
+        const char = piece.type === "knight" ? "n" : piece.type.charAt(0);
 
         rowStr += piece.color === WHITE ? char.toUpperCase() : char;
       }
