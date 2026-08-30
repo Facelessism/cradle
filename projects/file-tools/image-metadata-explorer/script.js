@@ -22,6 +22,17 @@ let currentFile = null;
 let currentMetadata = null;
 let currentObjectUrl = null;
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+const ACCEPTED_FILE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/bmp",
+  "image/tiff",
+]);
+
 /* --------------------------------
    Utility Functions
 -------------------------------- */
@@ -62,6 +73,43 @@ function hideError() {
 
   errorMessage.textContent = "";
   errorMessage.classList.add("hidden");
+}
+
+function validateImageFile(file) {
+  if (!file) {
+    return {
+      valid: false,
+      message: "Please select an image file."
+    };
+  }
+
+  console.log(
+    "Selected file:",
+    file.name,
+    "Size:",
+    file.size,
+    "Bytes",
+    formatFileSize(file.size)
+  );
+
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      valid: false,
+      message: `Image is too large (${formatFileSize(file.size)}). Maximum allowed size is 5 MB.`
+    };
+  }
+
+  if (!ACCEPTED_FILE_TYPES.has(file.type)) {
+    return {
+      valid: false,
+      message: "Invalid file type. Please select a supported image file."
+    };
+  }
+
+  return {
+    valid: true,
+    message: ""
+  };
 }
 
 /* --------------------------------
@@ -182,14 +230,26 @@ function loadImagePreview(file) {
 async function processImage(file) {
   hideError();
 
-  if (!file) {
+  const validation = validateImageFile(file);
+
+  if (!validation.valid) {
+    currentFile = null;
+    currentMetadata = null;
+
+    if (currentObjectUrl) {
+      URL.revokeObjectURL(currentObjectUrl);
+      currentObjectUrl = null;
+    }
+
+    if (imagePreview) {
+      imagePreview.removeAttribute("src");
+    }
+
+    showError(validation.message);
     return;
   }
 
-  if (!file.type.startsWith("image/")) {
-    showError("Please select a valid image file.");
-    return;
-  }
+  // Nothing below this line runs for an oversized file.
 
   currentFile = file;
 
@@ -203,37 +263,26 @@ async function processImage(file) {
     }
 
     if (fileType) {
-      fileType.textContent =
-        file.type || "Unknown";
+      fileType.textContent = file.type || "Unknown";
     }
 
     const imageInfo = await loadImagePreview(file);
 
-    /*
-     * metadataEngine.js handles EXIF metadata.
-     */
     if (
       !globalThis.ImageMetadataEngine ||
       typeof globalThis.ImageMetadataEngine.parse !== "function"
     ) {
-      throw new Error(
-        "Image metadata engine is unavailable."
-      );
+      throw new Error("Image metadata engine is unavailable.");
     }
 
     const exifMetadata =
       await globalThis.ImageMetadataEngine.parse(file);
 
-    /*
-     * Only keep the basic metadata we actually display.
-     */
     currentMetadata = {
       ...exifMetadata,
-
       fileName: file.name,
       fileSize: file.size,
       fileType: file.type || "Unknown",
-
       width: imageInfo.width,
       height: imageInfo.height,
     };
@@ -242,13 +291,10 @@ async function processImage(file) {
 
     uploadCard.classList.add("hidden");
     resultsSection.classList.remove("hidden");
-
   } catch (error) {
-    console.error(
-      "Image metadata error:",
-      error
-    );
+    console.error("Image metadata error:", error);
 
+    currentFile = null;
     currentMetadata = null;
 
     showError(
@@ -265,16 +311,74 @@ async function processImage(file) {
 
 if (imageInput) {
   imageInput.addEventListener("change", event => {
-    const file = event.target.files?.[0];
+    const input = event.target;
+    const file = input.files?.[0];
 
-    if (file) {
-      processImage(file);
+    if (!file) {
+      return;
     }
 
-    /*
-     * Allows selecting the same image again.
-     */
-    imageInput.value = "";
+    console.log("IMAGE UPLOAD ATTEMPT:", {
+      name: file.name,
+      size: file.size,
+      sizeMB: (file.size / (1024 * 1024)).toFixed(2),
+      type: file.type
+    });
+
+    const validation = validateImageFile(file);
+
+    // ALWAYS clear the input.
+    input.value = "";
+
+    // STOP immediately if invalid.
+    if (!validation.valid) {
+      console.warn("IMAGE REJECTED:", validation.message);
+
+      currentFile = null;
+      currentMetadata = null;
+
+      if (currentObjectUrl) {
+        URL.revokeObjectURL(currentObjectUrl);
+        currentObjectUrl = null;
+      }
+
+      if (imagePreview) {
+        imagePreview.removeAttribute("src");
+        imagePreview.removeAttribute("srcset");
+      }
+
+      if (resultsSection) {
+        resultsSection.classList.add("hidden");
+      }
+
+      if (uploadCard) {
+        uploadCard.classList.remove("hidden");
+      }
+
+      if (dimensions) {
+        dimensions.textContent = "—";
+      }
+
+      if (fileName) {
+        fileName.textContent = "—";
+      }
+
+      if (fileSize) {
+        fileSize.textContent = "—";
+      }
+
+      if (fileType) {
+        fileType.textContent = "—";
+      }
+
+      showError(validation.message);
+
+      return;
+    }
+
+    console.log("IMAGE ACCEPTED:", file.name);
+
+    processImage(file);
   });
 }
 
@@ -296,15 +400,32 @@ if (uploadCard) {
 
   uploadCard.addEventListener("drop", event => {
     event.preventDefault();
-
     uploadCard.classList.remove("drag-over");
 
-    const file =
-      event.dataTransfer?.files?.[0];
+    const file = event.dataTransfer?.files?.[0];
 
-    if (file) {
-      processImage(file);
+    if (!file) return;
+
+    const validation = validateImageFile(file);
+
+    if (!validation.valid) {
+      currentFile = null;
+      currentMetadata = null;
+
+      if (currentObjectUrl) {
+        URL.revokeObjectURL(currentObjectUrl);
+        currentObjectUrl = null;
+      }
+
+      if (imagePreview) {
+        imagePreview.removeAttribute("src");
+      }
+
+      showError(validation.message);
+      return;
     }
+
+    processImage(file);
   });
 }
 
@@ -415,3 +536,17 @@ window.addEventListener(
     }
   }
 );
+
+function showError(message) {
+  console.error("SHOW ERROR:", message);
+
+  if (errorMessage) {
+    errorMessage.textContent = message;
+    errorMessage.classList.remove("hidden");
+    errorMessage.style.display = "block";
+    errorMessage.style.visibility = "visible";
+    errorMessage.style.opacity = "1";
+  }
+
+  alert(message);
+}
