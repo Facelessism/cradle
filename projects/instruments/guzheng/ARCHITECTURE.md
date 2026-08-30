@@ -1,87 +1,171 @@
-# Virtual Guzheng — Architecture
+# Project Architecture — Virtual Guzheng
 
-## 1. Overview
+---
 
-The Virtual Guzheng is a standalone interactive musical instrument mini for
-Cradle, following the same structure as `projects/instruments/piano`.
+## Overview
 
-The project provides a playable 21-string guzheng that supports:
+The Virtual Guzheng is a standalone interactive musical instrument mini for Cradle. It provides a playable 21-string Chinese zither (guzheng) that supports mouse, touch, and computer keyboard interaction, delivering real-time synthesized plucked-string tones using the Web Audio API.
 
-- Mouse interaction on desktop (click, or drag across strings to glissando)
-- Touch interaction on mobile devices (tap or swipe)
-- Computer keyboard interaction
-- Real-time string highlighting on pluck
-- Synthesized plucked-string tones using the Web Audio API
-- Responsive string layout
-- Accessible keyboard controls
-- Reusable and testable string logic
+The project is self-contained and uses a pentatonic tuning system to ensure consonance across all played notes.
 
-The project does not require a frontend framework or external audio samples.
+---
 
-```text
-projects/instruments/guzheng/
-├── index.html
-├── script.js
-├── style.css
-├── guzhengEngine.js
-├── thumbnail.svg
-└── ARCHITECTURE.md
+## Purpose & Goals
+
+- Provide a responsive and culturally authentic virtual guzheng interface
+- Implement realistic plucked-string synthesis using additive harmonics and noise transients
+- Support "glissando" effects (sliding across strings) via pointer-move detection
+- Enable a wide range of note playback through a 21-string layout
+- Ensure low-latency audio response across modern browsers
+
+---
+
+## Folder Structure
+
+```
+guzheng/
+├── index.html      # UI shell and string layout
+├── script.js       # Browser controller, event handling, and interaction logic
+├── style.css       # String styling and responsive layout
+├── guzhengEngine.js  # Core audio engine, frequency data, and synthesis logic
+├── thumbnail.svg   # Project artwork
+└── ARCHITECTURE.md # This file
 ```
 
-```text
-                    ┌──────────────────────┐
-                    │       index.html      │
-                    │   Semantic UI / DOM   │
-                    └──────────┬───────────┘
-                               │
-                               ▼
-                    ┌──────────────────────┐
-                    │       script.js      │
-                    │   Browser Controller  │
-                    └───────┬───────┬──────┘
-                            │       │
-              ┌─────────────┘       └──────────────┐
-              ▼                                    ▼
-    ┌──────────────────────┐             ┌──────────────────────┐
-    │  guzhengEngine.js    │             │    Web Audio API     │
-    │ String / Pluck Logic │             │    Audio Playback    │
-    └──────────────────────┘             └──────────────────────┘
-              │
-              ▼
-    ┌──────────────────────┐
-    │    Guzheng Data      │
-    │ Strings / Frequencies│
-    │ Keyboard Mappings    │
-    └──────────────────────┘
+---
 
-                    ┌──────────────────────┐
-                    │       style.css     │
-                    │   Layout / Styling   │
-                    └──────────────────────┘
+## System / Project Architecture Overview
 
-                    ┌──────────────────────┐
-                    │     thumbnail.svg    │
-                    │    Project Artwork   │
-                    └──────────────────────┘
+The project follows a decoupled architecture where the UI and audio logic are separated. `index.html` and `style.css` define the visual string layout. `script.js` acts as the controller, capturing user inputs—including complex interactions like glissando (implemented via `document.elementFromPoint`)—and communicating with `guzhengEngine.js`. The engine handles the Web Audio API calls, managing the harmonic series and noise bursts to produce a zither-like timbre.
+
+---
+
+## Component Breakdown
+
+| File | Responsibility |
+|---|---|
+| `index.html` | Defines the 21-string DOM and status display |
+| `script.js` | Manages input events (click, drag, keyboard) and coordinates with the engine |
+| `style.css` | Handles the visual appearance of the strings and active states |
+| `guzhengEngine.js` | Owns the D-major pentatonic frequency data and implements the additive synthesis engine |
+
+---
+
+## Data Flow / Execution Flow
+
+```
+User interacts with the guzheng (Click / Drag / Keyboard)
+↓
+script.js captures the event and identifies the note
+↓
+If dragging: script.js continuously checks for new strings under the pointer
+↓
+script.js calls GuzhengEngine.pluckString(note)
+↓
+GuzhengEngine creates an AudioContext and layers multiple oscillators (Harmonics 1-6)
+↓
+A "pluck" noise buffer is added with a bandpass filter to simulate the attack
+↓
+Audio is routed through a gain node with an exponential decay envelope
+↓
+The sound is played through the browser's audio output
 ```
 
-## 2. Tuning
+---
 
-21 strings tuned to the D major pentatonic scale (D, E, F♯, A, B), spanning
-roughly 4 octaves — the standard pentatonic tuning used on a real guzheng, so
-any combination of strings played together stays consonant.
+## Key Features
 
-## 3. Interaction model
+- **Glissando Support**: Allows users to "slide" across strings, triggering notes sequentially as the pointer moves.
+- **Pentatonic Tuning**: Pre-configured for D major pentatonic (D, E, F#), ensuring any combination of strings is consonant.
+- **Additive Synthesis**: Uses a combination of triangle and sine waves to approximate the metallic timbre of a zither.
+- **Attack Simulation**: Implements a short noise transient at the start of each note for realism.
+- **Keyboard Mapping**: Maps the top row of the keyboard to the 21 strings for rapid play.
 
-- **Click / tap** a string to pluck it once.
-- **Drag / swipe** across multiple strings (mouse held down, or touch) to
-  glissando — implemented via `document.elementFromPoint` on `pointermove`,
-  plucking each newly-entered string once.
-- **Keyboard** keys `1234567890qwertyuiop[` map to the 21 strings low to
-  high, mirroring the on-screen `<kbd>` labels.
+---
 
-## 4. Notes
+## Technologies Used
 
-No third-party audio samples are used — every pluck is synthesized at play
-time with the Web Audio API (harmonic series + a short noise transient for
-the pluck attack), so there's nothing to attribute or license.
+| Technology | Purpose |
+|---|---|
+| HTML5 | String layout and semantic UI |
+| CSS3 | Visual styling and responsive layout |
+| JavaScript (ES6+) | Event management and coordination logic |
+| Web Audio API | Real-time sound synthesis and audio routing |
+
+---
+
+## File Responsibilities
+
+### `index.html`
+
+- Defines the 21 string elements with corresponding `data-note` attributes.
+- Provides a status area to show the currently played note.
+
+### `script.js`
+
+- `pluck()`: Coordinates the visual highlight and the audio trigger.
+- `pluckAtPoint()`: Implements glissando by detecting strings under the pointer during a drag.
+- Handles `pointerdown`, `pointermove`, and `keydown` events.
+
+### `guzhengEngine.js`
+
+- `STRINGS`: Constant defining the notes and frequencies for the 21-string layout.
+- `pluckString()`: Implements the synthesis chain (Harmonics + Noise -> Gain Envelope).
+- `createPluckNoise()`: Generates a short burst of bandpass-filtered noise for the attack.
+- `getNoteFromKey()`: Maps keyboard input to the pentatonic scale.
+
+### `style.css`
+
+- Styles the `.string` elements to look like a zither.
+- Defines the `.active` class for visual feedback during plucking.
+
+---
+
+## Design Decisions
+
+- **Pentatonic Scale**: Chose D major pentatonic to mirror the standard tuning of a real guzheng, simplifying the user experience by avoiding dissonant notes.
+- **Additive Synthesis**: Used 6 harmonic layers (1 fundamental + 5 overtones) to create a bright, metallic sound.
+- **Pointer-Based Glissando**: Used `document.elementFromPoint` instead of `mouseenter` to allow for more fluid, continuous sliding across strings.
+- **UMD Pattern**: Wrapped the engine in a UMD-style module to ensure it works in various environments.
+
+---
+
+## Dependencies
+
+None (uses native browser APIs).
+
+---
+
+## Future Improvements
+
+- Support for pitch-bending (pressing the string behind the bridge).
+- Implementation of different guzheng-style plucking techniques.
+- Addition of a visual "bridge" and "tuning pins" for more realism.
+
+---
+
+## Development Notes
+
+- The `AudioContext` is resumed on the first user interaction to comply with browser autoplay policies.
+- Notes are mapped using a standard frequency table.
+
+---
+
+## Known Limitations
+
+- The synthesis is a simplified model and does not capture the full complex resonance of a wooden soundboard.
+- No support for velocity-sensitive plucking.
+
+---
+
+## License & Attribution
+
+- **Project License:** MIT
+- **Third-Party Assets:** None.
+
+---
+
+## References
+
+- [Web Audio API Documentation (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+- [Chinese Guzheng Tuning Guide](https://en.wikipedia.org/wiki/Guzheng)

@@ -33,6 +33,12 @@ unit-converter/
 
 ---
 
+## System / Project Architecture Overview
+
+The project follows a simple reactive data model. The `index.html` provides the UI structure and input fields. `script.js` manages the `CATEGORIES` data object, which stores unit factors relative to a base unit for each category. When an input changes, the converter calculates the value by normalizing the input to the base unit and then scaling it to the target unit. Temperature is handled separately via dedicated conversion functions.
+
+---
+
 ## Component Breakdown
 
 | File            | Responsibility                                              |
@@ -40,6 +46,28 @@ unit-converter/
 | `index.html`    | Page shell, semantic markup, loads fonts and scripts         |
 | `script.js`     | Unit data definitions, conversion engine, swap, UI events   |
 | `style.css`     | Layout, input styling, responsive breakpoints               |
+
+---
+
+## Data Flow / Execution Flow
+
+```
+User selects category or enters value
+↓
+'input' or 'change' event fires
+↓
+convert() is called
+↓
+Value normalized to base unit (Value * Factor_from)
+↓
+Value scaled to target unit (BaseValue / Factor_to)
+↓
+Result formatted (exponential or fixed) and displayed in toValue
+↓
+Formula text updated based on category
+↓
+renderReference() updates the quick-reference grid
+```
 
 ---
 
@@ -53,6 +81,30 @@ unit-converter/
 - Click the result to copy it to clipboard
 - Smart number formatting: scientific notation for very large/small numbers
 - Fully responsive — stacked layout on mobile
+
+---
+
+## File Responsibilities
+
+### `index.html`
+
+- Defines the overall layout and semantic structure.
+- Hosts the unit selectors and value inputs.
+- Provides containers for the result and formula display.
+
+### `script.js`
+
+- `CATEGORIES`: Stores the mapping of units and their factors.
+- `convert()`: The core logic for scaling values between units.
+- `convertTemperature()`: Implements offset-based math for temperature.
+- `populateUnits()`: Dynamically fills the dropdowns based on the active category.
+- `renderReference()`: Generates the a common-conversions table for the user.
+
+### `style.css`
+
+- Implements a responsive grid layout.
+- Styles the "active" category tab.
+- Uses monospace fonts for numeric results to prevent layout shift.
 
 ---
 
@@ -81,6 +133,27 @@ unit-converter/
 
 ---
 
+## Dependencies
+
+None (uses native browser APIs).
+
+---
+
+## Future Improvements
+
+- Add more categories (e.g., Pressure, Energy, Torque).
+- Implement a search bar for units within a category.
+- Add a "history" log of recent conversions.
+
+---
+
+## Development Notes
+
+- The base units are: meter (Length), kilogram (Weight), liter (Volume), m/s (Speed), byte (Data).
+- Temperature does not use factors due to the offset between Celsius, Fahrenheit, and Kelvin.
+
+---
+
 ## Known Limitations
 
 - No reverse lookup ("what unit equals X in another system?")
@@ -93,3 +166,9 @@ unit-converter/
 
 - **Project License:** MIT
 - **Third-Party Assets:** None — all code is original.
+
+---
+
+## References
+
+- [NIST Guide for the Use of the International System of Units (SI)](https://www.nist.gov/pml/owm/metric-si/guide-si)

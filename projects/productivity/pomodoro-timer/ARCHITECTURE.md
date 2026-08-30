@@ -4,20 +4,19 @@
 
 ## Overview
 
-Pomodoro Timer is a focused work timer that helps users manage work sessions and breaks
-using the Pomodoro Technique. It features configurable durations, an animated SVG progress
-ring, sound notifications, session tracking with daily logs, and full localStorage
-persistence. Runs entirely in the browser with zero external dependencies.
+The Pomodoro Timer is a focused work timer designed to help users manage their productivity using the Pomodoro Technique. It features configurable work and break durations, an animated SVG progress ring, and comprehensive session tracking with daily logs.
+
+The project is self-contained, using vanilla HTML, CSS, and JavaScript, with the Web Audio API for notifications.
 
 ---
 
 ## Purpose & Goals
 
-- Help users maintain focus through timed work/break cycles
-- Track daily session count, total focus minutes, and current streak
-- Persist settings and session logs across browser refreshes via localStorage
-- Provide keyboard shortcuts for hands-free timer control
-- Remain lightweight and framework-free for fast loading
+- Help users maintain deep focus through structured work/break cycles
+- Provide a visual representation of time remaining via an animated ring
+- Track productivity metrics including total focus minutes, sessions completed, and streaks
+- Persist settings and session history locally to avoid data loss on refresh
+- Offer keyboard shortcuts for a streamlined, distraction-free experience
 
 ---
 
@@ -25,75 +24,142 @@ persistence. Runs entirely in the browser with zero external dependencies.
 
 ```text
 pomodoro-timer/
-├── index.html         # Page shell, UI structure, loads scripts
-├── script.js          # Timer engine, sound, state management, UI events
-├── style.css          # Layout, theming per mode, responsive design
+├── index.html         # Page shell, UI structure, and settings panel
+├── script.js          # Timer engine, sound synthesis, state management, and UI events
+├── style.css          # Layout, mode-dependent theming, and responsive design
 └── ARCHITECTURE.md    # This file
 ```
 
 ---
 
+## System / Project Architecture Overview
+
+The application uses a simple state-machine architecture. The core state (current mode, time remaining, and session counts) is managed in `script.js`. A central `setInterval` loop handles the countdown, triggering an update to the numeric display and the SVG `stroke-dashoffset` of the progress ring. Mode transitions (e.g., Focus → Short Break) are handled by a logic layer that checks the number of completed sessions against a user-defined threshold for long breaks.
+
+---
+
 ## Component Breakdown
 
-| File            | Responsibility                                              |
-| --------------- | ----------------------------------------------------------- |
-| `index.html`    | Page shell, semantic structure, loads fonts and scripts      |
-| `script.js`     | Timer engine, Web Audio beep, localStorage, settings, UI   |
-| `style.css`     | Layout, mode-dependent accent colors, responsive breakpoints|
+| File | Responsibility |
+|---|---|
+| `index.html` | Defines the timer UI, settings inputs, and the SVG ring structure |
+| `script.js` | Implements the timer loop, handles localStorage persistence, and manages audio beeps |
+| `style.css` | Handles the visual identity, including mode-specific accent colors and responsive breakpoints |
+
+---
+
+## Data Flow / Execution Flow
+
+```
+User interaction (Start / Pause / Reset / Mode Change)
+↓
+update state (currentMode, timeRemaining, isRunning)
+↓
+setInterval tick (every 1 second)
+    ↳ Decrement timeRemaining
+    ↳ updateDisplay() → Update numeric timer and Page Title
+    ↳ updateRing() → Calculate progress and update SVG stroke-dashoffset
+↓
+Timer reaches zero
+    ↳ playBeep() via Web Audio API
+    ↳ update stats (sessionsCompleted, totalFocusMinutes, currentStreak)
+    ↳ addLogEntry() → Add timestamped session to todayLog
+    ↳ Transition to next mode (e.g., Short Break or Long Break)
+↓
+saveState() → Sync settings and stats to localStorage
+```
 
 ---
 
 ## Key Features
 
-- Three modes: Focus (25 min), Short Break (5 min), Long Break (15 min)
-- Configurable durations for all modes via settings panel
-- Animated SVG ring shows time progress with mode-specific accent color
-- Web Audio API beep sounds on session completion
-- Auto-start next session toggle
-- Long break triggers after configurable number of focus sessions
-- Session counter, total focus minutes, and streak tracker
-- Today's session log with time stamps and session type
-- Keyboard shortcuts: Space (start/pause), R (reset), S (skip), 1/2/3 (mode)
-- Full localStorage persistence of settings, sessions, and daily log
+- **Mode-Driven UI**: The entire interface changes its accent color based on the mode (Red for Focus, Green for Short Break, Indigo for Long Break).
+- **Animated Progress Ring**: An SVG ring that depletes as time passes, providing a clear visual cue of remaining time.
+- **Persistence Layer**: All settings and daily session logs are saved to `localStorage`, resetting only at midnight.
+- **Web Audio Beeps**: Programmatically generated tones for session completion, eliminating the need for external audio files.
+- **Productivity Dashboard**: A dedicated section tracking total focus minutes and current streaks.
 
 ---
 
 ## Technologies Used
 
-| Technology             | Purpose                                |
-| ---------------------- | -------------------------------------- |
-| HTML5                  | Page structure and semantic markup     |
-| CSS3 (Grid, Flexbox)   | Layout and responsive design           |
-| Vanilla JavaScript     | Timer engine, audio, state, UI        |
-| Web Audio API          | Beep sound notifications              |
-| localStorage           | Settings and session persistence      |
-| Google Fonts (Outfit)  | UI typography                          |
-| Google Fonts (Fira Code)| Timer digits and monospace text       |
+| Technology | Purpose |
+|---|---|
+| HTML5 | Semantic page structure and SVG graphics |
+| CSS3 (Grid/Flexbox) | Layout and mode-specific theming |
+| Vanilla JavaScript | Timer logic, state management, and DOM manipulation |
+| Web Audio API | Programmatic sound notifications |
+| localStorage | Client-side persistence of user data |
+
+---
+
+## File Responsibilities
+
+### `index.html`
+
+- Houses the timer digits, mode buttons, and settings form.
+- Defines the SVG ring with a specific circumference for precise animation.
+
+### `script.js`
+
+- `startTimer()` / `pauseTimer()`: Controls the `setInterval` loop.
+- `updateRing()`: Maps the ratio of `timeRemaining / totalTime` to the ring's offset.
+- `onTimerComplete()`: Manages the logic for transitioning between Pomodoro phases.
+- `saveState()` / `loadState()`: Handles serialization of data to `localStorage`.
+
+### `style.css`
+
+- Implements the responsive layout and the `.mode-pomodoro`, `.mode-shortBreak`, and `.mode-longBreak` classes.
+- Ensures the timer digits remain centered and clear across different screen sizes.
 
 ---
 
 ## Design Decisions
 
-- **Mode-specific accent colors** — the UI changes its primary accent color per mode
-  (red for focus, green for short break, indigo for long break) so users instantly
-  know which mode is active without reading the label.
-- **Daily log resets at midnight** — the log is keyed by ISO date, so a new day
-  automatically starts fresh while preserving the previous day's count for that
-  session only.
-- **Web Audio API over HTML audio elements** — generating a tone programmatically
-  avoids needing an external audio file, keeping the project self-contained.
+- **Accent Colors for Modes**: Chosen to provide immediate subconscious feedback to the user about their current state (Focus vs. Break).
+- **localStorage-Based Logging**: Used to provide a "daily log" feel without requiring a backend database.
+- **Web Audio API**: Used instead of `<audio>` tags to ensure the notification sounds are generated instantly and without network latency.
+- **Symmetric Ring Logic**: Used `2 * PI * R` for the circumference to ensure the SVG stroke matches the visual circle perfectly.
+
+---
+
+## Dependencies
+
+None (uses native browser APIs).
+
+---
+
+## Future Improvements
+
+- Integration with browser Notification API for background alerts.
+- Support for multiple Pomodoro profiles (e.g., "Intense" vs "Relaxed").
+- Ability to export daily logs as a CSV or JSON file.
+
+---
+
+## Development Notes
+
+- The ring animation relies on the `stroke-dasharray` and `stroke-dashoffset` properties of the SVG circle.
+- To avoid layout shift, a monospace font (Fira Code) is used for the timer digits.
 
 ---
 
 ## Known Limitations
 
-- No notification API (browser tab must be visible to see/hear completion)
-- No pause-and-resume across page reloads
-- No multi-device sync
+- Timer precision can drift slightly over long periods due to `setInterval` behavior in background tabs.
+- No multi-device synchronization.
 
 ---
 
 ## License & Attribution
 
 - **Project License:** MIT
-- **Third-Party Assets:** None — all code is original.
+- **Third-Party Assets:** None.
+
+---
+
+## References
+
+- [MDN Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+- [SVG Stroke-Dasharray Guide](https://developer.mozilla.org/en-US/docs/Web/API/CSS/stroke-dasharray)
+- [Pomodoro Technique](https://pomodoro.com/)

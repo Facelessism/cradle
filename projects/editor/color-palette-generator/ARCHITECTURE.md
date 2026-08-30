@@ -51,6 +51,30 @@ formatting, and event handling. There is no build step; the browser loads files 
 
 ---
 
+## Data Flow / Execution Flow
+
+```
+User picks base color or harmony mode
+↓
+Event listener triggers renderPalette()
+↓
+generatePalette() computes new HSL values based on mode
+↓
+Merge with locked colors (lockedIndices Set)
+↓
+DOM updated with new swatches
+↓
+updateExport() generates code for current format (CSS/Tailwind/JSON/SCSS)
+↓
+User clicks swatch for contrast check
+↓
+runContrastCheck() computes luminance and ratio
+↓
+UI updated with AA/AAA pass/fail badges
+```
+
+---
+
 ## Key Features
 
 - Base color picker with hex input and random color button
@@ -77,11 +101,55 @@ formatting, and event handling. There is no build step; the browser loads files 
 
 ---
 
+## File Responsibilities
+
+### `index.html`
+
+- Defines the structural layout.
+- Provides input fields for base color and harmony mode selection.
+- Hosts the palette grid and contrast results area.
+
+### `script.js`
+
+- `generatePalette()`: Core engine that calculates harmonic colors using HSL.
+- `contrastRatio()`: Implements WCAG 2.x luminance-based contrast formulas.
+- `renderPalette()`: Manages DOM updates and handles the locking mechanism.
+- `updateExport()`: Maps the current palette to various developer-friendly formats.
+
+### `style.css`
+
+- Styles the swatch grid and individual swatches.
+- Implements the "active" state for harmony buttons.
+- Uses a responsive grid to adapt from desktop to mobile.
+
+---
+
 ## Design Decisions
 
 - **No external libraries** — color math is implemented from scratch using HSL conversions to keep the project self-contained and zero-dependency.
 - **Lock-per-swatch model** — locking individual swatches lets users iterate on part of a palette without losing work, a common workflow in design tools.
 - **Alternating contrast checker** — clicking a palette swatch alternates between setting foreground and background so users can quickly compare two palette colors.
+
+---
+
+## Dependencies
+
+None (uses native browser APIs).
+
+---
+
+## Future Improvements
+
+- Integration with a color-blindness simulator to preview palettes.
+- Ability to save palettes to `localStorage` for persistence across sessions.
+- Import from image via canvas sampling.
+
+---
+
+## Development Notes
+
+- The palette generation logic relies on rotating the Hue (H) in HSL space.
+- Contrast calculations follow the standard WCAG relative luminance formula.
 
 ---
 
@@ -97,3 +165,10 @@ formatting, and event handling. There is no build step; the browser loads files 
 
 - **Project License:** MIT
 - **Third-Party Assets:** None — all code is original.
+
+---
+
+## References
+
+- [WCAG 2.1 Contrast (W3C)](https://www.w3.org/TR/WCAG21/#contrast-minimum)
+- [MDN Web Docs — HSL Color](https://developer.mozilla.org/en-US/docs/Web/API/CSS/color_value#hsl)
