@@ -15,6 +15,13 @@ const inputStrokeColor = document.getElementById("inputStrokeColor");
 const presetsList = document.getElementById("presetsList");
 
 let currentImgUrl = "https://i.imgflip.com/1g8my4.jpg"; // fallback starter meme
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
 
 function getOptionsFromUI() {
   return {
@@ -144,14 +151,88 @@ function renderPresetsUI() {
 
 if (fileUpload) {
   fileUpload.addEventListener("change", e => {
-    const file = e.target.files[0];
-    if (file) {
+    const file = e.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+    const MAX_IMAGE_WIDTH = 4096;
+    const MAX_IMAGE_HEIGHT = 4096;
+
+    // Check actual file size before reading the file.
+    if (file.size > MAX_IMAGE_SIZE) {
+      showError(
+        `Image is too large (${(file.size / (1024 * 1024)).toFixed(
+          2
+        )} MB). Maximum allowed file size is 5 MB.`
+      );
+
+      e.target.value = "";
+      return;
+    }
+
+    // Check file type.
+    if (!ACCEPTED_IMAGE_TYPES.has(file.type)) {
+      showError(
+        "Invalid image type. Please upload a JPEG, PNG, WebP, or GIF image."
+      );
+
+      e.target.value = "";
+      return;
+    }
+
+    // Check image dimensions before actually loading it into the meme.
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      const width = img.naturalWidth;
+      const height = img.naturalHeight;
+
+      URL.revokeObjectURL(objectUrl);
+
+      if (
+        width > MAX_IMAGE_WIDTH ||
+        height > MAX_IMAGE_HEIGHT
+      ) {
+        showError(
+          `Image resolution is too high (${width} × ${height}px). Maximum allowed resolution is ${MAX_IMAGE_WIDTH} × ${MAX_IMAGE_HEIGHT}px.`
+        );
+
+        e.target.value = "";
+        return;
+      }
+
+      // Only load the image after ALL validation passes.
       const reader = new FileReader();
+
       reader.onload = event => {
         loadMemeFromUrl(event.target.result);
       };
+
+      reader.onerror = () => {
+        showError("Unable to read the selected image.");
+      };
+
       reader.readAsDataURL(file);
-    }
+
+      // Allows selecting the same file again.
+      e.target.value = "";
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      showError(
+        "Unable to validate the selected image. Please choose a valid image."
+      );
+
+      e.target.value = "";
+    };
+
+    img.src = objectUrl;
   });
 }
 
