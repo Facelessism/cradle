@@ -1,12 +1,21 @@
-const WORKER_URL = "./scripts/worker.js";
+import { isFilterRequest, isFilterResult } from "./messageValidation.js";
+
+const WORKER_OPTIONS = { type: "module" };
+
+// Default factory builds a same-origin module worker from the hardcoded literal
+// URL below. Keeping the URL literal is what lets the worker-integrity
+// validator (scripts/validate-worker-integrity.js) see the reference and check
+// that the target script is registered and unmodified.
+const defaultWorkerFactory = () =>
+  new Worker("./scripts/worker.js", WORKER_OPTIONS);
 
 /**
  * Create a search worker and turn both startup and runtime failures into a
  * single callback. The caller decides how to recover from the failure.
  */
-export function createFilterWorker({ WorkerCtor, onResult, onFailure }) {
+export function createFilterWorker({ workerFactory, onResult, onFailure }) {
   try {
-    const worker = new WorkerCtor(WORKER_URL, { type: "module" });
+    const worker = workerFactory ? workerFactory() : defaultWorkerFactory();
     let failed = false;
 
     const fail = error => {
@@ -17,7 +26,7 @@ export function createFilterWorker({ WorkerCtor, onResult, onFailure }) {
     };
 
     worker.onmessage = event => {
-      if (!Array.isArray(event.data)) {
+      if (!isFilterResult(event.data)) {
         fail(new Error("Worker returned an invalid search result"));
         return;
       }
@@ -30,6 +39,11 @@ export function createFilterWorker({ WorkerCtor, onResult, onFailure }) {
     return {
       postMessage(message) {
         if (failed) return false;
+
+        if (!isFilterRequest(message)) {
+          fail(new Error("Refusing to send an invalid search request"));
+          return false;
+        }
 
         try {
           worker.postMessage(message);

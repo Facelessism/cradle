@@ -62,6 +62,27 @@ test("worker attaches onmessage handler to self", () => {
   assert.equal(typeof self.onmessage, "function");
 });
 
+test("rejects malformed messages without running the search", () => {
+  const cases = [
+    null,
+    undefined,
+    {},
+    { allProjects: "oops", selectedCategory: "all", query: "" },
+    { allProjects: [], selectedCategory: 5, query: "" },
+    { allProjects: [], selectedCategory: "all" },
+  ];
+
+  for (const payload of cases) {
+    lastPostedMessage = null;
+    self.onmessage({ data: payload });
+    assert.deepEqual(
+      lastPostedMessage,
+      [],
+      `expected [] for ${JSON.stringify(payload)}`
+    );
+  }
+});
+
 test("returns all projects when selectedCategory is 'all' and query is empty", () => {
   const result = runWorkerFilter({
     allProjects: sampleProjects,
