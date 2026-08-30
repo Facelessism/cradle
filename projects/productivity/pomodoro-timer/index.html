@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pomodoro Timer</title>
+    <meta
+      name="description"
+      content="A focused work timer with configurable durations, session tracking, and sound alerts."
+    />
+    <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="glow-bg"></div>
+    <div class="app-container">
+      <header class="app-header">
+        <div class="logo">
+          <span class="icon">🍅</span>
+          <h1>Pomodoro Timer</h1>
+        </div>
+        <p class="subtitle">Stay focused. Take breaks. Track your sessions.</p>
+      </header>
+
+      <main class="main-content">
+        <div class="workspace-grid">
+          <!-- Left: Timer + Controls -->
+          <section class="timer-column">
+            <!-- Mode Tabs -->
+            <div class="card">
+              <div class="mode-tabs">
+                <button class="btn btn-mode active" data-mode="pomodoro">Focus</button>
+                <button class="btn btn-mode" data-mode="shortBreak">Short Break</button>
+                <button class="btn btn-mode" data-mode="longBreak">Long Break</button>
+              </div>
+            </div>
+
+            <!-- Timer Display -->
+            <div class="card timer-card">
+              <div class="timer-ring-wrap">
+                <svg class="timer-ring" viewBox="0 0 260 260">
+                  <circle class="ring-bg" cx="130" cy="130" r="118" />
+                  <circle class="ring-progress" id="ringProgress" cx="130" cy="130" r="118" />
+                </svg>
+                <div class="timer-display">
+                  <span class="timer-digits" id="timerDigits">25:00</span>
+                  <span class="timer-label" id="timerLabel">Focus</span>
+                </div>
+              </div>
+
+              <div class="timer-controls">
+                <button class="btn btn-control btn-reset" id="resetBtn" title="Reset (R)">
+                  ↺
+                </button>
+                <button class="btn btn-control btn-start" id="startBtn" title="Start / Pause (Space)">
+                  ▶
+                </button>
+                <button class="btn btn-control btn-skip" id="skipBtn" title="Skip (S)">
+                  ⏭
+                </button>
+              </div>
+            </div>
+
+            <!-- Session Counter -->
+            <div class="card stats-card">
+              <div class="stat">
+                <span class="stat-value" id="sessionCount">0</span>
+                <span class="stat-label">Sessions</span>
+              </div>
+              <div class="stat">
+                <span class="stat-value" id="totalMinutes">0</span>
+                <span class="stat-label">Focus min</span>
+              </div>
+              <div class="stat">
+                <span class="stat-value" id="currentStreak">0</span>
+                <span class="stat-label">Streak</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Right: Settings + History -->
+          <section class="settings-column">
+            <!-- Settings -->
+            <div class="card">
+              <h2>⚙️ Settings</h2>
+              <div class="settings-grid">
+                <div class="setting-item">
+                  <label>Focus (min)</label>
+                  <input type="number" id="setPomodoro" min="1" max="120" value="25" />
+                </div>
+                <div class="setting-item">
+                  <label>Short Break</label>
+                  <input type="number" id="setShortBreak" min="1" max="30" value="5" />
+                </div>
+                <div class="setting-item">
+                  <label>Long Break</label>
+                  <input type="number" id="setLongBreak" min="1" max="60" value="15" />
+                </div>
+                <div class="setting-item">
+                  <label>Auto-start</label>
+                  <label class="toggle">
+                    <input type="checkbox" id="setAutoStart" />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="setting-item">
+                  <label>Sound</label>
+                  <label class="toggle">
+                    <input type="checkbox" id="setSound" checked />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="setting-item">
+                  <label>Long break after</label>
+                  <input type="number" id="setLongBreakAfter" min="2" max="10" value="4" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Today's Log -->
+            <div class="card">
+              <h2>📋 Today's Log</h2>
+              <div class="log-list" id="logList">
+                <p class="empty-state">No sessions yet today. Start focusing!</p>
+              </div>
+            </div>
+
+            <!-- Keyboard Hints -->
+            <div class="card hints-card">
+              <h2>⌨️ Shortcuts</h2>
+              <div class="hints">
+                <span><kbd>Space</kbd> Start / Pause</span>
+                <span><kbd>R</kbd> Reset</span>
+                <span><kbd>S</kbd> Skip</span>
+                <span><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> Switch mode</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="script.js"></script>
+    <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+  </body>
+</html>

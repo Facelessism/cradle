@@ -90,16 +90,35 @@
           <input
             type="range"
             id="smoothing"
+            aria-label="Smoothing factor"
+            title="Smoothing: 0.80"
             min="0"
             max="0.99"
             step="0.01"
             value="0.8"
+            aria-valuemin="0"
+            aria-valuemax="0.99"
+            aria-valuenow="0.8"
+            aria-valuetext="0.80"
           />
           <span class="range-val mono" id="smoothing-val">0.80</span>
         </div>
         <div class="setting-group">
           <label for="gain">Gain:</label>
-          <input type="range" id="gain" min="1" max="10" step="0.5" value="1" />
+          <input
+            type="range"
+            id="gain"
+            aria-label="Gain multiplier"
+            title="Gain: 1.0×"
+            min="1"
+            max="10"
+            step="0.5"
+            value="1"
+            aria-valuemin="1"
+            aria-valuemax="10"
+            aria-valuenow="1"
+            aria-valuetext="1.0×"
+          />
           <span class="range-val mono" id="gain-val">1.0×</span>
         </div>
         <div class="setting-group">

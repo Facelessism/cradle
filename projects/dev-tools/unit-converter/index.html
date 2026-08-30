@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Unit Converter</title>
+    <meta
+      name="description"
+      content="Convert between units of length, weight, temperature, volume, speed, and data storage instantly."
+    />
+    <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="glow-bg"></div>
+    <div class="app-container">
+      <header class="app-header">
+        <div class="logo">
+          <span class="icon">⚖️</span>
+          <h1>Unit Converter</h1>
+        </div>
+        <p class="subtitle">
+          Instant conversions across length, weight, temperature, volume, speed, and data storage.
+        </p>
+      </header>
+
+      <main class="main-content">
+        <!-- Category Tabs -->
+        <div class="card category-card">
+          <div class="category-tabs" id="categoryTabs">
+            <button class="btn btn-cat active" data-cat="length">📏 Length</button>
+            <button class="btn btn-cat" data-cat="weight">⚖️ Weight</button>
+            <button class="btn btn-cat" data-cat="temperature">🌡️ Temp</button>
+            <button class="btn btn-cat" data-cat="volume">🧪 Volume</button>
+            <button class="btn btn-cat" data-cat="speed">🏎️ Speed</button>
+            <button class="btn btn-cat" data-cat="data">💾 Data</button>
+          </div>
+        </div>
+
+        <!-- Converter Card -->
+        <div class="card converter-card">
+          <div class="converter-row">
+            <!-- From -->
+            <div class="converter-side">
+              <label class="side-label">From</label>
+              <input
+                type="number"
+                class="value-input"
+                id="fromValue"
+                placeholder="0"
+                value="1"
+              />
+              <select class="unit-select" id="fromUnit"></select>
+            </div>
+
+            <!-- Swap -->
+            <button class="btn btn-swap" id="swapBtn" title="Swap units">⇄</button>
+
+            <!-- To -->
+            <div class="converter-side">
+              <label class="side-label">To</label>
+              <input
+                type="text"
+                class="value-input result-input"
+                id="toValue"
+                readonly
+                placeholder="0"
+              />
+              <select class="unit-select" id="toUnit"></select>
+            </div>
+          </div>
+
+          <!-- Formula -->
+          <div class="formula-bar" id="formulaBar">
+            <span class="formula-text" id="formulaText"></span>
+          </div>
+        </div>
+
+        <!-- Quick Reference -->
+        <div class="card ref-card">
+          <h2>📋 Quick Reference</h2>
+          <div class="ref-grid" id="refGrid"></div>
+        </div>
+      </main>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="script.js"></script>
+    <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+  </body>
+</html>

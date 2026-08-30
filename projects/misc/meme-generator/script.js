@@ -65,32 +65,46 @@ async function fetchRandomMeme() {
 function renderPresetsUI() {
   if (!presetsList) return;
   const presets = getSavedMemes();
+  if (typeof presetsList.replaceChildren === "function") {
+    presetsList.replaceChildren();
+  } else {
+    while (presetsList.firstChild) {
+      presetsList.removeChild(presetsList.firstChild);
+    }
+  }
+
   if (presets.length === 0) {
-    presetsList.innerHTML = `<p class="empty-presets">No saved presets yet. Customize text and click "Save Preset".</p>`;
+    const emptyMsg = document.createElement("p");
+    emptyMsg.className = "empty-presets";
+    emptyMsg.textContent =
+      'No saved presets yet. Customize text and click "Save Preset".';
+    presetsList.appendChild(emptyMsg);
     return;
   }
 
-  presetsList.innerHTML = "";
   presets.forEach(p => {
     const item = document.createElement("div");
     item.className = "preset-card";
-    // Static skeleton only — the preset text is user-controlled and must be
-    // inserted as text (textContent), never interpolated into innerHTML, or a
-    // saved preset like `<img src=x onerror=...>` would execute on render.
-    item.innerHTML = `
-            <div class="preset-info">
-                <strong></strong>
-                <span></span>
-            </div>
-            <div class="preset-actions">
-                <button class="btn-sm load-preset-btn">Load</button>
-                <button class="btn-sm delete-preset-btn">&times;</button>
-            </div>
-        `;
-    item.querySelector(".preset-info strong").textContent = `"${p.topText || ""}"`;
-    item.querySelector(".preset-info span").textContent = p.bottomText || "";
 
-    item.querySelector(".load-preset-btn").addEventListener("click", () => {
+    const infoDiv = document.createElement("div");
+    infoDiv.className = "preset-info";
+
+    const strongEl = document.createElement("strong");
+    strongEl.textContent = `"${p.topText || ""}"`;
+
+    const spanEl = document.createElement("span");
+    spanEl.textContent = p.bottomText || "";
+
+    infoDiv.appendChild(strongEl);
+    infoDiv.appendChild(spanEl);
+
+    const actionsDiv = document.createElement("div");
+    actionsDiv.className = "preset-actions";
+
+    const loadBtn = document.createElement("button");
+    loadBtn.className = "btn-sm load-preset-btn";
+    loadBtn.textContent = "Load";
+    loadBtn.addEventListener("click", () => {
       inputTopText.value = p.topText || "";
       inputBottomText.value = p.bottomText || "";
       inputFontSize.value = p.fontSize || 36;
@@ -99,10 +113,19 @@ function renderPresetsUI() {
       updateMeme();
     });
 
-    item.querySelector(".delete-preset-btn").addEventListener("click", () => {
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "btn-sm delete-preset-btn";
+    deleteBtn.textContent = "\u00D7";
+    deleteBtn.addEventListener("click", () => {
       deleteMemePreset(p.id);
       renderPresetsUI();
     });
+
+    actionsDiv.appendChild(loadBtn);
+    actionsDiv.appendChild(deleteBtn);
+
+    item.appendChild(infoDiv);
+    item.appendChild(actionsDiv);
 
     presetsList.appendChild(item);
   });

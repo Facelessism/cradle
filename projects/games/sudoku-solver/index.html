@@ -11,15 +11,25 @@
       name="description"
       content="Generate, solve, and master Sudoku puzzles."
     />
-    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/games/sudoku-solver/" />
+
+    <link
+      rel="canonical"
+      href="https://facelessism.github.io/cradle/projects/games/sudoku-solver/"
+    />
+
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Sudoku Solver" />
-    <meta property="og:description" content="Generate, solve, and master Sudoku puzzles." />
-    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/games/sudoku-solver/" />
+    <meta
+      property="og:description"
+      content="Generate, solve, and master Sudoku puzzles."
+    />
+    <meta
+      property="og:url"
+      content="https://facelessism.github.io/cradle/projects/games/sudoku-solver/"
+    />
 
-        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
-<link rel="stylesheet" href="style.css" />
-
+    <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
   </head>
 
@@ -55,24 +65,54 @@
             </div>
 
             <div class="control-group">
-              <label for="difficulty"> Difficulty </label>
+              <label for="difficulty">Difficulty</label>
 
-              <select id="difficulty">
+              <select
+                id="difficulty"
+                aria-label="Select Sudoku difficulty"
+                title="Select Sudoku difficulty"
+              >
                 <option value="easy">Easy</option>
-
                 <option value="medium" selected>Medium</option>
-
                 <option value="hard">Hard</option>
               </select>
             </div>
 
-            <button id="newGame" class="primary-btn">✨ New Puzzle</button>
+            <button
+              id="newGame"
+              class="primary-btn"
+              aria-label="Generate a new Sudoku puzzle"
+              title="Generate a new Sudoku puzzle"
+            >
+              ✨ New Puzzle
+            </button>
 
-            <button id="solveBtn" class="secondary-btn">🧠 Solve</button>
+            <button
+              id="solveBtn"
+              class="secondary-btn"
+              aria-label="Solve the Sudoku puzzle"
+              title="Solve the Sudoku puzzle"
+            >
+              🧠 Solve
+            </button>
 
-            <button id="hintBtn" class="secondary-btn">💡 Hint</button>
+            <button
+              id="hintBtn"
+              class="secondary-btn"
+              aria-label="Get a hint"
+              title="Get a hint"
+            >
+              💡 Hint
+            </button>
 
-            <button id="resetBtn" class="secondary-btn">↻ Reset</button>
+            <button
+              id="resetBtn"
+              class="secondary-btn"
+              aria-label="Reset the Sudoku puzzle"
+              title="Reset the Sudoku puzzle"
+            >
+              ↻ Reset
+            </button>
           </section>
 
           <!-- Number Pad -->
@@ -83,19 +123,84 @@
             </div>
 
             <div class="number-pad">
-              <button data-number="1">1</button>
-              <button data-number="2">2</button>
-              <button data-number="3">3</button>
+              <button
+                data-number="1"
+                aria-label="Enter number 1"
+                title="Enter number 1"
+              >
+                1
+              </button>
 
-              <button data-number="4">4</button>
-              <button data-number="5">5</button>
-              <button data-number="6">6</button>
+              <button
+                data-number="2"
+                aria-label="Enter number 2"
+                title="Enter number 2"
+              >
+                2
+              </button>
 
-              <button data-number="7">7</button>
-              <button data-number="8">8</button>
-              <button data-number="9">9</button>
+              <button
+                data-number="3"
+                aria-label="Enter number 3"
+                title="Enter number 3"
+              >
+                3
+              </button>
 
-              <button data-number="0" class="erase-btn" aria-label="Erase">
+              <button
+                data-number="4"
+                aria-label="Enter number 4"
+                title="Enter number 4"
+              >
+                4
+              </button>
+
+              <button
+                data-number="5"
+                aria-label="Enter number 5"
+                title="Enter number 5"
+              >
+                5
+              </button>
+
+              <button
+                data-number="6"
+                aria-label="Enter number 6"
+                title="Enter number 6"
+              >
+                6
+              </button>
+
+              <button
+                data-number="7"
+                aria-label="Enter number 7"
+                title="Enter number 7"
+              >
+                7
+              </button>
+
+              <button
+                data-number="8"
+                aria-label="Enter number 8"
+                title="Enter number 8"
+              >
+                8
+              </button>
+
+              <button
+                data-number="9"
+                aria-label="Enter number 9"
+                title="Enter number 9"
+              >
+                9
+              </button>
+
+              <button
+                data-number="0"
+                class="erase-btn"
+                aria-label="Erase number"
+                title="Erase number"
+              >
                 ⌫
               </button>
             </div>
@@ -110,20 +215,17 @@
 
             <div class="stat-row">
               <span>Difficulty</span>
-
-              <strong id="difficultyStat"> Medium </strong>
+              <strong id="difficultyStat">Medium</strong>
             </div>
 
             <div class="stat-row">
               <span>Filled</span>
-
-              <strong> <span id="filledStat">0</span>/81 </strong>
+              <strong><span id="filledStat">0</span>/81</strong>
             </div>
 
             <div class="stat-row">
               <span>Hints</span>
-
-              <strong id="hintStat"> 0 </strong>
+              <strong id="hintStat">0</strong>
             </div>
           </section>
         </aside>
@@ -133,7 +235,7 @@
         <section class="board-panel">
           <div class="board-header">
             <div>
-              <span class="eyebrow"> PUZZLE </span>
+              <span class="eyebrow">PUZZLE</span>
 
               <h2>Sudoku Board</h2>
             </div>
@@ -141,7 +243,7 @@
             <div class="timer-box">
               <span>TIME</span>
 
-              <strong id="timer"> 00:00 </strong>
+              <strong id="timer">00:00</strong>
             </div>
           </div>
 
@@ -154,7 +256,7 @@
           </div>
 
           <div class="board-footer">
-            <span> Select a cell and enter a number </span>
+            <span>Select a cell and enter a number</span>
 
             <span id="message" role="status" aria-live="polite">
               Good luck!
@@ -173,21 +275,21 @@
             </div>
 
             <div class="status-card">
-              <span class="status-label"> CURRENT DIFFICULTY </span>
+              <span class="status-label">CURRENT DIFFICULTY</span>
 
-              <strong id="difficultyDisplay"> Medium </strong>
+              <strong id="difficultyDisplay">Medium</strong>
             </div>
 
             <div class="status-card">
-              <span class="status-label"> CELLS FILLED </span>
+              <span class="status-label">CELLS FILLED</span>
 
-              <strong id="filledDisplay"> 0 / 81 </strong>
+              <strong id="filledDisplay">0 / 81</strong>
             </div>
 
             <div class="status-card">
-              <span class="status-label"> PUZZLE STATE </span>
+              <span class="status-label">PUZZLE STATE</span>
 
-              <strong id="puzzleState"> In Progress </strong>
+              <strong id="puzzleState">In Progress</strong>
             </div>
           </section>
 
@@ -199,25 +301,27 @@
             </div>
 
             <div class="instruction">
-              <span class="instruction-icon"> ① </span>
+              <span class="instruction-icon">①</span>
 
               <p>Select an empty cell on the board.</p>
             </div>
 
             <div class="instruction">
-              <span class="instruction-icon"> ② </span>
+              <span class="instruction-icon">②</span>
 
               <p>Choose a number from the number pad.</p>
             </div>
 
             <div class="instruction">
-              <span class="instruction-icon"> ③ </span>
+              <span class="instruction-icon">③</span>
 
-              <p>Each row, column and 3×3 box must contain numbers 1–9 once.</p>
+              <p>
+                Each row, column and 3×3 box must contain numbers 1–9 once.
+              </p>
             </div>
 
             <div class="instruction">
-              <span class="instruction-icon"> ④ </span>
+              <span class="instruction-icon">④</span>
 
               <p>Use Hint when you get stuck.</p>
             </div>

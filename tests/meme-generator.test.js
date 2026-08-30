@@ -118,3 +118,45 @@ test("exportMemeCanvas rejects tainted canvases with an actionable error", () =>
     /cross-origin image.*exported|Upload a local image/i
   );
 });
+
+// Security & DOM Safety Tests for Issue #723
+
+test("script.js does not contain unsafe innerHTML assignments", () => {
+  const fs = require("node:fs");
+  const scriptContent = fs.readFileSync(
+    require.resolve("../projects/misc/meme-generator/script.js"),
+    "utf8"
+  );
+
+  // Ensure no innerHTML property assignment exists in script.js
+  assert.doesNotMatch(
+    scriptContent,
+    /\.innerHTML\s*=/i,
+    "script.js must not assign to innerHTML"
+  );
+});
+
+test("meme preset storage preserves special characters and HTML payloads safely", () => {
+  localStorage.clear();
+
+  const xssPayloads = {
+    topText: "<script>alert('xss')</script>",
+    bottomText: '<img src=x onerror="alert(1)"> & "quotes" & <tags>',
+    fontSize: 36,
+    textColor: "#FFFFFF",
+    strokeColor: "#000000",
+  };
+
+  saveMemePreset(xssPayloads);
+  const saved = getSavedMemes();
+
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].topText, "<script>alert('xss')</script>");
+  assert.equal(
+    saved[0].bottomText,
+    '<img src=x onerror="alert(1)"> & "quotes" & <tags>'
+  );
+
+  deleteMemePreset(saved[0].id);
+});
+

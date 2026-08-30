@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#0d0d1a"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg)" rx="16"/>
+  <!-- Unit circle -->
+  <circle cx="150" cy="150" r="100" fill="none" stroke="#3b82f640" stroke-width="2"/>
+  <!-- Axes -->
+  <line x1="30" y1="150" x2="270" y2="150" stroke="#ffffff20" stroke-width="1"/>
+  <line x1="150" y1="30" x2="150" y2="270" stroke="#ffffff20" stroke-width="1"/>
+  <!-- Angle (60 degrees) -->
+  <line x1="150" y1="150" x2="200" y2="63.4" stroke="#ffffff40" stroke-width="1.5"/>
+  <!-- Cos projection (blue) -->
+  <line x1="150" y1="150" x2="200" y2="150" stroke="#3b82f6" stroke-width="3"/>
+  <!-- Sin projection (red) -->
+  <line x1="200" y1="150" x2="200" y2="63.4" stroke="#ef4444" stroke-width="3"/>
+  <!-- Point -->
+  <circle cx="200" cy="63.4" r="6" fill="#fff" stroke="#3b82f6" stroke-width="2"/>
+  <circle cx="200" cy="63.4" r="12" fill="#3b82f620"/>
+  <!-- Angle arc -->
+  <path d="M170,150 A20,20 0 0,0 160,132.7" fill="none" stroke="#a855f780" stroke-width="2"/>
+  <!-- Labels -->
+  <text x="200" y="145" fill="#3b82f6" font-family="monospace" font-size="10" font-weight="700">cos</text>
+  <text x="208" y="110" fill="#ef4444" font-family="monospace" font-size="10" font-weight="700">sin</text>
+  <!-- Title -->
+  <text x="310" y="40" text-anchor="middle" fill="#3b82f6" font-family="sans-serif" font-weight="800" font-size="14">UNIT CIRCLE</text>
+  <text x="310" y="56" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="10">EXPLORER</text>
+  <!-- Values -->
+  <text x="310" y="90" text-anchor="middle" fill="#e2e8f0" font-family="monospace" font-size="11">θ = 60°</text>
+  <text x="310" y="110" text-anchor="middle" fill="#ef4444" font-family="monospace" font-size="10">sin = 0.8660</text>
+  <text x="310" y="126" text-anchor="middle" fill="#3b82f6" font-family="monospace" font-size="10">cos = 0.5000</text>
+  <text x="310" y="142" text-anchor="middle" fill="#10b981" font-family="monospace" font-size="10">tan = 1.7321</text>
+  <!-- Quadrant -->
+  <g transform="translate(290, 180)">
+    <rect x="0" y="0" width="20" height="20" fill="#3b82f620" rx="3"/>
+    <rect x="22" y="0" width="20" height="20" fill="#ffffff08" rx="3"/>
+    <rect x="0" y="22" width="20" height="20" fill="#ffffff08" rx="3"/>
+    <rect x="22" y="22" width="20" height="20" fill="#ffffff08" rx="3"/>
+    <text x="10" y="14" text-anchor="middle" fill="#3b82f6" font-family="sans-serif" font-size="8" font-weight="700">I</text>
+    <text x="32" y="14" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="8">II</text>
+    <text x="10" y="36" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="8">III</text>
+    <text x="32" y="36" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="8">IV</text>
+  </g>
+</svg>

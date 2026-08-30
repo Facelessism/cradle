@@ -57,9 +57,12 @@
             data-variant="primary"
             data-size="sm"
             type="button"
+            aria-label="Start camera"
+            title="Start camera"
           >
             Start Camera
           </button>
+
           <button
             id="stopCameraBtn"
             data-cradle-btn
@@ -67,16 +70,36 @@
             data-size="sm"
             type="button"
             disabled
+            aria-label="Stop camera"
+            title="Stop camera"
           >
             Stop Camera
           </button>
-          <label class="file-button" for="imageUpload">Upload Image</label>
-          <input id="imageUpload" type="file" accept="image/*" />
+
+          <label
+            class="file-button"
+            for="imageUpload"
+            title="Upload an image"
+          >
+            Upload Image
+          </label>
+
+          <input
+            id="imageUpload"
+            type="file"
+            accept="image/*"
+            aria-label="Upload an image"
+            title="Upload an image"
+          />
         </div>
 
         <label>
           Density Palette
-          <select id="densitySelect">
+          <select
+            id="densitySelect"
+            aria-label="Select ASCII density palette"
+            title="Select ASCII density palette"
+          >
             <option value="standard" selected>Standard</option>
             <option value="detailed">Detailed (70 Chars)</option>
             <option value="blocks">Blocks</option>
@@ -94,6 +117,12 @@
             max="180"
             step="4"
             value="96"
+            aria-label="Columns"
+            title="Columns: 96"
+            aria-valuemin="48"
+            aria-valuemax="180"
+            aria-valuenow="96"
+            aria-valuetext="96"
           />
           <span id="columnValue">96</span>
         </label>
@@ -107,6 +136,12 @@
             max="180"
             step="5"
             value="115"
+            aria-label="Contrast"
+            title="Contrast: 115%"
+            aria-valuemin="60"
+            aria-valuemax="180"
+            aria-valuenow="115"
+            aria-valuetext="115%"
           />
           <span id="contrastValue">115%</span>
         </label>
@@ -120,6 +155,12 @@
             max="60"
             step="5"
             value="0"
+            aria-label="Brightness"
+            title="Brightness: 0"
+            aria-valuemin="-60"
+            aria-valuemax="60"
+            aria-valuenow="0"
+            aria-valuetext="0"
           />
           <span id="brightnessValue">0</span>
         </label>
@@ -133,21 +174,45 @@
             max="24"
             step="1"
             value="12"
+            aria-label="Frames per second"
+            title="FPS: 12"
+            aria-valuemin="4"
+            aria-valuemax="24"
+            aria-valuenow="12"
+            aria-valuetext="12"
           />
           <span id="fpsValue">12</span>
         </label>
 
         <div class="toggle-row" aria-label="ASCII rendering options">
           <label class="toggle">
-            <input id="invertToggle" type="checkbox" />
+            <input
+              id="invertToggle"
+              type="checkbox"
+              aria-label="Invert ASCII colors"
+              title="Invert ASCII colors"
+            />
             <span>Invert</span>
           </label>
+
           <label class="toggle">
-            <input id="edgeToggle" type="checkbox" />
+            <input
+              id="edgeToggle"
+              type="checkbox"
+              aria-label="Enable Sobel edge detection"
+              title="Enable Sobel edge detection"
+            />
             <span>Sobel Edges</span>
           </label>
+
           <label class="toggle">
-            <input id="colorToggle" type="checkbox" checked />
+            <input
+              id="colorToggle"
+              type="checkbox"
+              checked
+              aria-label="Enable color ASCII"
+              title="Enable color ASCII"
+            />
             <span>Color ASCII</span>
           </label>
         </div>
@@ -159,42 +224,56 @@
             data-variant="outline"
             data-size="sm"
             type="button"
+            aria-label="Copy ASCII text"
+            title="Copy ASCII text"
           >
             Copy Text
           </button>
+
           <button
             id="downloadTxtBtn"
             data-cradle-btn
             data-variant="secondary"
             data-size="sm"
             type="button"
+            aria-label="Download ASCII as TXT"
+            title="Download ASCII as TXT"
           >
             Download TXT
           </button>
+
           <button
             id="downloadHtmlBtn"
             data-cradle-btn
             data-variant="secondary"
             data-size="sm"
             type="button"
+            aria-label="Download ASCII as HTML"
+            title="Download ASCII as HTML"
           >
             Download HTML
           </button>
+
           <button
             id="downloadSvgBtn"
             data-cradle-btn
             data-variant="secondary"
             data-size="sm"
             type="button"
+            aria-label="Download ASCII as SVG"
+            title="Download ASCII as SVG"
           >
             Download SVG
           </button>
+
           <button
             id="downloadPngBtn"
             data-cradle-btn
             data-variant="primary"
             data-size="sm"
             type="button"
+            aria-label="Export ASCII as PNG"
+            title="Export ASCII as PNG"
           >
             Export PNG
           </button>
@@ -211,9 +290,20 @@
               </p>
             </div>
           </div>
+
           <div class="media-frame">
-            <video id="cameraVideo" playsinline muted></video>
-            <canvas id="sourceCanvas"></canvas>
+            <video
+              id="cameraVideo"
+              playsinline
+              muted
+              aria-label="Camera preview"
+            ></video>
+
+            <canvas
+              id="sourceCanvas"
+              aria-label="Source image preview"
+            ></canvas>
+
             <div id="emptyPreview" class="empty-preview">
               <strong>No source yet</strong>
               <span>Choose an image or enable webcam access.</span>
@@ -229,16 +319,20 @@
                 Waiting for a source.
               </p>
             </div>
+
             <button
               id="sampleBtn"
               data-cradle-btn
               data-variant="ghost"
               data-size="sm"
               type="button"
+              aria-label="Load sample image"
+              title="Load sample image"
             >
               Load Sample
             </button>
           </div>
+
           <div class="ascii-frame">
             <pre id="asciiOutput" aria-live="polite"></pre>
           </div>

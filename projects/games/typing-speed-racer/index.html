@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Typing Speed Racer</title>
+  <meta name="description"
+    content="A typing speed test with a racing twist. Type words to boost your car and race against the clock!" />
+  <link rel="canonical" href="https://facelessism.github.io/cradle/projects/games/typing-speed-racer/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Typing Speed Racer" />
+  <meta property="og:description"
+    content="A typing speed test with a racing twist. Type words to boost your car and race against the clock!" />
+  <meta property="og:url" content="https://facelessism.github.io/cradle/projects/games/typing-speed-racer/" />
+  <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+</head>
+
+<body>
+  <main class="game-shell">
+    <section class="panel" aria-labelledby="game-title">
+      <header class="panel__header">
+        <div>
+          <p class="eyebrow">Type fast, race faster</p>
+          <h1 id="game-title">🏎️ Typing Speed Racer</h1>
+        </div>
+        <div class="scores" aria-label="Game score">
+          <div class="score-card">
+            <span class="score-card__label">WPM</span>
+            <strong id="wpmValue">0</strong>
+          </div>
+          <div class="score-card">
+            <span class="score-card__label">Best WPM</span>
+            <strong id="bestWpmValue">0</strong>
+          </div>
+        </div>
+      </header>
+
+      <section class="controls" aria-label="Game controls">
+        <div class="mode-selector">
+          <label for="timeLimit">Time: </label>
+          <select id="timeLimit" class="size-select">
+            <option value="30">30s</option>
+            <option value="60" selected>60s</option>
+            <option value="120">120s</option>
+          </select>
+        </div>
+        <div class="difficulty-selector">
+          <label for="difficulty">Difficulty: </label>
+          <select id="difficulty" class="size-select">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+        <button id="startBtn" class="btn-primary">Start Race</button>
+        <button id="resetBtn" class="btn-secondary" hidden>Reset</button>
+      </section>
+
+      <!-- Race Track -->
+      <div class="race-track" aria-label="Race track visualization">
+        <div class="track-lanes">
+          <div class="lane opponent-lane" id="opponentLane">
+            <span class="car-icon opponent-car">🚗</span>
+            <span class="car-label">AI Racer</span>
+          </div>
+          <div class="lane player-lane" id="playerLane">
+            <span class="car-icon player-car" id="playerCar">🏎️</span>
+            <span class="car-label">You</span>
+          </div>
+        </div>
+        <div class="track-progress">
+          <div class="progress-bar" id="progressBar"></div>
+          <span class="progress-label" id="progressLabel">0%</span>
+        </div>
+        <div class="track-distance">
+          <span>START</span>
+          <span>FINISH</span>
+        </div>
+      </div>
+
+      <!-- Stats Bar -->
+      <div class="stats-bar" id="statsBar" hidden>
+        <div class="stat">
+          <span class="stat-label">⏱️ Time</span>
+          <span class="stat-value" id="timeLeft">60s</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">✅ Correct</span>
+          <span class="stat-value" id="correctCount">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">❌ Wrong</span>
+          <span class="stat-value" id="wrongCount">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">📏 Accuracy</span>
+          <span class="stat-value" id="accuracy">100%</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">🔥 Streak</span>
+          <span class="stat-value" id="streak">0</span>
+        </div>
+      </div>
+
+      <!-- Word Display -->
+      <div class="word-display" id="wordDisplay">
+        <p class="placeholder-text">Press <strong>Start Race</strong> to begin typing!</p>
+      </div>
+
+      <!-- Input -->
+      <div class="input-area" id="inputArea" hidden>
+        <input type="text" id="typeInput" class="type-input" autocomplete="off" autocapitalize="off"
+          autocorrect="off" spellcheck="false" placeholder="Type the words here..." aria-label="Type the words shown above" />
+      </div>
+
+      <!-- Results Overlay -->
+      <div class="results-overlay" id="resultsOverlay" hidden>
+        <div class="results-card">
+          <h2 id="resultTitle">🏆 Race Complete!</h2>
+          <div class="results-grid">
+            <div class="result-item">
+              <span class="result-label">Speed</span>
+              <span class="result-value" id="finalWpm">0</span>
+              <span class="result-unit">WPM</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Accuracy</span>
+              <span class="result-value" id="finalAccuracy">0</span>
+              <span class="result-unit">%</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Words Typed</span>
+              <span class="result-value" id="finalWords">0</span>
+              <span class="result-unit">words</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Best Streak</span>
+              <span class="result-value" id="finalStreak">0</span>
+              <span class="result-unit">🔥</span>
+            </div>
+          </div>
+          <div class="result-rank" id="resultRank"></div>
+          <div class="result-actions">
+            <button id="playAgainBtn" class="btn-primary">Race Again</button>
+            <button id="closeResultsBtn" class="btn-secondary">Close</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="script.js"></script>
+</body>
+
+</html>

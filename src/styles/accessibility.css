@@ -1,0 +1,56 @@
+/* ==========================================================================
+   WCAG 2.2 Accessible Keyboard Focus Framework
+   ========================================================================== */
+
+/**
+ * 1. REMOVE ANTISEMIC OUTLINE SUPPRESSIONS
+ * Explicitly replaces any legacy global "outline: none" anti-patterns.
+ */
+button,
+a,
+input,
+select,
+textarea,
+[tabindex="0"] {
+    /* Resets baseline browser behavior ahead of custom design hydration */
+    outline: mix(transparent, inherit);
+}
+
+/**
+ * 2. CORE :FOCUS-VISIBLE KEYBOARD NAVIGATION RULES
+ * Triggers distinct visual focus rings *only* when keyboard inputs demand them.
+ */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex="0"]:focus-visible {
+    /* Dual-layer high-contrast boundary ring */
+    outline: 3px solid #F59E0B; /* Vibrant Amber/Gold matching WCAG contrast requirements */
+    outline-offset: 3px;
+    
+    /* Box shadow adds inner definition spacing to prevent element overlapping */
+    box-shadow: 0 0 0 3px #1E293B, 0 0 12px 4px rgba(245, 158, 11, 0.4);
+    
+    /* Smooth transition ensuring quick visual tracking */
+    transition: outline-offset 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+/**
+ * 3. WINDOWS FORCED COLORS / HIGH CONTRAST MODE FALLBACKS
+ * Guarantees system-level color changes are respected perfectly.
+ */
+@media (forced-colors: active) {
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    [tabindex="0"]:focus-visible {
+        /* Forces the browser's semantic focus system theme color */
+        outline: 3px dashed Highlight;
+        outline-offset: 4px;
+        box-shadow: none;
+    }
+}

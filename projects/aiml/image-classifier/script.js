@@ -1,4 +1,8 @@
 const {
+  MAX_IMAGE_DIMENSION,
+  calculateClampedDimensions,
+  validateAndClampImage,
+  resizeImage,
   formatCustomPredictions,
   canPredictCustom,
   hasLowConfidence,
@@ -257,7 +261,16 @@ async function addImageToClass(event, id) {
 
     await new Promise(resolve => {
       img.addEventListener("load", () => {
-        const activation = model.infer(img, true);
+        const resizeResult = resizeImage(img, MAX_IMAGE_DIMENSION);
+        if (!resizeResult.valid) {
+          showToast("Invalid training image.");
+          resolve();
+          return;
+        }
+        if (resizeResult.resized && resizeResult.warning) {
+          showToast(resizeResult.warning);
+        }
+        const activation = model.infer(resizeResult.element, true);
         knn.addExample(activation, id);
 
         classObj.count++;
@@ -274,6 +287,10 @@ async function addImageToClass(event, id) {
 
         // Add before the "+" button.
         imagesContainer.insertBefore(wrapper, addBtn);
+        resolve();
+      });
+      img.addEventListener("error", () => {
+        showToast("Failed to load training image.");
         resolve();
       });
     });
@@ -302,7 +319,16 @@ async function performPrediction() {
         resetPredictions();
         return;
       }
-      const predictions = await model.classify(preview);
+      const resizeResult = resizeImage(preview, MAX_IMAGE_DIMENSION);
+      if (!resizeResult.valid) {
+        showToast("Invalid image provided!");
+        resetPredictions();
+        return;
+      }
+      if (resizeResult.resized && resizeResult.warning) {
+        showToast(resizeResult.warning);
+      }
+      const predictions = await model.classify(resizeResult.element);
       renderPredictions(
         predictions.map(p => ({
           className: p.className,
@@ -316,7 +342,16 @@ async function performPrediction() {
         resetPredictions();
         return;
       }
-      const activation = model.infer(customTestImage, true);
+      const resizeResult = resizeImage(customTestImage, MAX_IMAGE_DIMENSION);
+      if (!resizeResult.valid) {
+        showToast("Invalid test image provided!");
+        resetPredictions();
+        return;
+      }
+      if (resizeResult.resized && resizeResult.warning) {
+        showToast(resizeResult.warning);
+      }
+      const activation = model.infer(resizeResult.element, true);
       const result = await knn.predictClass(activation);
 
       // Format for rendering

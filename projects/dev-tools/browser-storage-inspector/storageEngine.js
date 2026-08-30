@@ -86,27 +86,43 @@
   }
 
   /**
-   * Read all key-value entries from LocalStorage or SessionStorage store.
-   */
-  function readWebStorage(storeType = "localStorage") {
-    const store =
+ * Read all key-value entries from LocalStorage or SessionStorage store.
+ *
+ * Gracefully handles unavailable storage and storage access errors.
+ */
+function readWebStorage(storeType = "localStorage") {
+  const items = [];
+  let totalBytes = 0;
+
+  let store;
+
+  try {
+    store =
       storeType === "sessionStorage"
         ? window.sessionStorage
         : window.localStorage;
+  } catch (error) {
+    return {
+      items,
+      totalBytes,
+      formattedTotal: "0 B"
+    };
+  }
 
-    const items = [];
-    let totalBytes = 0;
+  if (!store) {
+    return {
+      items,
+      totalBytes,
+      formattedTotal: "0 B"
+    };
+  }
 
-    if (!store) {
-      return {
-        items,
-        totalBytes,
-        formattedTotal: "0 B"
-      };
-    }
-
+  try {
     for (let i = 0; i < store.length; i++) {
       const key = store.key(i);
+
+      if (key === null) continue;
+
       const value = store.getItem(key);
       const bytes = calculateByteSize(key, value);
       const type = detectDataType(value);
@@ -121,13 +137,17 @@
         type
       });
     }
-
-    return {
-      items,
-      totalBytes,
-      formattedTotal: formatBytes(totalBytes)
-    };
+  } catch (error) {
+    // Storage may become unavailable while being read.
+    // Return entries collected before the failure.
   }
+
+  return {
+    items,
+    totalBytes,
+    formattedTotal: formatBytes(totalBytes)
+  };
+}
 
   /**
    * Read document cookies as structured key-value array.
