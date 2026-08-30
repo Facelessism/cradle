@@ -20,4 +20,5 @@ jobs:
       - run: npm run validate:architecture
       - run: npm run validate:projects-sync
       - run: npm run validate:project-order
+      - run: npm run validate:worker-integrity
       - run: npm test

@@ -1,0 +1,18 @@
+{
+  "policy": "All Worker/SharedWorker/importScripts targets must be same-origin files committed to this repository with a matching sha256. See SECURITY.md.",
+  "remoteAllowed": [],
+  "workers": [
+    {
+      "url": "projects/games/chess/ai-worker.js",
+      "sha256": "d6db6c41b1555d1d797d519ba51ee6e1600c9c40bf0fc01c52a2d7deacdef6bf"
+    },
+    {
+      "url": "projects/games/chess/chessLogic.js",
+      "sha256": "129ddd0b6954c04d0ba324dc8658f81a0ecbde318c7420c1a1ae660aa3e38f00"
+    },
+    {
+      "url": "scripts/worker.js",
+      "sha256": "cb54400f9d843e9c28aebea4a454bb2ae02af3bd3ed17ae0b6cf92160a915fe2"
+    }
+  ]
+}
