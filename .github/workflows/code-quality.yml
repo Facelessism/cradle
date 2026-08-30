@@ -1,0 +1,37 @@
+name: Code Quality & Consistency Guards
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  duplicate-js-check:
+    name: Duplicate JavaScript Detection Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history required to inspect changes accurately
+
+      - name: Setup Node.js Runtime environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Application Dependencies
+        run: npm ci
+
+      - name: Execute Duplicate JavaScript Detection Script
+        # Assumes your script is located at scripts/detect-duplicates.js or maps an npm command
+        run: |
+          if [ -f "scripts/detect-duplicates.js" ]; then
+            node scripts/detect-duplicates.js
+          else
+            echo "::warning file=scripts/detect-duplicates.js::Duplicate detection script file not found. Running fallback jscpd check."
+            npx jscpd client/src backend/src
+          fi
