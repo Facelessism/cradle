@@ -1,0 +1,21 @@
+/* Core Design System Tokens Blueprint */
+:root {
+  /* Surface & Background Core Colors */
+  --cradle-bg-primary: #0f111a;
+  --cradle-bg-secondary: #161925;
+  --cradle-bg-glass: rgba(255, 255, 255, 0.06);
+
+  /* Tactical Branding Tones */
+  --cradle-color-accent: #ef4444;
+  --cradle-color-success: #10b981;
+  --cradle-color-text-main: #ffffff;
+  --cradle-color-text-muted: #9ca3af;
+
+  /* Structural Geometry Layout Tokens */
+  --cradle-radius-standard: 12px;
+  --cradle-radius-full: 9999px;
+  --cradle-blur-glassmorphic: 16px;
+  
+  /* Transitional Kinetics */
+  --cradle-transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
