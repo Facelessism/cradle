@@ -33,6 +33,12 @@ css-gradient-generator/
 
 ---
 
+## System / Project Architecture Overview
+
+The project uses a reactive state-driven approach. The state consists of the `gradientType` (linear, radial, or conic), the `angle` of the gradient, and an array of `stops` containing color and position. `script.js` listens for input changes and immediately regenerates the CSS string using `buildGradientCSS()`, which is then applied to the preview box and the code output block.
+
+---
+
 ## Component Breakdown
 
 | File            | Responsibility                                          |
@@ -40,6 +46,26 @@ css-gradient-generator/
 | `index.html`    | Page shell, semantic markup, loads fonts and scripts    |
 | `script.js`     | Gradient CSS generation, stop CRUD, presets, UI events  |
 | `style.css`     | Layout, colors, responsive breakpoints                  |
+
+---
+
+## Data Flow / Execution Flow
+
+```
+User modifies angle, type, or color stop
+↓
+Event listener calls update()
+↓
+buildGradientCSS() sorts stops by position
+↓
+CSS string constructed based on gradientType (linear/radial/conic)
+↓
+previewBox.style.background is updated
+↓
+buildCSSOutput() wraps the gradient in a .gradient CSS class
+↓
+codeBlock.textContent is updated for the user to copy
+```
 
 ---
 
@@ -68,6 +94,28 @@ css-gradient-generator/
 
 ---
 
+## File Responsibilities
+
+### `index.html`
+
+- Defines the layout and the three-pane structure (controls, preview, output).
+- Provides input hooks for angle, type, and stop management.
+
+### `script.js`
+
+- `buildGradientCSS()`: The core engine that converts state (type, angle, stops) into a valid CSS string.
+- `renderStops()`: Dynamically builds the UI for the color stops list.
+- `update()`: Synchronizes the current state with the preview and code block.
+- `renderPresets()`: Implements the one-click preset application logic.
+
+### `style.css`
+
+- Handles the styling of the stop rows and the angle card.
+- Implements the "active" state for gradient type buttons.
+- Ensures the preview box is centered and responsive.
+
+---
+
 ## Design Decisions
 
 - **Sorted stops for CSS output** — color stops are sorted by position before generating
@@ -79,7 +127,41 @@ css-gradient-generator/
 
 ---
 
+## Dependencies
+
+None (uses native browser APIs).
+
+---
+
+## Future Improvements
+
+- Add support for multi-stop linear gradients with complex angles.
+- Implement a visual "color stop" slider for repositioning colors.
+- Add export options for other formats (e.g., SVG, Canvas).
+
+---
+
+## Development Notes
+
+- Stop positions are clamped between 0 and 100.
+- Conic gradients use the `from {angle}deg` syntax for rotation.
+
+---
+
+## Known Limitations
+
+- Radial gradients are limited to a center circle without offset support.
+- No support for complex CSS gradient functions like `repeating-linear-gradient`.
+
+---
+
 ## License & Attribution
 
 - **Project License:** MIT
 - **Third-Party Assets:** None — all code is original.
+
+---
+
+## References
+
+- [MDN Web Docs — CSS Gradients](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS-gradients)

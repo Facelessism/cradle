@@ -31,6 +31,46 @@ typing-speed-racer/
 
 ---
 
+## System / Project Architecture Overview
+
+The game follows a state-driven loop. The `state` object in `script.js` tracks the race progress, timer, and player performance. Input is captured in real-time, and every word submitted triggers a state update and a corresponding visual update to the race track (moving the player's car) and the stats bar. An interval-based tick manages the countdown timer and the movement of the AI opponent.
+
+---
+
+## Component Breakdown
+
+| File | Responsibility |
+|---|---|
+| `index.html` | UI shell, race track lanes, stats display, and the results overlay |
+| `script.js` | Word generation, WPM calculation, timer management, and car movement logic |
+| `style.css` | Visuals for the race track, animations for cars and streaks, and responsive layout |
+
+---
+
+## Data Flow / Execution Flow
+
+```
+User selects difficulty and clicks 'Start Race'
+↓
+Game state initialized → Words generated → Timer starts
+↓
+User types word → Space pressed
+↓
+Word validated against current target
+↓
+If correct: state.correctWords++ → Player car moves forward → Streak increments
+↓
+If wrong: state.wrongWords++ → Streak resets to 0
+↓
+setInterval(tick) runs every second → Timer decreases → AI car moves
+↓
+Timer reaches 0 → endGame() triggered
+↓
+Final WPM calculated → Rank assigned → Results overlay displayed
+```
+
+---
+
 ## Key Features
 
 | Feature | Description |
@@ -47,33 +87,84 @@ typing-speed-racer/
 
 ---
 
-## Word Banks
+## Technologies Used
 
-| Difficulty | Word Length | Count | Examples |
-|---|---|---|---|
-| Easy | 3 letters | 80 | the, and, for, cat, dog |
-| Medium | 5-6 letters | 80 | about, after, green, world |
-| Hard | 8-9 letters | 60 | absolute, beautiful, computer |
-
----
-
-## Scoring & Ranking
-
-| WPM Range | Rank |
+| Technology | Purpose |
 |---|---|
-| 100+ | 🏆 Formula 1 Legend |
-| 80-99 | 🥇 NASCAR Champion |
-| 60-79 | 🥈 Pro Racer |
-| 40-59 | 🥉 Road Racer |
-| 20-39 | 🚗 Sunday Driver |
-| 0-19 | 🐌 Learning to Drive |
+| HTML5 | Semantic structure and UI components |
+| CSS3 | Animations, race track layout, and responsive design |
+| JavaScript (ES6+) | Game loop, WPM math, and DOM manipulation |
+| localStorage API | Persisting best scores |
 
 ---
 
-## Technical Decisions
+## File Responsibilities
 
-- **No frameworks**: Pure vanilla JS for fast loading and zero dependencies
-- **Word batching**: Generates 60 words initially, adds 30 more when running low
-- **Live feedback**: Input border turns green/red for correct/misspelled partial matches
-- **Car animation**: CSS transitions for smooth car movement (0.3s ease-out)
-- **localStorage**: Best WPM persisted under `cradle:typing-racer-best-wpm`
+### `index.html`
+
+- Provides the layout for the racing lanes and the input field.
+- Hosts the stats bar and the results modal.
+
+### `script.js`
+
+- `startGame()`: Initializes the game state and timer.
+- `tick()`: Manages the second-by-second updates for the timer and AI.
+- `calculateWpm()`: Computes words per minute based on elapsed time and correct words.
+- `endGame()`: Finalizes the race, updates best score, and shows results.
+
+### `style.css`
+
+- Implements the `.car-icon` animations and the race track visual.
+- Defines the `.streak-flash` and `.boost-glow` visual effects.
+- Ensures the layout adapts to different screen sizes.
+
+---
+
+## Design Decisions
+
+- **No frameworks**: Pure vanilla JS for fast loading and zero dependencies.
+- **Word batching**: Generates 60 words initially, adds 30 more when running low to avoid huge initial arrays.
+- **Live feedback**: Input border turns green/red for correct/misspelled partial matches to guide the user.
+- **Car animation**: CSS transitions for smooth car movement (0.3s ease-out).
+- **localStorage**: Best WPM persisted under `cradle:typing-racer-best-wpm`.
+
+---
+
+## Dependencies
+
+None (uses native browser APIs).
+
+---
+
+## Future Improvements
+
+- Add a multiplayer mode using WebSockets.
+- Integrate a more diverse dictionary API for word generation.
+- Add sound effects for correct words and race finish.
+
+---
+
+## Known Limitations
+
+- The AI opponent speed is linear and doesn't adapt to the player's skill.
+- WPM calculation is simplified (correct words / elapsed time).
+
+---
+
+## Development Notes
+
+- Words are shuffled using a Fisher-Yates inspired shuffle.
+- AI speed varies by difficulty: Easy (0.3), Medium (0.6), Hard (0.9).
+
+---
+
+## License & Attribution
+- **Project License:** MIT
+- **Third-Party Assets:** None.
+
+---
+
+## References
+
+- [MDN Web Docs — localStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)
+- [Fisher-Yates Shuffle Algorithm](https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)
