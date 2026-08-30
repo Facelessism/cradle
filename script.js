@@ -91,7 +91,7 @@ function initializeFilterWorker() {
   if (!window.Worker || filterWorkerFailed) return;
 
   filterWorker = createFilterWorker({
-    WorkerCtor: window.Worker,
+    // No workerFactory: the default builds `new Worker("./scripts/worker.js")`.
     onResult: projects => {
       renderProjects(sortProjectList(projects));
     },

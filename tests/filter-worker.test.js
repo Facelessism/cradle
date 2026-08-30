@@ -34,7 +34,7 @@ test("falls back when worker construction throws", () => {
   }
 
   const worker = createFilterWorker({
-    WorkerCtor: FailingWorker,
+    workerFactory: () => new FailingWorker(),
     onResult: () => {},
     onFailure: error => failures.push(error),
   });
@@ -47,7 +47,7 @@ test("falls back when worker construction throws", () => {
 test("falls back when posting a search request fails", () => {
   const failures = [];
   const worker = createFilterWorker({
-    WorkerCtor: FakeWorker,
+    workerFactory: () => new FakeWorker(),
     onResult: () => {},
     onFailure: error => failures.push(error),
   });
@@ -70,7 +70,7 @@ test("falls back when posting a search request fails", () => {
 test("refuses to send malformed requests and falls back", () => {
   const failures = [];
   const worker = createFilterWorker({
-    WorkerCtor: FakeWorker,
+    workerFactory: () => new FakeWorker(),
     onResult: () => {},
     onFailure: error => failures.push(error),
   });
@@ -89,7 +89,7 @@ test("refuses to send malformed requests and falls back", () => {
 test("falls back when the worker reports an execution error", () => {
   const failures = [];
   const worker = createFilterWorker({
-    WorkerCtor: FakeWorker,
+    workerFactory: () => new FakeWorker(),
     onResult: () => {},
     onFailure: error => failures.push(error),
   });
@@ -106,7 +106,7 @@ test("falls back when the worker returns an invalid result", () => {
   const failures = [];
   const results = [];
   createFilterWorker({
-    WorkerCtor: FakeWorker,
+    workerFactory: () => new FakeWorker(),
     onResult: result => results.push(result),
     onFailure: error => failures.push(error),
   });
@@ -124,7 +124,7 @@ test("delivers valid worker results without invoking fallback", () => {
   const failures = [];
   const results = [];
   createFilterWorker({
-    WorkerCtor: FakeWorker,
+    workerFactory: () => new FakeWorker(),
     onResult: result => results.push(result),
     onFailure: error => failures.push(error),
   });
