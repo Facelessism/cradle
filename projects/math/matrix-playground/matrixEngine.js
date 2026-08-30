@@ -6,6 +6,37 @@
 (function (exports) {
   "use strict";
 
+  const MAX_ITERATIONS = 10000;
+
+  /**
+   * Validate matrix dimensions and malformed inputs.
+   */
+  function validateMatrix(matrix, name = "Matrix") {
+    if (!matrix || !Array.isArray(matrix) || matrix.length === 0) {
+      throw new Error(`${name} must be a non-empty 2D array.`);
+    }
+    const cols = matrix[0] ? matrix[0].length : 0;
+    if (cols === 0) {
+      throw new Error(`${name} must have at least one column.`);
+    }
+    
+    let iter = 0;
+    for (let r = 0; r < matrix.length; r++) {
+      if (++iter > MAX_ITERATIONS) throw new Error("Iteration limit exceeded during validation.");
+      if (!Array.isArray(matrix[r]) || matrix[r].length !== cols) {
+        throw new Error(`${name} must have consistent row dimensions.`);
+      }
+      for (let c = 0; c < cols; c++) {
+        if (++iter > MAX_ITERATIONS) throw new Error("Iteration limit exceeded during validation.");
+        const val = matrix[r][c];
+        if (typeof val !== "number" || !Number.isFinite(val)) {
+          throw new Error(`${name} elements must be valid finite numbers.`);
+        }
+      }
+    }
+    return true;
+  }
+
   /**
    * Helper: create an m x n matrix filled with a initial value.
    */
@@ -32,6 +63,8 @@
    * Add two matrices of identical dimensions.
    */
   function add(a, b) {
+    validateMatrix(a, "Matrix A");
+    validateMatrix(b, "Matrix B");
     if (a.length !== b.length || a[0].length !== b[0].length) {
       throw new Error("Matrix dimensions must match for addition.");
     }
@@ -42,6 +75,8 @@
    * Subtract matrix B from matrix A.
    */
   function subtract(a, b) {
+    validateMatrix(a, "Matrix A");
+    validateMatrix(b, "Matrix B");
     if (a.length !== b.length || a[0].length !== b[0].length) {
       throw new Error("Matrix dimensions must match for subtraction.");
     }
@@ -52,6 +87,8 @@
    * Multiply matrix A (m x n) by matrix B (n x p).
    */
   function multiply(a, b) {
+    validateMatrix(a, "Matrix A");
+    validateMatrix(b, "Matrix B");
     const rowsA = a.length;
     const colsA = a[0].length;
     const rowsB = b.length;
@@ -62,8 +99,10 @@
     }
 
     const result = createMatrix(rowsA, colsB, 0);
+    let iter = 0;
     for (let i = 0; i < rowsA; i++) {
       for (let j = 0; j < colsB; j++) {
+        if (++iter > MAX_ITERATIONS) throw new Error("Iteration limit exceeded in multiply.");
         let sum = 0;
         for (let k = 0; k < colsA; k++) {
           sum += a[i][k] * b[k][j];
@@ -78,6 +117,10 @@
    * Scale matrix by scalar multiplier.
    */
   function scale(matrix, scalar) {
+    validateMatrix(matrix);
+    if (typeof scalar !== "number" || !Number.isFinite(scalar)) {
+      throw new Error("Scalar must be a valid finite number.");
+    }
     return matrix.map(row => row.map(val => val * scalar));
   }
 
@@ -85,6 +128,7 @@
    * Transpose matrix.
    */
   function transpose(matrix) {
+    validateMatrix(matrix);
     const rows = matrix.length;
     const cols = matrix[0].length;
     const result = createMatrix(cols, rows, 0);
@@ -100,6 +144,7 @@
    * Calculate trace of a square matrix.
    */
   function trace(matrix) {
+    validateMatrix(matrix);
     if (matrix.length !== matrix[0].length) {
       throw new Error("Trace is only defined for square matrices.");
     }
@@ -114,6 +159,7 @@
    * Calculate determinant of a square matrix using LU/recursion.
    */
   function determinant(matrix) {
+    validateMatrix(matrix);
     const n = matrix.length;
     if (n !== matrix[0].length) {
       throw new Error("Determinant is only defined for square matrices.");
@@ -125,8 +171,10 @@
     const copy = matrix.map(r => r.slice());
     let det = 1;
     let swaps = 0;
+    let iter = 0;
 
     for (let i = 0; i < n; i++) {
+      if (++iter > MAX_ITERATIONS) throw new Error("Iteration limit exceeded in determinant.");
       let pivot = i;
       for (let j = i + 1; j < n; j++) {
         if (Math.abs(copy[j][i]) > Math.abs(copy[pivot][i])) {
@@ -158,6 +206,7 @@
    * Inverse of a square matrix using Gauss-Jordan elimination.
    */
   function inverse(matrix) {
+    validateMatrix(matrix);
     const n = matrix.length;
     if (n !== matrix[0].length) {
       throw new Error("Inverse is only defined for square matrices.");
@@ -169,7 +218,9 @@
       return row.concat(identityRow);
     });
 
+    let iter = 0;
     for (let i = 0; i < n; i++) {
+      if (++iter > MAX_ITERATIONS) throw new Error("Iteration limit exceeded in inverse.");
       let pivot = i;
       for (let j = i + 1; j < n; j++) {
         if (Math.abs(aug[j][i]) > Math.abs(aug[pivot][i])) {
@@ -209,12 +260,15 @@
    * Calculate Matrix Rank using Row Echelon Form.
    */
   function rank(matrix) {
+    validateMatrix(matrix);
     const rows = matrix.length;
     const cols = matrix[0].length;
     const copy = matrix.map(r => r.slice());
 
     let r = 0;
+    let iter = 0;
     for (let c = 0; c < cols && r < rows; c++) {
+      if (++iter > MAX_ITERATIONS) throw new Error("Iteration limit exceeded in rank.");
       let pivot = r;
       for (let i = r + 1; i < rows; i++) {
         if (Math.abs(copy[i][c]) > Math.abs(copy[pivot][c])) {
@@ -246,6 +300,7 @@
    * Returns { L, U } where A = L * U
    */
   function luDecomposition(matrix) {
+    validateMatrix(matrix);
     const n = matrix.length;
     if (n !== matrix[0].length) {
       throw new Error("LU decomposition requires a square matrix.");
@@ -254,7 +309,9 @@
     const L = createIdentity(n);
     const U = createMatrix(n, n, 0);
 
+    let iter = 0;
     for (let i = 0; i < n; i++) {
+      if (++iter > MAX_ITERATIONS) throw new Error("Iteration limit exceeded in luDecomposition.");
       // Upper Triangular U
       for (let k = i; k < n; k++) {
         let sum = 0;
@@ -287,6 +344,7 @@
    * Returns { Q, R } where A = Q * R
    */
   function qrDecomposition(matrix) {
+    validateMatrix(matrix);
     const rows = matrix.length;
     const cols = matrix[0].length;
 
@@ -294,7 +352,9 @@
     const Q = createMatrix(rows, cols, 0);
     const R = createMatrix(cols, cols, 0);
 
+    let iter = 0;
     for (let j = 0; j < cols; j++) {
+      if (++iter > MAX_ITERATIONS) throw new Error("Iteration limit exceeded in qrDecomposition.");
       let v = A.map(row => row[j]);
 
       for (let i = 0; i < j; i++) {
@@ -326,6 +386,7 @@
    * Calculate Real Eigenvalues for 2x2 or 3x3 matrices.
    */
   function eigenvalues(matrix) {
+    validateMatrix(matrix);
     const n = matrix.length;
     if (n !== matrix[0].length || (n !== 2 && n !== 3)) {
       throw new Error("Eigenvalue computation supports 2x2 or 3x3 square matrices.");
