@@ -423,6 +423,31 @@ function buildProjectsRegistry({
   return { projects, errors };
 }
 
+function validateProjectEntrypoint(projectPath, repoRoot = REPO_ROOT) {
+  const normalizedProjectPath = projectPath.replace(/[\\/]+$/, "");
+  const entrypointPath = path.join(
+    repoRoot,
+    normalizedProjectPath,
+    "index.html"
+  );
+
+  if (!fs.existsSync(entrypointPath)) {
+    return `Project entrypoint missing for "${projectPath}": expected "${path.relative(
+      repoRoot,
+      entrypointPath
+    )}".`;
+  }
+
+  if (!fs.statSync(entrypointPath).isFile()) {
+    return `Project entrypoint is not a file for "${projectPath}": expected "${path.relative(
+      repoRoot,
+      entrypointPath
+    )}".`;
+  }
+
+  return null;
+}
+
 function validateProjectsSync({
   projectsDir = PROJECTS_DIR,
   repoRoot = REPO_ROOT,
@@ -454,6 +479,21 @@ function validateProjectsSync({
       inSync: false,
       issues: [`Registry file "${path.relative(repoRoot, outputFile)}" must contain a JSON array.`]
     };
+  }
+
+  for (const project of existingProjects) {
+    if (!project || typeof project.path !== "string" || !project.path.trim()) {
+      continue;
+    }
+
+    const entrypointIssue = validateProjectEntrypoint(
+      project.path,
+      repoRoot
+    );
+
+    if (entrypointIssue) {
+      issues.push(entrypointIssue);
+    }
   }
 
   const { projects: expectedProjects, errors } = buildProjectsRegistry({

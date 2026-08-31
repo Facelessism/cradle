@@ -78,6 +78,12 @@
     "dateAdded": "2026-08-07T23:15:16+05:30"
   },
   {
+    "title": "Color Palette Generator",
+    "category": "editor",
+    "path": "projects/editor/color-palette-generator/",
+    "dateAdded": "2026-08-30T05:41:31+05:30"
+  },
+  {
     "title": "CPU Emulator",
     "category": "dev-tools",
     "path": "projects/dev-tools/cpu-emulator/",
@@ -90,10 +96,16 @@
     "dateAdded": "2026-08-07T23:54:44+05:30"
   },
   {
+    "title": "CSS Gradient Generator",
+    "category": "editor",
+    "path": "projects/editor/css-gradient-generator/",
+    "dateAdded": "2026-08-30T05:49:18+05:30"
+  },
+  {
     "title": "CSS Grid Generator",
     "category": "dev-tools",
     "path": "projects/dev-tools/css-grid-generator/",
-    "dateAdded": "2026-08-29T10:00:00+05:30"
+    "dateAdded": "2026-08-29T16:33:09+05:30"
   },
   {
     "title": "CSS Shape Designer",
@@ -186,6 +198,12 @@
     "dateAdded": "2026-07-27T16:36:49+05:30"
   },
   {
+    "title": "JSON Tree Viewer",
+    "category": "dev-tools",
+    "path": "projects/dev-tools/json-tree-viewer/",
+    "dateAdded": "2026-08-29T19:03:26+05:30"
+  },
+  {
     "title": "Ludo Game",
     "category": "games",
     "path": "projects/games/ludo-game/",
@@ -252,6 +270,18 @@
     "dateAdded": "2026-08-21T17:35:45+05:30"
   },
   {
+    "title": "Pomodoro Infinity Timer",
+    "category": "productivity",
+    "path": "projects/productivity/pomodoro-infinity-timer/",
+    "dateAdded": "2026-08-29T18:59:51+05:30"
+  },
+  {
+    "title": "Pomodoro Timer",
+    "category": "productivity",
+    "path": "projects/productivity/pomodoro-timer/",
+    "dateAdded": "2026-08-30T05:52:29+05:30"
+  },
+  {
     "title": "Reading Progress Tracker",
     "category": "productivity",
     "path": "projects/productivity/reading-progress-tracker/",
@@ -300,6 +330,24 @@
     "dateAdded": "2026-07-21T11:59:15+05:30"
   },
   {
+    "title": "Typing Speed Racer",
+    "category": "games",
+    "path": "projects/games/typing-speed-racer/",
+    "dateAdded": "2026-08-29T18:47:15+05:30"
+  },
+  {
+    "title": "Unit Circle Explorer",
+    "category": "math",
+    "path": "projects/math/unit-circle-explorer/",
+    "dateAdded": "2026-08-29T19:06:51+05:30"
+  },
+  {
+    "title": "Unit Converter",
+    "category": "dev-tools",
+    "path": "projects/dev-tools/unit-converter/",
+    "dateAdded": "2026-08-30T05:55:24+05:30"
+  },
+  {
     "title": "URL Parser",
     "category": "dev-tools",
     "path": "projects/dev-tools/url-parser/",
@@ -316,29 +364,5 @@
     "category": "games",
     "path": "projects/games/wordle-clone/",
     "dateAdded": "2026-08-19T20:45:50+05:30"
-  },
-  {
-    "title": "Unit Circle Explorer",
-    "category": "math",
-    "path": "projects/math/unit-circle-explorer/",
-    "dateAdded": "2026-08-29T13:36:43.111Z"
-    "title": "Cyberpunk Pixel Art Generator",
-    "category": "misc",
-    "path": "projects/misc/cyberpunk-pixel-art-generator/",
-    "dateAdded": "2026-08-29T13:24:56.323Z"
-  },
-  {
-    "title": "JSON Tree Viewer",
-    "category": "dev-tools",
-    "path": "projects/dev-tools/json-tree-viewer/",
-    "dateAdded": "2026-08-29T14:00:00.000Z"
-    "title": "Pomodoro Infinity Timer",
-    "category": "productivity",
-    "path": "projects/productivity/pomodoro-infinity-timer/",
-    "dateAdded": "2026-08-29T13:30:00.000Z"
-    "title": "Typing Speed Racer",
-    "category": "games",
-    "path": "projects/games/typing-speed-racer/",
-    "dateAdded": "2026-08-29T13:16:45.402Z"
   }
 ]
