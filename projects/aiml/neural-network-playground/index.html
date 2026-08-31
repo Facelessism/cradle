@@ -219,6 +219,8 @@
             <div
               id="csvErrorContainer"
               class="error-container"
+              role="alert"
+              aria-live="assertive"
               style="display: none"
             >
               <i aria-hidden="true" class="fas fa-exclamation-circle"></i>
@@ -227,6 +229,8 @@
             <div
               id="csvSuccessContainer"
               class="success-container"
+              role="status"
+              aria-live="polite"
               style="display: none"
             >
               <i aria-hidden="true" class="fas fa-check-circle"></i>
@@ -433,6 +437,15 @@
         </div>
       </div>
     </main>
+
+    <!-- ARIA live region: announces training milestones and state changes to screen readers -->
+    <p
+      id="training-status"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      class="sr-only"
+    ></p>
 
     <!-- Footer -->
     <footer class="app-footer">

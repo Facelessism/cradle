@@ -53,6 +53,7 @@ const RECENT_PROJECTS_COLLAPSED_KEY = "cradle:recent-projects-collapsed";
 const RECENT_PROJECTS_LIMIT = 5;
 const sortProjects = document.getElementById("sort-projects");
 const shortcutHint = document.querySelector(".keyboard-hint");
+const loadStatus = document.getElementById("load-status");
 
 if (shortcutHint) {
   shortcutHint.textContent = "/ or Ctrl + K";
@@ -211,6 +212,7 @@ async function fetchAndCacheProjects(db) {
 
 async function loadProjects() {
   try {
+    if (loadStatus) loadStatus.textContent = "Loading projects\u2026";
     let db;
 
     try {
@@ -223,6 +225,7 @@ async function loadProjects() {
 
         renderCategories();
         renderProjects(allProjects);
+        if (loadStatus) loadStatus.textContent = `${allProjects.length} projects loaded.`;
 
         fetchAndCacheProjects(db)
           .then(() => {
@@ -241,9 +244,11 @@ async function loadProjects() {
 
     renderCategories();
     renderProjects(allProjects);
+    if (loadStatus) loadStatus.textContent = `${allProjects.length} projects loaded.`;
   } catch (error) {
     console.error(error);
     projectsGrid.innerHTML = "<p>Failed to load projects.</p>";
+    if (loadStatus) loadStatus.textContent = "Failed to load projects.";
   }
 }
 

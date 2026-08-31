@@ -77,13 +77,16 @@ body {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--bg-secondary);
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
@@ -174,6 +177,7 @@ body {
 .loss-value {
   color: var(--warning);
 }
+
 .accuracy-value {
   color: var(--success);
 }
@@ -259,10 +263,12 @@ body {
   color: #fff;
   box-shadow: 0 2px 12px rgba(79, 195, 247, 0.3);
 }
+
 .btn-primary:hover {
   box-shadow: 0 4px 20px rgba(79, 195, 247, 0.5);
   transform: translateY(-1px);
 }
+
 .btn-primary:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -275,9 +281,11 @@ body {
   color: var(--warning);
   border: 1px solid rgba(255, 183, 77, 0.3);
 }
+
 .btn-warning:hover {
   background: rgba(255, 183, 77, 0.25);
 }
+
 .btn-warning:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -288,6 +296,7 @@ body {
   color: var(--danger);
   border: 1px solid rgba(239, 83, 80, 0.3);
 }
+
 .btn-danger:hover {
   background: rgba(239, 83, 80, 0.25);
 }
@@ -304,6 +313,7 @@ body {
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
 }
+
 .btn-outline:hover {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
@@ -323,6 +333,7 @@ body {
   font-size: 0.75rem;
   transition: all var(--transition-fast);
 }
+
 .btn-icon:hover {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
@@ -682,10 +693,12 @@ input[type="range"]::-webkit-slider-thumb {
    ANIMATIONS
    ============================================================ */
 @keyframes pulse-glow {
+
   0%,
   100% {
     box-shadow: 0 0 8px rgba(79, 195, 247, 0.2);
   }
+
   50% {
     box-shadow: 0 0 20px rgba(79, 195, 247, 0.45);
   }
@@ -709,6 +722,7 @@ input[type="range"]::-webkit-slider-thumb {
   gap: 8px;
   line-height: 1.35;
 }
+
 .error-container i {
   margin-top: 2px;
   flex-shrink: 0;
@@ -727,6 +741,7 @@ input[type="range"]::-webkit-slider-thumb {
   gap: 8px;
   line-height: 1.35;
 }
+
 .success-container i {
   margin-top: 2px;
   flex-shrink: 0;
@@ -746,6 +761,7 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* Accessibility: Respect user's reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
