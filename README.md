@@ -40,6 +40,7 @@ Cradle/
 ├── ARCHITECTURE_TEMPLATE.md   # Standardized template for mini projects
 ├── CONTRIBUTING.md            # Guidelines for repository contributors
 ├── README.md                  # Project overview documentation
+├── STORAGE_POLICY.md          # Storage API and conflict-resolution strategy
 ├── THIRD_PARTY_POLICY.md      # Rules for loading external models and scripts
 ├── index.html                 # Main landing page entry point
 ├── script.js                  # Global landing page logic & search engine
@@ -166,7 +167,7 @@ Every project in Cradle includes an `ARCHITECTURE.md` file that explains its fol
 ARCHITECTURE_TEMPLATE.md
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md#architecture-documentation) for full instructions on how to fill it in. For details on the repository's testing strategies and CI gates, refer to [TESTING.md](TESTING.md). For rules regarding external dependencies, refer to [THIRD_PARTY_POLICY.md](THIRD_PARTY_POLICY.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md#architecture-documentation) for full instructions on how to fill it in. For details on the repository's testing strategies and CI gates, refer to [TESTING.md](TESTING.md). For rules regarding external dependencies, refer to [THIRD_PARTY_POLICY.md](THIRD_PARTY_POLICY.md). For persistent data storage and conflict resolution policies, refer to [STORAGE_POLICY.md](STORAGE_POLICY.md).
 
 ## 🔧 Troubleshooting
 
