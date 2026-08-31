@@ -16,6 +16,57 @@ function isWholeNumber(value) {
   return Number.isInteger(value) && value >= 0;
 }
 
+/** Own property names that can be abused for prototype pollution. */
+const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+/**
+ * Whether any own key anywhere in the (acyclic) value can be used to pollute
+ * shared prototypes. Prototype-pollution payloads almost always carry
+ * `__proto__`, `constructor`, or `prototype` as names; rejecting them at the
+ * boundary blocks the attack even before any merge happens. Recursion is
+ * bounded by the acyclic, structured-cloned data that arrives via postMessage.
+ */
+export function hasDangerousKeys(value) {
+  if (value === null || typeof value !== "object") return false;
+  if (Array.isArray(value)) {
+    return value.some(hasDangerousKeys);
+  }
+  for (const key of Reflect.ownKeys(value)) {
+    if (typeof key === "string" && DANGEROUS_KEYS.has(key)) return true;
+    const child = value[key];
+    if (typeof child === "object" && child !== null && hasDangerousKeys(child)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Recursively strip any own `__proto__`, `constructor`, and `prototype` keys
+ * from a parsed structure (worker payloads, JSON). Returns a produce-free copy
+ * built with ordinary prototype objects, but assigned one key at a time so a
+ * stray `__proto__` can never trigger the base prototype's setter.
+ */
+export function sanitizeState(value) {
+  if (Array.isArray(value)) {
+    return value.map(sanitizeState);
+  }
+  if (value === null || typeof value !== "object") {
+    return value;
+  }
+  const result = {};
+  for (const key of Object.keys(value)) {
+    if (DANGEROUS_KEYS.has(key)) continue;
+    Object.defineProperty(result, key, {
+      value: sanitizeState(value[key]),
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
+  }
+  return result;
+}
+
 /** Board squares are 0..7 on both axes. */
 function isValidSquare(square) {
   return (
@@ -36,6 +87,7 @@ function isValidSquare(square) {
  */
 export function isChessBoard(board) {
   if (!Array.isArray(board) || board.length !== 8) return false;
+  if (hasDangerousKeys(board)) return false;
 
   return board.every(
     row =>
@@ -45,6 +97,7 @@ export function isChessBoard(board) {
         square =>
           square === null ||
           (typeof square === "object" &&
+            !hasDangerousKeys(square) &&
             typeof square.type === "string" &&
             (square.color === "white" || square.color === "black"))
       )
@@ -54,6 +107,7 @@ export function isChessBoard(board) {
 /** A move the chess worker reports back: `{ from, to }` squares in 0..7. */
 export function isChessMove(move) {
   if (move === null || typeof move !== "object") return false;
+  if (hasDangerousKeys(move)) return false;
   if (!isValidSquare(move.from) || !isValidSquare(move.to)) return false;
   if (move.promoteTo !== undefined && typeof move.promoteTo !== "string")
     return false;
@@ -65,8 +119,10 @@ export function isChessMove(move) {
 /** Message the landing page sends to the search filter worker. */
 export function isFilterRequest(payload) {
   if (payload === null || typeof payload !== "object") return false;
+  if (hasDangerousKeys(payload)) return false;
   return (
     Array.isArray(payload.allProjects) &&
+    !payload.allProjects.some(hasDangerousKeys) &&
     typeof payload.selectedCategory === "string" &&
     typeof payload.query === "string"
   );
@@ -74,7 +130,8 @@ export function isFilterRequest(payload) {
 
 /** Filter worker results are always an array of projects. */
 export function isFilterResult(data) {
-  return Array.isArray(data);
+  if (!Array.isArray(data)) return false;
+  return !data.some(hasDangerousKeys);
 }
 
 /**
@@ -83,6 +140,7 @@ export function isFilterResult(data) {
  */
 export function isChessSearchRequest(payload) {
   if (payload === null || typeof payload !== "object") return false;
+  if (hasDangerousKeys(payload)) return false;
   if (payload.type !== "search") return false;
   if (!isWholeNumber(payload.searchId)) return false;
   if (!isChessBoard(payload.board)) return false;
@@ -104,9 +162,9 @@ export function isChessSearchRequest(payload) {
 
 /** Message the chess page sends to cancel an in-flight AI search. */
 export function isChessCancelRequest(payload) {
-  return (
-    payload !== null && typeof payload === "object" && payload.type === "cancel"
-  );
+  if (payload === null || typeof payload !== "object") return false;
+  if (hasDangerousKeys(payload)) return false;
+  return payload.type === "cancel";
 }
 
 const CHESS_REPORT_TYPES = new Set([
@@ -124,6 +182,7 @@ const CHESS_REPORT_TYPES = new Set([
  */
 export function isChessWorkerReport(report) {
   if (report === null || typeof report !== "object") return false;
+  if (hasDangerousKeys(report)) return false;
   if (!CHESS_REPORT_TYPES.has(report.type)) return false;
 
   switch (report.type) {

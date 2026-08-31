@@ -451,6 +451,7 @@ function isValidSquare(value) {
 
 function isValidMoveShape(move) {
   if (move === null || typeof move !== "object") return false;
+  if (hasDangerousKeys(move)) return false;
   if (!isValidSquare(move.from) || !isValidSquare(move.to)) return false;
   if (move.promoteTo !== undefined && typeof move.promoteTo !== "string")
     return false;
@@ -461,6 +462,7 @@ function isValidMoveShape(move) {
 
 function getReportError(report) {
   if (report === null || typeof report !== "object") return "message";
+  if (hasDangerousKeys(report)) return "message";
   if (!REPORT_TYPES.has(report.type)) return `type "${String(report.type)}"`;
   if (
     report.type === "progress" &&

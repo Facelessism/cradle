@@ -326,6 +326,29 @@ function attacksSquare(position, fromRow, fromCol, targetRow, targetCol) {
   return true;
 }
 
+/**
+ * Detect prototype-pollution keys (`__proto__`, `constructor`, `prototype`)
+ * anywhere in an acyclic object graph. Worker messages are structured-cloned
+ * and acyclic, so recursion is bounded. Used by both the page and the worker
+ * at the message boundary to reject poisoned payloads before any state merge.
+ */
+function hasDangerousKeys(value) {
+  if (value === null || typeof value !== "object") return false;
+  if (Array.isArray(value)) {
+    return value.some(hasDangerousKeys);
+  }
+  for (const key of Reflect.ownKeys(value)) {
+    if (typeof key === "string" && /^(?:__proto__|constructor|prototype)$/.test(key)) {
+      return true;
+    }
+    const child = value[key];
+    if (typeof child === "object" && child !== null && hasDangerousKeys(child)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     WHITE,
@@ -341,5 +364,6 @@ if (typeof module !== "undefined" && module.exports) {
     applyMove,
     findKing,
     isSquareAttacked,
+    hasDangerousKeys,
   };
 }

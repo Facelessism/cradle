@@ -4,11 +4,11 @@
   "workers": [
     {
       "url": "projects/games/chess/ai-worker.js",
-      "sha256": "d6db6c41b1555d1d797d519ba51ee6e1600c9c40bf0fc01c52a2d7deacdef6bf"
+      "sha256": "1d487e11652f81f8ab913357e1eb216d57ec05b7eb2141875c853dede421bf0a"
     },
     {
       "url": "projects/games/chess/chessLogic.js",
-      "sha256": "129ddd0b6954c04d0ba324dc8658f81a0ecbde318c7420c1a1ae660aa3e38f00"
+      "sha256": "ea5f2b067b0faabdd40d53d6e3d36272f4feb97f741b59a665883b0ad0212f3b"
     },
     {
       "url": "scripts/worker.js",

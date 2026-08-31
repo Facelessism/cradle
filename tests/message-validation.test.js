@@ -9,6 +9,8 @@ import {
   isFilterRequest,
   isFilterResult,
   isTrustedMessageEvent,
+  hasDangerousKeys,
+  sanitizeState,
 } from "../src/utils/messageValidation.js";
 
 const emptyBoard = Array.from({ length: 8 }, () => Array(8).fill(null));
@@ -230,6 +232,76 @@ test("isTrustedMessageEvent accepts worker and own-origin messages only", () => 
   // not provably trusted and must be rejected.
   assert.equal(
     isTrustedMessageEvent({ origin: "https://evil.example" }),
+    false
+  );
+});
+
+test("hasDangerousKeys detects prototype-pollution keys at any depth", () => {
+  const withProto = JSON.parse('{"__proto__":{"isAdmin":true},"ok":1}');
+  const withConstructor = JSON.parse('{"constructor":{}}');
+  const withPrototype = { prototype: {} };
+  const nested = JSON.parse('{"a":[{"b":{"__proto__":{}}}]}');
+
+  assert.equal(hasDangerousKeys(null), false);
+  assert.equal(hasDangerousKeys("str"), false);
+  assert.equal(hasDangerousKeys({ ok: 1 }), false);
+  assert.equal(hasDangerousKeys({ a: { b: 1 } }), false);
+  assert.equal(hasDangerousKeys(withProto), true);
+  assert.equal(hasDangerousKeys(withConstructor), true);
+  assert.equal(hasDangerousKeys(withPrototype), true);
+  assert.equal(hasDangerousKeys(nested), true);
+});
+
+test("sanitizeState strips dangerous keys without mutating the source", () => {
+  const source = JSON.parse(
+    '{"ok":1,"__proto__":{"isAdmin":true},"nested":{"constructor":{}}}'
+  );
+  const clean = sanitizeState(source);
+
+  assert.deepEqual(Object.keys(clean).sort(), ["nested", "ok"]);
+  assert.equal("isAdmin" in {}, false);
+  assert.deepEqual(Object.keys(clean.nested), []);
+  // Source object is not mutated.
+  assert.equal(Object.keys(source).length, 3);
+
+  // Produces ordinary (non-null-prototype) objects, so downstream rendering
+  // code keeps working, while dangerous keys never become own properties and
+  // never reach Object.prototype.
+  assert.equal(Object.getPrototypeOf(clean), Object.prototype);
+  assert.equal(Object.prototype.hasOwnProperty.call(clean, "__proto__"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(clean.nested, "constructor"), false);
+});
+
+test("validators reject payloads carrying prototype-pollution keys", () => {
+  const boardWithProto = Array.from({ length: 8 }, () => Array(8).fill(null));
+  boardWithProto[0][0] = JSON.parse(
+    '{"__proto__":{"evil":1},"type":"pawn","color":"white"}'
+  );
+  assert.equal(isChessBoard(boardWithProto), false);
+  assert.equal(
+    isChessMove(
+      JSON.parse(
+        '{"from":{"row":0,"col":0},"to":{"row":1,"col":1},"constructor":{}}'
+      )
+    ),
+    false
+  );
+  assert.equal(
+    isFilterRequest(
+      JSON.parse('{"allProjects":[],"selectedCategory":"all","query":"","__proto__":{}}')
+    ),
+    false
+  );
+  assert.equal(
+    isFilterRequest(
+      JSON.parse('{"allProjects":[{"__proto__":{}}],"selectedCategory":"all","query":""}')
+    ),
+    false
+  );
+  assert.equal(isFilterResult([{ prototype: {} }]), false);
+  assert.equal(isChessCancelRequest({ type: "cancel", constructor: {} }), false);
+  assert.equal(
+    isChessWorkerReport({ type: "error", message: "x", prototype: {} }),
     false
   );
 });
