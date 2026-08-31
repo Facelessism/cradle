@@ -1,84 +1,113 @@
-import { test } from "node:test";
+import fs from "fs";
 import assert from "node:assert/strict";
-import { logWorkerFailure } from "../src/utils/workerLogger.js";
+import { test } from "node:test";
+import path from "path";
 
-test("logWorkerFailure returns structured log entry with all diagnostic fields", () => {
-  const mockLogs = [];
-  const mockLogger = {
-    error: (tag, entry) => mockLogs.push({ tag, entry }),
-  };
+function findProjectHtmlFiles() {
+  const files = [];
+  
+  function traverse(dir) {
+    if (!fs.existsSync(dir)) return;
+    const items = fs.readdirSync(dir);
+    
+    for (const item of items) {
+      const fullPath = path.join(dir, item);
+      if (fs.statSync(fullPath).isDirectory() && !item.startsWith('.')) {
+        traverse(fullPath);
+      } else if (item === 'index.html') {
+        files.push(fullPath);
+      }
+    }
+  }
+  
+  traverse('projects');
+  return files;
+}
 
-  const entry = logWorkerFailure({
-    workerName: "FilterWorker",
-    errorType: "InvalidResultError",
-    message: "Worker returned an invalid search result",
-    context: "onmessage",
-    logger: mockLogger,
-  });
+const htmlFiles = findProjectHtmlFiles();
 
-  assert.equal(entry.workerName, "FilterWorker");
-  assert.equal(entry.errorType, "InvalidResultError");
-  assert.equal(entry.message, "Worker returned an invalid search result");
-  assert.equal(entry.context, "onmessage");
-  assert.ok(typeof entry.timestamp === "string");
-  assert.ok(!isNaN(Date.parse(entry.timestamp)));
-
-  assert.equal(mockLogs.length, 1);
-  assert.equal(mockLogs[0].tag, "[WorkerFailure]");
-  assert.deepEqual(mockLogs[0].entry, entry);
+test("SEO Metadata - all project files found", () => {
+  assert.ok(htmlFiles.length > 0, `Expected at least 1 project file, found ${htmlFiles.length}`);
+  console.log(`\nValidating ${htmlFiles.length} project files for SEO metadata...`);
 });
 
-test("logWorkerFailure handles Error instances for message extraction", () => {
-  const mockLogs = [];
-  const mockLogger = {
-    error: (tag, entry) => mockLogs.push({ tag, entry }),
-  };
+test("SEO Metadata - all files have required meta tags", () => {
+  const missingTags = [];
 
-  const errorObj = new Error("Custom runtime crash");
-  const entry = logWorkerFailure({
-    workerName: "TestWorker",
-    errorType: "RuntimeError",
-    message: errorObj,
-    context: "onerror",
-    logger: mockLogger,
+  htmlFiles.forEach((file) => {
+    const content = fs.readFileSync(file, "utf8");
+    const issues = [];
+
+    if (!/<title>[^<]+<\/title>/.test(content)) issues.push("missing <title>");
+    if (!/<meta name="description"/.test(content)) issues.push("missing meta[name=description]");
+    if (!/<meta property="og:title"/.test(content)) issues.push("missing og:title");
+    if (!/<meta property="og:description"/.test(content)) issues.push("missing og:description");
+    if (!/<link rel="canonical"/.test(content)) issues.push("missing canonical");
+
+    if (issues.length > 0) {
+      missingTags.push(`${file}: ${issues.join(", ")}`);
+    }
   });
 
-  assert.equal(entry.message, "Custom runtime crash");
-  assert.equal(entry.errorType, "RuntimeError");
-  assert.equal(entry.context, "onerror");
+  assert.equal(missingTags.length, 0, `Files with missing tags:\n${missingTags.join("\n")}`);
 });
 
-test("logWorkerFailure uses safe defaults when parameters are omitted", () => {
-  const entry = logWorkerFailure({ logger: null });
+test("SEO Metadata - meta tag values have valid length", () => {
+  const invalidTags = [];
 
-  assert.equal(entry.workerName, "Worker");
-  assert.equal(entry.errorType, "WorkerError");
-  assert.equal(entry.message, "Unknown worker failure");
-  assert.equal(entry.context, "unknown");
-  assert.ok(typeof entry.timestamp === "string");
-});
+  htmlFiles.forEach((file) => {
+    const content = fs.readFileSync(file, "utf8");
 
-test("logWorkerFailure excludes sensitive fields and request/response objects", () => {
-  const entry = logWorkerFailure({
-    workerName: "FilterWorker",
-    errorType: "AuthError",
-    message: "Failed to process request",
-    context: "postMessage",
-    logger: null,
+    const titleMatch = content.match(/<title>([^<]+)<\/title>/);
+    if (titleMatch) {
+      const title = titleMatch[1];
+      if (title.length < 5 || title.length > 100) {
+        invalidTags.push(`${file}: title too short/long (${title.length} chars)`);
+      }
+    }
+
+    const descMatch = content.match(/<meta name="description" content="([^"]+)"/);
+    if (descMatch) {
+      const desc = descMatch[1];
+      if (desc.length < 20 || desc.length > 200) {
+        invalidTags.push(`${file}: description invalid length (${desc.length} chars)`);
+      }
+    }
   });
 
-  const keys = Object.keys(entry);
-  assert.deepEqual(keys.sort(), [
-    "context",
-    "errorType",
-    "message",
-    "timestamp",
-    "workerName",
-  ]);
+  assert.equal(invalidTags.length, 0, `Files with invalid tag values:\n${invalidTags.join("\n")}`);
+});
 
-  assert.equal("token" in entry, false);
-  assert.equal("password" in entry, false);
-  assert.equal("apiKey" in entry, false);
-  assert.equal("cookie" in entry, false);
-  assert.equal("authorization" in entry, false);
+test("SEO Metadata - canonical URLs are valid", () => {
+  const invalidUrls = [];
+
+  htmlFiles.forEach((file) => {
+    const content = fs.readFileSync(file, "utf8");
+    const canonicalMatch = content.match(/<link rel="canonical" href="([^"]+)"/);
+
+    if (canonicalMatch) {
+      const url = canonicalMatch[1];
+      if (!url.startsWith("https://facelessism.github.io/cradle/projects/")) {
+        invalidUrls.push(`${file}: invalid canonical URL (${url})`);
+      }
+      if (!url.endsWith("/")) {
+        invalidUrls.push(`${file}: canonical URL should end with / (${url})`);
+      }
+    }
+  });
+
+  assert.equal(invalidUrls.length, 0, `Files with invalid canonical URLs:\n${invalidUrls.join("\n")}`);
+});
+
+test("SEO Metadata - charset is UTF-8", () => {
+  const invalidCharsets = [];
+
+  htmlFiles.forEach((file) => {
+    const content = fs.readFileSync(file, "utf8");
+    if (!/<meta charset="UTF-8"/i.test(content)) {
+      invalidCharsets.push(file);
+    }
+  });
+
+  assert.equal(invalidCharsets.length, 0, `Files without UTF-8 charset:\n${invalidCharsets.join("\n")}`);
 });

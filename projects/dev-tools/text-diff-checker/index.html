@@ -1,9 +1,11 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Text Difference Checker</title>
+    <meta name="description" content="Text Difference Checker is a lightweight, dependency-free browser tool for comparing two blocks of text. It provides a side-by-side view of the original and mod..." />
+
     <meta
       name="description"
       content="Side-by-side text comparison tool highlighting insertions, deletions, and line changes."
@@ -55,7 +57,7 @@
             class="btn btn-secondary"
             title="Swap original and modified text"
           >
-            ⇄ Swap
+            ? Swap
           </button>
           <button id="clearBtn" class="btn btn-secondary">Clear</button>
         </div>
@@ -84,7 +86,7 @@
         <span class="stat stat-add"
           >+<span id="statAdd">0</span> additions</span
         >
-        <span class="stat stat-del">−<span id="statDel">0</span> removals</span>
+        <span class="stat stat-del">-<span id="statDel">0</span> removals</span>
         <span class="stat stat-mod"
           ><span id="statMod">0</span> modified lines</span
         >
