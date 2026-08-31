@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative Whiteboard | Cradle</title>
+    <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+    <link rel="stylesheet" href="style.css">
+    <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+</head>
+
+<body>
+    <main class="container">
+        <header class="header">
+            <h1>P2P Collaborative Whiteboard</h1>
+            <p class="subtitle">Draw together in real-time using WebRTC Data Channels (Serverless).</p>
+        </header>
+
+        <section class="toolbar">
+            <div class="tool-group">
+                <label for="color-picker">Color:</label>
+                <input type="color" id="color-picker" value="#3b82f6">
+            </div>
+            <div class="tool-group">
+                <label for="brush-size">Size:</label>
+                <input type="range" id="brush-size" min="1" max="20" value="3">
+                <span id="brush-size-display">3px</span>
+            </div>
+            <div class="tool-group">
+                <button id="btn-undo" class="btn btn-secondary" title="Undo (Ctrl+Z)">Undo</button>
+                <button id="btn-redo" class="btn btn-secondary" title="Redo (Ctrl+Y)">Redo</button>
+                <button id="btn-clear" class="btn btn-danger">Clear</button>
+                8
+            </div>
+        </section>
+
+        <section class="connection-panel">
+            <div class="connection-step">
+                <button id="btn-create-offer" class="btn btn-primary">1. Create Offer (Host)</button>
+                <textarea id="local-sdp" placeholder="Your SDP Offer/Answer will appear here..." readonly></textarea>
+                <button id="btn-copy-local" class="btn btn-small">Copy</button>
+            </div>
+            <div class="connection-step">
+                <textarea id="remote-sdp" placeholder="Paste partner's SDP here..."></textarea>
+                <button id="btn-accept" class="btn btn-primary">2. Accept & Connect</button>
+            </div>
+            <div class="status-indicator" id="connection-status">Status: Disconnected</div>
+        </section>
+
+        <div class="canvas-wrapper">
+            <canvas id="whiteboard-canvas"></canvas>
+        </div>
+    </main>
+    <script type="module" src="drawing-engine.js"></script>
+    <script type="module" src="webrtc-manager.js"></script>
+</body>
+
+</html>
