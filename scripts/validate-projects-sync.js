@@ -1,8 +1,8 @@
 const { validateProjectsSync, REPO_ROOT } = require("./generate-projects");
-const path = require("path");
 
 function main() {
   console.log("Checking that data/projects.json is synchronized with current project tree and generator output...");
+  
 
   const result = validateProjectsSync();
 
