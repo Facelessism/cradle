@@ -292,7 +292,7 @@ misc
 
 ## Testing
 
-Before submitting your Pull Request:
+Before submitting your Pull Request, review the [Testing Architecture & CI Strategy](TESTING.md) to understand the required tests and validation scripts.
 
 - Verify that your changes work as expected.
 - Ensure existing functionality is not broken.

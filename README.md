@@ -165,7 +165,7 @@ Every project in Cradle includes an `ARCHITECTURE.md` file that explains its fol
 ARCHITECTURE_TEMPLATE.md
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md#architecture-documentation) for full instructions on how to fill it in.
+See [CONTRIBUTING.md](CONTRIBUTING.md#architecture-documentation) for full instructions on how to fill it in. For details on the repository's testing strategies and CI gates, refer to [TESTING.md](TESTING.md).
 
 ## 🔧 Troubleshooting
 
