@@ -29,9 +29,9 @@ const $ = id => document.getElementById(id);
 const boundaryCanvas = $("boundaryCanvas");
 const networkCanvas = $("networkCanvas");
 const lossCanvas = $("lossCanvas");
-const bCtx = boundaryCanvas.getContext("2d");
-const nCtx = networkCanvas.getContext("2d");
-const lCtx = lossCanvas.getContext("2d");
+const bCtx = boundaryCanvas ? boundaryCanvas.getContext("2d") : null;
+const nCtx = networkCanvas ? networkCanvas.getContext("2d") : null;
+const lCtx = lossCanvas ? lossCanvas.getContext("2d") : null;
 
 // ── INITIALIZATION ───────────────────────────────────────────
 function initNetwork() {
@@ -339,12 +339,16 @@ function renderLayerUI() {
       <input type="range" min="1" max="12" value="${n}" data-layer="${i}">
       <span class="neuron-count">${n}</span>
     `;
-    row.querySelector("input").addEventListener("input", e => {
-      const val = parseInt(e.target.value);
-      state.hiddenLayers[i] = val;
-      row.querySelector(".neuron-count").textContent = val;
-      resetAll();
-    });
+    const inputEl = row.querySelector("input");
+    if (inputEl) {
+      inputEl.addEventListener("input", e => {
+        const val = parseInt(e.target.value);
+        state.hiddenLayers[i] = val;
+        const countEl = row.querySelector(".neuron-count");
+        if (countEl) countEl.textContent = val;
+        resetAll();
+      });
+    }
     container.appendChild(row);
   });
 }

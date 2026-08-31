@@ -71,11 +71,11 @@ const SAMPLE_DATA = {
 
 // ─── Parsing ───────────────────────────────────────────────────────
 function tryParse() {
-  const raw = jsonInput.value.trim()
+  const raw = jsonInput ? jsonInput.value.trim() : ''
   if (!raw) {
     parsedData = null
     setStatus('idle', 'Waiting for input')
-    treeContainer.innerHTML = '<p class="tree-placeholder">Parse JSON to see the tree view</p>'
+    if (treeContainer) treeContainer.innerHTML = '<p class="tree-placeholder">Parse JSON to see the tree view</p>'
     clearStats()
     return
   }
@@ -88,17 +88,20 @@ function tryParse() {
   } catch (err) {
     parsedData = null
     setStatus('error', `✗ ${err.message.substring(0, 60)}`)
-    treeContainer.innerHTML = `<p class="tree-placeholder" style="color:#ef4444">Parse error: ${escapeHtml(err.message)}</p>`
+    if (treeContainer) treeContainer.innerHTML = `<p class="tree-placeholder" style="color:#ef4444">Parse error: ${escapeHtml(err.message)}</p>`
     clearStats()
   }
 }
 
 function setStatus(type, text) {
-  inputStatus.className = `status-badge status-${type}`
-  inputStatus.textContent = text
+  if (inputStatus) {
+    inputStatus.className = `status-badge status-${type}`
+    inputStatus.textContent = text
+  }
 }
 
 function updateInputSize() {
+  if (!jsonInput || !inputSize) return
   const bytes = new Blob([jsonInput.value]).size
   inputSize.textContent = formatBytes(bytes)
 }
@@ -451,6 +454,7 @@ function showToast(msg) {
 
 // ─── Format / Minify ──────────────────────────────────────────────
 function formatJson() {
+  if (!jsonInput) return
   try {
     const data = JSON.parse(jsonInput.value)
     jsonInput.value = JSON.stringify(data, null, 2)
@@ -462,6 +466,7 @@ function formatJson() {
 }
 
 function minifyJson() {
+  if (!jsonInput) return
   try {
     const data = JSON.parse(jsonInput.value)
     jsonInput.value = JSON.stringify(data)
@@ -474,52 +479,53 @@ function minifyJson() {
 
 // ─── Event Listeners ───────────────────────────────────────────────
 let parseTimeout = null
-jsonInput.addEventListener('input', () => {
+jsonInput?.addEventListener('input', () => {
   updateInputSize()
   clearTimeout(parseTimeout)
   parseTimeout = setTimeout(tryParse, 300)
 })
 
-searchInput.addEventListener('input', () => {
-  clearSearchBtn.hidden = searchInput.value === ''
+searchInput?.addEventListener('input', () => {
+  if (!searchInput) return
+  if (clearSearchBtn) clearSearchBtn.hidden = searchInput.value === ''
   searchTree(searchInput.value)
 })
 
-clearSearchBtn.addEventListener('click', () => {
-  searchInput.value = ''
+clearSearchBtn?.addEventListener('click', () => {
+  if (searchInput) searchInput.value = ''
   clearSearchBtn.hidden = true
   searchMatches = []
-  searchCount.hidden = true
+  if (searchCount) searchCount.hidden = true
   clearSearchHighlights()
 })
 
-document.getElementById('expandAll').addEventListener('click', expandAll)
-document.getElementById('collapseAll').addEventListener('click', collapseAll)
-document.getElementById('formatBtn').addEventListener('click', formatJson)
-document.getElementById('minifyBtn').addEventListener('click', minifyJson)
-document.getElementById('clearBtn').addEventListener('click', () => {
-  jsonInput.value = ''
+document.getElementById('expandAll')?.addEventListener('click', expandAll)
+document.getElementById('collapseAll')?.addEventListener('click', collapseAll)
+document.getElementById('formatBtn')?.addEventListener('click', formatJson)
+document.getElementById('minifyBtn')?.addEventListener('click', minifyJson)
+document.getElementById('clearBtn')?.addEventListener('click', () => {
+  if (jsonInput) jsonInput.value = ''
   parsedData = null
-  treeContainer.innerHTML = '<p class="tree-placeholder">Parse JSON to see the tree view</p>'
+  if (treeContainer) treeContainer.innerHTML = '<p class="tree-placeholder">Parse JSON to see the tree view</p>'
   setStatus('idle', 'Waiting for input')
   clearStats()
   updateInputSize()
 })
 
-document.getElementById('copyPath').addEventListener('click', () => {
+document.getElementById('copyPath')?.addEventListener('click', () => {
   if (selectedPath) copyToClipboard(selectedPath, 'Path')
 })
 
-document.getElementById('copyJson').addEventListener('click', () => {
+document.getElementById('copyJson')?.addEventListener('click', () => {
   if (parsedData) copyToClipboard(JSON.stringify(parsedData, null, 2), 'JSON')
 })
 
-statPath.addEventListener('click', () => {
+statPath?.addEventListener('click', () => {
   if (selectedPath && selectedPath !== '$') copyToClipboard(selectedPath, 'Path')
 })
 
-document.getElementById('loadSample').addEventListener('click', () => {
-  jsonInput.value = JSON.stringify(SAMPLE_DATA, null, 2)
+document.getElementById('loadSample')?.addEventListener('click', () => {
+  if (jsonInput) jsonInput.value = JSON.stringify(SAMPLE_DATA, null, 2)
   updateInputSize()
   tryParse()
   showToast('Sample loaded!')
@@ -530,12 +536,14 @@ document.addEventListener('keydown', (e) => {
   if (e.target === jsonInput) return
   if (e.ctrlKey && e.key === 'f') {
     e.preventDefault()
-    searchInput.focus()
+    searchInput?.focus()
   }
   if (e.key === 'Escape') {
-    searchInput.value = ''
-    searchInput.blur()
-    clearSearchBtn.hidden = true
+    if (searchInput) {
+      searchInput.value = ''
+      searchInput.blur()
+    }
+    if (clearSearchBtn) clearSearchBtn.hidden = true
     clearSearchHighlights()
   }
 })

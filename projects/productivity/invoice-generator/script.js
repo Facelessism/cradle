@@ -84,14 +84,20 @@ function loadInvoice(invoice) {
 
 function addItem(item = { description: "", quantity: 1, rate: 0 }) {
   const row = itemTemplate.content.firstElementChild.cloneNode(true);
-  row.querySelector(".item-description").value = item.description || "";
-  row.querySelector(".item-quantity").value = item.quantity ?? 1;
-  row.querySelector(".item-rate").value = item.rate ?? 0;
-  row.querySelector(".remove-item").addEventListener("click", () => {
-    row.remove();
-    if (!itemsList.children.length) addItem();
-    updateInvoice();
-  });
+  const desc = row.querySelector(".item-description");
+  if (desc) desc.value = item.description || "";
+  const qty = row.querySelector(".item-quantity");
+  if (qty) qty.value = item.quantity ?? 1;
+  const rate = row.querySelector(".item-rate");
+  if (rate) rate.value = item.rate ?? 0;
+  const removeBtn = row.querySelector(".remove-item");
+  if (removeBtn) {
+    removeBtn.addEventListener("click", () => {
+      row.remove();
+      if (!itemsList.children.length) addItem();
+      updateInvoice();
+    });
+  }
   row.querySelectorAll("input").forEach((input) => input.addEventListener("input", updateInvoice));
   itemsList.appendChild(row);
   updateInvoice();
@@ -125,9 +131,9 @@ function collectInvoice() {
     paymentTerms: getValue("paymentTerms"),
     notes: getValue("notes"),
     items: Array.from(itemsList.children).map((row) => ({
-      description: row.querySelector(".item-description").value.trim(),
-      quantity: toNumber(row.querySelector(".item-quantity").value),
-      rate: toNumber(row.querySelector(".item-rate").value),
+      description: (row.querySelector(".item-description")?.value || "").trim(),
+      quantity: toNumber(row.querySelector(".item-quantity")?.value),
+      rate: toNumber(row.querySelector(".item-rate")?.value),
     })),
   };
 }
@@ -152,7 +158,9 @@ function calculateTotals(invoice) {
 function renderItemTotals(invoice) {
   Array.from(itemsList.children).forEach((row, index) => {
     const item = invoice.items[index];
-    row.querySelector(".item-total").textContent = formatMoney(item.quantity * item.rate, invoice.currency);
+    if (!item) return;
+    const totalEl = row.querySelector(".item-total");
+    if (totalEl) totalEl.textContent = formatMoney(item.quantity * item.rate, invoice.currency);
   });
 }
 
@@ -335,11 +343,12 @@ function formatDate(value) {
 }
 
 function getValue(id) {
-  return document.getElementById(id).value;
+  return document.getElementById(id)?.value ?? "";
 }
 
 function setValue(id, value) {
-  document.getElementById(id).value = value ?? "";
+  const el = document.getElementById(id);
+  if (el) el.value = value ?? "";
 }
 
 function toNumber(value) {

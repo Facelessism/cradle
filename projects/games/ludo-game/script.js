@@ -1,5 +1,5 @@
 const canvas = document.getElementById("ludoCanvas");
-const ctx = canvas.getContext("2d");
+const ctx = canvas ? canvas.getContext("2d") : null;
 const CELL_SIZE = 40; // 600 / 15
 
 const statusElement = document.getElementById("status");
@@ -481,7 +481,7 @@ function newGame() {
 }
 
 // Interactivity
-canvas.addEventListener("mousemove", e => {
+canvas?.addEventListener("mousemove", e => {
   if (gameOver || isRolling) {
     hoveredToken = null;
     return;
@@ -504,7 +504,7 @@ canvas.addEventListener("mousemove", e => {
   }
 });
 
-canvas.addEventListener("click", () => {
+canvas?.addEventListener("click", () => {
   if (
     hoveredToken &&
     LudoEngine.isValidMove(hoveredToken, COLORS[currentPlayerIndex], diceValue)
@@ -514,37 +514,41 @@ canvas.addEventListener("click", () => {
   }
 });
 
-document.getElementById("rollDice").addEventListener("click", () => {
+document.getElementById("rollDice")?.addEventListener("click", () => {
   if (playerTypes[COLORS[currentPlayerIndex]] === "human") {
     rollDice();
   }
 });
 
 const setupModal = document.getElementById("setupModal");
-document.getElementById("newGame").addEventListener("click", () => {
-  setupModal.classList.remove("hidden");
+document.getElementById("newGame")?.addEventListener("click", () => {
+  if (setupModal) setupModal.classList.remove("hidden");
 });
 
-document.getElementById("closeModalBtn").addEventListener("click", () => {
-  setupModal.classList.add("hidden");
+document.getElementById("closeModalBtn")?.addEventListener("click", () => {
+  if (setupModal) setupModal.classList.add("hidden");
 });
 
-document.getElementById("startGameBtn").addEventListener("click", () => {
-  playerTypes.red = document.getElementById("select-red").value;
-  playerTypes.green = document.getElementById("select-green").value;
-  playerTypes.blue = document.getElementById("select-blue").value;
-  playerTypes.yellow = document.getElementById("select-yellow").value;
+function setPlayerIcons() {
+  const setIcon = (id, type) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = type === "human" ? "👤" : "🤖";
+  };
+  setIcon("icon-red", playerTypes.red);
+  setIcon("icon-green", playerTypes.green);
+  setIcon("icon-blue", playerTypes.blue);
+  setIcon("icon-yellow", playerTypes.yellow);
+}
 
-  document.getElementById("icon-red").textContent =
-    playerTypes.red === "human" ? "👤" : "🤖";
-  document.getElementById("icon-green").textContent =
-    playerTypes.green === "human" ? "👤" : "🤖";
-  document.getElementById("icon-blue").textContent =
-    playerTypes.blue === "human" ? "👤" : "🤖";
-  document.getElementById("icon-yellow").textContent =
-    playerTypes.yellow === "human" ? "👤" : "🤖";
+document.getElementById("startGameBtn")?.addEventListener("click", () => {
+  playerTypes.red = document.getElementById("select-red")?.value || "human";
+  playerTypes.green = document.getElementById("select-green")?.value || "bot";
+  playerTypes.blue = document.getElementById("select-blue")?.value || "bot";
+  playerTypes.yellow = document.getElementById("select-yellow")?.value || "bot";
 
-  setupModal.classList.add("hidden");
+  setPlayerIcons();
+
+  if (setupModal) setupModal.classList.add("hidden");
   newGame();
 });
 
@@ -597,14 +601,7 @@ function loadGame(saveData) {
   updatePlayerIndicators();
   renderHistory();
 
-  document.getElementById("icon-red").textContent =
-    playerTypes.red === "human" ? "👤" : "🤖";
-  document.getElementById("icon-green").textContent =
-    playerTypes.green === "human" ? "👤" : "🤖";
-  document.getElementById("icon-blue").textContent =
-    playerTypes.blue === "human" ? "👤" : "🤖";
-  document.getElementById("icon-yellow").textContent =
-    playerTypes.yellow === "human" ? "👤" : "🤖";
+  setPlayerIcons();
 
   if (diceValue !== null) {
     checkAutoTurn();
@@ -618,25 +615,25 @@ const savedDataString = localStorage.getItem("cradle_ludo_save") || localStorage
 const resumeModal = document.getElementById("resumeModal");
 
 if (savedDataString) {
-  resumeModal.classList.remove("hidden");
+  if (resumeModal) resumeModal.classList.remove("hidden");
 } else {
-  setupModal.classList.remove("hidden");
+  if (setupModal) setupModal.classList.remove("hidden");
 }
 
-document.getElementById("resumeGameBtn").addEventListener("click", () => {
-  resumeModal.classList.add("hidden");
+document.getElementById("resumeGameBtn")?.addEventListener("click", () => {
+  if (resumeModal) resumeModal.classList.add("hidden");
   try {
     const savedData = JSON.parse(savedDataString);
     loadGame(savedData);
   } catch (e) {
     console.error("Failed to load save data", e);
-    setupModal.classList.remove("hidden");
+    if (setupModal) setupModal.classList.remove("hidden");
   }
 });
 
-document.getElementById("startFreshBtn").addEventListener("click", () => {
-  resumeModal.classList.add("hidden");
+document.getElementById("startFreshBtn")?.addEventListener("click", () => {
+  if (resumeModal) resumeModal.classList.add("hidden");
   localStorage.removeItem("cradle_ludo_save");
   localStorage.removeItem("ludoSave");
-  setupModal.classList.remove("hidden");
+  if (setupModal) setupModal.classList.remove("hidden");
 });

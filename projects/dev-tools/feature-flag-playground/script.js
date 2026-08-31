@@ -55,14 +55,14 @@
     }
 
     function updateSummary(flags) {
-        els.localCount.textContent = flags.length;
-        els.devCount.textContent = flags.filter(
+        if (els.localCount) els.localCount.textContent = flags.length;
+        if (els.devCount) els.devCount.textContent = flags.filter(
             (f) => f.environments.development.enabled,
         ).length;
-        els.stagingCount.textContent = flags.filter(
+        if (els.stagingCount) els.stagingCount.textContent = flags.filter(
             (f) => f.environments.staging.enabled,
         ).length;
-        els.prodCount.textContent = flags.filter(
+        if (els.prodCount) els.prodCount.textContent = flags.filter(
             (f) => f.environments.production.enabled,
         ).length;
     }
@@ -128,9 +128,9 @@
     }
 
     function toggleForm(show) {
-        els.flagFormWrap.classList.toggle("open", show);
-        if (show) {
-            els.flagForm.querySelector('input[name="name"]').focus();
+        if (els.flagFormWrap) els.flagFormWrap.classList.toggle("open", show);
+        if (show && els.flagForm) {
+            els.flagForm.querySelector('input[name="name"]')?.focus();
         }
     }
 

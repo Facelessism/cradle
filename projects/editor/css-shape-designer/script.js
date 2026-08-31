@@ -507,54 +507,64 @@ function loadPresetValue(val) {
   updateCanvas();
 }
 
-function syncSlidersFromBlobState() {
-  document.getElementById("blob-r-top-left-h").value = state.blob.tlh;
-  document.getElementById("blob-r-top-right-h").value = state.blob.trh;
-  document.getElementById("blob-r-bottom-right-h").value = state.blob.brh;
-  document.getElementById("blob-r-bottom-left-h").value = state.blob.blh;
+function setElValue(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
 
-  document.getElementById("blob-r-top-left-v").value = state.blob.tlv;
-  document.getElementById("blob-r-top-right-v").value = state.blob.trv;
-  document.getElementById("blob-r-bottom-right-v").value = state.blob.brv;
-  document.getElementById("blob-r-bottom-left-v").value = state.blob.blv;
+function setElText(id, txt) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = txt;
+}
+
+function syncSlidersFromBlobState() {
+  setElValue("blob-r-top-left-h", state.blob.tlh);
+  setElValue("blob-r-top-right-h", state.blob.trh);
+  setElValue("blob-r-bottom-right-h", state.blob.brh);
+  setElValue("blob-r-bottom-left-h", state.blob.blh);
+
+  setElValue("blob-r-top-left-v", state.blob.tlv);
+  setElValue("blob-r-top-right-v", state.blob.trv);
+  setElValue("blob-r-bottom-right-v", state.blob.brv);
+  setElValue("blob-r-bottom-left-v", state.blob.blv);
 
   updateBlobLabels();
 }
 
 function syncSlidersFromCircleState() {
-  document.getElementById("center-cx").value = state[state.selectedShape].cx;
-  document.getElementById("center-cy").value = state[state.selectedShape].cy;
+  if (state[state.selectedShape]) {
+    setElValue("center-cx", state[state.selectedShape].cx);
+    setElValue("center-cy", state[state.selectedShape].cy);
+  }
 
-  document.getElementById("radius-r").value = state.circle.r;
-  document.getElementById("radius-rx").value = state.ellipse.rx;
-  document.getElementById("radius-ry").value = state.ellipse.ry;
+  setElValue("radius-r", state.circle.r);
+  setElValue("radius-rx", state.ellipse.rx);
+  setElValue("radius-ry", state.ellipse.ry);
 
   updateCircleLabels();
 }
 
 function updateBlobLabels() {
-  document.getElementById("val-top-left-h").textContent = `${state.blob.tlh}%`;
-  document.getElementById("val-top-right-h").textContent = `${state.blob.trh}%`;
-  document.getElementById("val-bottom-right-h").textContent =
-    `${state.blob.brh}%`;
-  document.getElementById("val-bottom-left-h").textContent =
-    `${state.blob.blh}%`;
+  setElText("val-top-left-h", `${state.blob.tlh}%`);
+  setElText("val-top-right-h", `${state.blob.trh}%`);
+  setElText("val-bottom-right-h", `${state.blob.brh}%`);
+  setElText("val-bottom-left-h", `${state.blob.blh}%`);
 
-  document.getElementById("val-top-left-v").textContent = `${state.blob.tlv}%`;
-  document.getElementById("val-top-right-v").textContent = `${state.blob.trv}%`;
-  document.getElementById("val-bottom-right-v").textContent =
-    `${state.blob.brv}%`;
-  document.getElementById("val-bottom-left-v").textContent =
-    `${state.blob.blv}%`;
+  setElText("val-top-left-v", `${state.blob.tlv}%`);
+  setElText("val-top-right-v", `${state.blob.trv}%`);
+  setElText("val-bottom-right-v", `${state.blob.brv}%`);
+  setElText("val-bottom-left-v", `${state.blob.blv}%`);
 }
 
 function updateCircleLabels() {
   const shape = state.selectedShape;
-  document.getElementById("val-center-cx").textContent = `${state[shape].cx}%`;
-  document.getElementById("val-center-cy").textContent = `${state[shape].cy}%`;
-  document.getElementById("val-radius-r").textContent = `${state.circle.r}%`;
-  document.getElementById("val-radius-rx").textContent = `${state.ellipse.rx}%`;
-  document.getElementById("val-radius-ry").textContent = `${state.ellipse.ry}%`;
+  if (state[shape]) {
+    setElText("val-center-cx", `${state[shape].cx}%`);
+    setElText("val-center-cy", `${state[shape].cy}%`);
+  }
+  setElText("val-radius-r", `${state.circle.r}%`);
+  setElText("val-radius-rx", `${state.ellipse.rx}%`);
+  setElText("val-radius-ry", `${state.ellipse.ry}%`);
 }
 
 function handleBlobSliderInput(e) {

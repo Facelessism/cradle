@@ -87,15 +87,22 @@ function init() {
   updateDisplay()
   updateInfinity(0)
 
-  // Apply saved settings to inputs
-  document.getElementById('focusTime').value = config.focusTime
-  document.getElementById('shortBreak').value = config.shortBreak
-  document.getElementById('longBreak').value = config.longBreak
-  document.getElementById('sessionsBeforeLong').value = config.sessionsBeforeLong
-  document.getElementById('autoStart').checked = config.autoStart
-  document.getElementById('soundEnabled').checked = config.soundEnabled
-  document.getElementById('ambientSound').value = config.ambientSound
-  document.getElementById('volume').value = config.volume
+  const focusInput = document.getElementById('focusTime')
+  if (focusInput) focusInput.value = config.focusTime
+  const shortInput = document.getElementById('shortBreak')
+  if (shortInput) shortInput.value = config.shortBreak
+  const longInput = document.getElementById('longBreak')
+  if (longInput) longInput.value = config.longBreak
+  const sessionsInput = document.getElementById('sessionsBeforeLong')
+  if (sessionsInput) sessionsInput.value = config.sessionsBeforeLong
+  const autoInput = document.getElementById('autoStart')
+  if (autoInput) autoInput.checked = config.autoStart
+  const soundInput = document.getElementById('soundEnabled')
+  if (soundInput) soundInput.checked = config.soundEnabled
+  const ambientInput = document.getElementById('ambientSound')
+  if (ambientInput) ambientInput.value = config.ambientSound
+  const volumeInput = document.getElementById('volume')
+  if (volumeInput) volumeInput.value = config.volume
 
   setMode(state.mode)
 }
@@ -115,8 +122,8 @@ function getModeTime(mode) {
 function updateDisplay() {
   const mins = Math.floor(state.timeLeft / 60)
   const secs = state.timeLeft % 60
-  timerMinutes.textContent = String(mins).padStart(2, '0')
-  timerSeconds.textContent = String(secs).padStart(2, '0')
+  if (timerMinutes) timerMinutes.textContent = String(mins).padStart(2, '0')
+  if (timerSeconds) timerSeconds.textContent = String(secs).padStart(2, '0')
   document.title = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} — Pomodoro Infinity`
 
   // Infinity progress
@@ -127,17 +134,17 @@ function updateDisplay() {
 function updateInfinity(progress) {
   const totalLen = 400
   const offset = totalLen - (progress * totalLen)
-  infinityPath.style.strokeDashoffset = offset
+  if (infinityPath) infinityPath.style.strokeDashoffset = offset
 
   // Move dot along path
-  if (progress > 0) {
+  if (progress > 0 && infinityDot && infinityPath && typeof infinityPath.getTotalLength === 'function') {
     infinityDot.setAttribute('opacity', '1')
     const path = infinityPath
     const len = path.getTotalLength()
     const point = path.getPointAtLength(progress * len)
     infinityDot.setAttribute('cx', point.x)
     infinityDot.setAttribute('cy', point.y)
-  } else {
+  } else if (infinityDot) {
     infinityDot.setAttribute('opacity', '0')
   }
 }
@@ -270,16 +277,18 @@ function setMode(mode) {
   })
 
   // Update colors
-  infinityContainer.className = `infinity-container mode-${mode}`
+  if (infinityContainer) infinityContainer.className = `infinity-container mode-${mode}`
 
   // Labels
   const labels = { focus: 'Focus Time', short: 'Short Break', long: 'Long Break' }
-  timerLabel.textContent = labels[mode]
+  if (timerLabel) timerLabel.textContent = labels[mode]
 
-  startBtn.textContent = '▶ Start'
-  startBtn.hidden = false
-  pauseBtn.hidden = true
-  timerDisplay.classList.remove('paused')
+  if (startBtn) {
+    startBtn.textContent = '▶ Start'
+    startBtn.hidden = false
+  }
+  if (pauseBtn) pauseBtn.hidden = true
+  if (timerDisplay) timerDisplay.classList.remove('paused')
 
   updateDisplay()
   updateInfinity(0)
@@ -287,6 +296,7 @@ function setMode(mode) {
 
 // ─── Session Dots ──────────────────────────────────────────────────
 function renderSessionDots() {
+  if (!sessionDots) return
   sessionDots.innerHTML = ''
   for (let i = 1; i <= config.sessionsBeforeLong; i++) {
     const dot = document.createElement('div')
@@ -296,21 +306,26 @@ function renderSessionDots() {
     }
     sessionDots.appendChild(dot)
   }
-  sessionText.textContent = `Session ${state.streak % config.sessionsBeforeLong + 1} of ${config.sessionsBeforeLong}`
+  if (sessionText) sessionText.textContent = `Session ${state.streak % config.sessionsBeforeLong + 1} of ${config.sessionsBeforeLong}`
 }
 
 // ─── Stats ─────────────────────────────────────────────────────────
 function renderStats() {
-  document.getElementById('statStreak').textContent = state.streak
+  const statStreak = document.getElementById('statStreak')
+  if (statStreak) statStreak.textContent = state.streak
   const hours = Math.floor(state.todayMinutes / 60)
   const mins = state.todayMinutes % 60
-  document.getElementById('statTotal').textContent = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
-  document.getElementById('statSessions').textContent = state.todaySessions
-  document.getElementById('statBest').textContent = state.bestStreak
+  const statTotal = document.getElementById('statTotal')
+  if (statTotal) statTotal.textContent = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
+  const statSessions = document.getElementById('statSessions')
+  if (statSessions) statSessions.textContent = state.todaySessions
+  const statBest = document.getElementById('statBest')
+  if (statBest) statBest.textContent = state.bestStreak
 }
 
 // ─── Log ───────────────────────────────────────────────────────────
 function renderLog() {
+  if (!logList) return
   if (state.log.length === 0) {
     logList.innerHTML = '<p class="log-empty">No sessions yet today. Start your first focus!</p>'
     return
@@ -408,10 +423,10 @@ function stopAmbient() {
 }
 
 // ─── Event Listeners ───────────────────────────────────────────────
-startBtn.addEventListener('click', startTimer)
-pauseBtn.addEventListener('click', pauseTimer)
-resetBtn.addEventListener('click', resetTimer)
-skipBtn.addEventListener('click', skipSession)
+startBtn?.addEventListener('click', startTimer)
+pauseBtn?.addEventListener('click', pauseTimer)
+resetBtn?.addEventListener('click', resetTimer)
+skipBtn?.addEventListener('click', skipSession)
 
 // Mode tabs
 document.querySelectorAll('.mode-tab').forEach(tab => {
@@ -423,50 +438,50 @@ document.querySelectorAll('.mode-tab').forEach(tab => {
 })
 
 // Settings
-document.getElementById('focusTime').addEventListener('change', (e) => {
+document.getElementById('focusTime')?.addEventListener('change', (e) => {
   config.focusTime = parseInt(e.target.value, 10) || 25
   if (state.mode === 'focus' && !state.running) applyConfig()
   updateDisplay()
   saveState()
 })
 
-document.getElementById('shortBreak').addEventListener('change', (e) => {
+document.getElementById('shortBreak')?.addEventListener('change', (e) => {
   config.shortBreak = parseInt(e.target.value, 10) || 5
   if (state.mode === 'short' && !state.running) applyConfig()
   updateDisplay()
   saveState()
 })
 
-document.getElementById('longBreak').addEventListener('change', (e) => {
+document.getElementById('longBreak')?.addEventListener('change', (e) => {
   config.longBreak = parseInt(e.target.value, 10) || 15
   if (state.mode === 'long' && !state.running) applyConfig()
   updateDisplay()
   saveState()
 })
 
-document.getElementById('sessionsBeforeLong').addEventListener('change', (e) => {
+document.getElementById('sessionsBeforeLong')?.addEventListener('change', (e) => {
   config.sessionsBeforeLong = parseInt(e.target.value, 10) || 4
   renderSessionDots()
   saveState()
 })
 
-document.getElementById('autoStart').addEventListener('change', (e) => {
+document.getElementById('autoStart')?.addEventListener('change', (e) => {
   config.autoStart = e.target.checked
   saveState()
 })
 
-document.getElementById('soundEnabled').addEventListener('change', (e) => {
+document.getElementById('soundEnabled')?.addEventListener('change', (e) => {
   config.soundEnabled = e.target.checked
   saveState()
 })
 
-document.getElementById('ambientSound').addEventListener('change', (e) => {
+document.getElementById('ambientSound')?.addEventListener('change', (e) => {
   config.ambientSound = e.target.value
   if (state.running) startAmbient()
   saveState()
 })
 
-document.getElementById('volume').addEventListener('input', (e) => {
+document.getElementById('volume')?.addEventListener('input', (e) => {
   config.volume = parseInt(e.target.value, 10)
   if (ambientGain) ambientGain.gain.value = config.volume / 100 * 0.3
   saveState()

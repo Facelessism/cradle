@@ -20,49 +20,53 @@
 
   function addEntry(groupKey) {
     const g = groups[groupKey];
+    if (!g || !g.template || !g.template.content || !g.template.content.firstElementChild) return;
     const node = g.template.content.firstElementChild.cloneNode(true);
-    node.querySelector(".remove-entry").addEventListener("click", () => {
+    node.querySelector(".remove-entry")?.addEventListener("click", () => {
       node.remove();
       rebuildAndRender();
     });
     g.fields.forEach((f) => {
-      node.querySelector(`[data-field="${f}"]`).addEventListener("input", rebuildAndRender);
+      node.querySelector(`[data-field="${f}"]`)?.addEventListener("input", rebuildAndRender);
     });
-    g.container.appendChild(node);
+    if (g.container) g.container.appendChild(node);
   }
 
   function readEntries(groupKey) {
     const g = groups[groupKey];
+    if (!g || !g.container) return [];
     return Array.from(g.container.querySelectorAll("[data-entry]")).map((node) => {
       const entry = {};
       g.fields.forEach((f) => {
-        const val = node.querySelector(`[data-field="${f}"]`).value.trim();
+        const val = (node.querySelector(`[data-field="${f}"]`)?.value || "").trim();
         entry[f] = f === "tech" ? val.split(",").map((s) => s.trim()).filter(Boolean) : val;
       });
       return entry;
     });
   }
 
+  const getVal = (id) => document.getElementById(id)?.value || "";
   function readPortfolio() {
-    const skillsRaw = document.getElementById("skillsInput").value;
+    const skillsRaw = getVal("skillsInput");
     return {
-      name: document.getElementById("nameInput").value.trim(),
-      role: document.getElementById("roleInput").value.trim(),
-      about: document.getElementById("aboutInput").value,
+      name: getVal("nameInput").trim(),
+      role: getVal("roleInput").trim(),
+      about: getVal("aboutInput"),
       skills: skillsRaw.split(",").map((s) => s.trim()).filter(Boolean),
       projects: readEntries("projects"),
       experience: readEntries("experience"),
       education: readEntries("education"),
       contact: {
-        email: document.getElementById("emailInput").value.trim(),
-        github: document.getElementById("githubInput").value.trim(),
-        linkedin: document.getElementById("linkedinInput").value.trim(),
-        website: document.getElementById("websiteInput").value.trim()
+        email: getVal("emailInput").trim(),
+        github: getVal("githubInput").trim(),
+        linkedin: getVal("linkedinInput").trim(),
+        website: getVal("websiteInput").trim()
       }
     };
   }
 
   function renderThemeRow() {
+    if (!themeRowEl) return;
     themeRowEl.innerHTML = "";
     Themes.getThemeIds().forEach((id) => {
       const theme = Themes.getTheme(id);
@@ -108,14 +112,17 @@
   function rebuildAndRender() {
     const portfolio = readPortfolio();
     const { valid, errors } = PortfolioEngine.validatePortfolio(portfolio);
-    validationErrorsEl.textContent = valid ? "" : errors.join(" ");
+    if (validationErrorsEl) validationErrorsEl.textContent = valid ? "" : (Array.isArray(errors) ? errors.join(" ") : String(errors || ""));
 
     currentCommandOutput = PortfolioEngine.buildCommandOutput(portfolio);
 
-    terminalEl.innerHTML = "";
-    currentCommandOutput.autoRunOrder.forEach((cmdName) => {
-      appendBlock(cmdName, currentCommandOutput.commands[cmdName].lines, false);
-    });
+    if (terminalEl) terminalEl.innerHTML = "";
+    if (currentCommandOutput?.autoRunOrder) {
+      currentCommandOutput.autoRunOrder.forEach((cmdName) => {
+        const cmdObj = currentCommandOutput.commands ? currentCommandOutput.commands[cmdName] : null;
+        if (cmdObj) appendBlock(cmdName, cmdObj.lines, false);
+      });
+    }
   }
 
   function handleTerminalCommand(rawInput) {
@@ -124,7 +131,7 @@
     const result = PortfolioEngine.runCommand(currentCommandOutput, rawInput);
 
     if (result.clientAction === "clear") {
-      terminalEl.innerHTML = "";
+      if (terminalEl) terminalEl.innerHTML = "";
       return;
     }
 
@@ -168,16 +175,16 @@
     URL.revokeObjectURL(url);
   }
 
-  document.getElementById("addProjectBtn").addEventListener("click", () => { addEntry("projects"); rebuildAndRender(); });
-  document.getElementById("addExperienceBtn").addEventListener("click", () => { addEntry("experience"); rebuildAndRender(); });
-  document.getElementById("addEducationBtn").addEventListener("click", () => { addEntry("education"); rebuildAndRender(); });
-  document.getElementById("exportBtn").addEventListener("click", handleExport);
+  document.getElementById("addProjectBtn")?.addEventListener("click", () => { addEntry("projects"); rebuildAndRender(); });
+  document.getElementById("addExperienceBtn")?.addEventListener("click", () => { addEntry("experience"); rebuildAndRender(); });
+  document.getElementById("addEducationBtn")?.addEventListener("click", () => { addEntry("education"); rebuildAndRender(); });
+  document.getElementById("exportBtn")?.addEventListener("click", handleExport);
 
   ["nameInput", "roleInput", "aboutInput", "skillsInput", "emailInput", "githubInput", "linkedinInput", "websiteInput"].forEach((id) => {
-    document.getElementById(id).addEventListener("input", rebuildAndRender);
+    document.getElementById(id)?.addEventListener("input", rebuildAndRender);
   });
 
-  terminalInputEl.addEventListener("keydown", (e) => {
+  terminalInputEl?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       const value = terminalInputEl.value;
       if (value.trim()) {

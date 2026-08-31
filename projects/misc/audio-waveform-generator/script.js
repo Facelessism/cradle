@@ -19,7 +19,7 @@ const volDisplay = document.getElementById("volDisplay");
 const playBtn = document.getElementById("playBtn");
 const statusText = document.getElementById("statusText");
 const canvas = document.getElementById("waveform");
-const ctx = canvas.getContext("2d");
+const ctx = canvas ? canvas.getContext("2d") : null;
 const canvasMeta = document.getElementById("canvasMeta");
 const pianoEl = document.getElementById("piano");
 
@@ -110,16 +110,19 @@ function togglePlay() {
 /* ──── Visualization ──────────────────────────────────────────────── */
 
 function resizeCanvas() {
-  const rect = canvas.parentElement.getBoundingClientRect();
+  if (!canvas) return;
+  const rect = canvas.parentElement ? canvas.parentElement.getBoundingClientRect() : canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
   canvas.width = rect.width * dpr;
   canvas.height = 200 * dpr;
   canvas.style.width = rect.width + "px";
   canvas.style.height = "200px";
-  ctx.scale(dpr, dpr);
+  if (ctx) ctx.scale(dpr, dpr);
 }
 
 function drawWaveform() {
+  if (!canvas || !ctx) return;
+
   if (!isPlaying || !analyser) {
     clearCanvas();
     animId = requestAnimationFrame(drawWaveform);
@@ -191,6 +194,7 @@ function stopVisualization() {
 }
 
 function clearCanvas() {
+  if (!canvas || !ctx) return;
   const w = canvas.width / (window.devicePixelRatio || 1);
   const h = canvas.height / (window.devicePixelRatio || 1);
 
@@ -204,12 +208,12 @@ function clearCanvas() {
   ctx.lineTo(w, h / 2);
   ctx.stroke();
 
-  canvasMeta.textContent = "—";
+  if (canvasMeta) canvasMeta.textContent = "—";
 }
 
 /* ──── Wave Type ──────────────────────────────────────────────────── */
 
-waveBtns.forEach(btn => {
+if (waveBtns) waveBtns.forEach(btn => {
   btn.addEventListener("click", () => {
     waveBtns.forEach(b => {
       b.classList.remove("active");
@@ -227,9 +231,10 @@ waveBtns.forEach(btn => {
 
 /* ──── Frequency ──────────────────────────────────────────────────── */
 
-freqSlider.addEventListener("input", () => {
+freqSlider?.addEventListener("input", () => {
+  if (!freqSlider) return;
   currentFreq = parseFloat(freqSlider.value);
-  freqDisplay.textContent = Math.round(currentFreq) + " Hz";
+  if (freqDisplay) freqDisplay.textContent = Math.round(currentFreq) + " Hz";
   if (isPlaying) {
     updateOscillator();
   }
@@ -237,9 +242,10 @@ freqSlider.addEventListener("input", () => {
 
 /* ──── Volume ─────────────────────────────────────────────────────── */
 
-volSlider.addEventListener("input", () => {
+volSlider?.addEventListener("input", () => {
+  if (!volSlider) return;
   currentVol = parseFloat(volSlider.value) / 100;
-  volDisplay.textContent = Math.round(volSlider.value) + "%";
+  if (volDisplay) volDisplay.textContent = Math.round(volSlider.value) + "%";
   if (isPlaying) {
     updateVolume();
   }
@@ -247,14 +253,15 @@ volSlider.addEventListener("input", () => {
 
 /* ──── Play Button ────────────────────────────────────────────────── */
 
-playBtn.addEventListener("click", togglePlay);
+playBtn?.addEventListener("click", togglePlay);
 
 /* ──── Piano Keyboard ─────────────────────────────────────────────── */
 
 function buildPiano() {
+  if (!pianoEl) return;
   pianoEl.innerHTML = "";
 
-  NOTES.forEach(({ note, freq }) => {
+  if (Array.isArray(NOTES)) NOTES.forEach(({ note, freq }) => {
     const key = document.createElement("div");
     key.className = "piano-key";
     key.dataset.note = note;
@@ -290,8 +297,8 @@ function buildPiano() {
 function playNote(note, freq, keyEl) {
   // Set oscillator frequency
   currentFreq = freq;
-  freqSlider.value = freq;
-  freqDisplay.textContent = Math.round(freq) + " Hz";
+  if (freqSlider) freqSlider.value = freq;
+  if (freqDisplay) freqDisplay.textContent = Math.round(freq) + " Hz";
 
   // If not playing, start
   if (!isPlaying) {
@@ -304,7 +311,7 @@ function playNote(note, freq, keyEl) {
   document
     .querySelectorAll(".piano-key")
     .forEach(k => k.classList.remove("active"));
-  keyEl.classList.add("active");
+  if (keyEl) keyEl.classList.add("active");
 }
 
 /* ──── Keyboard Shortcuts ─────────────────────────────────────────── */

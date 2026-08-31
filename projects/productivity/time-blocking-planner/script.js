@@ -633,10 +633,12 @@ document.addEventListener("DOMContentLoaded", () => {
       messageEl.textContent = message;
       if (isSuccess) {
         container.classList.add("success");
-        container.querySelector(".alert-icon").textContent = "✅";
+        const alertIcon = container.querySelector(".alert-icon");
+        if (alertIcon) alertIcon.textContent = "✅";
       } else {
         container.classList.remove("success");
-        container.querySelector(".alert-icon").textContent = "⚠️";
+        const alertIcon = container.querySelector(".alert-icon");
+        if (alertIcon) alertIcon.textContent = "⚠️";
       }
       container.style.display = "flex";
       clearTimeout(alertTimeout);

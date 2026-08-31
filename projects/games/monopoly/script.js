@@ -86,6 +86,7 @@ const numPickerEl = document.getElementById('numPicker');
 const nameInputsEl = document.getElementById('nameInputs');
 
 function renderNameInputs(){
+  if (!nameInputsEl) return;
   nameInputsEl.innerHTML = '';
 
   for(let i=0;i<numPlayers;i++){
@@ -109,26 +110,28 @@ function renderNameInputs(){
 }
 renderNameInputs();
 
-numPickerEl.querySelectorAll('button').forEach(btn=>{
+numPickerEl?.querySelectorAll('button').forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    numPickerEl.querySelectorAll('button').forEach(b=>b.classList.remove('sel'));
+    numPickerEl?.querySelectorAll('button').forEach(b=>b.classList.remove('sel'));
     btn.classList.add('sel');
     numPlayers = parseInt(btn.dataset.n);
     renderNameInputs();
   });
 });
 
-document.getElementById('startGameBtn').addEventListener('click', ()=>{
+document.getElementById('startGameBtn')?.addEventListener('click', ()=>{
   players = [];
   for(let i=0;i<numPlayers;i++){
-    const val = document.getElementById('nameIn'+i).value.trim();
+    const input = document.getElementById('nameIn'+i);
+    const val = input ? input.value.trim() : '';
     players.push({
       id:i, name: val || ('Player '+(i+1)), cash:1500, pos:0,
       color: TOKEN_COLORS[i], letter: TOKEN_LETTERS[i],
       inJail:false, jailTurns:0, bankrupt:false
     });
   }
-  document.getElementById('setupOverlay').style.display='none';
+  const overlay = document.getElementById('setupOverlay');
+  if (overlay) overlay.style.display='none';
   initBoard();
   renderAll();
   logMsg('Game started with ' + players.map(p=>p.name).join(', ') + '.');
@@ -186,11 +189,13 @@ function renderTokens(){
   document.querySelectorAll('.tokens-on-cell').forEach(e=>e.remove());
   players.forEach(p=>{
     if(p.bankrupt) return;
-    let holder = document.getElementById('cell-'+p.pos).querySelector('.tokens-on-cell');
+    const cell = document.getElementById('cell-'+p.pos);
+    if (!cell) return;
+    let holder = cell.querySelector('.tokens-on-cell');
     if(!holder){
       holder = document.createElement('div');
       holder.className = 'tokens-on-cell';
-      document.getElementById('cell-'+p.pos).appendChild(holder);
+      cell.appendChild(holder);
     }
     const t = document.createElement('div');
     t.className = 'token';
@@ -269,7 +274,8 @@ function logMsg(msg){
 }
 
 function setStatus(msg){
-  document.getElementById('statusMsg').textContent = msg;
+  const el = document.getElementById('statusMsg');
+  if (el) el.textContent = msg;
 }
 
 /* GAME HELPERS */
@@ -302,8 +308,10 @@ function checkGameOver(){
   const alive = players.filter(p=>!p.bankrupt);
   if(alive.length===1){
     setStatus(alive[0].name + ' wins the game!');
-    document.getElementById('rollBtn').disabled = true;
-    document.getElementById('endTurnBtn').disabled = true;
+    const roll = document.getElementById('rollBtn');
+    if (roll) roll.disabled = true;
+    const endBtn = document.getElementById('endTurnBtn');
+    if (endBtn) endBtn.disabled = true;
     logMsg(alive[0].name + ' wins the game!');
   }
 }
@@ -329,9 +337,9 @@ const rollBtn = document.getElementById('rollBtn');
 const buyBtn = document.getElementById('buyBtn');
 const endTurnBtn = document.getElementById('endTurnBtn');
 
-rollBtn.addEventListener('click', doRoll);
-endTurnBtn.addEventListener('click', endTurn);
-buyBtn.addEventListener('click', buyCurrentProperty);
+rollBtn?.addEventListener('click', doRoll);
+endTurnBtn?.addEventListener('click', endTurn);
+buyBtn?.addEventListener('click', buyCurrentProperty);
 
 function setDie(el, val){ el.dataset.v = val; }
 
@@ -343,7 +351,8 @@ function doRoll(){
   const d2 = 1+Math.floor(Math.random()*6);
   setDie(document.getElementById('die1'), d1);
   setDie(document.getElementById('die2'), d2);
-  document.getElementById('diceSum').textContent = `= ${d1+d2}` + (d1===d2 ? ' (doubles!)' : '');
+  const diceSum = document.getElementById('diceSum');
+  if (diceSum) diceSum.textContent = `= ${d1+d2}` + (d1===d2 ? ' (doubles!)' : '');
 
   rollBtn.disabled = true;
 
@@ -452,7 +461,8 @@ function resolveSpace(p, diceSum, wasDouble){
 function finishNonBuyStep(wasDouble){
   endTurnBtn.disabled = false;
   if(wasDouble){
-    setStatus(document.getElementById('statusMsg').textContent + ' Doubles! Roll again after ending this step.');
+    const sm = document.getElementById('statusMsg');
+    setStatus((sm ? sm.textContent : '') + ' Doubles! Roll again after ending this step.');
   }
 }
 
@@ -488,7 +498,9 @@ function buyCurrentProperty(){
 
 function endTurn(){
   const p = currentPlayer();
-  const wasDoubleTurn = document.getElementById('die1').dataset.v === document.getElementById('die2').dataset.v;
+  const d1 = document.getElementById('die1');
+  const d2 = document.getElementById('die2');
+  const wasDoubleTurn = (d1 && d2) ? d1.dataset.v === d2.dataset.v : false;
   buyBtn.style.display = 'none';
   pendingSpace = null;
 
@@ -506,7 +518,8 @@ function endTurn(){
 
   rollBtn.disabled = false;
   endTurnBtn.disabled = true;
-  document.getElementById('diceSum').textContent = '';
+  const diceSum = document.getElementById('diceSum');
+  if (diceSum) diceSum.textContent = '';
   renderPlayers();
   setStatus(currentPlayer().name + "'s turn. Roll the dice.");
 }
@@ -516,11 +529,13 @@ function showCardModal(type, card, onClose){
   const overlay = document.getElementById('modalOverlay');
   const box = document.getElementById('modalBox');
   const title = type==='chance' ? 'Chance' : 'Community Chest';
-  box.innerHTML = `<h2>${title}</h2><p>${card.text}</p>
-    <div class="btn-row"><button id="modalOkBtn">OK</button></div>`;
-  overlay.style.display = 'flex';
-  document.getElementById('modalOkBtn').addEventListener('click', ()=>{
-    overlay.style.display = 'none';
+  if (box) {
+    box.innerHTML = `<h2>${title}</h2><p>${card.text}</p>
+      <div class="btn-row"><button id="modalOkBtn">OK</button></div>`;
+  }
+  if (overlay) overlay.style.display = 'flex';
+  document.getElementById('modalOkBtn')?.addEventListener('click', ()=>{
+    if (overlay) overlay.style.display = 'none';
     onClose();
   }, {once:true});
 }

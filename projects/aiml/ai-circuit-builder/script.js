@@ -47,14 +47,14 @@ if (typeof document !== "undefined") {
       btn.addEventListener("click", () => selectArch(btn));
     });
 
-    document.getElementById("cores").addEventListener("input", e => {
-      document.getElementById("coreValue").innerText =
-        e.target.value + " Cores";
+    document.getElementById("cores")?.addEventListener("input", e => {
+      const coreVal = document.getElementById("coreValue");
+      if (coreVal) coreVal.innerText = e.target.value + " Cores";
     });
 
-    document.getElementById("frequency").addEventListener("input", e => {
-      document.getElementById("freqValue").innerText =
-        parseFloat(e.target.value).toFixed(2) + " GHz";
+    document.getElementById("frequency")?.addEventListener("input", e => {
+      const freqVal = document.getElementById("freqValue");
+      if (freqVal) freqVal.innerText = parseFloat(e.target.value).toFixed(2) + " GHz";
     });
 
     document
@@ -152,14 +152,17 @@ function calculatePPA(goal, nodeValue, cores, freq) {
 }
 
 function generateDesign() {
+  const projNameEl = document.getElementById("projectName");
   const name = escapeHTML(
-    document.getElementById("projectName").value.trim() || "Unnamed_Design"
+    (projNameEl ? projNameEl.value.trim() : "") || "Unnamed_Design"
   );
 
-  const goal = document.getElementById("goal").value;
-  const node = document.getElementById("node").value;
-  const cores = parseInt(document.getElementById("cores").value);
-  const freq = parseFloat(document.getElementById("frequency").value);
+  const goal = document.getElementById("goal")?.value || "";
+  const node = document.getElementById("node")?.value || "";
+  const coresEl = document.getElementById("cores");
+  const cores = parseInt(coresEl ? coresEl.value : "1");
+  const freqEl = document.getElementById("frequency");
+  const freq = parseFloat(freqEl ? freqEl.value : "1");
 
   const ppa = calculatePPA(goal, node, cores, freq);
 
@@ -303,7 +306,8 @@ function renderDesignOutput() {
     </div>
   `;
 
-  document.getElementById("welcome").style.display = "none";
+  const welcomeEl = document.getElementById("welcome");
+  if (welcomeEl) welcomeEl.style.display = "none";
 
   const outNode = document.getElementById("designResults");
   outNode.replaceChildren();
@@ -515,16 +519,17 @@ function loadSavedProject(id) {
   const projects = getStoredProjects();
   const found = projects.find(p => p.id === id);
   if (found) {
-    // Rehydrate control UI states parameter configurations
-    document.getElementById("projectName").value = found.name;
-    document.getElementById("goal").value = found.goal;
-    document.getElementById("node").value = found.node;
-    document.getElementById("cores").value = found.cores;
-    document.getElementById("coreValue").innerText = found.cores + " Cores";
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+    const setTxt = (id, txt) => { const el = document.getElementById(id); if (el) el.innerText = txt; };
+
+    setVal("projectName", found.name);
+    setVal("goal", found.goal);
+    setVal("node", found.node);
+    setVal("cores", found.cores);
+    setTxt("coreValue", found.cores + " Cores");
     if (found.frequency) {
-      document.getElementById("frequency").value = found.frequency;
-      document.getElementById("freqValue").innerText =
-        found.frequency.toFixed(2) + " GHz";
+      setVal("frequency", found.frequency);
+      setTxt("freqValue", found.frequency.toFixed(2) + " GHz");
     }
 
     // Restore chosen architecture selection styles
@@ -546,10 +551,11 @@ function renderSavedProjectsList() {
   if (typeof document === "undefined") return;
   const projects = getStoredProjects();
   const container = document.getElementById("savedProjectsList");
-  document.getElementById("savedCount").innerText = projects.length;
+  const savedCount = document.getElementById("savedCount");
+  if (savedCount) savedCount.innerText = projects.length;
 
   if (projects.length === 0) {
-    container.innerHTML = `<p class="text-gray-500 italic text-center py-4">No chips saved in vault yet.</p>`;
+    if (container) container.innerHTML = `<p class="text-gray-500 italic text-center py-4">No chips saved in vault yet.</p>`;
     return;
   }
 
