@@ -15,6 +15,9 @@
  *   - In-memory fallback so reads/writes never throw when storage is
  *     unavailable (e.g. SSR or tests without a DOM).
  *   - JSON helpers (`get` / `set`) that parse/serialize automatically.
+ *   - State validation (`get(key, fallback, validator)`) ensuring persisted
+ *     state meets expected schemas and safely falls back on corrupted or
+ *     malformed data.
  *   - Raw string helpers (`getRaw` / `setRaw`) for plain values such as
  *     theme names or high scores.
  *   - Namespaced handles (`namespace`) plus `keys` / `clear` for consistent
@@ -23,13 +26,13 @@
  * Usage (HTML):
  *   <script src="../../../src/components/ui/storage.js"></script>
  *   ...
- *   const settings = CradleStorage.get("cradle_settings", {});
+ *   const settings = CradleStorage.get("cradle_settings", { theme: "dark" }, s => typeof s?.theme === "string");
  *   CradleStorage.set("cradle_settings", { theme: "dark" });
  *
  * Usage (namespace):
  *   const store = CradleStorage.namespace("cradle_rps_");
  *   store.set("stats", { wins: 1 });   // writes "cradle_rps_stats"
- *   store.get("stats", {});            // reads "cradle_rps_stats"
+ *   store.get("stats", { wins: 0 }, s => Number.isInteger(s?.wins)); // reads with schema validation
  *   store.clear();                     // removes every "cradle_rps_*" key
  */
 (function (exports) {
@@ -116,16 +119,36 @@
   }
 
   /**
+   * Evaluates a value against an optional validator function or schema.
+   * If validator returns false or throws, returns false.
+   * @param {*} value
+   * @param {Function} [validator]
+   * @returns {boolean}
+   */
+  function isValid(value, validator) {
+    if (typeof validator !== "function") return true;
+    try {
+      return Boolean(validator(value));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
    * Read a raw (unparsed) string value.
    * @param {string} key
-   * @param {*} [fallback=null] Returned when the key is missing or storage
+   * @param {*} [fallback=null] Returned when the key is missing, invalid, or storage
    *                            is unavailable.
+   * @param {Function} [validator] Optional validator function receiving the string.
+   *                               If it returns false or throws, fallback is returned.
    * @returns {string|null}
    */
-  function getRaw(key, fallback = null) {
+  function getRaw(key, fallback = null, validator = null) {
     try {
       const raw = resolveStore().getItem(String(key));
-      return raw === null ? fallback : raw;
+      if (raw === null) return fallback;
+      if (!isValid(raw, validator)) return fallback;
+      return raw;
     } catch (e) {
       return fallback;
     }
@@ -135,14 +158,18 @@
    * Read a JSON-serialized value.
    * @param {string} key
    * @param {*} [fallback=null] Returned when the key is missing, corrupt,
-   *                            or storage is unavailable.
+   *                            invalid, or storage is unavailable.
+   * @param {Function} [validator] Optional validator function receiving the parsed object.
+   *                               If it returns false or throws, fallback is returned.
    * @returns {*}
    */
-  function get(key, fallback = null) {
+  function get(key, fallback = null, validator = null) {
     const raw = getRaw(key, null);
     if (raw === null) return fallback;
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (!isValid(parsed, validator)) return fallback;
+      return parsed;
     } catch (e) {
       return fallback;
     }
@@ -228,8 +255,9 @@
   function namespace(prefix) {
     const p = String(prefix);
     return {
-      get: (key, fallback) => get(p + key, fallback),
-      getRaw: (key, fallback) => getRaw(p + key, fallback),
+      get: (key, fallback, validator) => get(p + key, fallback, validator),
+      getRaw: (key, fallback, validator) =>
+        getRaw(p + key, fallback, validator),
       set: (key, value) => set(p + key, value),
       setRaw: (key, value) => setRaw(p + key, value),
       remove: key => remove(p + key),
@@ -239,6 +267,7 @@
   }
 
   exports.isAvailable = isAvailable;
+  exports.isValid = isValid;
   exports.getRaw = getRaw;
   exports.get = get;
   exports.setRaw = setRaw;
