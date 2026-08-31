@@ -9,13 +9,30 @@ const DEFAULT_FLAGS = {
   enableDarkThemePreview: false,
 };
 
+const FAIL_CLOSED_FLAGS = {
+  enableBetaScanner: false,
+  enableAdvancedMetrics: false,
+  enableDarkThemePreview: false,
+};
+
 export function FlagProvider({ children }) {
   const [flags, setFlags] = useState(() => {
     try {
       const cached = flagStorage.getItem('openprep_flags_playground');
-      return cached ? JSON.parse(cached) : DEFAULT_FLAGS;
+      if (cached === null || cached === undefined) {
+        return DEFAULT_FLAGS;
+      }
+      const parsed = JSON.parse(cached);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return FAIL_CLOSED_FLAGS;
+      }
+      return {
+        enableBetaScanner: Boolean(parsed.enableBetaScanner),
+        enableAdvancedMetrics: Boolean(parsed.enableAdvancedMetrics),
+        enableDarkThemePreview: Boolean(parsed.enableDarkThemePreview),
+      };
     } catch {
-      return DEFAULT_FLAGS;
+      return FAIL_CLOSED_FLAGS;
     }
   });
 

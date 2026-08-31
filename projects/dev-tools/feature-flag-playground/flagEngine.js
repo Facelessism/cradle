@@ -32,17 +32,25 @@ const FlagEngine = (function () {
     function loadFlags() {
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) return null;
+            if (raw === null || raw === undefined) return null;
             const parsed = JSON.parse(raw);
-            return Array.isArray(parsed) ? parsed : null;
+            if (!Array.isArray(parsed)) {
+                console.error("FlagEngine: stored flag state is invalid (not an array)");
+                return [];
+            }
+            return parsed;
         } catch (err) {
             console.error("FlagEngine: failed to read storage", err);
-            return null;
+            return [];
         }
     }
 
     function saveFlags(flags) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(flags));
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(flags));
+        } catch (err) {
+            console.error("FlagEngine: failed to save storage", err);
+        }
         return flags;
     }
 
@@ -102,7 +110,7 @@ const FlagEngine = (function () {
 
     function getFlags() {
         const existing = loadFlags();
-        if (existing) return existing;
+        if (existing !== null) return existing;
         return seedDemoData();
     }
 
@@ -170,12 +178,37 @@ const FlagEngine = (function () {
     }
 
     function evaluate(flag, env, userId) {
-        const state = flag.environments[env];
-        if (!state || !state.enabled) {
+        try {
+            if (!flag || typeof flag !== "object") {
+                return { on: false, bucket: null };
+            }
+            if (!flag.environments || typeof flag.environments !== "object") {
+                return { on: false, bucket: null };
+            }
+            if (!env || typeof env !== "string" || !ENVIRONMENTS.includes(env)) {
+                return { on: false, bucket: null };
+            }
+            const state = flag.environments[env];
+            if (!state || typeof state !== "object" || !state.enabled) {
+                return { on: false, bucket: null };
+            }
+            const rollout = Number(state.rollout);
+            if (isNaN(rollout) || rollout <= 0) {
+                return { on: false, bucket: null };
+            }
+            if (!flag.key || typeof flag.key !== "string") {
+                return { on: false, bucket: null };
+            }
+            const safeUserId = userId !== undefined && userId !== null ? String(userId) : "anonymous";
+            const bucket = bucketFor(safeUserId, flag.key);
+            if (typeof bucket !== "number" || isNaN(bucket)) {
+                return { on: false, bucket: null };
+            }
+            return { on: bucket < rollout, bucket };
+        } catch (err) {
+            console.error("FlagEngine: evaluation error", err);
             return { on: false, bucket: null };
         }
-        const bucket = bucketFor(userId, flag.key);
-        return { on: bucket < state.rollout, bucket };
     }
 
     return {
