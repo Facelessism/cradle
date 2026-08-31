@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Markdown Editor</title>
+  <meta
+    name="description"
+    content="A split-pane Markdown editor with live preview, toolbar, word count, and HTML export."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="shell">
+    <!-- ==================== HEADER ==================== -->
+    <header class="project-header">
+      <div>
+        <a href="../../../index.html" class="back-link">
+          <i class="fa-solid fa-arrow-left"></i> Back to Cradle
+        </a>
+        <p class="eyebrow">Editor</p>
+        <h1>Markdown Editor</h1>
+        <p class="subtitle">
+          Write Markdown on the left, see live HTML preview on the right.
+          Toolbar, word count, and export built in.
+        </p>
+      </div>
+      <div class="header-actions">
+        <button id="btn-export-md" class="action-btn" title="Export as .md file">
+          <i class="fa-solid fa-file-export"></i> Export MD
+        </button>
+        <button id="btn-export-html" class="action-btn" title="Export as .html file">
+          <i class="fa-solid fa-code"></i> Export HTML
+        </button>
+      </div>
+    </header>
+
+    <!-- ==================== TOOLBAR ==================== -->
+    <div class="toolbar" id="toolbar" role="toolbar" aria-label="Formatting toolbar">
+      <button class="tool-btn" data-action="heading" title="Heading (Ctrl+H)"><i class="fa-solid fa-heading"></i></button>
+      <button class="tool-btn" data-action="bold" title="Bold (Ctrl+B)"><i class="fa-solid fa-bold"></i></button>
+      <button class="tool-btn" data-action="italic" title="Italic (Ctrl+I)"><i class="fa-solid fa-italic"></i></button>
+      <button class="tool-btn" data-action="strikethrough" title="Strikethrough (Ctrl+D)"><i class="fa-solid fa-strikethrough"></i></button>
+      <span class="tool-sep"></span>
+      <button class="tool-btn" data-action="ul" title="Unordered list"><i class="fa-solid fa-list-ul"></i></button>
+      <button class="tool-btn" data-action="ol" title="Ordered list"><i class="fa-solid fa-list-ol"></i></button>
+      <button class="tool-btn" data-action="checklist" title="Checklist"><i class="fa-solid fa-square-check"></i></button>
+      <span class="tool-sep"></span>
+      <button class="tool-btn" data-action="link" title="Link (Ctrl+K)"><i class="fa-solid fa-link"></i></button>
+      <button class="tool-btn" data-action="image" title="Image"><i class="fa-solid fa-image"></i></button>
+      <button class="tool-btn" data-action="code" title="Inline code (Ctrl+`)"><i class="fa-solid fa-code"></i></button>
+      <button class="tool-btn" data-action="codeblock" title="Code block"><i class="fa-solid fa-file-code"></i></button>
+      <button class="tool-btn" data-action="quote" title="Blockquote (Ctrl+Q)"><i class="fa-solid fa-quote-left"></i></button>
+      <button class="tool-btn" data-action="hr" title="Horizontal rule"><i class="fa-solid fa-minus"></i></button>
+      <button class="tool-btn" data-action="table" title="Insert table"><i class="fa-solid fa-table"></i></button>
+    </div>
+
+    <!-- ==================== EDITOR PANE ==================== -->
+    <div class="editor-container" id="editorContainer">
+      <div class="pane editor-pane">
+        <div class="pane-header">
+          <span class="pane-label"><i class="fa-solid fa-pen-to-square"></i> Markdown</span>
+          <span class="char-count" id="charCount">0 chars</span>
+        </div>
+        <textarea
+          id="editor"
+          class="editor-textarea"
+          placeholder="Start writing Markdown here..."
+          spellcheck="false"
+          aria-label="Markdown editor"
+        ></textarea>
+      </div>
+
+      <div class="pane-divider" id="paneDivider" aria-label="Drag to resize"></div>
+
+      <div class="pane preview-pane">
+        <div class="pane-header">
+          <span class="pane-label"><i class="fa-solid fa-eye"></i> Preview</span>
+          <span class="word-count" id="wordCount">0 words</span>
+        </div>
+        <div id="preview" class="preview-content markdown-body" aria-label="Markdown preview"></div>
+      </div>
+    </div>
+
+    <!-- ==================== STATUS BAR ==================== -->
+    <div class="status-bar" id="statusBar">
+      <span class="status-item" id="lineInfo">Ln 1, Col 1</span>
+      <span class="status-item">Markdown</span>
+      <span class="status-item" id="readTime">~0 min read</span>
+      <span class="status-item status-right">CRLF</span>
+    </div>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="project-footer">
+      <p>
+        Markdown Editor &mdash; part of
+        <a href="../../../index.html" class="footer-link">Cradle</a>
+      </p>
+    </footer>
+  </main>
+
+  <!-- Shared BackToHome UI Component -->
+  <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+  <!-- Marked.js for Markdown parsing (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <!-- Application Script -->
+  <script src="script.js"></script>
+</body>
+</html>
