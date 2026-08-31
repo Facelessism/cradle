@@ -71,23 +71,41 @@
     });
   }
 
+  let observer = null;
+
+  function handleOrientationChange() {
+    setTimeout(drawOverlay, 150);
+  }
+
+  function cleanup() {
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
+    window.removeEventListener('resize', drawOverlay);
+    window.removeEventListener('orientationchange', handleOrientationChange);
+    window.removeEventListener('load', drawOverlay);
+    window.removeEventListener('pagehide', cleanup);
+    window.removeEventListener('unload', cleanup);
+  }
+
   function init() {
+    cleanup();
     drawOverlay();
 
     const stringButtons = getStringButtons();
     if (stringButtons.length) {
-      const observer = new MutationObserver(syncActiveStates);
+      observer = new MutationObserver(syncActiveStates);
       stringButtons.forEach((btn) => {
         observer.observe(btn, { attributes: true, attributeFilter: ['class'] });
       });
     }
 
     window.addEventListener('resize', drawOverlay);
-
-    window.addEventListener('orientationchange', () => {
-      setTimeout(drawOverlay, 150);
-    });
+    window.addEventListener('orientationchange', handleOrientationChange);
     window.addEventListener('load', drawOverlay);
+    window.addEventListener('pagehide', cleanup);
+    window.addEventListener('unload', cleanup);
 
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(drawOverlay).catch(() => {});
@@ -95,6 +113,13 @@
 
     setTimeout(drawOverlay, 300);
   }
+
+  window.GuitarStringOverlayCleanup = cleanup;
+  window.GuitarStringOverlay = {
+    init,
+    drawOverlay,
+    cleanup,
+  };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
