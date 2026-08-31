@@ -77,6 +77,16 @@ Where external resources are loaded over a CDN, pin the resource and use
 Subresource Integrity (`integrity="sha384-..."`) attributes so a compromised
 CDN cannot execute code in a visitor's browser.
 
+## User-Gesture-Driven Audio Activation Policy
+
+**Web Audio contexts and media playback must only be instantiated or resumed after an explicit user interaction (click, keypress, tap).**
+
+To adhere to browser autoplay policies, respect user preferences, and avoid unexpected background noise or console warnings:
+
+1. **Explicit Trigger Requirement:** Audio contexts (`new AudioContext()`) and audio graph resumption (`audioContext.resume()`) must be triggered by an explicit user gesture (e.g. clicking a "Play", "Record", piano key, or toggle button).
+2. **No Eager or Auto-playing Audio:** Mini-projects and UI components must never initialize running audio graphs or call `.play()` during initial page load, `DOMContentLoaded`, or unprompted lifecycle events.
+3. **Graceful State Handling:** Applications using Web Audio should check `audioContext.state === "suspended"` upon user gesture and call `audioContext.resume()`, with error handling in case the promise is rejected.
+4. **Validation Guardrails:** Shipped code is guarded by repository tests ensuring audio initialization helpers conform to user-driven event handler pathways.
 ## Frame Embedding & Clickjacking Policy
 
 **Cradle mini-pages and interactive demos are designed for direct standalone navigation and must not be embedded in untrusted external frames.**
