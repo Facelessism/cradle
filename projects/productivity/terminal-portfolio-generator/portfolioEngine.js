@@ -2,6 +2,11 @@
  * Portfolio Engine - Data model, validation, and terminal command output
  */
 (function (exports) {
+  const sanitizeUrl =
+    typeof window !== "undefined" && window.ExportHtml
+      ? window.ExportHtml.sanitizeUrl
+      : require("./exportHtml.js").sanitizeUrl;
+
   /**
    * Returns a fresh, empty portfolio with sensible default shape.
    * Every optional section defaults to an empty array/object so
@@ -17,7 +22,7 @@
       projects: [],
       experience: [],
       education: [],
-      contact: {}
+      contact: {},
     };
   }
 
@@ -47,13 +52,16 @@
       errors.push("About must be a string.");
     }
 
-    ["skills", "projects", "experience", "education"].forEach((key) => {
+    ["skills", "projects", "experience", "education"].forEach(key => {
       if (data[key] !== undefined && !Array.isArray(data[key])) {
         errors.push(`${key} must be an array.`);
       }
     });
 
-    if (data.contact !== undefined && (typeof data.contact !== "object" || Array.isArray(data.contact))) {
+    if (
+      data.contact !== undefined &&
+      (typeof data.contact !== "object" || Array.isArray(data.contact))
+    ) {
       errors.push("Contact must be an object.");
     }
 
@@ -83,25 +91,29 @@
 
   function formatSkills(p) {
     if (!p.skills || p.skills.length === 0) return ["No skills listed yet."];
-    return p.skills.map((s) => `  - ${s}`);
+    return p.skills.map(s => `  - ${s}`);
   }
 
   function formatProjects(p) {
-    if (!p.projects || p.projects.length === 0) return ["No projects listed yet."];
+    if (!p.projects || p.projects.length === 0)
+      return ["No projects listed yet."];
     const lines = [];
-    p.projects.forEach((proj) => {
+    p.projects.forEach(proj => {
       lines.push(`${proj.name || "Untitled project"}`);
       if (proj.description) lines.push(`  ${proj.description}`);
-      if (proj.tech && proj.tech.length) lines.push(`  tech: ${proj.tech.join(", ")}`);
-      if (proj.link) lines.push(`  link: ${proj.link}`);
+      if (proj.tech && proj.tech.length)
+        lines.push(`  tech: ${proj.tech.join(", ")}`);
+      const safeLink = sanitizeUrl(proj.link);
+      if (safeLink) lines.push(`  link: ${safeLink}`);
     });
     return lines;
   }
 
   function formatExperience(p) {
-    if (!p.experience || p.experience.length === 0) return ["No experience listed yet."];
+    if (!p.experience || p.experience.length === 0)
+      return ["No experience listed yet."];
     const lines = [];
-    p.experience.forEach((exp) => {
+    p.experience.forEach(exp => {
       const header = `${exp.role || "Role"} @ ${exp.company || "Company"}${exp.period ? ` (${exp.period})` : ""}`;
       lines.push(header);
       if (exp.description) lines.push(`  ${exp.description}`);
@@ -110,21 +122,32 @@
   }
 
   function formatEducation(p) {
-    if (!p.education || p.education.length === 0) return ["No education listed yet."];
-    return p.education.map((ed) => {
+    if (!p.education || p.education.length === 0)
+      return ["No education listed yet."];
+    return p.education.map(ed => {
       const period = ed.period ? ` (${ed.period})` : "";
       return `${ed.degree || "Degree"}, ${ed.institution || "Institution"}${period}`;
     });
   }
 
   function formatContact(p) {
-    const entries = p.contact ? Object.entries(p.contact).filter(([, v]) => v) : [];
+    const entries = p.contact
+      ? Object.entries(p.contact).filter(([, v]) => v)
+      : [];
     if (entries.length === 0) return ["No contact info provided yet."];
-    return entries.map(([k, v]) => `  ${k}: ${v}`);
+    const lines = [];
+    entries.forEach(([k, v]) => {
+      const safeValue = sanitizeUrl(v);
+      if (safeValue) lines.push(`  ${k}: ${safeValue}`);
+    });
+    return lines.length > 0 ? lines : ["No contact info provided yet."];
   }
 
   function formatBanner(p) {
-    const greeting = p.name && p.name.trim() ? `Welcome to ${p.name.trim()}'s terminal portfolio!` : "Welcome to my terminal portfolio!";
+    const greeting =
+      p.name && p.name.trim()
+        ? `Welcome to ${p.name.trim()}'s terminal portfolio!`
+        : "Welcome to my terminal portfolio!";
     return [greeting, "Type 'help' to see available commands."];
   }
 
@@ -141,15 +164,28 @@
     const p = portfolio || createEmptyPortfolio();
 
     const commands = {
-      banner: { description: "Show the welcome banner", lines: formatBanner(p) },
+      banner: {
+        description: "Show the welcome banner",
+        lines: formatBanner(p),
+      },
       whoami: { description: "Show name and role", lines: formatWhoami(p) },
       about: { description: "Show the about section", lines: formatAbout(p) },
       skills: { description: "List skills", lines: formatSkills(p) },
       projects: { description: "List projects", lines: formatProjects(p) },
-      experience: { description: "List work experience", lines: formatExperience(p) },
+      experience: {
+        description: "List work experience",
+        lines: formatExperience(p),
+      },
       education: { description: "List education", lines: formatEducation(p) },
-      contact: { description: "Show contact / social links", lines: formatContact(p) },
-      clear: { description: "Clear the terminal screen", lines: [], clientAction: "clear" }
+      contact: {
+        description: "Show contact / social links",
+        lines: formatContact(p),
+      },
+      clear: {
+        description: "Clear the terminal screen",
+        lines: [],
+        clientAction: "clear",
+      },
     };
 
     commands.help = {
@@ -158,7 +194,10 @@
         .concat("help")
         .filter((name, i, arr) => arr.indexOf(name) === i)
         .sort()
-        .map((name) => `  ${name.padEnd(12)} ${commands[name] ? commands[name].description : "List available commands"}`)
+        .map(
+          name =>
+            `  ${name.padEnd(12)} ${commands[name] ? commands[name].description : "List available commands"}`
+        ),
     };
 
     const sectionHasContent = {
@@ -168,12 +207,19 @@
       projects: Boolean(p.projects && p.projects.length),
       experience: Boolean(p.experience && p.experience.length),
       education: Boolean(p.education && p.education.length),
-      contact: Boolean(p.contact && Object.values(p.contact).some((v) => v))
+      contact: Boolean(p.contact && Object.values(p.contact).some(v => v)),
     };
 
-    const autoRunOrder = ["banner", "whoami", "about", "skills", "projects", "experience", "education", "contact"].filter(
-      (name) => name === "banner" || sectionHasContent[name]
-    );
+    const autoRunOrder = [
+      "banner",
+      "whoami",
+      "about",
+      "skills",
+      "projects",
+      "experience",
+      "education",
+      "contact",
+    ].filter(name => name === "banner" || sectionHasContent[name]);
 
     return { commands, autoRunOrder };
   }
@@ -189,7 +235,9 @@
   function levenshtein(a, b) {
     const strA = String(a || "");
     const strB = String(b || "");
-    const matrix = Array.from({ length: strA.length + 1 }, () => new Array(strB.length + 1).fill(0));
+    const matrix = Array.from({ length: strA.length + 1 }, () =>
+      new Array(strB.length + 1).fill(0)
+    );
 
     for (let i = 0; i <= strA.length; i++) matrix[i][0] = i;
     for (let j = 0; j <= strB.length; j++) matrix[0][j] = j;
@@ -223,7 +271,7 @@
     let closest = null;
     let minDist = Infinity;
 
-    candidateNames.forEach((name) => {
+    candidateNames.forEach(name => {
       const dist = levenshtein(input, name);
       if (dist < minDist && dist <= threshold) {
         minDist = dist;
@@ -242,9 +290,10 @@
    * @returns {string[]}
    */
   function findMatchingCommands(partial, candidateNames) {
-    if (typeof partial !== "string" || !Array.isArray(candidateNames)) return [];
+    if (typeof partial !== "string" || !Array.isArray(candidateNames))
+      return [];
     const p = partial.toLowerCase();
-    return candidateNames.filter((name) => name.startsWith(p)).sort();
+    return candidateNames.filter(name => name.startsWith(p)).sort();
   }
 
   /**
@@ -266,7 +315,8 @@
       return { found: false, command: "", lines: [], suggestion: null };
     }
 
-    const registry = commandOutput && commandOutput.commands ? commandOutput.commands : {};
+    const registry =
+      commandOutput && commandOutput.commands ? commandOutput.commands : {};
 
     if (registry[name]) {
       return {
@@ -274,7 +324,7 @@
         command: name,
         lines: registry[name].lines,
         suggestion: null,
-        clientAction: registry[name].clientAction || null
+        clientAction: registry[name].clientAction || null,
       };
     }
 
@@ -283,8 +333,11 @@
     return {
       found: false,
       command: name,
-      lines: [`command not found: ${name}`, "type 'help' to see available commands"],
-      suggestion
+      lines: [
+        `command not found: ${name}`,
+        "type 'help' to see available commands",
+      ],
+      suggestion,
     };
   }
 
