@@ -13,6 +13,7 @@ const {
   applyMove,
   findKing,
   isSquareAttacked,
+  hasDangerousKeys,
 } = require("../projects/games/chess/chessLogic");
 
 /* ──── Helper: create a board from a FEN-like position string ─────── */
@@ -316,4 +317,12 @@ test("applyMove does not promote a non-pawn piece", () => {
 
   assert.equal(board[0][0].type, "queen"); // stays queen, not converted to knight
   assert.equal(board[0][0].color, WHITE);
+});
+
+test("hasDangerousKeys detects prototype-pollution keys in worker payloads", () => {
+  assert.equal(hasDangerousKeys(null), false);
+  assert.equal(hasDangerousKeys({ type: "pawn" }), false);
+  assert.equal(hasDangerousKeys(JSON.parse('{"x":{"__proto__":{}}}')), true);
+  assert.equal(hasDangerousKeys({ constructor: {} }), true);
+  assert.equal(hasDangerousKeys({ a: [{ b: { prototype: {} } }] }), true);
 });
