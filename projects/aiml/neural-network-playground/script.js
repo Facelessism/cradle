@@ -19,6 +19,7 @@ const state = {
   data: [],
   customData: [],
   net: null,
+  worker: null,
   animId: null,
   showData: true,
   showWeights: true,
@@ -36,11 +37,20 @@ const lCtx = lossCanvas ? lossCanvas.getContext("2d") : null;
 // ── INITIALIZATION ───────────────────────────────────────────
 function initNetwork() {
   const layers = [2, ...state.hiddenLayers, 1];
-  state.net = new NeuralNetwork(
-    layers,
-    state.activationName,
-    state.learningRate
-  );
+  if (state.worker) {
+    state.worker.postMessage({
+      type: 'INIT_NETWORK',
+      payload: {
+        layers,
+        activationName: state.activationName,
+        lr: state.learningRate
+      }
+    });
+  } else {
+    // Fallback for first-time init before worker is ready
+    state.net = new NeuralNetwork(layers, state.activationName, state.learningRate);
+  }
+  
   state.epoch = 0;
   state.lossHistory = [];
   updateStats(0, "—", "—");
@@ -51,6 +61,18 @@ function initData() {
     state.data = state.customData.map(p => [...p]);
   } else {
     state.data = generateDataset(state.dataset, state.numPoints, state.noise);
+  }
+
+  if (state.worker) {
+    state.worker.postMessage({
+      type: 'INIT_DATA',
+      payload: {
+        datasetType: state.dataset,
+        numPoints: state.numPoints,
+        noise: state.noise,
+        customData: state.customData
+      }
+    });
   }
 }
 
@@ -71,29 +93,31 @@ function drawBoundary() {
   const res = 3;
   const imgData = ctx.createImageData(w, h);
 
-  for (let py = 0; py < h; py += res) {
-    for (let px = 0; px < w; px += res) {
-      const x = (px / w) * 2 - 1;
-      const y = (py / h) * 2 - 1;
-      const pred = state.net ? state.net.predict([x, y]) : 0.5;
+   if (state.net) {
+    for (let py = 0; py < h; py += res) {
+      for (let px = 0; px < w; px += res) {
+        const x = (px / w) * 2 - 1;
+        const y = (py / h) * 2 - 1;
+        const pred = state.net.predict([x, y]);
 
-      const r = Math.floor(30 + pred * 180);
-      const g = Math.floor(40 + (1 - Math.abs(pred - 0.5) * 2) * 30);
-      const b = Math.floor(30 + (1 - pred) * 180);
-      const a = 180;
+        const r = Math.floor(30 + pred * 180);
+        const g = Math.floor(40 + (1 - Math.abs(pred - 0.5) * 2) * 30);
+        const b = Math.floor(30 + (1 - pred) * 180);
+        const a = 180;
 
-      for (let dy = 0; dy < res && py + dy < h; dy++) {
-        for (let dx = 0; dx < res && px + dx < w; dx++) {
-          const idx = ((py + dy) * w + (px + dx)) * 4;
-          imgData.data[idx] = r;
-          imgData.data[idx + 1] = g;
-          imgData.data[idx + 2] = b;
-          imgData.data[idx + 3] = a;
+        for (let dy = 0; dy < res && py + dy < h; dy++) {
+          for (let dx = 0; dx < res && px + dx < w; dx++) {
+            const idx = ((py + dy) * w + (px + dx)) * 4;
+            imgData.data[idx] = r;
+            imgData.data[idx + 1] = g;
+            imgData.data[idx + 2] = b;
+            imgData.data[idx + 3] = a;
+          }
         }
       }
     }
-  }
   ctx.putImageData(imgData, 0, 0);
+}
 
   if (state.showData && state.data.length) {
     state.data.forEach(([x, y, label]) => {
@@ -274,30 +298,18 @@ function renderAll() {
 }
 
 function trainStep() {
-  if (!state.training || !state.net) return;
+  if (!state.training || !state.worker) return;
 
-  const inputs = state.data.map(d => [d[0], d[1]]);
-  const targets = state.data.map(d => d[2]);
-
-  for (let s = 0; s < state.speed; s++) {
-    const { loss, accuracy } = state.net.train(
-      inputs,
-      targets,
-      state.batchSize
-    );
-    state.epoch++;
-    if (
-      state.epoch % Math.max(1, Math.floor(state.speed / 5)) === 0 ||
-      state.lossHistory.length === 0
-    ) {
-      state.lossHistory.push(loss);
-      if (state.lossHistory.length > 500) state.lossHistory.shift();
+  state.worker.postMessage({
+    type: 'TRAIN_STEP',
+    payload: {
+      speed: state.speed,
+      batchSize: state.batchSize
     }
-    updateStats(state.epoch, loss, accuracy);
-  }
+  });
 
-  renderAll();
-  state.animId = requestAnimationFrame(trainStep);
+  // Note: renderAll() and requestAnimationFrame are now handled 
+  // in the worker's response handler to prevent overlapping requests.
 }
 
 function startTraining() {
@@ -354,9 +366,56 @@ function renderLayerUI() {
 }
 
 function setupEvents() {
+  // Initialize Web Worker
+  state.worker = new Worker('nnWorker.js');
+  
+  state.worker.onmessage = e => {
+    const { type, payload } = e.data;
+    
+    switch (type) {
+      case 'NETWORK_INITED':
+        console.log('Worker: Network initialized');
+        break;
+        
+      case 'DATA_INITED':
+        console.log(`Worker: Data initialized with ${payload} points`);
+        break;
+        
+      case 'TRAIN_STEP_COMPLETE': {
+        const { loss, accuracy, epochs, weights, biases } = payload;
+        
+        state.epoch += epochs;
+        if (state.lossHistory.length === 0 || state.epoch % Math.max(1, Math.floor(state.speed / 5)) === 0) {
+          state.lossHistory.push(loss);
+          if (state.lossHistory.length > 500) state.lossHistory.shift();
+        }
+        
+        updateStats(state.epoch, loss, accuracy);
+        
+        // Synchronize weights back to main thread for rendering
+        if (state.net) {
+          state.net.weights = weights;
+          state.net.biases = biases;
+        } else {
+          // Reconstruct NeuralNetwork object to keep .predict() and .layers available
+          const layers = [2, ...state.hiddenLayers, 1];
+          state.net = new NeuralNetwork(layers, state.activationName, state.learningRate);
+          state.net.weights = weights;
+          state.net.biases = biases;
+        }
+        
+        renderAll();
+        if (state.training) {
+          state.animId = requestAnimationFrame(trainStep);
+        }
+        break;
+      }
+    }
+  };
   $("btnTrain").addEventListener("click", startTraining);
   $("btnPause").addEventListener("click", pauseTraining);
   $("btnReset").addEventListener("click", resetAll);
+
 
   $("speedSlider").addEventListener("input", e => {
     state.speed = parseInt(e.target.value);
@@ -382,6 +441,12 @@ function setupEvents() {
 
   $("learningRate").addEventListener("change", e => {
     state.learningRate = parseFloat(e.target.value);
+    if (state.worker) {
+      state.worker.postMessage({
+        type: 'UPDATE_PARAMS',
+        payload: { lr: state.learningRate }
+      });
+    }
     if (state.net) state.net.lr = state.learningRate;
   });
 
