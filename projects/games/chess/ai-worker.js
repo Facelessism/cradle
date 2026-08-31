@@ -468,7 +468,13 @@ onmessage = function (event) {
     return;
   }
 
+  // Reject any unexpected/unknown message type instead of silently ignoring
+  // it, so malformed or unauthorized traffic is surfaced to the caller.
   if (data.type !== "search") {
+    postMessage({
+      type: "error",
+      message: "Unexpected worker message type.",
+    });
     return;
   }
 

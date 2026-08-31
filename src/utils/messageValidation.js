@@ -135,12 +135,26 @@ export function isFilterResult(data) {
 }
 
 /**
+ * Restrict a worker payload to an explicit allowlist of top-level keys. Any
+ * unexpected key (or a prototype-pollution key) is treated as an invalid,
+ * unauthorized message.
+ */
+export function hasUnexpectedKeys(value, allowed) {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return true;
+  }
+  return Object.keys(value).some(key => !allowed.has(key));
+}
+
+/**
  * Message the chess page sends to the AI worker when a search is requested.
  * `enPassantTarget` and `timeLimit` are optional (worker applies defaults).
  */
 export function isChessSearchRequest(payload) {
   if (payload === null || typeof payload !== "object") return false;
   if (hasDangerousKeys(payload)) return false;
+  if (hasUnexpectedKeys(payload, new Set(["type", "searchId", "board", "color", "depth", "enPassantTarget", "timeLimit"])))
+    return false;
   if (payload.type !== "search") return false;
   if (!isWholeNumber(payload.searchId)) return false;
   if (!isChessBoard(payload.board)) return false;
@@ -164,6 +178,7 @@ export function isChessSearchRequest(payload) {
 export function isChessCancelRequest(payload) {
   if (payload === null || typeof payload !== "object") return false;
   if (hasDangerousKeys(payload)) return false;
+  if (hasUnexpectedKeys(payload, new Set(["type"]))) return false;
   return payload.type === "cancel";
 }
 
@@ -185,20 +200,35 @@ export function isChessWorkerReport(report) {
   if (hasDangerousKeys(report)) return false;
   if (!CHESS_REPORT_TYPES.has(report.type)) return false;
 
+  const allowedKeys = {
+    progress: new Set(["type", "depth", "maxDepth", "completed", "total", "nodes"]),
+    depthComplete: new Set(["type", "depth", "maxDepth", "move", "score", "nodes"]),
+    complete: new Set(["type", "move", "depth", "nodes"]),
+    timeout: new Set(["type", "move", "depth", "nodes"]),
+    cancelled: new Set(["type", "move", "depth", "nodes"]),
+    error: new Set(["type", "message"]),
+  }[report.type];
+
   switch (report.type) {
     case "progress":
       return (
+        !hasUnexpectedKeys(report, allowedKeys) &&
         isWholeNumber(report.depth) &&
         isWholeNumber(report.maxDepth) &&
         isWholeNumber(report.completed) &&
         isWholeNumber(report.total)
       );
     case "depthComplete":
-      return isWholeNumber(report.depth) && isWholeNumber(report.maxDepth);
+      return (
+        !hasUnexpectedKeys(report, allowedKeys) &&
+        isWholeNumber(report.depth) &&
+        isWholeNumber(report.maxDepth)
+      );
     case "complete":
     case "timeout":
     case "cancelled":
       return (
+        !hasUnexpectedKeys(report, allowedKeys) &&
         (report.move === null ||
           report.move === undefined ||
           isChessMove(report.move)) &&
@@ -206,7 +236,10 @@ export function isChessWorkerReport(report) {
         isWholeNumber(report.nodes)
       );
     case "error":
-      return typeof report.message === "string";
+      return (
+        !hasUnexpectedKeys(report, allowedKeys) &&
+        typeof report.message === "string"
+      );
     default:
       return false;
   }
