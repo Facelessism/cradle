@@ -270,7 +270,10 @@ test("sanitizeState strips dangerous keys without mutating the source", () => {
   // never reach Object.prototype.
   assert.equal(Object.getPrototypeOf(clean), Object.prototype);
   assert.equal(Object.prototype.hasOwnProperty.call(clean, "__proto__"), false);
-  assert.equal(Object.prototype.hasOwnProperty.call(clean.nested, "constructor"), false);
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(clean.nested, "constructor"),
+    false
+  );
 });
 
 test("validators reject payloads carrying prototype-pollution keys", () => {
@@ -289,18 +292,25 @@ test("validators reject payloads carrying prototype-pollution keys", () => {
   );
   assert.equal(
     isFilterRequest(
-      JSON.parse('{"allProjects":[],"selectedCategory":"all","query":"","__proto__":{}}')
+      JSON.parse(
+        '{"allProjects":[],"selectedCategory":"all","query":"","__proto__":{}}'
+      )
     ),
     false
   );
   assert.equal(
     isFilterRequest(
-      JSON.parse('{"allProjects":[{"__proto__":{}}],"selectedCategory":"all","query":""}')
+      JSON.parse(
+        '{"allProjects":[{"__proto__":{}}],"selectedCategory":"all","query":""}'
+      )
     ),
     false
   );
   assert.equal(isFilterResult([{ prototype: {} }]), false);
-  assert.equal(isChessCancelRequest({ type: "cancel", constructor: {} }), false);
+  assert.equal(
+    isChessCancelRequest({ type: "cancel", constructor: {} }),
+    false
+  );
   assert.equal(
     isChessWorkerReport({ type: "error", message: "x", prototype: {} }),
     false
@@ -326,10 +336,7 @@ test("isChessSearchRequest and reports reject unexpected keys (strict schema)", 
     }),
     false
   );
-  assert.equal(
-    isChessCancelRequest({ type: "cancel", extra: true }),
-    false
-  );
+  assert.equal(isChessCancelRequest({ type: "cancel", extra: true }), false);
   assert.equal(
     isChessWorkerReport({
       type: "progress",

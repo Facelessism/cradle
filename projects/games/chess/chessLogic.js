@@ -338,11 +338,18 @@ function hasDangerousKeys(value) {
     return value.some(hasDangerousKeys);
   }
   for (const key of Reflect.ownKeys(value)) {
-    if (typeof key === "string" && /^(?:__proto__|constructor|prototype)$/.test(key)) {
+    if (
+      typeof key === "string" &&
+      /^(?:__proto__|constructor|prototype)$/.test(key)
+    ) {
       return true;
     }
     const child = value[key];
-    if (typeof child === "object" && child !== null && hasDangerousKeys(child)) {
+    if (
+      typeof child === "object" &&
+      child !== null &&
+      hasDangerousKeys(child)
+    ) {
       return true;
     }
   }

@@ -205,14 +205,13 @@ test("rejects filter results that carry prototype-pollution keys", () => {
   });
   const instance = FakeWorker.instances[0];
 
-  instance.onmessage({ data: [JSON.parse('{"id":"chess","__proto__":{"evil":1}}')] });
+  instance.onmessage({
+    data: [JSON.parse('{"id":"chess","__proto__":{"evil":1}}')],
+  });
 
   assert.deepEqual(results, []);
   assert.equal(failures.length, 1);
   assert.equal(instance.terminated, true);
-  assert.equal(
-    failures[0].message,
-    "Worker returned an invalid search result"
-  );
+  assert.equal(failures[0].message, "Worker returned an invalid search result");
   assert.equal(logs[0].entry.errorType, "InvalidResultError");
 });

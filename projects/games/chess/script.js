@@ -129,13 +129,17 @@ function updatePanels() {
 
   if (whiteCaptures) {
     whiteCaptures.innerHTML = capturedByWhite.length
-      ? capturedByWhite.map(piece => SYMBOLS[piece?.color]?.[piece?.type] || "").join(" ")
+      ? capturedByWhite
+          .map(piece => SYMBOLS[piece?.color]?.[piece?.type] || "")
+          .join(" ")
       : "None";
   }
 
   if (blackCaptures) {
     blackCaptures.innerHTML = capturedByBlack.length
-      ? capturedByBlack.map(piece => SYMBOLS[piece?.color]?.[piece?.type] || "").join(" ")
+      ? capturedByBlack
+          .map(piece => SYMBOLS[piece?.color]?.[piece?.type] || "")
+          .join(" ")
       : "None";
   }
 
@@ -538,7 +542,10 @@ function triggerAI() {
   cancelAI();
   isComputerThinking = true;
 
-  setStatus((statusElement ? statusElement.textContent : "") + " Computer is thinking...");
+  setStatus(
+    (statusElement ? statusElement.textContent : "") +
+      " Computer is thinking..."
+  );
 
   if (!aiWorker) {
     aiWorker = new Worker("ai-worker.js");

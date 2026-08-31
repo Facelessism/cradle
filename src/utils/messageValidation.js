@@ -34,7 +34,11 @@ export function hasDangerousKeys(value) {
   for (const key of Reflect.ownKeys(value)) {
     if (typeof key === "string" && DANGEROUS_KEYS.has(key)) return true;
     const child = value[key];
-    if (typeof child === "object" && child !== null && hasDangerousKeys(child)) {
+    if (
+      typeof child === "object" &&
+      child !== null &&
+      hasDangerousKeys(child)
+    ) {
       return true;
     }
   }
@@ -153,7 +157,20 @@ export function hasUnexpectedKeys(value, allowed) {
 export function isChessSearchRequest(payload) {
   if (payload === null || typeof payload !== "object") return false;
   if (hasDangerousKeys(payload)) return false;
-  if (hasUnexpectedKeys(payload, new Set(["type", "searchId", "board", "color", "depth", "enPassantTarget", "timeLimit"])))
+  if (
+    hasUnexpectedKeys(
+      payload,
+      new Set([
+        "type",
+        "searchId",
+        "board",
+        "color",
+        "depth",
+        "enPassantTarget",
+        "timeLimit",
+      ])
+    )
+  )
     return false;
   if (payload.type !== "search") return false;
   if (!isWholeNumber(payload.searchId)) return false;
@@ -201,8 +218,22 @@ export function isChessWorkerReport(report) {
   if (!CHESS_REPORT_TYPES.has(report.type)) return false;
 
   const allowedKeys = {
-    progress: new Set(["type", "depth", "maxDepth", "completed", "total", "nodes"]),
-    depthComplete: new Set(["type", "depth", "maxDepth", "move", "score", "nodes"]),
+    progress: new Set([
+      "type",
+      "depth",
+      "maxDepth",
+      "completed",
+      "total",
+      "nodes",
+    ]),
+    depthComplete: new Set([
+      "type",
+      "depth",
+      "maxDepth",
+      "move",
+      "score",
+      "nodes",
+    ]),
     complete: new Set(["type", "move", "depth", "nodes"]),
     timeout: new Set(["type", "move", "depth", "nodes"]),
     cancelled: new Set(["type", "move", "depth", "nodes"]),

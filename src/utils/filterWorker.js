@@ -28,11 +28,7 @@ export function createFilterWorker({
     const worker = workerFactory ? workerFactory() : defaultWorkerFactory();
     let failed = false;
 
-    const fail = (
-      error,
-      context = "onerror",
-      errorType = undefined
-    ) => {
+    const fail = (error, context = "onerror", errorType = undefined) => {
       if (failed) return;
       failed = true;
       const resolvedErrorType =
