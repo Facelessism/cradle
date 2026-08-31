@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Password Generator</title>
+  <meta
+    name="description"
+    content="Generate secure passwords with customizable character sets, strength meter, entropy calculation, and batch generation."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="shell">
+    <!-- ==================== HEADER ==================== -->
+    <header class="project-header">
+      <div>
+        <a href="../../../index.html" class="back-link">
+          <i class="fa-solid fa-arrow-left"></i> Back to Cradle
+        </a>
+        <p class="eyebrow">Dev Tools</p>
+        <h1>Password Generator</h1>
+        <p class="subtitle">
+          Create strong, customizable passwords with real-time strength
+          analysis, entropy calculation, and batch generation.
+        </p>
+      </div>
+    </header>
+
+    <!-- ==================== MAIN CARD ==================== -->
+    <section class="gen-panel" aria-label="Password generator">
+      <!-- Generated Password Display -->
+      <div class="password-display">
+        <div class="password-row">
+          <span class="password-text" id="passwordOutput" aria-label="Generated password">Click Generate</span>
+          <div class="password-actions">
+            <button id="btnCopy" class="icon-btn" title="Copy to clipboard (Ctrl+C)">
+              <i class="fa-regular fa-copy"></i>
+            </button>
+            <button id="btnRefresh" class="icon-btn" title="Regenerate (Space)">
+              <i class="fa-solid fa-rotate"></i>
+            </button>
+          </div>
+        </div>
+        <!-- Strength Meter -->
+        <div class="strength-meter">
+          <div class="strength-bar" id="strengthBar"></div>
+        </div>
+        <div class="strength-info">
+          <span class="strength-label" id="strengthLabel">—</span>
+          <span class="entropy-label" id="entropyLabel">0 bits of entropy</span>
+        </div>
+      </div>
+
+      <!-- Controls Grid -->
+      <div class="controls-grid">
+        <!-- Length Slider -->
+        <div class="control-group span-full">
+          <label class="control-label" for="lengthSlider">
+            Length: <strong id="lengthValue">16</strong>
+          </label>
+          <input
+            type="range"
+            id="lengthSlider"
+            min="4"
+            max="128"
+            value="16"
+            class="range-slider"
+            aria-label="Password length"
+          />
+          <div class="range-marks">
+            <span>4</span><span>32</span><span>64</span><span>96</span><span>128</span>
+          </div>
+        </div>
+
+        <!-- Character Set Toggles -->
+        <div class="control-group">
+          <span class="control-label">Character Sets</span>
+          <div class="toggle-grid">
+            <label class="toggle-item">
+              <input type="checkbox" id="chkUpper" checked />
+              <span class="toggle-label">ABC <small>Uppercase</small></span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="chkLower" checked />
+              <span class="toggle-label">abc <small>Lowercase</small></span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="chkDigits" checked />
+              <span class="toggle-label">123 <small>Digits</small></span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="chkSymbols" checked />
+              <span class="toggle-label">#$& <small>Symbols</small></span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="chkBrackets" />
+              <span class="toggle-label">{}[] <small>Brackets</small></span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="chkAmbiguous" />
+              <span class="toggle-label">Il1O0 <small>Ambiguous</small></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Options -->
+        <div class="control-group">
+          <span class="control-label">Options</span>
+          <div class="toggle-grid">
+            <label class="toggle-item">
+              <input type="checkbox" id="chkNoRepeats" />
+              <span class="toggle-label">No Repeats</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="chkNoSequential" />
+              <span class="toggle-label">No Sequential</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="chkMemorable" />
+              <span class="toggle-label">Memorable</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Batch Generation -->
+        <div class="control-group">
+          <span class="control-label">Batch Count: <strong id="batchValue">1</strong></span>
+          <input
+            type="range"
+            id="batchSlider"
+            min="1"
+            max="20"
+            value="1"
+            class="range-slider"
+            aria-label="Number of passwords to generate"
+          />
+        </div>
+
+        <!-- Generate Button -->
+        <div class="control-group span-full">
+          <button id="btnGenerate" class="btn-generate">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Password
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== BATCH OUTPUT ==================== -->
+    <section class="batch-section hidden" id="batchSection" aria-label="Generated passwords">
+      <div class="batch-card">
+        <div class="section-header">
+          <h2><i class="fa-solid fa-list"></i> Generated Passwords</h2>
+          <button id="btnCopyAll" class="action-btn" title="Copy all to clipboard">
+            <i class="fa-solid fa-copy"></i> Copy All
+          </button>
+        </div>
+        <div class="batch-list" id="batchList"></div>
+      </div>
+    </section>
+
+    <!-- ==================== HISTORY ==================== -->
+    <section class="history-section" aria-label="Generation history">
+      <div class="history-card">
+        <div class="section-header">
+          <h2><i class="fa-solid fa-clock-rotate-left"></i> Recent Generations</h2>
+          <button id="btnClearHistory" class="action-btn danger-sm">Clear</button>
+        </div>
+        <div class="history-list" id="historyList">
+          <p class="empty-state">No passwords generated yet.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="project-footer">
+      <p>
+        Password Generator &mdash; part of
+        <a href="../../../index.html" class="footer-link">Cradle</a>
+      </p>
+    </footer>
+  </main>
+
+  <!-- Shared BackToHome UI Component -->
+  <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+  <!-- Application Script -->
+  <script src="script.js"></script>
+</body>
+</html>
