@@ -33,7 +33,7 @@ let showLabels = false
 
 // ─── DOM ───────────────────────────────────────────────────────────
 const canvas = document.getElementById('unitCircle')
-const ctx = canvas.getContext('2d')
+const ctx = canvas ? canvas.getContext('2d') : null
 const angleDegEl = document.getElementById('angleDeg')
 const angleRadEl = document.getElementById('angleRad')
 const angleInput = document.getElementById('angleInput')
@@ -56,6 +56,7 @@ const dpr = window.devicePixelRatio || 1
 
 function resizeCanvas() {
   const panel = document.querySelector('.canvas-panel')
+  if (!panel || !canvas || !ctx) return
   const size = Math.min(panel.clientWidth - 40, panel.clientHeight - 60, 500)
   canvas.style.width = size + 'px'
   canvas.style.height = size + 'px'
@@ -67,6 +68,7 @@ function resizeCanvas() {
 
 // ─── Rendering ─────────────────────────────────────────────────────
 function render() {
+  if (!canvas || !ctx) return
   const w = canvas.width / dpr
   const h = canvas.height / dpr
   const cx = w / 2
@@ -242,20 +244,20 @@ function updateValues() {
   const sec = Math.abs(cos) > 1e-10 ? 1 / cos : null
   const cot = Math.abs(sin) > 1e-10 ? cos / sin : null
 
-  angleDegEl.textContent = `${angleDeg.toFixed(1)}°`
-  angleRadEl.textContent = `${rad.toFixed(4)} rad`
-  angleInput.value = Math.round(angleDeg)
-  angleSlider.value = angleDeg
+  if (angleDegEl) angleDegEl.textContent = `${angleDeg.toFixed(1)}°`
+  if (angleRadEl) angleRadEl.textContent = `${rad.toFixed(4)} rad`
+  if (angleInput) angleInput.value = Math.round(angleDeg)
+  if (angleSlider) angleSlider.value = angleDeg
 
-  sinValue.textContent = sin.toFixed(4)
-  cosValue.textContent = cos.toFixed(4)
-  tanValue.textContent = tan !== null ? tan.toFixed(4) : '∞'
-  cscValue.textContent = csc !== null ? csc.toFixed(4) : '—'
-  secValue.textContent = sec !== null ? sec.toFixed(4) : '—'
-  cotValue.textContent = cot !== null ? cot.toFixed(4) : '—'
+  if (sinValue) sinValue.textContent = sin.toFixed(4)
+  if (cosValue) cosValue.textContent = cos.toFixed(4)
+  if (tanValue) tanValue.textContent = tan !== null ? tan.toFixed(4) : '∞'
+  if (cscValue) cscValue.textContent = csc !== null ? csc.toFixed(4) : '—'
+  if (secValue) secValue.textContent = sec !== null ? sec.toFixed(4) : '—'
+  if (cotValue) cotValue.textContent = cot !== null ? cot.toFixed(4) : '—'
 
-  coordX.textContent = cos.toFixed(4)
-  coordY.textContent = sin.toFixed(4)
+  if (coordX) coordX.textContent = cos.toFixed(4)
+  if (coordY) coordY.textContent = sin.toFixed(4)
 
   // Update bars (centered at 50%)
   const barScale = 45
@@ -263,7 +265,7 @@ function updateValues() {
   updateBar(cosBar, cos * barScale)
   if (tan !== null) {
     updateBar(tanBar, Math.max(-1, Math.min(1, tan)) * barScale)
-  } else {
+  } else if (tanBar) {
     tanBar.style.width = '0'
   }
 
@@ -278,6 +280,7 @@ function updateValues() {
 }
 
 function updateBar(bar, offset) {
+  if (!bar) return
   const center = 50
   if (offset >= 0) {
     bar.style.left = center + '%'
@@ -290,7 +293,7 @@ function updateBar(bar, offset) {
 
 function updateQuadrant() {
   const cells = ['q1', 'q2', 'q3', 'q4']
-  cells.forEach(id => document.getElementById(id).classList.remove('q-active'))
+  cells.forEach(id => document.getElementById(id)?.classList.remove('q-active'))
 
   let q
   if (angleDeg >= 0 && angleDeg < 90) q = 'q1'
@@ -299,12 +302,14 @@ function updateQuadrant() {
   else if (angleDeg >= 270 && angleDeg < 360) q = 'q4'
   else q = 'q1'
 
-  document.getElementById(q).classList.add('q-active')
+  document.getElementById(q)?.classList.add('q-active')
 
-  const activeCell = document.querySelector('.q-active')
   const qNum = { q1: 'I', q2: 'II', q3: 'III', q4: 'IV' }
-  document.getElementById('q-active').textContent = qNum[q]
-  document.getElementById('q-active').classList.add('q-active')
+  const qActive = document.getElementById('q-active')
+  if (qActive) {
+    qActive.textContent = qNum[q]
+    qActive.classList.add('q-active')
+  }
 }
 
 function getRefAngle(deg) {
@@ -336,12 +341,12 @@ function getAngleFromEvent(e) {
   return deg
 }
 
-canvas.addEventListener('mousedown', (e) => {
+canvas?.addEventListener('mousedown', (e) => {
   isDragging = true
   setAngle(getAngleFromEvent(e))
 })
 
-canvas.addEventListener('mousemove', (e) => {
+canvas?.addEventListener('mousemove', (e) => {
   if (!isDragging) return
   setAngle(getAngleFromEvent(e))
 })
@@ -351,50 +356,50 @@ window.addEventListener('mouseup', () => {
 })
 
 // Touch support
-canvas.addEventListener('touchstart', (e) => {
+canvas?.addEventListener('touchstart', (e) => {
   e.preventDefault()
   isDragging = true
   setAngle(getAngleFromEvent(e.touches[0]))
 })
 
-canvas.addEventListener('touchmove', (e) => {
+canvas?.addEventListener('touchmove', (e) => {
   e.preventDefault()
   if (!isDragging) return
   setAngle(getAngleFromEvent(e.touches[0]))
 })
 
-canvas.addEventListener('touchend', () => {
+canvas?.addEventListener('touchend', () => {
   isDragging = false
 })
 
 // Input controls
-angleInput.addEventListener('change', () => {
-  setAngle(parseFloat(angleInput.value) || 0)
+angleInput?.addEventListener('change', () => {
+  if (angleInput) setAngle(parseFloat(angleInput.value) || 0)
 })
 
-angleSlider.addEventListener('input', () => {
-  setAngle(parseFloat(angleSlider.value))
+angleSlider?.addEventListener('input', () => {
+  if (angleSlider) setAngle(parseFloat(angleSlider.value))
 })
 
 // Toggle controls
-document.getElementById('showDegrees').addEventListener('change', (e) => {
+document.getElementById('showDegrees')?.addEventListener('change', (e) => {
   showDegrees = e.target.checked
   updateValues()
   render()
 })
 
-document.getElementById('showReference').addEventListener('change', (e) => {
+document.getElementById('showReference')?.addEventListener('change', (e) => {
   showReference = e.target.checked
   render()
 })
 
-document.getElementById('showLabels').addEventListener('change', (e) => {
+document.getElementById('showLabels')?.addEventListener('change', (e) => {
   showLabels = e.target.checked
   render()
 })
 
 // Snap to key angle
-document.getElementById('snapToKey').addEventListener('click', () => {
+document.getElementById('snapToKey')?.addEventListener('click', () => {
   let closest = KEY_ANGLES[0]
   let minDiff = 360
   for (const ka of KEY_ANGLES) {
@@ -413,6 +418,7 @@ document.addEventListener('keydown', (e) => {
 
 // ─── Key Angles Grid ──────────────────────────────────────────────
 function renderAnglesGrid() {
+  if (!anglesGrid) return
   anglesGrid.innerHTML = ''
   const displayAngles = KEY_ANGLES.filter(a => a.deg < 360)
   for (const ka of displayAngles) {

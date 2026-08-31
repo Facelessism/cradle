@@ -112,6 +112,7 @@ if (presetSelector) {
 }
 
 function renderInitialHardwareGrid() {
+  if (!ramGrid) return;
   ramGrid.innerHTML = "";
   for (let i = 0; i < 16; i++) {
     const hexAddress = "0x" + i.toString(16).toUpperCase();
@@ -125,34 +126,32 @@ function renderInitialHardwareGrid() {
 }
 
 function updateHardwareDashboard() {
-  document.getElementById("reg-a").textContent = cpu.registers.A.toString(16)
-    .toUpperCase()
-    .padStart(2, "0");
-  document.getElementById("reg-b").textContent = cpu.registers.B.toString(16)
-    .toUpperCase()
-    .padStart(2, "0");
-  document.getElementById("reg-c").textContent = cpu.registers.C.toString(16)
-    .toUpperCase()
-    .padStart(2, "0");
-  document.getElementById("reg-d").textContent = cpu.registers.D.toString(16)
-    .toUpperCase()
-    .padStart(2, "0");
-  document.getElementById("reg-pc").textContent =
-    "0x" + cpu.PC.toString(16).toUpperCase().padStart(2, "0");
-  document.getElementById("reg-flags").textContent =
-    `Z:${cpu.flags.Z} C:${cpu.flags.C}`;
+  const setRegText = (id, txt) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+  };
+  setRegText("reg-a", cpu.registers.A.toString(16).toUpperCase().padStart(2, "0"));
+  setRegText("reg-b", cpu.registers.B.toString(16).toUpperCase().padStart(2, "0"));
+  setRegText("reg-c", cpu.registers.C.toString(16).toUpperCase().padStart(2, "0"));
+  setRegText("reg-d", cpu.registers.D.toString(16).toUpperCase().padStart(2, "0"));
+  setRegText("reg-pc", "0x" + cpu.PC.toString(16).toUpperCase().padStart(2, "0"));
+  setRegText("reg-flags", `Z:${cpu.flags.Z} C:${cpu.flags.C}`);
 
   for (let i = 0; i < 16; i++) {
     const cell = document.getElementById(`ram-cell-${i}`);
     const dataElement = document.getElementById(`ram-data-${i}`);
-    dataElement.textContent = cpu.RAM[i]
-      .toString(16)
-      .toUpperCase()
-      .padStart(2, "0");
-    if (i === cpu.PC && !cpu.halted) {
-      cell.classList.add("active-pc");
-    } else {
-      cell.classList.remove("active-pc");
+    if (dataElement) {
+      dataElement.textContent = cpu.RAM[i]
+        .toString(16)
+        .toUpperCase()
+        .padStart(2, "0");
+    }
+    if (cell) {
+      if (i === cpu.PC && !cpu.halted) {
+        cell.classList.add("active-pc");
+      } else {
+        cell.classList.remove("active-pc");
+      }
     }
   }
 
@@ -200,6 +199,7 @@ function updatePipelineUI(stage, instrStr, isStalled) {
 }
 
 function printConsole(text, isError = false) {
+  if (!consoleOutput) return;
   consoleOutput.textContent = text;
   consoleOutput.style.color = isError ? "#ef4444" : "#a4b0be";
 }
@@ -278,7 +278,7 @@ function getRamElementId(addr) {
 }
 
 // --- COMPILER HOOK ---
-document.getElementById("btn-assemble").addEventListener("click", () => {
+document.getElementById("btn-assemble")?.addEventListener("click", () => {
   printConsole("Initializing compilation pipeline...");
 
   try {
@@ -710,13 +710,13 @@ function ifStage() {
   cpu.PC += len;
 }
 
-btnStep.addEventListener("click", async () => {
-  btnStep.disabled = true;
-  btnRun.disabled = true;
+btnStep?.addEventListener("click", async () => {
+  if (btnStep) btnStep.disabled = true;
+  if (btnRun) btnRun.disabled = true;
   await executeClockCycleStep();
   if (!cpu.halted) {
-    btnStep.disabled = false;
-    btnRun.disabled = false;
+    if (btnStep) btnStep.disabled = false;
+    if (btnRun) btnRun.disabled = false;
   }
 });
 
@@ -727,15 +727,15 @@ async function executionLoop() {
       setTimeout(r, chkAnimate && chkAnimate.checked ? 100 : 50)
     );
   }
-  btnStep.disabled = cpu.halted;
-  btnRun.disabled = cpu.halted;
+  if (btnStep) btnStep.disabled = cpu.halted;
+  if (btnRun) btnRun.disabled = cpu.halted;
 }
 
-btnRun.addEventListener("click", () => {
+btnRun?.addEventListener("click", () => {
   if (runLoopActive) return;
   runLoopActive = true;
-  btnRun.disabled = true;
-  btnStep.disabled = true;
+  if (btnRun) btnRun.disabled = true;
+  if (btnStep) btnStep.disabled = true;
   printConsole("Pipeline execution loop running...");
   executionLoop();
 });
@@ -762,10 +762,10 @@ function resetHardwareState(clearRAM = true) {
   updateHardwareDashboard();
 }
 
-document.getElementById("btn-reset").addEventListener("click", () => {
+document.getElementById("btn-reset")?.addEventListener("click", () => {
   resetHardwareState(true);
-  btnStep.disabled = true;
-  btnRun.disabled = true;
+  if (btnStep) btnStep.disabled = true;
+  if (btnRun) btnRun.disabled = true;
   printConsole("Pipeline state flushed. RAM cleared.");
 });
 

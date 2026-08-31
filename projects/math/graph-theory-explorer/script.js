@@ -77,9 +77,9 @@
         return { x: transformed.x, y: transformed.y };
     }
 
-    canvas.addEventListener("click", evt => {
+    canvas?.addEventListener("click", evt => {
         // Ignore clicks that landed on a node (handled separately) or during playback.
-        if (playing || evt.target.closest(".node-circle") || evt.target.closest(".node-label")) return;
+        if (playing || evt.target?.closest(".node-circle") || evt.target?.closest(".node-label")) return;
         if (mode !== "add-node") return;
         const { x, y } = getSvgPoint(evt);
         addNode(x, y);
@@ -89,11 +89,11 @@
         if (mode !== "add-edge" || playing) return;
         if (!edgeFirstNode) {
             edgeFirstNode = nodeId;
-            canvasHint.textContent = `Now click a second node to connect to ${nodeId}`;
+            if (canvasHint) canvasHint.textContent = `Now click a second node to connect to ${nodeId}`;
         } else {
             addEdge(edgeFirstNode, nodeId);
             edgeFirstNode = null;
-            canvasHint.textContent = "Click two nodes to connect them";
+            if (canvasHint) canvasHint.textContent = "Click two nodes to connect them";
         }
     }
 
@@ -106,7 +106,7 @@
         evt.stopPropagation();
     }
 
-    canvas.addEventListener("mousemove", evt => {
+    canvas?.addEventListener("mousemove", evt => {
         if (!draggingNode) return;
         const { x, y } = getSvgPoint(evt);
         const node = nodes.find(n => n.id === draggingNode);
@@ -124,6 +124,7 @@
     // ===================== RENDERING =====================
 
     function clearSvg() {
+        if (!canvas) return;
         while (canvas.firstChild) canvas.removeChild(canvas.firstChild);
     }
 
@@ -262,11 +263,12 @@
     // ===================== RANDOM / CLEAR =====================
 
     function flashButton(button) {
+        if (!button) return;
         button.classList.add("btn-flash");
         setTimeout(() => button.classList.remove("btn-flash"), 200);
     }
 
-    document.getElementById("btn-random").addEventListener("click", () => {
+    document.getElementById("btn-random")?.addEventListener("click", () => {
         flashButton(document.getElementById("btn-random"));
         nodes = [];
         edges = [];
@@ -294,7 +296,7 @@
         render();
     });
 
-    document.getElementById("btn-clear").addEventListener("click", () => {
+    document.getElementById("btn-clear")?.addEventListener("click", () => {
         flashButton(document.getElementById("btn-clear"));
         nodes = [];
         edges = [];
@@ -402,11 +404,11 @@
         steps = [];
         stepIndex = -1;
         finalResult = null;
-        resultPanel.textContent = "Waiting to start...";
+        if (resultPanel) resultPanel.textContent = "Waiting to start...";
         updatePlaybackUI();
     }
 
-    btnPlay.addEventListener("click", () => {
+    btnPlay?.addEventListener("click", () => {
         if (playing) {
             stopPlaying();
         } else {
@@ -418,17 +420,17 @@
         }
     });
 
-    btnNext.addEventListener("click", () => {
+    btnNext?.addEventListener("click", () => {
         if (steps.length === 0) steps = computeSteps();
         goToStep(stepIndex + 1);
     });
 
-    btnPrev.addEventListener("click", () => goToStep(stepIndex - 1));
+    btnPrev?.addEventListener("click", () => goToStep(stepIndex - 1));
 
-    btnResetPlay.addEventListener("click", () => resetPlayback());
+    btnResetPlay?.addEventListener("click", () => resetPlayback());
 
-    speedSlider.addEventListener("input", () => {
-        speedDisplay.textContent = `${(Number(speedSlider.value) / 1000).toFixed(1)}s / step`;
+    speedSlider?.addEventListener("input", () => {
+        if (speedDisplay && speedSlider) speedDisplay.textContent = `${(Number(speedSlider.value) / 1000).toFixed(1)}s / step`;
         if (playing) {
             stopPlaying();
             startPlaying();
@@ -438,14 +440,16 @@
     // ===================== THEME TOGGLE =====================
     const themeToggle = document.getElementById("theme-toggle");
     const themeIcon = document.getElementById("theme-icon");
-    themeToggle.addEventListener("click", () => {
+    themeToggle?.addEventListener("click", () => {
         const isLight = document.documentElement.classList.toggle("light-theme");
         themeToggle.setAttribute("aria-pressed", String(isLight));
-        themeIcon.classList.toggle("fa-moon", !isLight);
-        themeIcon.classList.toggle("fa-sun", isLight);
+        if (themeIcon) {
+            themeIcon.classList.toggle("fa-moon", !isLight);
+            themeIcon.classList.toggle("fa-sun", isLight);
+        }
     });
 
     // ===================== INIT =====================
-    endGroup.style.display = "none"; // only relevant for Dijkstra
+    if (endGroup) endGroup.style.display = "none"; // only relevant for Dijkstra
     render();
 })();

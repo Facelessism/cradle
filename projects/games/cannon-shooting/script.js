@@ -19,16 +19,19 @@ fireAudio.onerror = () => {
 let stats = CannonStorage.loadStats();
 
 function updateHUD() {
-  document.getElementById("hud-score").textContent = stats.score;
-  document.getElementById("hud-high-score").textContent = stats.highScore;
-  document.getElementById("hud-streak").textContent =
-    stats.currentStreak + "🔥";
-  document.getElementById("hud-best-streak").textContent = stats.bestStreak;
+  const setTxt = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
+  setTxt("hud-score", stats.score);
+  setTxt("hud-high-score", stats.highScore);
+  setTxt("hud-streak", stats.currentStreak + "🔥");
+  setTxt("hud-best-streak", stats.bestStreak);
   const acc =
     stats.totalShots > 0
       ? Math.round((stats.totalHits / stats.totalShots) * 100)
       : 100;
-  document.getElementById("hud-accuracy").textContent = acc + "%";
+  setTxt("hud-accuracy", acc + "%");
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -51,7 +54,8 @@ function animateLeft(el, targetLeft, duration, callback) {
 
 setInterval(() => {
   countdown = countdown > 0 ? countdown : 0;
-  document.querySelector(".countdown").textContent = countdown--;
+  const cd = document.querySelector(".countdown");
+  if (cd) cd.textContent = countdown--;
 }, 1000);
 
 setInterval(() => {
@@ -65,19 +69,21 @@ setInterval(() => {
   let ballMileage = CannonEngine.calculateBallMileage(cmCanX, cmCanAngle);
   countdown = fireTime / 1000 - 3;
 
-  cmCanPipe.style.transform = "rotate(" + cmCanAngle + "deg)";
-  cmCan.style.transform = "translateX(" + cmCanX + "cm)";
-  document.querySelector(".cm .wheel").style.transform =
-    "rotate(" + cmCanX + "deg)";
+  if (cmCanPipe) cmCanPipe.style.transform = "rotate(" + cmCanAngle + "deg)";
+  if (cmCan) cmCan.style.transform = "translateX(" + cmCanX + "cm)";
+  const cmWheel = document.querySelector(".cm .wheel");
+  if (cmWheel) cmWheel.style.transform = "rotate(" + cmCanX + "deg)";
 
-  document.querySelector(".level-monitor").textContent = cmCanAngle;
+  const lvlMon = document.querySelector(".level-monitor");
+  if (lvlMon) lvlMon.textContent = cmCanAngle;
   canBalls.forEach((ball) => {
     ball.style.transition = "";
     ball.style.left = "0";
   });
   allPipe.forEach((pipe) => pipe.classList.remove("fire"));
-  document.querySelector(".game-container").classList.remove("defended");
-  document.querySelector(".level").style.width = ballMileage + "cm";
+  document.querySelector(".game-container")?.classList.remove("defended");
+  const levelEl = document.querySelector(".level");
+  if (levelEl) levelEl.style.width = ballMileage + "cm";
 
   setTimeout(() => {
     let comCanX = cmCanX * 37.79;
@@ -106,7 +112,7 @@ setInterval(() => {
     updateHUD();
 
     if (isHit) {
-      document.querySelector(".game-container").classList.add("defended");
+      document.querySelector(".game-container")?.classList.add("defended");
       canBalls.forEach((ball) => {
         animateLeft(ball, -ballMileage + 4.23 + "cm", 500, () => {
           try {
@@ -122,7 +128,7 @@ setInterval(() => {
 
 document
   .querySelector(".wheel-handle")
-  .addEventListener("mousedown", function (e) {
+  ?.addEventListener("mousedown", function (e) {
     const clickX = e.pageX;
     let canX = userCanX;
 
@@ -130,10 +136,10 @@ document
       let canDX = e.pageX - clickX + userCanX;
       canX = canDX < 375 && canDX > 35 ? canDX : canX;
 
-      document.querySelector(".user-col .cannon").style.transform =
-        "translateX(" + canX + "px)";
-      document.querySelector(".user-col .wheel").style.transform =
-        "rotate(" + canX + "deg)";
+      const userCannon = document.querySelector(".user-col .cannon");
+      if (userCannon) userCannon.style.transform = "translateX(" + canX + "px)";
+      const userWheel = document.querySelector(".user-col .wheel");
+      if (userWheel) userWheel.style.transform = "rotate(" + canX + "deg)";
     }
 
     function onMouseUp() {
@@ -148,7 +154,7 @@ document
 
 document
   .querySelector(".level-handle")
-  .addEventListener("mousedown", function (e) {
+  ?.addEventListener("mousedown", function (e) {
     const clickY = e.pageY;
     let canY = userCanY;
 
@@ -156,9 +162,10 @@ document
       let canDY = e.pageY - clickY + userCanY;
       canY = canDY < 65 && canDY > -5 ? canDY : canY;
 
-      document.querySelector(".level-handle").textContent = canY;
-      document.querySelector(".user-col .pipe").style.transform =
-        "rotate(" + canY + "deg)";
+      const lvlHandle = document.querySelector(".level-handle");
+      if (lvlHandle) lvlHandle.textContent = canY;
+      const userPipe = document.querySelector(".user-col .pipe");
+      if (userPipe) userPipe.style.transform = "rotate(" + canY + "deg)";
     }
 
     function onMouseUp() {

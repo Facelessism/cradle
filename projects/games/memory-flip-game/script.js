@@ -253,9 +253,9 @@ function endGame(victory) {
 // Events
 // ---------------------------------------------------------
 
-document.getElementById("startBtn").addEventListener("click", startGame);
-document.getElementById("restartBtn").addEventListener("click", startGame);
-document.getElementById("playAgainBtn").addEventListener("click", startGame);
+document.getElementById("startBtn")?.addEventListener("click", startGame);
+document.getElementById("restartBtn")?.addEventListener("click", startGame);
+document.getElementById("playAgainBtn")?.addEventListener("click", startGame);
 
 // Initialize High Scores on load
 updateHighScoreDisplays();

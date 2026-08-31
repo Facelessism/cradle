@@ -66,7 +66,7 @@ function orderedSquares() {
 }
 
 function render() {
-  boardElement.innerHTML = "";
+  if (boardElement) boardElement.innerHTML = "";
 
   const legalKeys = new Set(
     legalTargets.map(move => `${move.to.row},${move.to.col}`)
@@ -113,29 +113,33 @@ function render() {
     if (piece) {
       const pieceNode = document.createElement("span");
       pieceNode.className = `piece ${piece.color}`;
-      pieceNode.innerHTML = SYMBOLS[piece.color][piece.type];
+      pieceNode.innerHTML = SYMBOLS[piece.color]?.[piece.type] || "";
       square.appendChild(pieceNode);
     }
 
     square.addEventListener("click", () => handleSquareClick(row, col));
-    boardElement.appendChild(square);
+    if (boardElement) boardElement.appendChild(square);
   });
 
   updatePanels();
 }
 
 function updatePanels() {
-  turnLabel.textContent = turn === WHITE ? "White" : "Black";
+  if (turnLabel) turnLabel.textContent = turn === WHITE ? "White" : "Black";
 
-  whiteCaptures.innerHTML = capturedByWhite.length
-    ? capturedByWhite.map(piece => SYMBOLS[piece.color][piece.type]).join(" ")
-    : "None";
+  if (whiteCaptures) {
+    whiteCaptures.innerHTML = capturedByWhite.length
+      ? capturedByWhite.map(piece => SYMBOLS[piece?.color]?.[piece?.type] || "").join(" ")
+      : "None";
+  }
 
-  blackCaptures.innerHTML = capturedByBlack.length
-    ? capturedByBlack.map(piece => SYMBOLS[piece.color][piece.type]).join(" ")
-    : "None";
+  if (blackCaptures) {
+    blackCaptures.innerHTML = capturedByBlack.length
+      ? capturedByBlack.map(piece => SYMBOLS[piece?.color]?.[piece?.type] || "").join(" ")
+      : "None";
+  }
 
-  moveCount.textContent = history.length;
+  if (moveCount) moveCount.textContent = history.length;
 
   let moveHtml = "";
 
@@ -157,7 +161,7 @@ function updatePanels() {
     moveHtml += `</li>`;
   }
 
-  moveList.innerHTML = moveHtml;
+  if (moveList) moveList.innerHTML = moveHtml;
 
   const undoBtn = document.getElementById("undoMove");
   const redoBtn = document.getElementById("redoMove");
@@ -491,7 +495,7 @@ function getReportError(report) {
 }
 
 function checkTriggerAI() {
-  const mode = document.getElementById("gameMode").value;
+  const mode = document.getElementById("gameMode")?.value;
 
   if (mode === "computer" && turn === BLACK && !gameOver) {
     triggerAI();
@@ -517,7 +521,7 @@ function triggerAI() {
   cancelAI();
   isComputerThinking = true;
 
-  setStatus(statusElement.textContent + " Computer is thinking...");
+  setStatus((statusElement ? statusElement.textContent : "") + " Computer is thinking...");
 
   if (!aiWorker) {
     aiWorker = new Worker("ai-worker.js");
@@ -540,8 +544,9 @@ function triggerAI() {
           "AI error: unexpected worker message. Switching to local mode."
         );
 
-        document.getElementById("gameMode").value = "local";
-        document.getElementById("aiDifficulty").classList.add("hidden");
+        const gm = document.getElementById("gameMode");
+        if (gm) gm.value = "local";
+        document.getElementById("aiDifficulty")?.classList.add("hidden");
 
         render();
         return;
@@ -580,24 +585,19 @@ function triggerAI() {
         return;
       }
 
-      if (data.type === "cancelled") {
-        isComputerThinking = false;
-        render();
-        return;
-      }
-
       if (data.type === "error") {
         logChessWorkerFailure({
-          errorType: "WorkerError",
-          message: data.message || "Unknown error.",
+          errorType: "WorkerLogicError",
+          message: data.message,
           context: "onmessage",
         });
 
         isComputerThinking = false;
         setStatus(`AI error: ${data.message || "Unknown error."}`);
 
-        document.getElementById("gameMode").value = "local";
-        document.getElementById("aiDifficulty").classList.add("hidden");
+        const gm = document.getElementById("gameMode");
+        if (gm) gm.value = "local";
+        document.getElementById("aiDifficulty")?.classList.add("hidden");
         render();
       }
     };
@@ -612,8 +612,9 @@ function triggerAI() {
       isComputerThinking = false;
       setStatus("AI error. Switching to manual mode.");
 
-      document.getElementById("gameMode").value = "local";
-      document.getElementById("aiDifficulty").classList.add("hidden");
+      const gm = document.getElementById("gameMode");
+      if (gm) gm.value = "local";
+      document.getElementById("aiDifficulty")?.classList.add("hidden");
 
       aiWorker.terminate();
       aiWorker = null;
@@ -622,7 +623,8 @@ function triggerAI() {
     };
   }
 
-  const depth = parseInt(document.getElementById("aiDifficulty").value, 10);
+  const aiDiff = document.getElementById("aiDifficulty");
+  const depth = aiDiff ? parseInt(aiDiff.value, 10) : 3;
 
   aiSearchId++;
 
@@ -650,7 +652,7 @@ function undoMove() {
   cancelAI();
 
   const isComputerMode =
-    document.getElementById("gameMode").value === "computer";
+    document.getElementById("gameMode")?.value === "computer";
 
   let previous = history.pop();
 
@@ -721,7 +723,7 @@ function redoMove() {
   cancelAI();
 
   const isComputerMode =
-    document.getElementById("gameMode").value === "computer";
+    document.getElementById("gameMode")?.value === "computer";
 
   let next = redoStack.pop();
 
@@ -795,7 +797,7 @@ function generatePGN() {
   let result = "*";
 
   if (gameOver) {
-    const statusText = statusElement.textContent;
+    const statusText = statusElement ? statusElement.textContent : "";
 
     if (statusText.includes("White wins")) result = "1-0";
     else if (statusText.includes("Black wins")) result = "0-1";
@@ -806,7 +808,7 @@ function generatePGN() {
 }
 
 function setStatus(text) {
-  statusElement.textContent = text;
+  if (statusElement) statusElement.textContent = text;
 }
 
 function capitalize(text) {
@@ -835,17 +837,18 @@ function newGame() {
   checkTriggerAI();
 }
 
-document.getElementById("newGame").addEventListener("click", newGame);
-document.getElementById("undoMove").addEventListener("click", undoMove);
-document.getElementById("redoMove").addEventListener("click", redoMove);
+document.getElementById("newGame")?.addEventListener("click", newGame);
+document.getElementById("undoMove")?.addEventListener("click", undoMove);
+document.getElementById("redoMove")?.addEventListener("click", redoMove);
 
-document.getElementById("copyPGN").addEventListener("click", () => {
+document.getElementById("copyPGN")?.addEventListener("click", () => {
   const pgn = generatePGN();
 
   navigator.clipboard
     .writeText(pgn)
     .then(() => {
       const btn = document.getElementById("copyPGN");
+      if (!btn) return;
       const originalText = btn.innerHTML;
 
       btn.innerHTML = `<span aria-hidden="true">✅</span> Copied!`;
@@ -857,19 +860,19 @@ document.getElementById("copyPGN").addEventListener("click", () => {
     });
 });
 
-document.getElementById("flipBoard").addEventListener("click", () => {
+document.getElementById("flipBoard")?.addEventListener("click", () => {
   flipped = !flipped;
   render();
 });
 
-document.getElementById("gameMode").addEventListener("change", e => {
+document.getElementById("gameMode")?.addEventListener("change", e => {
   const aiDiff = document.getElementById("aiDifficulty");
 
   if (e.target.value === "computer") {
-    aiDiff.classList.remove("hidden");
+    aiDiff?.classList.remove("hidden");
   } else {
     cancelAI();
-    aiDiff.classList.add("hidden");
+    aiDiff?.classList.add("hidden");
   }
 
   checkTriggerAI();
@@ -1064,7 +1067,7 @@ const loadFENBtn = document.getElementById("loadFEN");
 
 if (loadFENBtn) {
   loadFENBtn.addEventListener("click", () => {
-    const input = document.getElementById("fenInput").value;
+    const input = document.getElementById("fenInput")?.value;
 
     if (input) {
       loadFEN(input);
@@ -1080,7 +1083,8 @@ if (copyFENBtn) {
   copyFENBtn.addEventListener("click", () => {
     const fen = boardToFEN();
 
-    document.getElementById("fenInput").value = fen;
+    const fenInput = document.getElementById("fenInput");
+    if (fenInput) fenInput.value = fen;
 
     navigator.clipboard
       .writeText(fen)

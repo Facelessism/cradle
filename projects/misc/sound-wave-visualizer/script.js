@@ -113,16 +113,17 @@ const ui = {
 };
 
 // Canvas contexts
-const ctxWave = ui.canvasWaveform.getContext("2d");
-const ctxSpec = ui.canvasSpectrum.getContext("2d");
-const ctxSpgm = ui.canvasSpectrogram.getContext("2d");
+const ctxWave = ui.canvasWaveform ? ui.canvasWaveform.getContext("2d") : null;
+const ctxSpec = ui.canvasSpectrum ? ui.canvasSpectrum.getContext("2d") : null;
+const ctxSpgm = ui.canvasSpectrogram ? ui.canvasSpectrogram.getContext("2d") : null;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Canvas Setup — responsive sizing
 // ──────────────────────────────────────────────────────────────────────────────
 function resizeCanvases() {
   [ui.canvasWaveform, ui.canvasSpectrum, ui.canvasSpectrogram].forEach(c => {
-    const rect = c.parentElement.getBoundingClientRect();
+    if (!c) return;
+    const rect = c.parentElement ? c.parentElement.getBoundingClientRect() : c.getBoundingClientRect();
     c.width = Math.max(100, Math.floor(rect.width));
     c.height = Math.max(60, Math.floor(rect.height));
   });
@@ -348,6 +349,7 @@ function drawLoop() {
 function drawWaveform(data) {
   const c = ui.canvasWaveform;
   const cx = ctxWave;
+  if (!c || !cx) return;
   const W = c.width,
     H = c.height;
   const theme = COLOR_THEMES[settings.colorScheme];
@@ -420,6 +422,7 @@ function drawWaveform(data) {
 function drawSpectrum(data, bufferLength) {
   const c = ui.canvasSpectrum;
   const cx = ctxSpec;
+  if (!c || !cx) return;
   const W = c.width,
     H = c.height;
   const theme = COLOR_THEMES[settings.colorScheme];
@@ -481,6 +484,7 @@ function drawSpectrum(data, bufferLength) {
 function drawSpectrogram(data, bufferLength) {
   const c = ui.canvasSpectrogram;
   const cx = ctxSpgm;
+  if (!c || !cx) return;
   const W = c.width,
     H = c.height;
   const theme = COLOR_THEMES[settings.colorScheme];
@@ -514,6 +518,7 @@ function drawSpectrogram(data, bufferLength) {
 // Frequency Axis Labels
 // ──────────────────────────────────────────────────────────────────────────────
 function buildFreqAxis() {
+  if (!ui.freqAxis) return;
   if (!audioCtx) {
     ui.freqAxis.innerHTML = "";
     return;
@@ -530,13 +535,14 @@ function buildFreqAxis() {
 // ──────────────────────────────────────────────────────────────────────────────
 function renderRecordings() {
   if (recordings.length === 0) {
-    ui.recordingsList.innerHTML = "";
-    ui.emptyRecordings.hidden = false;
+    if (ui.recordingsList) ui.recordingsList.innerHTML = "";
+    if (ui.emptyRecordings) ui.emptyRecordings.hidden = false;
     return;
   }
-  ui.emptyRecordings.hidden = true;
+  if (ui.emptyRecordings) ui.emptyRecordings.hidden = true;
 
-  ui.recordingsList.innerHTML = recordings
+  if (ui.recordingsList) {
+    ui.recordingsList.innerHTML = recordings
     .slice()
     .reverse()
     .map(
@@ -553,15 +559,16 @@ function renderRecordings() {
     )
     .join("");
 
-  ui.recordingsList.querySelectorAll(".rec-play-btn").forEach(btn => {
+  ui.recordingsList?.querySelectorAll(".rec-play-btn").forEach(btn => {
     btn.addEventListener("click", () => togglePlayback(btn.dataset.id));
   });
-  ui.recordingsList.querySelectorAll(".rec-dl-btn").forEach(btn => {
+  ui.recordingsList?.querySelectorAll(".rec-dl-btn").forEach(btn => {
     btn.addEventListener("click", () => downloadRecording(btn.dataset.id));
   });
-  ui.recordingsList.querySelectorAll(".rec-del-btn").forEach(btn => {
+  ui.recordingsList?.querySelectorAll(".rec-del-btn").forEach(btn => {
     btn.addEventListener("click", () => deleteRecording(btn.dataset.id));
   });
+  }
 }
 
 function downloadRecording(recId) {
@@ -595,8 +602,8 @@ function deleteRecording(recId) {
 // Status Helper
 // ──────────────────────────────────────────────────────────────────────────────
 function setStatus(state, text) {
-  ui.statusDot.className = `status-dot ${state}`;
-  ui.statusText.textContent = text;
+  if (ui.statusDot) ui.statusDot.className = `status-dot ${state}`;
+  if (ui.statusText) ui.statusText.textContent = text;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -656,7 +663,7 @@ function escapeHtml(str) {
 // ──────────────────────────────────────────────────────────────────────────────
 // Event Wiring
 // ──────────────────────────────────────────────────────────────────────────────
-ui.btnRecord.addEventListener("click", () => {
+ui.btnRecord?.addEventListener("click", () => {
   if (isRecording) {
     stopRecording();
     stopAnimation();
@@ -673,13 +680,13 @@ ui.btnRecord.addEventListener("click", () => {
   }
 });
 
-ui.btnStop.addEventListener("click", () => {
+ui.btnStop?.addEventListener("click", () => {
   if (isRecording) stopRecording();
   stopAnimation();
 });
 
-ui.btnPlay.addEventListener("click", () => {
-  const recId = ui.btnPlay.dataset.recId;
+ui.btnPlay?.addEventListener("click", () => {
+  const recId = ui.btnPlay ? ui.btnPlay.dataset.recId : null;
   if (!recId) return;
   if (currentPlayback && currentPlayback.id === recId) {
     stopPlayback();
@@ -689,13 +696,14 @@ ui.btnPlay.addEventListener("click", () => {
   }
 });
 
-ui.btnDownload.addEventListener("click", () => {
-  const recId = ui.btnDownload.dataset.recId;
+ui.btnDownload?.addEventListener("click", () => {
+  const recId = ui.btnDownload ? ui.btnDownload.dataset.recId : null;
   if (recId) downloadRecording(recId);
 });
 
 // Settings
-ui.fftSizeSelect.addEventListener("change", () => {
+ui.fftSizeSelect?.addEventListener("change", () => {
+  if (!ui.fftSizeSelect) return;
   settings.fftSize = parseInt(ui.fftSizeSelect.value, 10);
   if (analyser) {
     applyAnalyserSettings();
@@ -703,34 +711,39 @@ ui.fftSizeSelect.addEventListener("change", () => {
   }
 });
 
-ui.smoothingRange.addEventListener("input", () => {
+ui.smoothingRange?.addEventListener("input", () => {
+  if (!ui.smoothingRange) return;
   settings.smoothing = parseFloat(ui.smoothingRange.value);
-  ui.smoothingVal.textContent = settings.smoothing.toFixed(2);
+  if (ui.smoothingVal) ui.smoothingVal.textContent = settings.smoothing.toFixed(2);
   if (analyser) applyAnalyserSettings();
 });
 
-ui.gainRange.addEventListener("input", () => {
+ui.gainRange?.addEventListener("input", () => {
+  if (!ui.gainRange) return;
   settings.gain = parseFloat(ui.gainRange.value);
-  ui.gainVal.textContent = `${settings.gain.toFixed(1)}×`;
+  if (ui.gainVal) ui.gainVal.textContent = `${settings.gain.toFixed(1)}×`;
   if (gainNode) gainNode.gain.value = settings.gain;
 });
 
-ui.colorSchemeSelect.addEventListener("change", () => {
+ui.colorSchemeSelect?.addEventListener("change", () => {
+  if (!ui.colorSchemeSelect) return;
   settings.colorScheme = ui.colorSchemeSelect.value;
   // Clear spectrogram when theme changes
-  ctxSpgm.clearRect(
-    0,
-    0,
-    ui.canvasSpectrogram.width,
-    ui.canvasSpectrogram.height
-  );
-  ctxSpgm.fillStyle = "#0a0e1a";
-  ctxSpgm.fillRect(
-    0,
-    0,
-    ui.canvasSpectrogram.width,
-    ui.canvasSpectrogram.height
-  );
+  if (ctxSpgm && ui.canvasSpectrogram) {
+    ctxSpgm.clearRect(
+      0,
+      0,
+      ui.canvasSpectrogram.width,
+      ui.canvasSpectrogram.height
+    );
+    ctxSpgm.fillStyle = "#0a0e1a";
+    ctxSpgm.fillRect(
+      0,
+      0,
+      ui.canvasSpectrogram.width,
+      ui.canvasSpectrogram.height
+    );
+  }
 });
 
 // Responsive canvas resize
@@ -744,7 +757,8 @@ const resizeObserver = new ResizeObserver(() => {
     drawSpectrum(freqBuf, freqBuf.length);
   }
 });
-resizeObserver.observe(document.querySelector(".visualizer-grid"));
+const visualizerGrid = document.querySelector(".visualizer-grid");
+if (visualizerGrid) resizeObserver.observe(visualizerGrid);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Init
@@ -753,8 +767,12 @@ resizeObserver.observe(document.querySelector(".visualizer-grid"));
   resizeCanvases();
 
   // Draw idle state on canvases
-  [ctxWave, ctxSpec, ctxSpgm].forEach((cx, i) => {
-    const c = [ui.canvasWaveform, ui.canvasSpectrum, ui.canvasSpectrogram][i];
+  [
+    { cx: ctxWave, c: ui.canvasWaveform },
+    { cx: ctxSpec, c: ui.canvasSpectrum },
+    { cx: ctxSpgm, c: ui.canvasSpectrogram },
+  ].forEach(({ cx, c }) => {
+    if (!cx || !c) return;
     cx.fillStyle = "#0a0e1a";
     cx.fillRect(0, 0, c.width, c.height);
     cx.fillStyle = "rgba(100,116,139,0.25)";

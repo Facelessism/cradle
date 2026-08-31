@@ -28,8 +28,8 @@ function showAlert(message) {
 function render() {
   const body = document.getElementById("attendance-body");
   const logBox = document.getElementById("history-log");
-  body.innerHTML = "";
-  logBox.innerHTML = "";
+  if (body) body.innerHTML = "";
+  if (logBox) logBox.innerHTML = "";
 
   const stats = calculateStats(data.subjects);
   const overallPctEl = document.getElementById("overallAttendance");
@@ -150,7 +150,7 @@ function render() {
     tdRemove.appendChild(btnRemove);
     tr.appendChild(tdRemove);
 
-    body.appendChild(tr);
+    if (body) body.appendChild(tr);
   });
 
   // Render Log Items cleanly without innerHTML compilation loops
@@ -159,7 +159,7 @@ function render() {
     const emptyMsg = document.createElement("p");
     emptyMsg.className = "history-empty";
     emptyMsg.textContent = "No attendance history yet.";
-    logBox.appendChild(emptyMsg);
+    if (logBox) logBox.appendChild(emptyMsg);
   } else {
     data.logs
       .slice(-15)
@@ -178,7 +178,7 @@ function render() {
 
         logDiv.appendChild(spanSub);
         logDiv.appendChild(spanType);
-        logBox.appendChild(logDiv);
+        if (logBox) logBox.appendChild(logDiv);
       });
   }
 
@@ -289,12 +289,14 @@ function importCSV(event) {
 }
 
 function openModal() {
-  document.getElementById("addModal").style.display = "flex";
+  const modal = document.getElementById("addModal");
+  if (modal) modal.style.display = "flex";
 }
 
 function closeModal() {
-  document.getElementById("addModal").style.display = "none";
-  document.getElementById("newSubjectForm").reset();
+  const modal = document.getElementById("addModal");
+  if (modal) modal.style.display = "none";
+  document.getElementById("newSubjectForm")?.reset();
 }
 
 window.addEventListener("click", event => {
@@ -307,9 +309,9 @@ window.addEventListener("click", event => {
 function addSubject(event) {
   event.preventDefault();
 
-  const name = document.getElementById("subName").value;
-  const total = document.getElementById("subTotal").value;
-  const target = document.getElementById("subTarget").value;
+  const name = document.getElementById("subName")?.value;
+  const total = document.getElementById("subTotal")?.value;
+  const target = document.getElementById("subTarget")?.value;
 
   if (name && total && target) {
     data.subjects.push({
@@ -373,22 +375,22 @@ function clearHistory() {
 
 document
   .querySelector(".btn-export-action")
-  .addEventListener("click", exportCSV);
+  ?.addEventListener("click", exportCSV);
 document
   .querySelector(".btn-import-action")
-  .addEventListener("click", triggerImport);
+  ?.addEventListener("click", triggerImport);
 document
   .getElementById("csvFileInput")
-  .addEventListener("change", importCSV);
+  ?.addEventListener("change", importCSV);
 document
   .getElementById("btn-new-subject")
-  .addEventListener("click", openModal);
+  ?.addEventListener("click", openModal);
 document
   .querySelector(".btn-clear-history-action")
-  .addEventListener("click", clearHistory);
-document.querySelector(".close-btn").addEventListener("click", closeModal);
+  ?.addEventListener("click", clearHistory);
+document.querySelector(".close-btn")?.addEventListener("click", closeModal);
 document
   .getElementById("newSubjectForm")
-  .addEventListener("submit", addSubject);
+  ?.addEventListener("submit", addSubject);
 
 render();

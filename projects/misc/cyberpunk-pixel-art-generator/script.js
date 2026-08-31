@@ -35,9 +35,9 @@ let rectStart = null
 const pixelCanvas = document.getElementById('pixelCanvas')
 const gridOverlay = document.getElementById('gridOverlay')
 const previewCanvas = document.getElementById('previewCanvas')
-const ctx = pixelCanvas.getContext('2d')
-const gridCtx = gridOverlay.getContext('2d')
-const previewCtx = previewCanvas.getContext('2d')
+const ctx = pixelCanvas ? pixelCanvas.getContext('2d') : null
+const gridCtx = gridOverlay ? gridOverlay.getContext('2d') : null
+const previewCtx = previewCanvas ? previewCanvas.getContext('2d') : null
 const canvasWrapper = document.getElementById('canvasWrapper')
 const paletteEl = document.getElementById('palette')
 const layersListEl = document.getElementById('layersList')
@@ -48,6 +48,7 @@ const historyCountEl = document.getElementById('historyCount')
 // ─── Canvas Sizing ─────────────────────────────────────────────────
 function getCanvasSize() {
   const area = document.querySelector('.canvas-area')
+  if (!area) return 400
   const maxW = area.clientWidth - 40
   const maxH = area.clientHeight - 60
   const size = Math.min(maxW, maxH, 560)
@@ -63,6 +64,7 @@ function initCanvas() {
   const ps = pixelSize()
 
   for (const c of [pixelCanvas, gridOverlay, previewCanvas]) {
+    if (!c) continue
     c.width = size
     c.height = size
     c.style.width = size + 'px'
@@ -86,6 +88,7 @@ function createEmptyGrid() {
 
 // ─── Rendering ─────────────────────────────────────────────────────
 function renderCanvas() {
+  if (!ctx || !pixelCanvas) return
   ctx.clearRect(0, 0, pixelCanvas.width, pixelCanvas.height)
 
   // Draw checker background
@@ -112,6 +115,7 @@ function renderCanvas() {
 }
 
 function renderGrid() {
+  if (!gridCtx || !gridOverlay) return
   gridCtx.clearRect(0, 0, gridOverlay.width, gridOverlay.height)
   const ps = pixelSize()
   gridCtx.strokeStyle = 'rgba(0, 255, 255, 0.08)'
@@ -130,11 +134,13 @@ function renderGrid() {
 }
 
 function clearPreview() {
+  if (!previewCtx || !previewCanvas) return
   previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height)
 }
 
 // ─── Palette ───────────────────────────────────────────────────────
 function renderPalette() {
+  if (!paletteEl) return
   paletteEl.innerHTML = ''
   for (const color of CYBER_PALETTE) {
     const el = document.createElement('div')
@@ -147,13 +153,16 @@ function renderPalette() {
 
 function selectColor(color) {
   currentColor = color
-  document.getElementById('customColor').value = color
-  document.getElementById('colorHex').textContent = color
+  const cc = document.getElementById('customColor')
+  if (cc) cc.value = color
+  const ch = document.getElementById('colorHex')
+  if (ch) ch.textContent = color
   renderPalette()
 }
 
 // ─── Layers UI ─────────────────────────────────────────────────────
 function renderLayers() {
+  if (!layersListEl) return
   layersListEl.innerHTML = ''
   layers.forEach((layer, i) => {
     const el = document.createElement('div')
@@ -221,7 +230,7 @@ function redo() {
 }
 
 function updateHistoryCount() {
-  historyCountEl.textContent = `${undoStack.length} steps`
+  if (historyCountEl) historyCountEl.textContent = `${undoStack.length} steps`
 }
 
 // ─── Drawing ───────────────────────────────────────────────────────
@@ -437,7 +446,8 @@ function importJson(file) {
     try {
       const data = JSON.parse(e.target.result)
       gridSize = data.gridSize || 16
-      document.getElementById('gridSize').value = gridSize
+      const gs = document.getElementById('gridSize')
+      if (gs) gs.value = gridSize
       layers = data.layers.map((l, i) => ({
         id: i + 1,
         name: l.name,
@@ -456,7 +466,7 @@ function importJson(file) {
 }
 
 // ─── Event Handlers ────────────────────────────────────────────────
-pixelCanvas.addEventListener('mousedown', (e) => {
+pixelCanvas?.addEventListener('mousedown', (e) => {
   if (!layers[activeLayerIndex]?.visible) return
   const { x, y } = getGridPos(e)
   isDrawing = true
@@ -485,9 +495,9 @@ pixelCanvas.addEventListener('mousedown', (e) => {
   }
 })
 
-pixelCanvas.addEventListener('mousemove', (e) => {
+pixelCanvas?.addEventListener('mousemove', (e) => {
   const { x, y } = getGridPos(e)
-  coordDisplay.textContent = `X: ${x}, Y: ${y}`
+  if (coordDisplay) coordDisplay.textContent = `X: ${x}, Y: ${y}`
 
   if (!isDrawing) return
 
@@ -499,26 +509,30 @@ pixelCanvas.addEventListener('mousemove', (e) => {
     renderCanvas()
   } else if (currentTool === 'line' && lineStart) {
     clearPreview()
-    previewCtx.strokeStyle = currentColor
-    previewCtx.lineWidth = pixelSize()
-    previewCtx.lineCap = 'square'
-    previewCtx.beginPath()
-    previewCtx.moveTo(lineStart.x * pixelSize() + pixelSize() / 2, lineStart.y * pixelSize() + pixelSize() / 2)
-    previewCtx.lineTo(x * pixelSize() + pixelSize() / 2, y * pixelSize() + pixelSize() / 2)
-    previewCtx.stroke()
+    if (previewCtx) {
+      previewCtx.strokeStyle = currentColor
+      previewCtx.lineWidth = pixelSize()
+      previewCtx.lineCap = 'square'
+      previewCtx.beginPath()
+      previewCtx.moveTo(lineStart.x * pixelSize() + pixelSize() / 2, lineStart.y * pixelSize() + pixelSize() / 2)
+      previewCtx.lineTo(x * pixelSize() + pixelSize() / 2, y * pixelSize() + pixelSize() / 2)
+      previewCtx.stroke()
+    }
   } else if (currentTool === 'rect' && rectStart) {
     clearPreview()
-    previewCtx.strokeStyle = currentColor
-    previewCtx.lineWidth = pixelSize()
-    const minX = Math.min(rectStart.x, x) * pixelSize()
-    const minY = Math.min(rectStart.y, y) * pixelSize()
-    const w = (Math.abs(x - rectStart.x) + 1) * pixelSize()
-    const h = (Math.abs(y - rectStart.y) + 1) * pixelSize()
-    previewCtx.strokeRect(minX, minY, w, h)
+    if (previewCtx) {
+      previewCtx.strokeStyle = currentColor
+      previewCtx.lineWidth = pixelSize()
+      const minX = Math.min(rectStart.x, x) * pixelSize()
+      const minY = Math.min(rectStart.y, y) * pixelSize()
+      const w = (Math.abs(x - rectStart.x) + 1) * pixelSize()
+      const h = (Math.abs(y - rectStart.y) + 1) * pixelSize()
+      previewCtx.strokeRect(minX, minY, w, h)
+    }
   }
 })
 
-pixelCanvas.addEventListener('mouseup', (e) => {
+pixelCanvas?.addEventListener('mouseup', (e) => {
   if (!isDrawing) return
   const { x, y } = getGridPos(e)
 
@@ -537,7 +551,7 @@ pixelCanvas.addEventListener('mouseup', (e) => {
   isDrawing = false
 })
 
-pixelCanvas.addEventListener('mouseleave', () => {
+pixelCanvas?.addEventListener('mouseleave', () => {
   isDrawing = false
   lineStart = null
   rectStart = null
@@ -584,14 +598,16 @@ function getColorAt(x, y) {
 }
 
 // Brush size
-document.getElementById('brushSize').addEventListener('input', (e) => {
+document.getElementById('brushSize')?.addEventListener('input', (e) => {
   brushSize = parseInt(e.target.value, 10)
-  document.getElementById('brushSizeLabel').textContent = brushSize + 'px'
+  const bsl = document.getElementById('brushSizeLabel')
+  if (bsl) bsl.textContent = brushSize + 'px'
 })
 
 // Grid size
-document.getElementById('applySize').addEventListener('click', () => {
-  const newSize = parseInt(document.getElementById('gridSize').value, 10)
+document.getElementById('applySize')?.addEventListener('click', () => {
+  const gs = document.getElementById('gridSize')
+  const newSize = gs ? parseInt(gs.value, 10) : gridSize
   if (newSize !== gridSize) {
     saveState()
     gridSize = newSize
@@ -604,12 +620,12 @@ document.getElementById('applySize').addEventListener('click', () => {
 })
 
 // Custom color
-document.getElementById('customColor').addEventListener('input', (e) => {
+document.getElementById('customColor')?.addEventListener('input', (e) => {
   selectColor(e.target.value)
 })
 
 // Layers
-document.getElementById('addLayer').addEventListener('click', () => {
+document.getElementById('addLayer')?.addEventListener('click', () => {
   saveState()
   layerIdCounter++
   layers.push({
@@ -622,7 +638,7 @@ document.getElementById('addLayer').addEventListener('click', () => {
   renderLayers()
 })
 
-document.getElementById('mergeLayers').addEventListener('click', () => {
+document.getElementById('mergeLayers')?.addEventListener('click', () => {
   if (activeLayerIndex <= 0) return
   saveState()
   const upper = layers[activeLayerIndex]
@@ -641,25 +657,25 @@ document.getElementById('mergeLayers').addEventListener('click', () => {
 })
 
 // Effects
-document.getElementById('effectGlow').addEventListener('click', applyNeonGlow)
-document.getElementById('effectScanlines').addEventListener('click', applyScanlines)
-document.getElementById('effectGlitch').addEventListener('click', applyGlitch)
-document.getElementById('effectMirror').addEventListener('click', applyMirrorX)
+document.getElementById('effectGlow')?.addEventListener('click', applyNeonGlow)
+document.getElementById('effectScanlines')?.addEventListener('click', applyScanlines)
+document.getElementById('effectGlitch')?.addEventListener('click', applyGlitch)
+document.getElementById('effectMirror')?.addEventListener('click', applyMirrorX)
 
 // History
-document.getElementById('undoBtn').addEventListener('click', undo)
-document.getElementById('redoBtn').addEventListener('click', redo)
+document.getElementById('undoBtn')?.addEventListener('click', undo)
+document.getElementById('redoBtn')?.addEventListener('click', redo)
 
 // Export / Import
-document.getElementById('exportPng').addEventListener('click', exportPng)
-document.getElementById('exportJson').addEventListener('click', exportJson)
-document.getElementById('importJson').addEventListener('click', () => {
-  document.getElementById('fileInput').click()
+document.getElementById('exportPng')?.addEventListener('click', exportPng)
+document.getElementById('exportJson')?.addEventListener('click', exportJson)
+document.getElementById('importJson')?.addEventListener('click', () => {
+  document.getElementById('fileInput')?.click()
 })
-document.getElementById('fileInput').addEventListener('change', (e) => {
+document.getElementById('fileInput')?.addEventListener('change', (e) => {
   if (e.target.files[0]) importJson(e.target.files[0])
 })
-document.getElementById('clearCanvas').addEventListener('click', () => {
+document.getElementById('clearCanvas')?.addEventListener('click', () => {
   if (confirm('Clear entire canvas?')) {
     saveState()
     for (const layer of layers) {

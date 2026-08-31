@@ -309,34 +309,36 @@ function createNoteCard(note) {
   card.classList.toggle("done", note.done);
   card.classList.toggle("pinned", note.pinned);
 
-  card.querySelector(".note-category").textContent = note.category;
-  card.querySelector(".note-time").textContent = formatRelativeTime(
-    note.createdAt
-  );
-  card.querySelector(".note-text").textContent = note.text;
-  card.querySelector(".note-tags").innerHTML = note.tags
-    .map(tag => `<span class="tag">#${escapeHtml(tag)}</span>`)
-    .join("");
+  const catEl = card.querySelector(".note-category");
+  if (catEl) catEl.textContent = note.category;
+  const timeEl = card.querySelector(".note-time");
+  if (timeEl) timeEl.textContent = formatRelativeTime(note.createdAt);
+  const textEl = card.querySelector(".note-text");
+  if (textEl) textEl.textContent = note.text;
+  const tagsEl = card.querySelector(".note-tags");
+  if (tagsEl) {
+    tagsEl.innerHTML = note.tags
+      .map(tag => `<span class="tag">#${escapeHtml(tag)}</span>`)
+      .join("");
+  }
 
-  card.querySelector('[data-action="pin"]').textContent = note.pinned
-    ? "Unpin"
-    : "Pin";
-  card.querySelector('[data-action="done"]').textContent = note.done
-    ? "Reopen"
-    : "Done";
+  const pinBtn = card.querySelector('[data-action="pin"]');
+  if (pinBtn) {
+    pinBtn.textContent = note.pinned ? "Unpin" : "Pin";
+    pinBtn.addEventListener("click", () => toggleNote(note.id, "pinned"));
+  }
 
-  card
-    .querySelector('[data-action="pin"]')
-    .addEventListener("click", () => toggleNote(note.id, "pinned"));
-  card
-    .querySelector('[data-action="done"]')
-    .addEventListener("click", () => toggleNote(note.id, "done"));
-  card
-    .querySelector('[data-action="edit"]')
-    .addEventListener("click", () => editNote(note.id));
-  card
-    .querySelector('[data-action="delete"]')
-    .addEventListener("click", () => deleteNote(note.id));
+  const doneBtn = card.querySelector('[data-action="done"]');
+  if (doneBtn) {
+    doneBtn.textContent = note.done ? "Reopen" : "Done";
+    doneBtn.addEventListener("click", () => toggleNote(note.id, "done"));
+  }
+
+  const editBtn = card.querySelector('[data-action="edit"]');
+  if (editBtn) editBtn.addEventListener("click", () => editNote(note.id));
+
+  const deleteBtn = card.querySelector('[data-action="delete"]');
+  if (deleteBtn) deleteBtn.addEventListener("click", () => deleteNote(note.id));
 
   return card;
 }

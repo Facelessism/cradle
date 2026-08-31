@@ -7,8 +7,8 @@
 /* ──── DOM Refs ────────────────────────────────────────────────────── */
 const compositeCanvas = document.getElementById('compositeCanvas');
 const harmonicsCanvas = document.getElementById('harmonicsCanvas');
-const ctxComposite = compositeCanvas.getContext('2d');
-const ctxHarmonics = harmonicsCanvas.getContext('2d');
+const ctxComposite = compositeCanvas ? compositeCanvas.getContext('2d') : null;
+const ctxHarmonics = harmonicsCanvas ? harmonicsCanvas.getContext('2d') : null;
 
 const waveBtns = document.querySelectorAll('.wave-btn');
 const freqSlider = document.getElementById('freqSlider');
@@ -50,15 +50,16 @@ const state = {
 
 /* ──── Canvas Sizing ───────────────────────────────────────────────── */
 function resizeCanvas(canvas) {
-  const rect = canvas.parentElement.getBoundingClientRect();
+  if (!canvas) return;
+  const rect = canvas.parentElement ? canvas.parentElement.getBoundingClientRect() : canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
   state.dpr = dpr;
   canvas.width = rect.width * dpr;
   canvas.height = rect.height * dpr;
   canvas.style.width = rect.width + 'px';
   canvas.style.height = rect.height + 'px';
-  ctxComposite.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctxHarmonics.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (ctxComposite) ctxComposite.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (ctxHarmonics) ctxHarmonics.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 function resizeAllCanvases() {
@@ -162,6 +163,7 @@ function drawCompositeFill(ctx, samples, w, h, color) {
 
 /* ──── Rendering ──────────────────────────────────────────────────── */
 function render() {
+  if (!compositeCanvas || !harmonicsCanvas) return;
   const cw = compositeCanvas.width / state.dpr;
   const ch = compositeCanvas.height / state.dpr;
   const hw = harmonicsCanvas.width / state.dpr;
@@ -184,26 +186,30 @@ function render() {
   const normalisedSamples = normalise(result.samples);
 
   // Update meta info
-  const effectiveHarmonics = result.harmonics.length;
+  const effectiveHarmonics = result.harmonics ? result.harmonics.length : 0;
   const displayedHarmonics = state.activeHarmonics.size > 0
     ? state.activeHarmonics.size
     : state.numHarmonics;
-  compositeMeta.textContent = `${displayedHarmonics} harmonic${displayedHarmonics !== 1 ? 's' : ''} · ${state.frequency} Hz`;
-  harmonicsMeta.textContent = `${effectiveHarmonics} active / ${state.numHarmonics} max`;
+  if (compositeMeta) compositeMeta.textContent = `${displayedHarmonics} harmonic${displayedHarmonics !== 1 ? 's' : ''} · ${state.frequency} Hz`;
+  if (harmonicsMeta) harmonicsMeta.textContent = `${effectiveHarmonics} active / ${state.numHarmonics} max`;
 
   // ── Composite Canvas ──
-  clearCanvas(ctxComposite, cw, ch);
-  drawGrid(ctxComposite, cw, ch);
-  drawCompositeFill(ctxComposite, normalisedSamples, cw, ch, 'var(--theme-accent)');
-  drawWaveform(ctxComposite, normalisedSamples, '#6366f1', cw, ch);
+  if (ctxComposite) {
+    clearCanvas(ctxComposite, cw, ch);
+    drawGrid(ctxComposite, cw, ch);
+    drawCompositeFill(ctxComposite, normalisedSamples, cw, ch, 'var(--theme-accent)');
+    drawWaveform(ctxComposite, normalisedSamples, '#6366f1', cw, ch);
+  }
 
   // ── Harmonics Canvas ──
-  clearCanvas(ctxHarmonics, hw, hh);
-  drawGrid(ctxHarmonics, hw, hh);
+  if (ctxHarmonics) {
+    clearCanvas(ctxHarmonics, hw, hh);
+    drawGrid(ctxHarmonics, hw, hh);
+  }
 
   const midY = hh / 2;
   const amp = (hh / 2) * 0.85;
-  const maxHarmToDraw = result.harmonics.length;
+  const maxHarmToDraw = result.harmonics ? result.harmonics.length : 0;
 
   for (let idx = 0; idx < maxHarmToDraw && idx < WAVE_COLORS.length; idx++) {
     const hData = result.harmonics[idx];
@@ -271,8 +277,9 @@ function updateLegend(harmonics) {
 
 /* ──── Harmonic List ──────────────────────────────────────────────── */
 function buildHarmonicList() {
+  if (!harmonicListEl) return;
   harmonicListEl.innerHTML = '';
-  const count = parseInt(harmCount.value, 10);
+  const count = harmCount ? parseInt(harmCount.value, 10) : 1;
 
   for (let n = 1; n <= count; n++) {
     const coeff = fourierCoeff(state.waveType, n);
@@ -327,17 +334,21 @@ function initTheme() {
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const isDark = saved !== null ? saved === 'dark' : prefersDark;
   document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-  themeIcon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-  themeToggle.setAttribute('aria-pressed', String(isDark));
+  applyTheme(isDark);
 }
 
-themeToggle.addEventListener('click', () => {
+function applyTheme(isDark) {
+  if (themeIcon) themeIcon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+  if (themeToggle) themeToggle.setAttribute('aria-pressed', String(isDark));
+}
+
+themeToggle?.addEventListener('click', () => {
   const current = document.documentElement.getAttribute('data-theme');
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('theme', next);
-  themeIcon.className = next === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-  themeToggle.setAttribute('aria-pressed', String(next === 'dark'));
+  if (themeIcon) themeIcon.className = next === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+  if (themeToggle) themeToggle.setAttribute('aria-pressed', String(next === 'dark'));
 });
 
 /* ──── Animation ──────────────────────────────────────────────────── */
@@ -345,8 +356,8 @@ function startAnimation() {
   if (state.animId) return;
   state.animate = true;
   state.animStartTime = performance.now();
-  animateIcon.className = 'fa-solid fa-pause';
-  animateBtn.innerHTML = '<i class="fa-solid fa-pause" id="animateIcon"></i> Pause';
+  if (animateIcon) animateIcon.className = 'fa-solid fa-pause';
+  if (animateBtn) animateBtn.innerHTML = '<i class="fa-solid fa-pause" id="animateIcon"></i> Pause';
 
   // Reset to first harmonic and build up progressively
   let currentStep = 1;
@@ -401,8 +412,8 @@ function stopAnimation() {
     cancelAnimationFrame(state.animId);
     state.animId = null;
   }
-  animateIcon.className = 'fa-solid fa-play';
-  animateBtn.innerHTML = '<i class="fa-solid fa-play" id="animateIcon"></i> Animate Build';
+  if (animateIcon) animateIcon.className = 'fa-solid fa-play';
+  if (animateBtn) animateBtn.innerHTML = '<i class="fa-solid fa-play" id="animateIcon"></i> Animate Build';
 
   // Restore full set
   if (state.activeHarmonics.size === 0) {
@@ -420,7 +431,7 @@ function updateHarmonicCheckboxes() {
   });
 }
 
-animateBtn.addEventListener('click', () => {
+animateBtn?.addEventListener('click', () => {
   if (state.animate) {
     stopAnimation();
   } else {
@@ -428,57 +439,60 @@ animateBtn.addEventListener('click', () => {
   }
 });
 
-resetBtn.addEventListener('click', () => {
+resetBtn?.addEventListener('click', () => {
   if (state.animate) stopAnimation();
   state.activeHarmonics.clear();
-  const count = parseInt(harmCount.value, 10);
+  const count = harmCount ? parseInt(harmCount.value, 10) : 1;
   // Set first harmonic only
   state.activeHarmonics.add(1);
   // Wait — reset should show all. Clear means "all active"
   state.activeHarmonics.clear();
   render();
   buildHarmonicList();
-  statusLeft.textContent = 'Reset to default view';
+  if (statusLeft) statusLeft.textContent = 'Reset to default view';
 });
 
 /* ──── Controls Setup ─────────────────────────────────────────────── */
 waveBtns.forEach((btn) => {
-  btn.addEventListener('click', () => {
-    waveBtns.forEach((b) => b.classList.remove('active'));
+  btn?.addEventListener('click', () => {
+    waveBtns.forEach((b) => b?.classList.remove('active'));
     btn.classList.add('active');
     state.waveType = btn.dataset.wave;
     state.activeHarmonics.clear();
     if (state.animate) stopAnimation();
     render();
     buildHarmonicList();
-    statusLeft.textContent = `Switched to ${state.waveType} wave`;
+    if (statusLeft) statusLeft.textContent = `Switched to ${state.waveType} wave`;
   });
 });
 
-freqSlider.addEventListener('input', () => {
+freqSlider?.addEventListener('input', () => {
+  if (!freqSlider) return;
   state.frequency = parseInt(freqSlider.value, 10);
-  freqDisplay.textContent = state.frequency + ' Hz';
+  if (freqDisplay) freqDisplay.textContent = state.frequency + ' Hz';
   if (state.animate) {
     // Just update — no reset needed
   }
   render();
-  statusLeft.textContent = `Frequency: ${state.frequency} Hz`;
+  if (statusLeft) statusLeft.textContent = `Frequency: ${state.frequency} Hz`;
 });
 
-harmCount.addEventListener('input', () => {
+harmCount?.addEventListener('input', () => {
+  if (!harmCount) return;
   const val = parseInt(harmCount.value, 10);
   state.numHarmonics = val;
-  harmDisplay.textContent = val;
+  if (harmDisplay) harmDisplay.textContent = val;
   state.activeHarmonics.clear();
   render();
   buildHarmonicList();
-  statusLeft.textContent = `Harmonics: ${val}`;
+  if (statusLeft) statusLeft.textContent = `Harmonics: ${val}`;
 });
 
-speedSlider.addEventListener('input', () => {
+speedSlider?.addEventListener('input', () => {
+  if (!speedSlider) return;
   state.speed = parseInt(speedSlider.value, 10);
-  speedDisplay.textContent = (state.speed / 1000).toFixed(1) + 's';
-  statusLeft.textContent = `Animation speed: ${state.speed}ms per cycle`;
+  if (speedDisplay) speedDisplay.textContent = (state.speed / 1000).toFixed(1) + 's';
+  if (statusLeft) statusLeft.textContent = `Animation speed: ${state.speed}ms per cycle`;
 });
 
 /* ──── Initialisation ─────────────────────────────────────────────── */
@@ -496,7 +510,7 @@ function init() {
   render();
 
   // Status
-  statusLeft.textContent = 'Ready — adjust controls to explore Fourier series';
+  if (statusLeft) statusLeft.textContent = 'Ready — adjust controls to explore Fourier series';
 }
 
 // Resize observer
@@ -504,8 +518,8 @@ const resizeObserver = new ResizeObserver(() => {
   resizeAllCanvases();
   render();
 });
-resizeObserver.observe(compositeCanvas.parentElement);
-resizeObserver.observe(harmonicsCanvas.parentElement);
+if (compositeCanvas?.parentElement) resizeObserver.observe(compositeCanvas.parentElement);
+if (harmonicsCanvas?.parentElement) resizeObserver.observe(harmonicsCanvas.parentElement);
 
 // Init on DOM ready
 if (document.readyState === 'loading') {

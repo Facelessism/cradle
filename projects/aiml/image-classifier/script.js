@@ -54,64 +54,66 @@ let customTestImageURL = null;
 let Engine = null;
 
 async function loadModel() {
-  resultDiv.innerHTML = `<p class="loading">Loading AI Model...</p>`;
+  if (resultDiv) resultDiv.innerHTML = `<p class="loading">Loading AI Model...</p>`;
   try {
     model = await mobilenet.load();
     knn = knnClassifier.create();
     isModelLoaded = true;
-    resultDiv.innerHTML = `<p class="loading">AI Model Ready</p>`;
+    if (resultDiv) resultDiv.innerHTML = `<p class="loading">AI Model Ready</p>`;
   } catch (error) {
     console.error("Failed to load MobileNet model:", error);
-    resultDiv.innerHTML = `<p class="loading">Failed to load AI Model</p>`;
+    if (resultDiv) resultDiv.innerHTML = `<p class="loading">Failed to load AI Model</p>`;
   }
 }
 loadModel();
 
 function resetPredictions() {
-  predictionPanel.classList.remove("active");
-  mainLayout.classList.remove("shifted");
-  resultDiv.innerHTML = "";
+  if (predictionPanel) predictionPanel.classList.remove("active");
+  if (mainLayout) mainLayout.classList.remove("shifted");
+  if (resultDiv) resultDiv.innerHTML = "";
 }
 
 document.querySelectorAll(".upload-btn").forEach(btn => {
-  btn.addEventListener("click", resetPredictions);
+  btn?.addEventListener("click", resetPredictions);
 });
 
 // Mode Switching
-standardModeBtn.addEventListener("click", () => {
+standardModeBtn?.addEventListener("click", () => {
   isCustomMode = false;
-  standardModeBtn.classList.add("active");
-  customModeBtn.classList.remove("active");
-  standardContent.style.display = "block";
-  customContent.style.display = "none";
+  if (standardModeBtn) standardModeBtn.classList.add("active");
+  if (customModeBtn) customModeBtn.classList.remove("active");
+  if (standardContent) standardContent.style.display = "block";
+  if (customContent) customContent.style.display = "none";
   resetPredictions();
 });
 
-customModeBtn.addEventListener("click", () => {
+customModeBtn?.addEventListener("click", () => {
   isCustomMode = true;
-  customModeBtn.classList.add("active");
-  standardModeBtn.classList.remove("active");
-  standardContent.style.display = "none";
-  customContent.style.display = "block";
+  if (customModeBtn) customModeBtn.classList.add("active");
+  if (standardModeBtn) standardModeBtn.classList.remove("active");
+  if (standardContent) standardContent.style.display = "none";
+  if (customContent) customContent.style.display = "block";
   resetPredictions();
 });
 
 // Standard Image Upload
-imageUpload.addEventListener("change", event => {
+imageUpload?.addEventListener("change", event => {
   const file = event.target.files[0];
   if (file) {
     if (previewObjectURL) {
       URL.revokeObjectURL(previewObjectURL);
     }
     previewObjectURL = URL.createObjectURL(file);
-    preview.src = previewObjectURL;
-    preview.style.display = "block";
-    uploadContent.style.display = "none";
+    if (preview) {
+      preview.src = previewObjectURL;
+      preview.style.display = "block";
+    }
+    if (uploadContent) uploadContent.style.display = "none";
   }
 });
 
 // Custom Test Image Upload
-customImageUpload.addEventListener("change", event => {
+customImageUpload?.addEventListener("change", event => {
   const file = event.target.files[0];
   if (file) {
     if (customTestImageURL) {
@@ -126,6 +128,7 @@ customImageUpload.addEventListener("change", event => {
 });
 
 function updateCustomPredictState() {
+  if (!customClassifyBtn) return;
   if (canPredictCustom(customClasses, customTestImage)) {
     customClassifyBtn.removeAttribute("disabled");
   } else {
@@ -134,7 +137,7 @@ function updateCustomPredictState() {
 }
 
 // Add Class
-addClassBtn.addEventListener("click", () => {
+addClassBtn?.addEventListener("click", () => {
   const className = newClassNameInput.value;
 
   const validation = validateClassName(className, customClasses);
@@ -167,6 +170,7 @@ function createElementWithText(tagName, className, text) {
 }
 
 function renderClasses() {
+  if (!classesContainer) return;
   classesContainer.innerHTML = "";
 
   customClasses.forEach(c => {
@@ -251,7 +255,7 @@ async function addImageToClass(event, id) {
 
   const classObj = customClasses.find(c => c.id === id);
   const imagesContainer = document.getElementById(`images-${id}`);
-  const addBtn = imagesContainer.querySelector(".add-image-btn");
+  const addBtn = imagesContainer ? imagesContainer.querySelector(".add-image-btn") : null;
 
   for (let file of files) {
     const img = new Image();
@@ -274,8 +278,8 @@ async function addImageToClass(event, id) {
         knn.addExample(activation, id);
 
         classObj.count++;
-        document.getElementById(`count-${id}`).textContent =
-          `${classObj.count} images`;
+        const countEl = document.getElementById(`count-${id}`);
+        if (countEl) countEl.textContent = `${classObj.count} images`;
 
         const wrapper = document.createElement("div");
         wrapper.className = "thumb-wrapper";
@@ -307,9 +311,9 @@ async function performPrediction() {
     return;
   }
 
-  predictionPanel.classList.add("active");
-  mainLayout.classList.add("shifted");
-  resultDiv.innerHTML = `<p class="loading">🔍 Analyzing...</p>`;
+  if (predictionPanel) predictionPanel.classList.add("active");
+  if (mainLayout) mainLayout.classList.add("shifted");
+  if (resultDiv) resultDiv.innerHTML = `<p class="loading">🔍 Analyzing...</p>`;
 
   try {
     if (!isCustomMode) {
@@ -360,16 +364,16 @@ async function performPrediction() {
         customClasses
       );
 
-
       renderPredictions(formatted);
     }
   } catch (error) {
-    resultDiv.innerHTML = `<p class="loading">❌ Error analyzing image</p>`;
+    if (resultDiv) resultDiv.innerHTML = `<p class="loading">❌ Error analyzing image</p>`;
     console.error(error);
   }
 }
 
 function renderPredictions(predictions) {
+  if (!resultDiv) return;
   resultDiv.innerHTML = "";
 
   if (predictions.length > 0 && predictions[0].probability < 0.1) {
@@ -413,8 +417,8 @@ function renderPredictions(predictions) {
   });
 }
 
-classifyBtn.addEventListener("click", performPrediction);
-customClassifyBtn.addEventListener("click", performPrediction);
+classifyBtn?.addEventListener("click", performPrediction);
+customClassifyBtn?.addEventListener("click", performPrediction);
 
 function cleanupObjectUrls() {
   if (previewObjectURL) {

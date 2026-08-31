@@ -259,19 +259,26 @@ function endGame() {
   }
 
   // Show results
-  document.getElementById('finalWpm').textContent = wpm
-  document.getElementById('finalAccuracy').textContent = acc
-  document.getElementById('finalWords').textContent = state.correctWords
-  document.getElementById('finalStreak').textContent = state.bestStreak
+  const finalWpm = document.getElementById('finalWpm')
+  if (finalWpm) finalWpm.textContent = wpm
+  const finalAccuracy = document.getElementById('finalAccuracy')
+  if (finalAccuracy) finalAccuracy.textContent = acc
+  const finalWords = document.getElementById('finalWords')
+  if (finalWords) finalWords.textContent = state.correctWords
+  const finalStreak = document.getElementById('finalStreak')
+  if (finalStreak) finalStreak.textContent = state.bestStreak
 
   const rankEl = document.getElementById('resultRank')
-  rankEl.textContent = rank.text
-  rankEl.style.background = rank.bg
-  rankEl.style.color = rank.color
+  if (rankEl) {
+    rankEl.textContent = rank.text
+    rankEl.style.background = rank.bg
+    rankEl.style.color = rank.color
+  }
 
   // Did the player win?
   const playerWon = state.opponentPos < (parseFloat(playerCar.style.left) || 0)
-  document.getElementById('resultTitle').textContent = playerWon ? '🏆 You Won!' : '🏁 Race Complete!'
+  const resultTitle = document.getElementById('resultTitle')
+  if (resultTitle) resultTitle.textContent = playerWon ? '🏆 You Won!' : '🏁 Race Complete!'
 
   resultsOverlay.hidden = false
 
@@ -282,26 +289,26 @@ function resetGame() {
   state.running = false
   clearInterval(state.timerId)
 
-  startBtn.hidden = false
-  resetBtn.hidden = true
-  statsBar.hidden = true
-  inputArea.hidden = true
-  resultsOverlay.hidden = true
+  if (startBtn) startBtn.hidden = false
+  if (resetBtn) resetBtn.hidden = true
+  if (statsBar) statsBar.hidden = true
+  if (inputArea) inputArea.hidden = true
+  if (resultsOverlay) resultsOverlay.hidden = true
 
-  wordDisplay.innerHTML = '<p class="placeholder-text">Press <strong>Start Race</strong> to begin typing!</p>'
+  if (wordDisplay) wordDisplay.innerHTML = '<p class="placeholder-text">Press <strong>Start Race</strong> to begin typing!</p>'
 
-  progressBar.style.width = '0%'
-  progressLabel.textContent = '0%'
-  playerCar.style.left = '0%'
+  if (progressBar) progressBar.style.width = '0%'
+  if (progressLabel) progressLabel.textContent = '0%'
+  if (playerCar) playerCar.style.left = '0%'
 
-  const opponentCar = opponentLane.querySelector('.car-icon')
+  const opponentCar = opponentLane ? opponentLane.querySelector('.car-icon') : null
   if (opponentCar) opponentCar.style.left = '0%'
 
-  wpmEl.textContent = '0'
+  if (wpmEl) wpmEl.textContent = '0'
 }
 
 // ─── Input Handling ────────────────────────────────────────────────
-typeInput.addEventListener('input', (e) => {
+typeInput?.addEventListener('input', (e) => {
   if (!state.running) return
 
   const val = typeInput.value
@@ -320,12 +327,12 @@ typeInput.addEventListener('input', (e) => {
       // Boost on streaks
       if (state.streak > 0 && state.streak % 5 === 0) {
         state.opponentPos = Math.max(0, state.opponentPos - 3)
-        playerCar.classList.add('boost-glow')
-        setTimeout(() => playerCar.classList.remove('boost-glow'), 500)
+        if (playerCar) playerCar.classList.add('boost-glow')
+        setTimeout(() => playerCar && playerCar.classList.remove('boost-glow'), 500)
       }
       if (state.streak > 0 && state.streak % 10 === 0) {
-        streakEl.classList.add('streak-flash')
-        setTimeout(() => streakEl.classList.remove('streak-flash'), 300)
+        if (streakEl) streakEl.classList.add('streak-flash')
+        setTimeout(() => streakEl && streakEl.classList.remove('streak-flash'), 300)
       }
     } else {
       state.wrongWords++
@@ -351,23 +358,23 @@ typeInput.addEventListener('input', (e) => {
 })
 
 // Prevent form submission
-typeInput.addEventListener('keydown', (e) => {
+typeInput?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     e.preventDefault()
   }
 })
 
 // ─── Event Listeners ───────────────────────────────────────────────
-startBtn.addEventListener('click', startGame)
-resetBtn.addEventListener('click', resetGame)
-playAgainBtn.addEventListener('click', () => {
-  resultsOverlay.hidden = true
+startBtn?.addEventListener('click', startGame)
+resetBtn?.addEventListener('click', resetGame)
+playAgainBtn?.addEventListener('click', () => {
+  if (resultsOverlay) resultsOverlay.hidden = true
   startGame()
 })
-closeResultsBtn.addEventListener('click', () => {
-  resultsOverlay.hidden = true
+closeResultsBtn?.addEventListener('click', () => {
+  if (resultsOverlay) resultsOverlay.hidden = true
   resetGame()
 })
 
 // ─── Init ──────────────────────────────────────────────────────────
-bestWpmEl.textContent = state.bestWpm
+if (bestWpmEl) bestWpmEl.textContent = state.bestWpm
