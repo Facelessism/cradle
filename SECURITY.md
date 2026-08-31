@@ -76,3 +76,17 @@ matching `event.origin` check.
 Where external resources are loaded over a CDN, pin the resource and use
 Subresource Integrity (`integrity="sha384-..."`) attributes so a compromised
 CDN cannot execute code in a visitor's browser.
+
+## Frame Embedding & Clickjacking Policy
+
+**Cradle mini-pages and interactive demos are designed for direct standalone navigation and must not be embedded in untrusted external frames.**
+
+To protect users against clickjacking (UI redressing) attacks, the following policy applies:
+
+1. **Standalone Execution Model:** All mini-projects (`projects/*/*/index.html`), UI components, and the main landing page (`index.html`) run directly in top-level browser contexts. No project in this repository requires or expects embedding inside third-party frames or iframes.
+2. **Clickjacking Defense via HTTP Headers:** Production hosting environments (such as GitHub Pages, Cloudflare, Netlify, or custom reverse proxies) should send HTTP response headers that restrict frame ancestry:
+   - `Content-Security-Policy: frame-ancestors 'self';` (or `frame-ancestors 'none';` where framing by the same origin is also unneeded)
+   - `X-Frame-Options: SAMEORIGIN` (or `DENY` for legacy browser fallback)
+3. **Repository Guardrails:** Repository validation tooling (`scripts/validate-no-dynamic-eval.js` and `scripts/validate-demo-html.js`) ensures that:
+   - Shipped pages do not dynamically construct unvalidated `<iframe>` elements or embed arbitrary external targets without security review.
+   - If an `<iframe>` is ever introduced for an isolated sandbox or interactive preview, it must use explicit `sandbox` attributes (e.g. `sandbox="allow-scripts"`) and never embed `javascript:` or untrusted `data:` URIs.
