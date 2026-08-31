@@ -87,3 +87,16 @@ To adhere to browser autoplay policies, respect user preferences, and avoid unex
 2. **No Eager or Auto-playing Audio:** Mini-projects and UI components must never initialize running audio graphs or call `.play()` during initial page load, `DOMContentLoaded`, or unprompted lifecycle events.
 3. **Graceful State Handling:** Applications using Web Audio should check `audioContext.state === "suspended"` upon user gesture and call `audioContext.resume()`, with error handling in case the promise is rejected.
 4. **Validation Guardrails:** Shipped code is guarded by repository tests ensuring audio initialization helpers conform to user-driven event handler pathways.
+## Frame Embedding & Clickjacking Policy
+
+**Cradle mini-pages and interactive demos are designed for direct standalone navigation and must not be embedded in untrusted external frames.**
+
+To protect users against clickjacking (UI redressing) attacks, the following policy applies:
+
+1. **Standalone Execution Model:** All mini-projects (`projects/*/*/index.html`), UI components, and the main landing page (`index.html`) run directly in top-level browser contexts. No project in this repository requires or expects embedding inside third-party frames or iframes.
+2. **Clickjacking Defense via HTTP Headers:** Production hosting environments (such as GitHub Pages, Cloudflare, Netlify, or custom reverse proxies) should send HTTP response headers that restrict frame ancestry:
+   - `Content-Security-Policy: frame-ancestors 'self';` (or `frame-ancestors 'none';` where framing by the same origin is also unneeded)
+   - `X-Frame-Options: SAMEORIGIN` (or `DENY` for legacy browser fallback)
+3. **Repository Guardrails:** Repository validation tooling (`scripts/validate-no-dynamic-eval.js` and `scripts/validate-demo-html.js`) ensures that:
+   - Shipped pages do not dynamically construct unvalidated `<iframe>` elements or embed arbitrary external targets without security review.
+   - If an `<iframe>` is ever introduced for an isolated sandbox or interactive preview, it must use explicit `sandbox` attributes (e.g. `sandbox="allow-scripts"`) and never embed `javascript:` or untrusted `data:` URIs.

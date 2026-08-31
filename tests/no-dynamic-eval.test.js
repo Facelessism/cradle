@@ -82,6 +82,24 @@ test("scanSource flags inline event handlers", () => {
   );
 });
 
+test("scanSource flags unsafe iframe targets", () => {
+  assert.ok(
+    namesOf('<iframe src="javascript:alert(1)"></iframe>').includes(
+      "unsafe iframe target"
+    )
+  );
+  assert.ok(
+    namesOf('<iframe src="data:text/html,<b>x</b>"></iframe>').includes(
+      "unsafe iframe target"
+    )
+  );
+  assert.ok(
+    namesOf('<iframe srcdoc="javascript:alert(1)"></iframe>').includes(
+      "unsafe iframe target"
+    )
+  );
+});
+
 test("scanSource does not treat // inside URLs as a comment", () => {
   assert.equal(namesOf('const url = "https://example.com/a";').length, 0);
 });

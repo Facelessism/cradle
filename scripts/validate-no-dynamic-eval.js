@@ -3,9 +3,9 @@ const path = require("path");
 
 // Guards shipped code against dynamic code-execution patterns (eval, Function
 // constructor, string-based timers, inline handlers, javascript: URLs,
-// non-literal importScripts). Follows the project's validate-* script
-// conventions: pure functions exported for tests + a CLI entry guarded by
-// require.main.
+// non-literal importScripts, and unsafe/unrestricted iframes). Follows the
+// project's validate-* script conventions: pure functions exported for tests +
+// a CLI entry guarded by require.main.
 //
 // Scan scope is the deployable surface: projects/, src/, and root-level files.
 // tests/ (fixtures intentionally contain malicious strings) and scripts/
@@ -37,6 +37,11 @@ const PATTERNS = [
     name: "inline event handler",
     regex:
       /\son(?:abort|change|click|dblclick|error|input|keydown|keypress|keyup|load|mouseover|submit)\s*=\s*["']/i,
+  },
+  {
+    name: "unsafe iframe target",
+    regex:
+      /<iframe\b[^>]*(?:src|srcdoc)\s*=\s*["']\s*(?:javascript:|data:text\/html)/i,
   },
 ];
 
