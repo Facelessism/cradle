@@ -81,22 +81,171 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const regex = new RegExp(pattern, flags);
-      
-      // 1. Generate Explainer
-      generateExplainer(pattern);
+  const regex = new RegExp(pattern, flags);
 
-      // 2. Perform Matching & Highlighting
-      processMatches(regex, testString);
-      
-    } catch (e) {
-      regexError.classList.remove('hidden');
-      regexError.textContent = `Regex Error: ${e.message}`;
-      highlightsOverlay.innerHTML = escapeHtml(testString);
-      matchCountBadge.textContent = '0 Matches';
-      matchesTableBody.innerHTML = '<tr><td colspan="4" class="table-placeholder">Invalid regex syntax.</td></tr>';
+  // 1. Generate Explainer
+  generateExplainer(pattern);
+
+  // 2. Perform Matching & Highlighting
+  processMatches(regex, testString);
+
+} catch (e) {
+  const errorDetails = getRegexErrorDetails(e, pattern);
+
+  regexError.classList.remove('hidden');
+  regexError.innerHTML = `
+    <strong>Regex Error:</strong> ${escapeHtml(errorDetails.message)}
+    ${
+      errorDetails.position !== null
+        ? `<br><span class="regex-error-position">
+            Problem near position ${errorDetails.position}:
+            <code>${escapeHtml(errorDetails.snippet)}</code>
+          </span>`
+        : ''
+    }
+  `;
+
+  highlightsOverlay.innerHTML = escapeHtml(testString);
+  matchCountBadge.textContent = '0 Matches';
+
+  matchesTableBody.innerHTML = `
+    <tr>
+      <td colspan="4" class="table-placeholder">
+        ${escapeHtml(errorDetails.message)}
+      </td>
+    </tr>
+  `;
+   }
+  }
+  function getRegexErrorDetails(error, pattern) {
+  const message = error?.message || 'Invalid regular expression.';
+
+  // JavaScript engines may report errors such as:
+  // "Invalid regular expression: /.../: Unterminated group"
+  // "Invalid regular expression: /.../: Invalid character class"
+  // "... at position 5"
+  const positionMatch = message.match(/(?:position|at position)\s*(\d+)/i);
+
+  let position = positionMatch ? Number(positionMatch[1]) : null;
+
+  // Some engines don't provide a position. Try to identify
+  // an obvious problematic section from the pattern itself.
+  if (position === null) {
+    if (hasUnclosedCharacterClass(pattern)) {
+      position = pattern.lastIndexOf('[');
+    } else if (hasUnclosedGroup(pattern)) {
+      position = findUnclosedGroupPosition(pattern);
+    } else if (hasTrailingEscape(pattern)) {
+      position = pattern.length - 1;
     }
   }
+
+  let snippet = '';
+
+  if (position !== null && position >= 0 && position < pattern.length) {
+    const start = Math.max(0, position - 5);
+    const end = Math.min(pattern.length, position + 6);
+
+    snippet =
+      pattern.substring(start, position) +
+      '👉' +
+      pattern.substring(position, end);
+  }
+
+  return {
+    message,
+    position,
+    snippet
+  };
+}
+
+function hasUnclosedCharacterClass(pattern) {
+  let escaped = false;
+
+  for (let i = 0; i < pattern.length; i++) {
+    const char = pattern[i];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+
+    if (char === '[') {
+      const closingIndex = pattern.indexOf(']', i + 1);
+
+      if (closingIndex === -1) {
+        return true;
+      }
+
+      i = closingIndex;
+    }
+  }
+
+  return false;
+}
+
+function hasUnclosedGroup(pattern) {
+  return findUnclosedGroupPosition(pattern) !== null;
+}
+
+function findUnclosedGroupPosition(pattern) {
+  const stack = [];
+  let escaped = false;
+  let inCharacterClass = false;
+
+  for (let i = 0; i < pattern.length; i++) {
+    const char = pattern[i];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+
+    if (char === '[') {
+      inCharacterClass = true;
+      continue;
+    }
+
+    if (char === ']' && inCharacterClass) {
+      inCharacterClass = false;
+      continue;
+    }
+
+    if (inCharacterClass) {
+      continue;
+    }
+
+    if (char === '(') {
+      stack.push(i);
+    } else if (char === ')') {
+      if (stack.length > 0) {
+        stack.pop();
+      }
+    }
+  }
+
+  return stack.length > 0 ? stack[stack.length - 1] : null;
+}
+
+function hasTrailingEscape(pattern) {
+  let backslashCount = 0;
+
+  for (let i = pattern.length - 1; i >= 0 && pattern[i] === '\\'; i--) {
+    backslashCount++;
+  }
+
+  return backslashCount % 2 === 1;
+}
 
   // Highlight matches and groups and construct detail tables
   function processMatches(regex, text) {
