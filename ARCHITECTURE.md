@@ -73,6 +73,7 @@ cradle/
 ├── ARCHITECTURE.md               # This file
 ├── ARCHITECTURE_TEMPLATE.md      # Template every project copies for its own ARCHITECTURE.md
 ├── TESTING.md                    # Unified testing architecture and CI strategy
+├── THIRD_PARTY_POLICY.md         # Rules for loading external models and scripts
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
 └── README.md
@@ -293,3 +294,4 @@ None at runtime. The site uses only native browser APIs (DOM, `fetch`, IndexedDB
 - [`ARCHITECTURE_TEMPLATE.md`](ARCHITECTURE_TEMPLATE.md) - standardized template used for every per-project `ARCHITECTURE.md`
 - [`src/components/ui/README.md`](src/components/ui/README.md) - usage docs for the shared Cradle UI component library
 - [`TESTING.md`](TESTING.md) - unified testing architecture and CI strategy
+- [`THIRD_PARTY_POLICY.md`](THIRD_PARTY_POLICY.md) - rules for loading external models and scripts
