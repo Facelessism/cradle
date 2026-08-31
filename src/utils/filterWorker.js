@@ -1,4 +1,8 @@
-import { isFilterRequest, isFilterResult } from "./messageValidation.js";
+import {
+  isFilterRequest,
+  isFilterResult,
+  sanitizeState,
+} from "./messageValidation.js";
 import { logWorkerFailure } from "./workerLogger.js";
 
 const WORKER_OPTIONS = { type: "module" };
@@ -57,7 +61,10 @@ export function createFilterWorker({
         return;
       }
 
-      onResult(event.data);
+      // Hand a produce-free copy to the consumer. Any dangerous key that
+      // slipped through validation is stripped so it can never merge into,
+      // or otherwise pollute, application state.
+      onResult(sanitizeState(event.data));
     };
 
     worker.onerror = event => {

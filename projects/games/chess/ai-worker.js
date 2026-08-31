@@ -53,6 +53,7 @@ function isValidBoard(board) {
   return (
     Array.isArray(board) &&
     board.length === 8 &&
+    !hasDangerousKeys(board) &&
     board.every(
       row =>
         Array.isArray(row) &&
@@ -61,6 +62,7 @@ function isValidBoard(board) {
           square =>
             square === null ||
             (typeof square === "object" &&
+              !hasDangerousKeys(square) &&
               typeof square.type === "string" &&
               VALID_COLORS.has(square.color))
         )
@@ -439,6 +441,16 @@ async function searchBestMove(
 
 onmessage = function (event) {
   const data = event.data || {};
+
+  // Reject payloads carrying prototype-pollution keys before touching any of
+  // it, so a poisoned message can never reach the engine or a merge site.
+  if (hasDangerousKeys(data)) {
+    postMessage({
+      type: "error",
+      message: "Invalid worker message.",
+    });
+    return;
+  }
 
   // Cancellation is now actually handled because the search periodically
   // yields back to the worker event loop.

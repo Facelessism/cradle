@@ -192,3 +192,27 @@ test("delivers valid worker results without invoking fallback or logging failure
   assert.equal(instance.terminated, false);
   assert.equal(logs.length, 0);
 });
+
+test("rejects filter results that carry prototype-pollution keys", () => {
+  const failures = [];
+  const results = [];
+  const { logs, logger } = createMockLogger();
+  createFilterWorker({
+    workerFactory: () => new FakeWorker(),
+    onResult: result => results.push(result),
+    onFailure: error => failures.push(error),
+    logger,
+  });
+  const instance = FakeWorker.instances[0];
+
+  instance.onmessage({ data: [JSON.parse('{"id":"chess","__proto__":{"evil":1}}')] });
+
+  assert.deepEqual(results, []);
+  assert.equal(failures.length, 1);
+  assert.equal(instance.terminated, true);
+  assert.equal(
+    failures[0].message,
+    "Worker returned an invalid search result"
+  );
+  assert.equal(logs[0].entry.errorType, "InvalidResultError");
+});
