@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
+const { discoverProjects, titleCase } = require("./project-discovery");
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 const PROJECTS_DIR = path.join(REPO_ROOT, "projects");
@@ -171,27 +172,7 @@ const defaultStyle = {
   </g>`
 };
 
-function titleCase(str) {
-  let title = str
-    .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, char => char.toUpperCase());
-
-  const acronyms = {
-    "Ai": "AI",
-    "Api": "API",
-    "Ascii": "ASCII",
-    "Cpu": "CPU",
-    "Qr": "QR",
-    "Css": "CSS",
-    "Json": "JSON",
-    "Url": "URL",
-    "Html": "HTML",
-    "Csv": "CSV"
-  };
-
-  return title.replace(/\b(Ai|Api|Ascii|Cpu|Qr|Css|Json|Url|Html|Csv)\b/g, match => acronyms[match]);
-}
-
+// titleCase has been moved to project-discovery.js
 function wrapText(text, maxChars = 20) {
   const words = text.split(" ");
   const lines = [];
@@ -329,96 +310,71 @@ function buildProjectsRegistry({
   ensureFullHistory(repoRoot);
   const existingDates = loadExistingDates(outputFile);
 
-  const categories = fs
-    .readdirSync(projectsDir, { withFileTypes: true })
-    .filter(dirent => dirent.isDirectory())
-    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
-
+  const discoveredProjects = discoverProjects(projectsDir, repoRoot);
   const seenPaths = new Set();
   const seenTitles = new Set();
 
-  for (const category of categories) {
-    const categoryName = path.basename(category.name);
-    const categoryPath = path.join(projectsDir, categoryName);
+  for (const proj of discoveredProjects) {
+    const { title, category: categoryName, relPath: projectPathStr, absPath: fullProjectPath } = proj;
 
-    const projectFolders = fs
-      .readdirSync(categoryPath, {
-        withFileTypes: true
-      })
-      .filter(dirent => dirent.isDirectory())
-      .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
-
-    for (const project of projectFolders) {
-      const projectName = path.basename(project.name);
-      const title = titleCase(projectName);
-      const projectPathStr = `projects/${categoryName}/${projectName}/`;
-      const fullProjectPath = path.join(repoRoot, projectPathStr);
-
-      // Validation checks
-      if (!title || title.trim() === "") {
-        errors.push(`Project in category '${categoryName}' has a missing or empty title.`);
-      }
-      if (!categoryName || categoryName.trim() === "") {
-        errors.push(`Project '${projectName}' has a missing or empty category.`);
-      }
-      if (!fs.existsSync(fullProjectPath)) {
-        errors.push(`Project path does not exist on disk: ${projectPathStr}`);
-      }
-      if (seenPaths.has(projectPathStr)) {
-        errors.push(`Duplicate project path detected: ${projectPathStr}`);
-      } else {
-        seenPaths.add(projectPathStr);
-      }
-      if (seenTitles.has(title)) {
-        errors.push(`Duplicate project title detected: '${title}'`);
-      } else {
-        seenTitles.add(title);
-      }
-
-      // Generate card thumbnail if requested and missing
-      if (generateThumbnails) {
-        const thumbnailPath = path.join(fullProjectPath, "thumbnail.svg");
-        if (fs.existsSync(fullProjectPath) && !fs.existsSync(thumbnailPath)) {
-          try {
-            generateSvgThumbnail(title, categoryName, fullProjectPath);
-          } catch (err) {
-            console.warn(
-              `⚠️  Could not generate thumbnail for ${projectPathStr}: ${err.message}`
-            );
-          }
-        }
-      }
-
-      let dateAdded = getDateAdded(fullProjectPath, repoRoot);
-      if (!dateAdded && existingDates.has(projectPathStr)) {
-        // git history wasn't available (shallow clone, no .git, etc.) —
-        // keep the last known-good date instead of losing it.
-        dateAdded = existingDates.get(projectPathStr);
-      }
-      if (!dateAdded && fs.existsSync(fullProjectPath)) {
-        // Last resort so a brand-new project (with no git history yet and
-        // no prior recorded date) still gets a usable dateAdded.
-        try {
-          dateAdded = fs.statSync(fullProjectPath).birthtime.toISOString();
-        } catch {
-          dateAdded = null;
-        }
-      }
-
-      projects.push({
-        title: title,
-        category: categoryName,
-        path: projectPathStr,
-        dateAdded: dateAdded
-      });
+    // Validation checks
+    if (!title || title.trim() === "") {
+      errors.push(`Project in category '${categoryName}' has a missing or empty title.`);
     }
-  }
+    if (!categoryName || categoryName.trim() === "") {
+      errors.push(`Project '${proj.name}' has a missing or empty category.`);
+    }
+    if (!fs.existsSync(fullProjectPath)) {
+      errors.push(`Project path does not exist on disk: ${projectPathStr}`);
+    }
+    if (seenPaths.has(projectPathStr)) {
+      errors.push(`Duplicate project path detected: ${projectPathStr}`);
+    } else {
+      seenPaths.add(projectPathStr);
+    }
+    if (seenTitles.has(title)) {
+      errors.push(`Duplicate project title detected: '${title}'`);
+    } else {
+      seenTitles.add(title);
+    }
 
-  projects.sort((a, b) => {
-    const comp = a.title.localeCompare(b.title, "en", { sensitivity: "base" });
-    if (comp !== 0) return comp;
-    return a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
-  });
+    // Generate card thumbnail if requested and missing
+    if (generateThumbnails) {
+      const thumbnailPath = path.join(fullProjectPath, "thumbnail.svg");
+      if (fs.existsSync(fullProjectPath) && !fs.existsSync(thumbnailPath)) {
+        try {
+          generateSvgThumbnail(title, categoryName, fullProjectPath);
+        } catch (err) {
+          console.warn(
+            `⚠️  Could not generate thumbnail for ${projectPathStr}: ${err.message}`
+          );
+        }
+      }
+    }
+
+    let dateAdded = getDateAdded(fullProjectPath, repoRoot);
+    if (!dateAdded && existingDates.has(projectPathStr)) {
+      // git history wasn't available (shallow clone, no .git, etc.) —
+      // keep the last known-good date instead of losing it.
+      dateAdded = existingDates.get(projectPathStr);
+    }
+    if (!dateAdded && fs.existsSync(fullProjectPath)) {
+      // Last resort so a brand-new project (with no git history yet and
+      // no prior recorded date) still gets a usable dateAdded.
+      try {
+        dateAdded = fs.statSync(fullProjectPath).birthtime.toISOString();
+      } catch {
+        dateAdded = null;
+      }
+    }
+
+    projects.push({
+      title: title,
+      category: categoryName,
+      path: projectPathStr,
+      dateAdded: dateAdded
+    });
+  }
 
   return { projects, errors };
 }
