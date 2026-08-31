@@ -5,6 +5,74 @@
     root.ClampCalculator = factory();
   }
 })(typeof self !== "undefined" ? self : this, function () {
+  // Attempt to load shared CSS sanitizer for property allowlist
+  let sanitizeCssProperty = null;
+  try {
+    if (typeof window !== "undefined" && window.CradleSanitizeCss) {
+      sanitizeCssProperty = window.CradleSanitizeCss.sanitizeCssProperty;
+    } else {
+      // Node.js: require shared utility
+      sanitizeCssProperty =
+        require("../../../src/components/ui/sanitizeCss.js").sanitizeCssProperty;
+    }
+  } catch (_) {
+    // Fallback inline allowlist if shared module not available (e.g., isolated test)
+    const ALLOWED = new Set([
+      "font-size",
+      "width",
+      "height",
+      "max-width",
+      "min-width",
+      "max-height",
+      "min-height",
+      "padding",
+      "padding-top",
+      "padding-right",
+      "padding-bottom",
+      "padding-left",
+      "padding-block",
+      "padding-inline",
+      "padding-block-start",
+      "padding-block-end",
+      "padding-inline-start",
+      "padding-inline-end",
+      "margin",
+      "margin-top",
+      "margin-right",
+      "margin-bottom",
+      "margin-left",
+      "margin-block",
+      "margin-inline",
+      "margin-block-start",
+      "margin-block-end",
+      "margin-inline-start",
+      "margin-inline-end",
+      "gap",
+      "row-gap",
+      "column-gap",
+      "inset",
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "flex-basis",
+      "line-height",
+      "letter-spacing",
+      "border-radius",
+      "border-width",
+      "grid-template-columns",
+      "grid-template-rows",
+    ]);
+    sanitizeCssProperty = function (prop, fallback) {
+      if (fallback === undefined) fallback = null;
+      if (typeof prop !== "string") return fallback;
+      const n = prop.trim().toLowerCase();
+      if (!/^[a-z][a-z0-9-]*$/.test(n)) return fallback;
+      if (!ALLOWED.has(n)) return fallback;
+      return n;
+    };
+  }
+
   const PRESETS = [
     {
       id: "font-size",
@@ -74,22 +142,33 @@
     const minValue = toNumber(input.minValue, "Minimum value");
     const maxValue = toNumber(input.maxValue, "Maximum value");
     const unit = input.unit || "rem";
-    const property = input.property || "font-size";
+    const rawProperty = input.property || "font-size";
 
     if (minViewport <= 0 || maxViewport <= 0) {
       throw new Error("Viewport values must be greater than zero.");
     }
 
     if (maxViewport <= minViewport) {
-      throw new Error("Maximum viewport must be greater than minimum viewport.");
+      throw new Error(
+        "Maximum viewport must be greater than minimum viewport."
+      );
     }
 
     if (maxValue < minValue) {
-      throw new Error("Maximum value must be greater than or equal to minimum value.");
+      throw new Error(
+        "Maximum value must be greater than or equal to minimum value."
+      );
     }
 
     if (!["px", "rem"].includes(unit)) {
       throw new Error("Unit must be px or rem.");
+    }
+
+    const property = sanitizeCssProperty(rawProperty, null);
+    if (property === null) {
+      throw new Error(
+        `Unsupported CSS property "${rawProperty}". Allowed properties are: font-size, width, height, max-width, min-width, max-height, min-height, padding, margin, gap, inset, etc.`
+      );
     }
 
     return {
@@ -124,9 +203,10 @@
     const intercept = `${formatNumber(result.intercept)}${result.unit}`;
     const slope = `${formatNumber(result.slope)}vw`;
     const operator = result.intercept < 0 ? "-" : "+";
-    const preferred = result.intercept < 0
-      ? `calc(${slope} - ${formatNumber(Math.abs(result.intercept))}${result.unit})`
-      : `calc(${intercept} ${operator} ${slope})`;
+    const preferred =
+      result.intercept < 0
+        ? `calc(${slope} - ${formatNumber(Math.abs(result.intercept))}${result.unit})`
+        : `calc(${intercept} ${operator} ${slope})`;
 
     return {
       ...result,
@@ -159,8 +239,10 @@
 
   function convertValue(value, fromUnit, toUnit, baseFontSize = 16) {
     if (fromUnit === toUnit) return toNumber(value, "Value");
-    if (fromUnit === "px" && toUnit === "rem") return pxToRem(value, baseFontSize);
-    if (fromUnit === "rem" && toUnit === "px") return remToPx(value, baseFontSize);
+    if (fromUnit === "px" && toUnit === "rem")
+      return pxToRem(value, baseFontSize);
+    if (fromUnit === "rem" && toUnit === "px")
+      return remToPx(value, baseFontSize);
     throw new Error("Unsupported unit conversion.");
   }
 

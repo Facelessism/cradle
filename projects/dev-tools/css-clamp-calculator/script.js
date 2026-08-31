@@ -37,7 +37,17 @@ function updatePreview(result) {
   previewBox.style.removeProperty("padding");
   previewBox.style.removeProperty("gap");
   previewBox.style.removeProperty("max-width");
-  previewBox.style.setProperty(result.property, result.clamp);
+  // Defensive: only set allowed properties (validate again even though
+  // ClampCalculator already sanitizes the property)
+  const isAllowed =
+    typeof window !== "undefined" &&
+    window.CradleSanitizeCss &&
+    window.CradleSanitizeCss.isAllowedCssProperty
+      ? window.CradleSanitizeCss.isAllowedCssProperty(result.property)
+      : /^[a-z][a-z0-9-]*$/.test(result.property);
+  if (isAllowed) {
+    previewBox.style.setProperty(result.property, result.clamp);
+  }
 
   if (result.property === "max-width") {
     previewBox.style.width = "100%";
@@ -73,12 +83,14 @@ function applyPreset(preset) {
 }
 
 function renderPresets() {
-  presetSelect.innerHTML = ClampCalculator.PRESETS
-    .map(preset => `<option value="${preset.id}">${preset.name}</option>`)
-    .join("");
+  presetSelect.innerHTML = ClampCalculator.PRESETS.map(
+    preset => `<option value="${preset.id}">${preset.name}</option>`
+  ).join("");
 
   presetSelect.addEventListener("change", () => {
-    const preset = ClampCalculator.PRESETS.find(item => item.id === presetSelect.value);
+    const preset = ClampCalculator.PRESETS.find(
+      item => item.id === presetSelect.value
+    );
     if (preset) applyPreset(preset);
   });
 }
@@ -115,7 +127,14 @@ function convertUnit() {
   }
 }
 
-[propertyInput, unitSelect, minViewport, maxViewport, minValue, maxValue].forEach(input => {
+[
+  propertyInput,
+  unitSelect,
+  minViewport,
+  maxViewport,
+  minValue,
+  maxValue,
+].forEach(input => {
   input.addEventListener("input", render);
   input.addEventListener("change", render);
 });
