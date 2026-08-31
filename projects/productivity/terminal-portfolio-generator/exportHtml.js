@@ -14,7 +14,7 @@
     accent: "#00ff00",
     cursor: "#33ff33",
     dim: "#1f7a1f",
-    error: "#ff5555"
+    error: "#ff5555",
   };
 
   /**
@@ -38,9 +38,46 @@
   }
 
   /**
+   * Validates a URL and returns it only when it uses a safe scheme.
+   *
+   * Allowed schemes: https, http, mailto, tel, or an empty string
+   * (no URL supplied at all).  Every other scheme — including data:,
+   * javascript:, vbscript:, blob:, and anything else — is rejected
+   * and the empty string is returned instead.
+   *
+   * This prevents executable data URIs or script injection from
+   * appearing in the generated HTML when links are embedded.
+   *
+   * @param {string} url - raw URL value from user input
+   * @returns {string} the original URL if safe, or "" if rejected
+   */
+  function sanitizeUrl(url) {
+    if (typeof url !== "string") return "";
+
+    const trimmed = url.trim();
+    if (trimmed === "") return "";
+
+    // A URL without any scheme (e.g. a bare hostname like "example.com")
+    // is treated as relative and is safe to pass through.
+    if (!trimmed.includes(":")) return trimmed;
+
+    // Extract the scheme (everything before the first colon).
+    const scheme = trimmed.slice(0, trimmed.indexOf(":")).toLowerCase();
+
+    const ALLOWED_SCHEMES = new Set(["https", "http", "mailto", "tel"]);
+    if (!ALLOWED_SCHEMES.has(scheme)) return "";
+
+    return trimmed;
+  }
+
+  /**
    * Renders a standalone HTML document showing the portfolio as
    * static terminal output, styled with the given theme, with no
    * external dependencies.
+   *
+   * All project links and contact URLs are passed through
+   * {@link sanitizeUrl} before being embedded, so data: URIs and
+   * other executable schemes cannot appear in the output.
    *
    * @param {Object} portfolio - the raw portfolio data (used for <title>)
    * @param {{commands: Object, autoRunOrder: string[]}} commandOutput
@@ -55,13 +92,10 @@
         ? commandOutput
         : {
             commands: {},
-            autoRunOrder: []
+            autoRunOrder: [],
           };
 
-    const rawTheme =
-      theme && typeof theme === "object"
-        ? theme
-        : DEFAULT_THEME;
+    const rawTheme = theme && typeof theme === "object" ? theme : DEFAULT_THEME;
 
     const t = {
       bg: sanitizeColor(rawTheme.bg, DEFAULT_THEME.bg),
@@ -69,17 +103,15 @@
       accent: sanitizeColor(rawTheme.accent, DEFAULT_THEME.accent),
       cursor: sanitizeColor(rawTheme.cursor, DEFAULT_THEME.cursor),
       dim: sanitizeColor(rawTheme.dim, DEFAULT_THEME.dim),
-      error: sanitizeColor(rawTheme.error, DEFAULT_THEME.error)
+      error: sanitizeColor(rawTheme.error, DEFAULT_THEME.error),
     };
 
     const title = escapeHtml(
-      p.name
-        ? `${p.name} — Terminal Portfolio`
-        : "Terminal Portfolio"
+      p.name ? `${p.name} — Terminal Portfolio` : "Terminal Portfolio"
     );
 
     const blocks = co.autoRunOrder
-      .map((cmdName) => {
+      .map(cmdName => {
         const cmd = co.commands[cmdName];
 
         if (!cmd) {
@@ -89,8 +121,7 @@
         const lines = Array.isArray(cmd.lines)
           ? cmd.lines
               .map(
-                (line) =>
-                  `<div class="line">${escapeHtml(String(line))}</div>`
+                line => `<div class="line">${escapeHtml(String(line))}</div>`
               )
               .join("\n")
           : "";
@@ -185,4 +216,5 @@ ${blocks}
   exports.generateStandaloneHtml = generateStandaloneHtml;
   exports.escapeHtml = escapeHtml;
   exports.sanitizeColor = sanitizeColor;
+  exports.sanitizeUrl = sanitizeUrl;
 })(typeof exports === "undefined" ? (window.ExportHtml = {}) : exports);
