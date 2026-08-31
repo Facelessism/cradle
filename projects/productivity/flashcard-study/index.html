@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flashcard Studio</title>
+  <meta
+    name="description"
+    content="Create, study, and track flashcard decks with spaced repetition. Flip cards, track progress, and export your decks."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="shell">
+    <!-- ==================== HEADER ==================== -->
+    <header class="project-header">
+      <div>
+        <a href="../../../index.html" class="back-link">
+          <i class="fa-solid fa-arrow-left"></i> Back to Cradle
+        </a>
+        <p class="eyebrow">Productivity</p>
+        <h1>Flashcard Studio</h1>
+        <p class="subtitle">
+          Create decks, add cards, and study with flip animations.
+          Track your mastery and export/import decks.
+        </p>
+      </div>
+      <div class="header-actions">
+        <button id="btn-import" class="action-btn" title="Import deck from JSON">
+          <i class="fa-solid fa-file-import"></i> Import
+        </button>
+        <button id="btn-export" class="action-btn" title="Export all decks as JSON">
+          <i class="fa-solid fa-file-export"></i> Export
+        </button>
+      </div>
+    </header>
+
+    <!-- ==================== STATS BAR ==================== -->
+    <section class="stats-bar" id="statsBar" aria-label="Study statistics">
+      <article class="stat-card">
+        <span class="stat-label">Total Decks</span>
+        <strong class="stat-value" id="statDecks">0</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Total Cards</span>
+        <strong class="stat-value" id="statCards">0</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Mastered</span>
+        <strong class="stat-value" id="statMastered">0</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Study Sessions</span>
+        <strong class="stat-value" id="statSessions">0</strong>
+      </article>
+    </section>
+
+    <!-- ==================== DECK LIST ==================== -->
+    <section class="deck-section" id="deckSection" aria-label="Your decks">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-layer-group"></i> My Decks</h2>
+        <button id="btn-new-deck" class="action-btn primary" title="Create new deck">
+          <i class="fa-solid fa-plus"></i> New Deck
+        </button>
+      </div>
+      <div class="deck-grid" id="deckGrid">
+        <p class="empty-state" id="emptyState">No decks yet. Click "New Deck" to get started!</p>
+      </div>
+    </section>
+
+    <!-- ==================== STUDY VIEW (hidden by default) ==================== -->
+    <section class="study-view hidden" id="studyView" aria-label="Study mode">
+      <div class="study-header">
+        <button id="btn-back" class="action-btn" title="Back to decks">
+          <i class="fa-solid fa-arrow-left"></i> Back
+        </button>
+        <div class="study-info">
+          <span id="studyDeckName" class="study-deck-name"></span>
+          <span id="studyProgress" class="study-progress"></span>
+        </div>
+        <div class="study-score">
+          <span class="score-known" id="scoreKnown">0 ✓</span>
+          <span class="score-unknown" id="scoreUnknown">0 ✗</span>
+        </div>
+      </div>
+
+      <div class="flashcard-area">
+        <div class="flashcard" id="flashcard" tabindex="0" role="button" aria-label="Flip card">
+          <div class="flashcard-inner" id="flashcardInner">
+            <div class="flashcard-front">
+              <span class="card-label">Question</span>
+              <p id="cardFront" class="card-text"></p>
+              <span class="flip-hint">Click or press Space to flip</span>
+            </div>
+            <div class="flashcard-back">
+              <span class="card-label">Answer</span>
+              <p id="cardBack" class="card-text"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="study-actions">
+        <button id="btn-know" class="study-btn know" title="I know this (→)">
+          <i class="fa-solid fa-check"></i> Know
+        </button>
+        <button id="btn-flip" class="study-btn flip" title="Flip (Space)">
+          <i class="fa-solid fa-rotate"></i> Flip
+        </button>
+        <button id="btn-dont-know" class="study-btn dont-know" title="Don't know (←)">
+          <i class="fa-solid fa-xmark"></i> Don't Know
+        </button>
+      </div>
+
+      <div class="session-done hidden" id="sessionDone">
+        <h2><i class="fa-solid fa-trophy"></i> Session Complete!</h2>
+        <div class="session-summary">
+          <div class="summary-stat">
+            <span class="summary-value" id="summaryKnown">0</span>
+            <span class="summary-label">Known</span>
+          </div>
+          <div class="summary-stat">
+            <span class="summary-value" id="summaryUnknown">0</span>
+            <span class="summary-label">Review Again</span>
+          </div>
+          <div class="summary-stat">
+            <span class="summary-value" id="summaryAccuracy">0%</span>
+            <span class="summary-label">Accuracy</span>
+          </div>
+        </div>
+        <div class="session-actions">
+          <button id="btn-study-again" class="action-btn primary">
+            <i class="fa-solid fa-rotate-right"></i> Study Again
+          </button>
+          <button id="btn-session-back" class="action-btn">
+            <i class="fa-solid fa-arrow-left"></i> Back to Decks
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== MODAL: Create/Edit Deck ==================== -->
+    <div class="modal-overlay hidden" id="deckModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h2 id="deckModalTitle">New Deck</h2>
+          <button class="close-btn" id="deckModalClose" aria-label="Close">&times;</button>
+        </div>
+        <form id="deckForm">
+          <div class="form-group">
+            <label for="deckName">Deck Name</label>
+            <input type="text" id="deckName" placeholder="e.g., JavaScript Basics" required />
+          </div>
+          <div class="form-group">
+            <label for="deckDesc">Description (optional)</label>
+            <input type="text" id="deckDesc" placeholder="What is this deck about?" />
+          </div>
+          <button type="submit" class="action-btn primary full-width">
+            <i class="fa-solid fa-check"></i> Save Deck
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL: Add/Edit Card ==================== -->
+    <div class="modal-overlay hidden" id="cardModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h2 id="cardModalTitle">Add Card</h2>
+          <button class="close-btn" id="cardModalClose" aria-label="Close">&times;</button>
+        </div>
+        <form id="cardForm">
+          <div class="form-group">
+            <label for="cardFrontInput">Front (Question)</label>
+            <textarea id="cardFrontInput" rows="3" placeholder="Enter the question or prompt" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="cardBackInput">Back (Answer)</label>
+            <textarea id="cardBackInput" rows="3" placeholder="Enter the answer" required></textarea>
+          </div>
+          <button type="submit" class="action-btn primary full-width">
+            <i class="fa-solid fa-check"></i> Save Card
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL: Deck Detail ==================== -->
+    <div class="modal-overlay hidden" id="detailModal">
+      <div class="modal-box modal-large">
+        <div class="modal-header">
+          <h2 id="detailModalTitle">Deck Details</h2>
+          <button class="close-btn" id="detailModalClose" aria-label="Close">&times;</button>
+        </div>
+        <div class="detail-actions">
+          <button id="btn-add-card" class="action-btn primary">
+            <i class="fa-solid fa-plus"></i> Add Card
+          </button>
+          <button id="btn-start-study" class="action-btn success">
+            <i class="fa-solid fa-play"></i> Start Study
+          </button>
+          <button id="btn-delete-deck" class="action-btn danger">
+            <i class="fa-solid fa-trash"></i> Delete
+          </button>
+        </div>
+        <div class="card-list" id="cardList">
+          <p class="empty-state">No cards yet. Add one above!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="project-footer">
+      <p>
+        Flashcard Studio &mdash; part of
+        <a href="../../../index.html" class="footer-link">Cradle</a>
+      </p>
+    </footer>
+  </main>
+
+  <input type="file" id="fileImport" accept=".json" style="display:none" />
+
+  <!-- Shared BackToHome UI Component -->
+  <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+  <!-- Application Script -->
+  <script src="script.js"></script>
+</body>
+</html>
