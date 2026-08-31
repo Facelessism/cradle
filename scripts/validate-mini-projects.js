@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { discoverProjects } = require("./project-discovery");
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 const PROJECTS_DIR = path.join(REPO_ROOT, "projects");
@@ -42,31 +43,7 @@ function sanitizePath(url) {
  * Scans projects directory to discover all mini project folders.
  */
 function getDiskProjects() {
-  const diskProjects = [];
-  if (!fs.existsSync(PROJECTS_DIR)) return diskProjects;
-
-  const categories = fs
-    .readdirSync(PROJECTS_DIR, { withFileTypes: true })
-    .filter(d => d.isDirectory());
-
-  for (const cat of categories) {
-    const catPath = path.join(PROJECTS_DIR, cat.name);
-    const projects = fs
-      .readdirSync(catPath, { withFileTypes: true })
-      .filter(d => d.isDirectory());
-
-    for (const proj of projects) {
-      const relPath = `projects/${cat.name}/${proj.name}/`;
-      diskProjects.push({
-        category: cat.name,
-        name: proj.name,
-        relPath,
-        absPath: path.join(catPath, proj.name),
-      });
-    }
-  }
-
-  return diskProjects;
+  return discoverProjects(PROJECTS_DIR, REPO_ROOT);
 }
 
 /**

@@ -23,8 +23,7 @@
     "dev": "npm run generate && live-server",
     "build": "npm run generate",
     "format": "prettier --write .",
-    "check-format": "prettier --check .",
-    "validate:project-order": "node scripts/validate-project-order.js"
+    "check-format": "prettier --check ."
   },
   "devDependencies": {
     "live-server": "^1.2.2",
