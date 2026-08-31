@@ -273,6 +273,20 @@ function renderAll() {
   drawLossChart();
 }
 
+// ── ARIA LIVE REGION HELPER ──────────────────────────────────
+/**
+ * Announces a training status message to screen readers via
+ * the #training-status live region without disrupting sighted users.
+ */
+function announceTrainingStatus(message) {
+  const el = document.getElementById("training-status");
+  if (!el) return;
+  // Clear first so re-announcing the same text still triggers the reader.
+  el.textContent = "";
+  // Small timeout lets the DOM settle before the new announcement.
+  window.setTimeout(() => { el.textContent = message; }, 50);
+}
+
 function trainStep() {
   if (!state.training || !state.net) return;
 
@@ -308,6 +322,7 @@ function startTraining() {
   $("btnPause").disabled = false;
   document.body.classList.add("training-active");
   hideExportError();
+  announceTrainingStatus("Training started.");
   trainStep();
 }
 
@@ -318,6 +333,7 @@ function pauseTraining() {
   $("btnPause").disabled = true;
   $("btnTrain").innerHTML = '<i class="fas fa-play"></i> Resume';
   document.body.classList.remove("training-active");
+  announceTrainingStatus(`Training paused at epoch ${state.epoch}.`);
 }
 
 function resetAll() {
@@ -326,6 +342,7 @@ function resetAll() {
   initNetwork();
   renderAll();
   hideExportError();
+  announceTrainingStatus("Training reset.");
 }
 
 function renderLayerUI() {
