@@ -1,5 +1,5 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
+import { test } from "node:test";
 import { logWorkerFailure } from "../src/utils/workerLogger.js";
 
 test("logWorkerFailure returns structured log entry with all diagnostic fields", () => {
