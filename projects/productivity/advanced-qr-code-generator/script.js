@@ -361,18 +361,41 @@ addListener(el.downloadSvgBtn, "click", async () => {
   }
 });
 
-/** Copy QR image to clipboard */
+/** Copy or share QR image */
 addListener(el.copyImageBtn, "click", async () => {
   if (!qrCode || !state.text.trim()) return;
 
-  const canvas = el.qrContainer.querySelector("canvas");
+  const canvas = el.qrContainer ? el.qrContainer.querySelector("canvas") : null;
 
   if (!canvas) {
-    showToast("Unable to copy image right now.", "error");
+    showToast("Unable to process image right now.", "error");
     return;
   }
 
-  if (!navigator.clipboard || !window.ClipboardItem) {
+  // Attempt Web Share API first if supported
+  if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+    try {
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+      if (blob) {
+        const file = new File([blob], "qr-code.png", { type: "image/png" });
+        if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: "QR Code",
+            text: state.text,
+            files: [file]
+          });
+          showToast("Shared successfully!", "success");
+          return;
+        }
+      }
+    } catch (err) {
+      if (err.name === "AbortError") return; // User cancelled share dialog
+      // Fall through to clipboard copy fallback
+    }
+  }
+
+  // Fallback to Clipboard API
+  if (typeof navigator === "undefined" || !navigator.clipboard || !window.ClipboardItem) {
     showToast(
       "Clipboard image copy is not supported in this browser.",
       "error"
