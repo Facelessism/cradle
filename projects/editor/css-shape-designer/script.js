@@ -18,10 +18,50 @@
 if (typeof ShapeEngine === "undefined") {
   throw new Error(
     "[css-shape-designer] shapeEngine.js failed to load. " +
-      "Ensure <script src=\"shapeEngine.js\"></script> appears before " +
-      "<script src=\"script.js\"></script> in index.html. " +
+      'Ensure <script src="shapeEngine.js"></script> appears before ' +
+      '<script src="script.js"></script> in index.html. ' +
       "See issue #434."
   );
+}
+
+// Load CSS sanitizer if available (shared utility)
+const CssSanitizer =
+  typeof window !== "undefined" && window.CradleSanitizeCss
+    ? window.CradleSanitizeCss
+    : (function () {
+        try {
+          return require("../../../src/components/ui/sanitizeCss.js");
+        } catch (_) {
+          return null;
+        }
+      })();
+
+function sanitizeColorValue(value, fallback) {
+  if (CssSanitizer && CssSanitizer.sanitizeHexColor) {
+    return CssSanitizer.sanitizeHexColor(value, fallback);
+  }
+  return /^#[0-9A-Fa-f]{3,8}$/.test(value.trim()) ? value.trim() : fallback;
+}
+
+function sanitizeImageUrlForCss(url) {
+  if (CssSanitizer && CssSanitizer.sanitizeCssUrl) {
+    return CssSanitizer.sanitizeCssUrl(url, "");
+  }
+  // Fallback: basic URL sanitization
+  if (typeof url !== "string") return "";
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  if (/["'\)\n\r;{}]/.test(trimmed)) return "";
+  if (trimmed.includes(":")) {
+    const scheme = trimmed.slice(0, trimmed.indexOf(":")).toLowerCase();
+    if (
+      !["https", "http"].includes(scheme) &&
+      !/^data:image\//i.test(trimmed)
+    ) {
+      return "";
+    }
+  }
+  return trimmed;
 }
 
 const state = {
@@ -432,15 +472,18 @@ function setupEventListeners() {
 
 function bindColorSync(picker, text, stateKey) {
   picker.addEventListener("input", e => {
-    state[stateKey] = e.target.value;
-    text.value = e.target.value;
-    updateCanvas();
+    const safe = sanitizeColorValue(e.target.value, null);
+    if (safe !== null) {
+      state[stateKey] = safe;
+      text.value = safe;
+      updateCanvas();
+    }
   });
   text.addEventListener("input", e => {
-    const val = e.target.value;
-    if (val.match(/^#[0-9A-Fa-f]{6}$/)) {
-      state[stateKey] = val;
-      picker.value = val;
+    const safe = sanitizeColorValue(e.target.value, null);
+    if (safe !== null) {
+      state[stateKey] = safe;
+      picker.value = safe;
       updateCanvas();
     }
   });
@@ -607,19 +650,45 @@ function updateCanvas() {
 }
 
 function renderPreviewElement() {
-  // Apply Background style
+  // Apply Background style — sanitize all user-controlled values
   let bgValue = "";
   if (state.fillMode === "solid") {
-    bgValue = state.solidColor;
+    const safeColor = sanitizeColorValue(state.solidColor, "#6366f1");
+    bgValue = safeColor;
   } else if (state.fillMode === "gradient") {
-    bgValue = `linear-gradient(${state.gradAngle}deg, ${state.gradColor1}, ${state.gradColor2})`;
+    const safeColor1 = sanitizeColorValue(state.gradColor1, "#6366f1");
+    const safeColor2 = sanitizeColorValue(state.gradColor2, "#a78bfa");
+    const safeAngle = Math.min(
+      360,
+      Math.max(0, parseInt(state.gradAngle) || 0)
+    );
+    bgValue = `linear-gradient(${safeAngle}deg, ${safeColor1}, ${safeColor2})`;
   } else if (state.fillMode === "image") {
-    bgValue = `url(${state.imageUrl}) center/cover`;
+    const safeUrl = sanitizeImageUrlForCss(state.imageUrl);
+    if (safeUrl) {
+      bgValue = `url("${safeUrl}") center/cover`;
+    } else {
+      bgValue = "#6366f1";
+    }
   }
-  shapePreview.style.background = bgValue;
+  // Use sanitizeInlineStyle to ensure background value is safe, or set via property allowlist
+  if (CssSanitizer && CssSanitizer.sanitizeCssValue) {
+    const safeBg = CssSanitizer.sanitizeCssValue(bgValue, null);
+    shapePreview.style.background = safeBg !== null ? safeBg : "#6366f1";
+  } else {
+    shapePreview.style.background = bgValue;
+  }
 
-  // Apply Glow filter shadow
-  shapePreview.style.filter = `drop-shadow(0 0 ${state.shadowBlur}px ${state.shadowColor})`;
+  // Apply Glow filter shadow — sanitize blur and color
+  const safeBlur = Math.min(50, Math.max(0, parseInt(state.shadowBlur) || 0));
+  const safeShadowColor = sanitizeColorValue(state.shadowColor, "#6366f1");
+  const filterValue = `drop-shadow(0 0 ${safeBlur}px ${safeShadowColor})`;
+  if (CssSanitizer && CssSanitizer.sanitizeCssValue) {
+    const safeFilter = CssSanitizer.sanitizeCssValue(filterValue, null);
+    shapePreview.style.filter = safeFilter !== null ? safeFilter : "none";
+  } else {
+    shapePreview.style.filter = filterValue;
+  }
 
   // Apply Clip-path or Border-radius shape via ShapeEngine
   const shapeData = {
@@ -628,12 +697,19 @@ function renderPreviewElement() {
     circle: state.circle,
     ellipse: state.ellipse,
   };
-  const cssRule = ShapeEngine.generateClipPathCSS(state.selectedShape, shapeData);
+  const cssRule = ShapeEngine.generateClipPathCSS(
+    state.selectedShape,
+    shapeData
+  );
   if (cssRule.startsWith("border-radius:")) {
-    shapePreview.style.borderRadius = cssRule.replace("border-radius: ", "").replace(";", "");
+    shapePreview.style.borderRadius = cssRule
+      .replace("border-radius: ", "")
+      .replace(";", "");
     shapePreview.style.clipPath = "none";
   } else {
-    shapePreview.style.clipPath = cssRule.replace("clip-path: ", "").replace(";", "");
+    shapePreview.style.clipPath = cssRule
+      .replace("clip-path: ", "")
+      .replace(";", "");
     shapePreview.style.borderRadius = "0";
   }
 }
@@ -938,18 +1014,32 @@ function updateExporters() {
   const shape = state.selectedShape;
   let cssValue = "";
 
-  // Format Background styling
+  // Format Background styling — sanitize all user-controlled values
   let fillBgCss = "";
   if (state.fillMode === "solid") {
-    fillBgCss = `background: ${state.solidColor};`;
+    const safeColor = sanitizeColorValue(state.solidColor, "#6366f1");
+    fillBgCss = `background: ${safeColor};`;
   } else if (state.fillMode === "gradient") {
-    fillBgCss = `background: linear-gradient(${state.gradAngle}deg, ${state.gradColor1}, ${state.gradColor2});`;
+    const safeColor1 = sanitizeColorValue(state.gradColor1, "#6366f1");
+    const safeColor2 = sanitizeColorValue(state.gradColor2, "#a78bfa");
+    const safeAngle = Math.min(
+      360,
+      Math.max(0, parseInt(state.gradAngle) || 0)
+    );
+    fillBgCss = `background: linear-gradient(${safeAngle}deg, ${safeColor1}, ${safeColor2});`;
   } else if (state.fillMode === "image") {
-    fillBgCss = `background: url("${state.imageUrl}") center/cover;`;
+    const safeUrl = sanitizeImageUrlForCss(state.imageUrl);
+    if (safeUrl) {
+      fillBgCss = `background: url("${safeUrl}") center/cover;`;
+    } else {
+      fillBgCss = `background: #6366f1;`;
+    }
   }
 
-  // Glow drop shadow filter property
-  const glowCss = `filter: drop-shadow(0 0 ${state.shadowBlur}px ${state.shadowColor});`;
+  // Glow drop shadow filter property — sanitize
+  const safeBlur = Math.min(50, Math.max(0, parseInt(state.shadowBlur) || 0));
+  const safeShadowColor = sanitizeColorValue(state.shadowColor, "#6366f1");
+  const glowCss = `filter: drop-shadow(0 0 ${safeBlur}px ${safeShadowColor});`;
 
   // Shape geometry CSS
   if (shape === "polygon") {
