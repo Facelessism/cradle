@@ -401,20 +401,49 @@ function exportPng() {
   const expCanvas = document.createElement('canvas')
   expCanvas.width = gridSize * scale
   expCanvas.height = gridSize * scale
-  const expCtx = expCanvas.getContext('2d')
+  const expCtx = expCanvas ? expCanvas.getContext('2d') : null
 
-  for (let y = 0; y < gridSize; y++) {
-    for (let x = 0; x < gridSize; x++) {
-      let color = null
-      for (const layer of layers) {
-        if (layer.visible && layer.data && layer.data[y] && layer.data[y][x]) {
-          color = layer.data[y][x]
+  if (expCtx) {
+    for (let y = 0; y < gridSize; y++) {
+      for (let x = 0; x < gridSize; x++) {
+        let color = null
+        for (const layer of layers) {
+          if (layer.visible && layer.data && layer.data[y] && layer.data[y][x]) {
+            color = layer.data[y][x]
+          }
+        }
+        if (color) {
+          expCtx.fillStyle = color
+          expCtx.fillRect(x * scale, y * scale, scale, scale)
         }
       }
-      if (color) {
-        expCtx.fillStyle = color
-        expCtx.fillRect(x * scale, y * scale, scale, scale)
-      }
+    }
+  }
+
+  // Attempt Web Share API if supported
+  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    try {
+      expCanvas.toBlob(async blob => {
+        if (blob) {
+          const file = new File([blob], `cyberpunk-art-${gridSize}x${gridSize}.png`, { type: 'image/png' })
+          if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              title: 'Cyberpunk Pixel Art',
+              files: [file]
+            })
+            return
+          }
+        }
+        // Fallback to download
+        const link = document.createElement('a')
+        link.download = `cyberpunk-art-${gridSize}x${gridSize}.png`
+        link.href = expCanvas.toDataURL('image/png')
+        link.click()
+      }, 'image/png')
+      return
+    } catch (err) {
+      if (err.name === 'AbortError') return
+      // Fall through to download
     }
   }
 

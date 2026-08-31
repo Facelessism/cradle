@@ -573,8 +573,8 @@ document.addEventListener("DOMContentLoaded", () => {
     downloadFile(dataStr, `schedule_${currentDate}.json`, "application/json");
   });
 
-  // Export Text Summary (.md)
-  btnExportText.addEventListener("click", () => {
+  // Export Text Summary (.md) / Share
+  btnExportText.addEventListener("click", async () => {
     let mdStr = `# Daily Schedule Summary (${currentDate})\n\n`;
     mdStr += `## Time Blocks:\n`;
 
@@ -582,6 +582,19 @@ document.addEventListener("DOMContentLoaded", () => {
       mdStr += `- **${minutesToTimeString(b.startMinutes)} - ${minutesToTimeString(b.endMinutes)}**: ${b.title} (${CATEGORY_NAMES[b.category] || b.category})\n`;
       if (b.notes) mdStr += `  *Notes:* ${b.notes}\n`;
     });
+
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: `Daily Schedule (${currentDate})`,
+          text: mdStr
+        });
+        return;
+      } catch (err) {
+        if (err.name === "AbortError") return; // User cancelled share dialog
+        // Fall through to file download
+      }
+    }
 
     downloadFile(mdStr, `schedule_${currentDate}.md`, "text/markdown");
   });

@@ -165,9 +165,27 @@ function loadSampleResume() {
 }
 
 async function copyMarkdown() {
+  if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+    try {
+      await navigator.share({
+        title: "Resume Markdown",
+        text: markdownInput.value
+      });
+      setStatus("Markdown shared");
+      return;
+    } catch (error) {
+      if (error.name === "AbortError") return;
+      // Fall through to clipboard copy
+    }
+  }
+
   try {
-    await navigator.clipboard.writeText(markdownInput.value);
-    setStatus("Markdown copied");
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(markdownInput.value);
+      setStatus("Markdown copied");
+    } else {
+      setStatus("Copy unsupported");
+    }
   } catch (error) {
     setStatus("Copy failed");
   }
