@@ -460,10 +460,25 @@ function isValidMoveShape(move) {
   return true;
 }
 
+const REPORT_ALLOWED_KEYS = {
+  progress: ["type", "depth", "maxDepth", "completed", "total", "nodes"],
+  depthComplete: ["type", "depth", "maxDepth", "move", "score", "nodes"],
+  complete: ["type", "move", "depth", "nodes"],
+  timeout: ["type", "move", "depth", "nodes"],
+  cancelled: ["type", "move", "depth", "nodes"],
+  error: ["type", "message"],
+};
+
+function hasUnexpectedKeys(report) {
+  const allowed = REPORT_ALLOWED_KEYS[report.type] || [];
+  return Object.keys(report).some(key => !allowed.includes(key));
+}
+
 function getReportError(report) {
   if (report === null || typeof report !== "object") return "message";
   if (hasDangerousKeys(report)) return "message";
   if (!REPORT_TYPES.has(report.type)) return `type "${String(report.type)}"`;
+  if (hasUnexpectedKeys(report)) return "unexpected fields";
   if (
     report.type === "progress" &&
     (!isWholeNumber(report.depth) ||

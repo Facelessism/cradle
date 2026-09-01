@@ -4,7 +4,7 @@
   "workers": [
     {
       "url": "projects/games/chess/ai-worker.js",
-      "sha256": "0e2e88722b0ec89de430c69fbbe851da75010a7a70d9cb00ae06d88bbc803e11"
+      "sha256": "1d487e11652f81f8ab913357e1eb216d57ec05b7eb2141875c853dede421bf0a"
     },
     {
       "url": "projects/games/chess/chessLogic.js",
