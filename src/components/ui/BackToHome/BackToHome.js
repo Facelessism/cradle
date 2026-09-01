@@ -40,6 +40,12 @@
 
   const STYLE_ID = "cradle-back-home-styles";
 
+  /* ── HTML sanitizer ──────────────────────────────────────── */
+  const _sanitize =
+    (typeof window !== "undefined" && window.CradleSanitize && window.CradleSanitize.sanitizeHtml) ||
+    (typeof require === "function" && (function () { try { return require("../sanitizeHtml.js").sanitizeHtml; } catch { return null; } })()) ||
+    function (html) { return String(html ?? ""); };
+
   /* This script's own URL, captured at load time (document.currentScript is
      only valid during synchronous execution). It sits at a fixed path under
      the site root, so we can resolve the home URL from it — which is correct
@@ -237,7 +243,7 @@
       /* Icon wrapper */
       const iconWrapper = document.createElement("span");
       iconWrapper.className = "cradle-back-home__icon";
-      iconWrapper.innerHTML = icon;
+      iconWrapper.innerHTML = _sanitize(icon);
 
       /* Label span */
       const labelSpan = document.createElement("span");

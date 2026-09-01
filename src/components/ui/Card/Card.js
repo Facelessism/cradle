@@ -252,6 +252,12 @@
     return true;
   }
 
+  /* ── HTML sanitizer — strips dangerous patterns from user-supplied HTML ── */
+  const _sanitize =
+    (typeof window !== "undefined" && window.CradleSanitize && window.CradleSanitize.sanitizeHtml) ||
+    (typeof require === "function" && (function () { try { return require("../sanitizeHtml.js").sanitizeHtml; } catch { return null; } })()) ||
+    function (html) { return String(html ?? ""); };
+
   /* ── Sub-component builders ───────────────────────────── */
 
   /** Build a CardHeader element */
@@ -263,7 +269,7 @@
       const iconEl = document.createElement("div");
       iconEl.className = "cradle-card__icon";
       iconEl.setAttribute("aria-hidden", "true");
-      iconEl.innerHTML = icon;
+      iconEl.innerHTML = _sanitize(icon);
       header.appendChild(iconEl);
     }
 
@@ -305,7 +311,7 @@
     const content = document.createElement("div");
     content.className = "cradle-card__content";
     if (typeof children === "string") {
-      content.innerHTML = children;
+      content.innerHTML = _sanitize(children);
     } else if (children instanceof Element) {
       content.appendChild(children);
     }
@@ -317,7 +323,7 @@
     const footer = document.createElement("div");
     footer.className = `cradle-card__footer cradle-card__footer--${align}`;
     if (typeof children === "string") {
-      footer.innerHTML = children;
+      footer.innerHTML = _sanitize(children);
     } else if (children instanceof Element) {
       footer.appendChild(children);
     } else if (Array.isArray(children)) {

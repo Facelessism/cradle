@@ -32,6 +32,12 @@
 (function (global) {
   "use strict";
 
+  /* ── HTML sanitizer ──────────────────────────────────────── */
+  const _sanitize =
+    (typeof window !== "undefined" && window.CradleSanitize && window.CradleSanitize.sanitizeHtml) ||
+    (typeof require === "function" && (function () { try { return require("../sanitizeHtml.js").sanitizeHtml; } catch { return null; } })()) ||
+    function (html) { return String(html ?? ""); };
+
   /* ── Inject styles once ───────────────────────────────── */
   const STYLE_ID = "cradle-btn-styles";
 
@@ -295,7 +301,7 @@
         const icon = document.createElement("span");
         icon.className = "cradle-btn__icon cradle-btn__icon--left";
         icon.setAttribute("aria-hidden", "true");
-        icon.innerHTML = leftIcon;
+        icon.innerHTML = _sanitize(leftIcon);
         el.appendChild(icon);
       }
 
@@ -309,7 +315,7 @@
         const icon = document.createElement("span");
         icon.className = "cradle-btn__icon cradle-btn__icon--right";
         icon.setAttribute("aria-hidden", "true");
-        icon.innerHTML = rightIcon;
+        icon.innerHTML = _sanitize(rightIcon);
         el.appendChild(icon);
       }
 
@@ -359,7 +365,7 @@
           const icon = document.createElement("span");
           icon.className = "cradle-btn__icon cradle-btn__icon--left";
           icon.setAttribute("aria-hidden", "true");
-          icon.innerHTML = leftIcon;
+          icon.innerHTML = _sanitize(leftIcon);
           el.insertBefore(icon, el.firstChild);
         }
 
@@ -367,7 +373,7 @@
           const icon = document.createElement("span");
           icon.className = "cradle-btn__icon cradle-btn__icon--right";
           icon.setAttribute("aria-hidden", "true");
-          icon.innerHTML = rightIcon;
+          icon.innerHTML = _sanitize(rightIcon);
           el.appendChild(icon);
         }
       });
