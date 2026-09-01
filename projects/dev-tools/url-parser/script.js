@@ -3,7 +3,7 @@ const button = document.getElementById("parseBtn");
 const result = document.getElementById("result");
 
 // Pure helpers live in urlEngine.js (loaded first) so they can be unit-tested.
-const { detectURLType, detectFileType, escapeHTML } = URLEngine;
+const { detectURLType, detectFileType, escapeHTML, encodeURLComponentSafe } = URLEngine;
 
 button.addEventListener("click", parseURL);
 
@@ -66,13 +66,13 @@ function parseURL() {
       Port: url.port || "Default",
       Username: url.username || "None",
       Password: url.password ? "******" : "None",
-      Path: pathname,
-      Directory: directory,
-      Filename: filename,
+      Path: encodeURLComponentSafe(pathname),
+      Directory: encodeURLComponentSafe(directory),
+      Filename: encodeURLComponentSafe(filename),
       Extension: extension,
       FileType: detectFileType(extension),
-      Search: url.search || "None",
-      Fragment: url.hash.replace("#", "") || "None",
+      Search: url.search ? encodeURLComponentSafe(url.search) : "None",
+      Fragment: url.hash ? encodeURLComponentSafe(url.hash.replace("#", "")) : "None",
     };
 
     result.innerHTML = "";
@@ -91,7 +91,7 @@ function parseURL() {
       `;
 
       queryParams.forEach(param => {
-        createRow(param.key, param.value);
+        createRow(encodeURLComponentSafe(param.key), encodeURLComponentSafe(param.value));
       });
     }
   } catch (error) {
