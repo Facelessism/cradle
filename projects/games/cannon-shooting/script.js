@@ -2,19 +2,65 @@ let userCanX = 185;
 let userCanY = 0;
 let fireTime = 13000;
 let countdown = fireTime / 1000 - 3;
-let hitAudio = new Audio(
+
+/**
+ * Trusted audio sources for this project.
+ * Only URLs from explicitly allowed origins are loaded.
+ * To add new audio sources, add their URL here and ensure
+ * the origin is in the trusted list below.
+ */
+const TRUSTED_AUDIO_ORIGINS = [
+  "https://soundbible.com",
+];
+const TRUSTED_AUDIO_URLS = new Set([
+  "https://soundbible.com/mp3/Sniper_Rifle-Kibblesbob-2053709564.mp3",
+  "https://soundbible.com/mp3/Super%20Punch%20MMA-SoundBible.com-1869306362.mp3",
+]);
+
+/**
+ * Validate that an audio URL comes from a trusted origin.
+ * @param {string} url - The audio URL to validate
+ * @returns {boolean} True if the URL is from a trusted source
+ */
+function isTrustedAudioUrl(url) {
+  if (typeof url !== "string" || !url) return false;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return false;
+    if (!TRUSTED_AUDIO_URLS.has(url)) {
+      const originAllowed = TRUSTED_AUDIO_ORIGINS.some(
+        trusted => parsed.origin === trusted
+      );
+      if (!originAllowed) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Create an Audio element only if the URL is from a trusted source.
+ * Returns null if the URL fails validation.
+ * @param {string} url - The audio URL
+ * @returns {HTMLAudioElement|null}
+ */
+function createTrustedAudio(url) {
+  if (!isTrustedAudioUrl(url)) {
+    console.warn("Cannon Shooting: blocked untrusted audio source:", url);
+    return null;
+  }
+  const audio = new Audio(url);
+  audio.onerror = () => { /* audio unavailable — graceful degradation */ };
+  return audio;
+}
+
+let hitAudio = createTrustedAudio(
   "https://soundbible.com/mp3/Sniper_Rifle-Kibblesbob-2053709564.mp3"
 );
-let fireAudio = new Audio(
+let fireAudio = createTrustedAudio(
   "https://soundbible.com/mp3/Super%20Punch%20MMA-SoundBible.com-1869306362.mp3"
 );
-
-hitAudio.onerror = () => {
-  /* audio unavailable */
-};
-fireAudio.onerror = () => {
-  /* audio unavailable */
-};
 
 let stats = CannonStorage.loadStats();
 
@@ -95,7 +141,7 @@ setInterval(() => {
     );
 
     try {
-      fireAudio.play().catch(() => { });
+      if (fireAudio) fireAudio.play().catch(() => { });
     } catch (e) { }
     allPipe.forEach((pipe) => pipe.classList.add("fire"));
 
@@ -116,7 +162,7 @@ setInterval(() => {
       canBalls.forEach((ball) => {
         animateLeft(ball, -ballMileage + 4.23 + "cm", 500, () => {
           try {
-            hitAudio.play().catch(() => { });
+            if (hitAudio) hitAudio.play().catch(() => { });
           } catch (e) { }
         });
       });

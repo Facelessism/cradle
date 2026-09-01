@@ -145,6 +145,42 @@ UI event bindings, HUD update controller, vanilla-JS animation loops.
 
 ---
 
+## Third-Party Audio Trust Model
+
+Audio samples are loaded from external origins at runtime via the `HTMLAudioElement` API. To protect against supply-chain attacks and untrusted content, the game validates every audio URL before creating an `Audio` element.
+
+### Trusted Origins
+
+| Origin | Purpose |
+|---|---|
+| `https://soundbible.com` | Free sound effects (hit and fire sounds) |
+
+### Pinned Assets
+
+Only explicitly listed URLs are permitted. The full allowlist is defined in `TRUSTED_AUDIO_URLS` in `script.js`:
+
+- `Sniper_Rifle-Kibblesbob-2053709564.mp3`
+- `Super_Punch_MMA-SoundBible.com-1869306362.mp3`
+
+### Validation Rules
+
+1. **HTTPS required** — All audio URLs must use `https:` or `http:` protocol.
+2. **Origin allowlist** — The URL's origin must be in `TRUSTED_AUDIO_ORIGINS`.
+3. **URL allowlist** — The full URL must match a pinned entry in `TRUSTED_AUDIO_URLS`.
+4. **Graceful degradation** — If audio fails to load or validation fails, the game continues silently without sound.
+5. **No user-supplied audio URLs** — The game does not accept audio URLs from user input.
+
+### Adding New Audio Sources
+
+To add a new trusted audio source:
+
+1. Add the full URL to `TRUSTED_AUDIO_URLS` in `script.js`.
+2. If from a new origin, add it to `TRUSTED_AUDIO_ORIGINS`.
+3. Ensure the source provides HTTPS access.
+4. Update this section of ARCHITECTURE.md.
+
+---
+
 ## Future Improvements
 
 - Add sound effects for firing and hits
