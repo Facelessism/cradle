@@ -10,6 +10,7 @@ import {
   isFilterResult,
   isTrustedMessageEvent,
   hasDangerousKeys,
+  hasUnexpectedKeys,
   sanitizeState,
 } from "../src/utils/messageValidation.js";
 
@@ -302,6 +303,49 @@ test("validators reject payloads carrying prototype-pollution keys", () => {
   assert.equal(isChessCancelRequest({ type: "cancel", constructor: {} }), false);
   assert.equal(
     isChessWorkerReport({ type: "error", message: "x", prototype: {} }),
+    false
+  );
+});
+
+test("hasUnexpectedKeys rejects keys outside the allowlist", () => {
+  const allowed = new Set(["type", "id"]);
+  assert.equal(hasUnexpectedKeys({ type: "x", id: 1 }, allowed), false);
+  assert.equal(hasUnexpectedKeys({ type: "x", evil: 1 }, allowed), true);
+  assert.equal(hasUnexpectedKeys(null, allowed), true);
+});
+
+test("isChessSearchRequest and reports reject unexpected keys (strict schema)", () => {
+  assert.equal(
+    isChessSearchRequest({
+      type: "search",
+      searchId: 1,
+      board: emptyBoard,
+      color: "white",
+      depth: 3,
+      extra: "forbidden",
+    }),
+    false
+  );
+  assert.equal(isChessCancelRequest({ type: "cancel", extra: true }), false);
+  assert.equal(
+    isChessWorkerReport({
+      type: "progress",
+      depth: 1,
+      maxDepth: 3,
+      completed: 1,
+      total: 5,
+      extra: 1,
+    }),
+    false
+  );
+  assert.equal(
+    isChessWorkerReport({
+      type: "complete",
+      move: { from: { row: 0, col: 0 }, to: { row: 1, col: 1 } },
+      depth: 3,
+      nodes: 5,
+      score: 999,
+    }),
     false
   );
 });
