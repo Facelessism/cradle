@@ -21,9 +21,12 @@
     "validate:a11y-labels": "node scripts/validate-accessible-labels.js",
     "test": "node --test",
     "dev": "npm run generate && live-server",
-    "build": "npm run generate",
+    "build": "npm run generate && npm run minis:build",
     "format": "prettier --write .",
-    "check-format": "prettier --check ."
+    "check-format": "prettier --check .",
+    "minis:discover": "node scripts/minis/discover.mjs",
+    "minis:list": "node scripts/minis/discover.mjs",
+    "minis:build": "node scripts/minis/build.mjs"
   },
   "devDependencies": {
     "live-server": "^1.2.2",
