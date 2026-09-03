@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reading Progress Tracker | Cradle</title>
+    <meta name="description" content="Reading Progress Tracker makes it easy to keep track of the books you're reading without needing a notebook or spreadsheet. You can log each reading session, se..." />
+
+    <meta
+      name="description"
+      content="Track your books, reading sessions, progress visualizations and estimated completion dates with statistics dashboard."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/productivity/reading-progress-tracker/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Reading Progress Tracker | Cradle" />
+    <meta property="og:description" content="Track your books, reading sessions, progress visualizations and estimated completion dates with statistics dashboard." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/productivity/reading-progress-tracker/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <a href="../../../index.html" class="back-link">← Back to Cradle</a>
+          <h1>Reading Progress Tracker</h1>
+          <p class="subtitle">
+            Track books, reading sessions, progress history and estimated
+            completion dates.
+          </p>
+        </div>
+        <div class="header-right">
+          <div class="export-dropdown">
+            <button class="btn btn-outline" id="btn-export-menu">
+              📤 Export / Import ▾
+            </button>
+            <div class="dropdown-content" id="export-dropdown-content" hidden>
+              <button id="btn-export-json">💾 Export Data (.json)</button>
+              <label for="import-json-file" class="dropdown-file-label"
+                >📥 Import Data (.json)</label
+              >
+              <input
+                type="file"
+                id="import-json-file"
+                accept=".json"
+                style="display: none"
+              />
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btn-add-book">➕ Add Book</button>
+        </div>
+      </header>
+
+      <div
+        id="alertContainer"
+        class="alert-container"
+        role="status"
+        aria-live="polite"
+        style="display: none"
+      >
+        <span class="alert-icon">⚠️</span>
+        <span id="alertMessage"></span>
+      </div>
+
+      <main role="main">
+        <!-- Stats Dashboard -->
+        <section class="stats-dashboard" id="stats-dashboard">
+          <div class="stat-card" id="stat-total-books">
+            <div class="stat-icon">📚</div>
+            <div class="stat-body">
+              <div class="stat-value" id="val-total-books">0</div>
+              <div class="stat-label">Total Books</div>
+            </div>
+          </div>
+          <div class="stat-card" id="stat-completed">
+            <div class="stat-icon">✅</div>
+            <div class="stat-body">
+              <div class="stat-value" id="val-completed">0</div>
+              <div class="stat-label">Completed</div>
+            </div>
+          </div>
+          <div class="stat-card" id="stat-reading">
+            <div class="stat-icon">📖</div>
+            <div class="stat-body">
+              <div class="stat-value" id="val-reading">0</div>
+              <div class="stat-label">Reading Now</div>
+            </div>
+          </div>
+          <div class="stat-card" id="stat-pages">
+            <div class="stat-icon">📄</div>
+            <div class="stat-body">
+              <div class="stat-value" id="val-pages">0</div>
+              <div class="stat-label">Pages Read</div>
+            </div>
+          </div>
+          <div class="stat-card" id="stat-hours">
+            <div class="stat-icon">⏱️</div>
+            <div class="stat-body">
+              <div class="stat-value" id="val-hours">0h</div>
+              <div class="stat-label">Reading Time</div>
+            </div>
+          </div>
+          <div class="stat-card" id="stat-streak">
+            <div class="stat-icon">🔥</div>
+            <div class="stat-body">
+              <div class="stat-value" id="val-streak">0</div>
+              <div class="stat-label">Day Streak</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tabs -->
+        <nav class="tabs-nav" role="tablist">
+          <button
+            class="tab-btn active"
+            data-tab="library"
+            id="tab-library"
+            role="tab"
+            aria-selected="true"
+          >
+            📚 Library
+          </button>
+          <button
+            class="tab-btn"
+            data-tab="sessions"
+            id="tab-sessions"
+            role="tab"
+            aria-selected="false"
+          >
+            📝 Sessions
+          </button>
+          <button
+            class="tab-btn"
+            data-tab="history"
+            id="tab-history"
+            role="tab"
+            aria-selected="false"
+          >
+            📊 Analytics
+          </button>
+        </nav>
+
+        <!-- Tab: Library -->
+        <section class="tab-panel active" id="panel-library" role="tabpanel">
+          <h2 class="sr-only" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">Library</h2>
+          <!-- Filter Bar -->
+          <div class="filter-bar">
+            <div class="filter-group">
+              <label for="filter-status">Status:</label>
+              <select id="filter-status">
+                <option value="all">All</option>
+                <option value="reading">Reading</option>
+                <option value="completed">Completed</option>
+                <option value="want-to-read">Want to Read</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="filter-genre">Genre:</label>
+              <select id="filter-genre">
+                <option value="all">All Genres</option>
+              </select>
+            </div>
+            <div class="search-group">
+              <input
+                type="text"
+                id="search-books"
+                placeholder="🔍 Search books or authors…"
+              />
+            </div>
+          </div>
+
+          <!-- Books Grid -->
+          <div class="books-grid" id="books-grid">
+            <!-- Book cards rendered dynamically -->
+          </div>
+
+          <div class="empty-state" id="empty-library" hidden>
+            <div class="empty-icon">📚</div>
+            <h3>No books yet</h3>
+            <p>Click "Add Book" to start tracking your reading journey.</p>
+            <button class="btn btn-primary" id="btn-add-book-empty">
+              ➕ Add Your First Book
+            </button>
+          </div>
+        </section>
+
+        <!-- Tab: Sessions -->
+        <section class="tab-panel" id="panel-sessions" role="tabpanel" hidden>
+          <div class="sessions-toolbar">
+            <h2 class="panel-title">Reading Sessions</h2>
+            <button class="btn btn-primary" id="btn-log-session">
+              📝 Log Session
+            </button>
+          </div>
+
+          <div class="sessions-list" id="sessions-list">
+            <!-- Session rows rendered dynamically -->
+          </div>
+
+          <div class="empty-state" id="empty-sessions" hidden>
+            <div class="empty-icon">📝</div>
+            <h3>No sessions logged</h3>
+            <p>Log a reading session to start tracking your progress.</p>
+          </div>
+        </section>
+
+        <!-- Tab: Analytics -->
+        <section class="tab-panel" id="panel-history" role="tabpanel" hidden>
+          <h2 class="panel-title">Analytics</h2>
+          <div class="analytics-grid">
+            <!-- Monthly Reading Chart -->
+            <div class="analytics-card wide">
+              <h3 class="analytics-card-title">📅 Monthly Pages Read</h3>
+              <div class="bar-chart-container" id="monthly-chart">
+                <div class="chart-empty">No session data yet.</div>
+              </div>
+            </div>
+
+            <!-- Genre Breakdown -->
+            <div class="analytics-card">
+              <h3 class="analytics-card-title">🏷️ Genre Breakdown</h3>
+              <div class="genre-list" id="genre-list">
+                <div class="chart-empty">No books added yet.</div>
+              </div>
+            </div>
+
+            <!-- Speed Stats -->
+            <div class="analytics-card">
+              <h3 class="analytics-card-title">⚡ Reading Speed</h3>
+              <div class="speed-stats" id="speed-stats">
+                <div class="speed-item">
+                  <span class="speed-label">Avg Pages / Hour</span>
+                  <span class="speed-value mono" id="avg-speed">—</span>
+                </div>
+                <div class="speed-item">
+                  <span class="speed-label">Longest Streak</span>
+                  <span class="speed-value mono" id="longest-streak"
+                    >0 days</span
+                  >
+                </div>
+                <div class="speed-item">
+                  <span class="speed-label">Completion Rate</span>
+                  <span class="speed-value mono" id="completion-rate">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <!-- end app-container -->
+
+    <!-- ======================== MODALS ======================== -->
+
+    <!-- Add / Edit Book Modal -->
+    <div class="modal-backdrop" id="book-modal" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="book-modal-title">Add Book</h2>
+          <button class="modal-close" id="book-modal-close" aria-label="Close">
+            ✕
+          </button>
+        </div>
+        <form id="book-form" class="modal-form" novalidate>
+          <input type="hidden" id="book-id" />
+
+          <div class="form-group">
+            <label for="book-title"
+              >Book Title <span class="required">*</span></label
+            >
+            <input
+              type="text"
+              id="book-title"
+              placeholder="e.g. The Pragmatic Programmer"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="book-author">Author</label>
+            <input
+              type="text"
+              id="book-author"
+              placeholder="e.g. David Thomas"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="book-total-pages"
+                >Total Pages <span class="required">*</span></label
+              >
+              <input
+                type="number"
+                id="book-total-pages"
+                placeholder="352"
+                min="1"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="book-current-page">Current Page</label>
+              <input
+                type="number"
+                id="book-current-page"
+                placeholder="0"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="book-genre">Genre</label>
+              <select id="book-genre">
+                <option value="">Select genre…</option>
+                <option value="Fiction">Fiction</option>
+                <option value="Non-Fiction">Non-Fiction</option>
+                <option value="Science">Science</option>
+                <option value="Technology">Technology</option>
+                <option value="Biography">Biography</option>
+                <option value="History">History</option>
+                <option value="Self-Help">Self-Help</option>
+                <option value="Fantasy">Fantasy</option>
+                <option value="Mystery">Mystery</option>
+                <option value="Philosophy">Philosophy</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="book-status">Status</label>
+              <select id="book-status">
+                <option value="want-to-read">Want to Read</option>
+                <option value="reading">Currently Reading</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="book-notes">Notes (Optional)</label>
+            <textarea
+              id="book-notes"
+              rows="2"
+              placeholder="Personal thoughts, reminders…"
+            ></textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-danger"
+              id="btn-delete-book"
+              hidden
+            >
+              Delete
+            </button>
+            <div class="footer-right">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                id="btn-cancel-book"
+              >
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-primary">Save Book</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Log Session Modal -->
+    <div class="modal-backdrop" id="session-modal" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Log Reading Session</h2>
+          <button
+            class="modal-close"
+            id="session-modal-close"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+        <form id="session-form" class="modal-form" novalidate>
+          <input type="hidden" id="session-id" />
+
+          <div class="form-group">
+            <label for="session-book"
+              >Book <span class="required">*</span></label
+            >
+            <select id="session-book" required>
+              <option value="">Select a book…</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="session-date"
+                >Date <span class="required">*</span></label
+              >
+              <input type="date" id="session-date" required />
+            </div>
+            <div class="form-group">
+              <label for="session-duration">Duration (min)</label>
+              <input
+                type="number"
+                id="session-duration"
+                placeholder="45"
+                min="1"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="session-start-page">Start Page</label>
+              <input
+                type="number"
+                id="session-start-page"
+                placeholder="100"
+                min="0"
+              />
+            </div>
+            <div class="form-group">
+              <label for="session-end-page">End Page</label>
+              <input
+                type="number"
+                id="session-end-page"
+                placeholder="145"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="session-notes">Session Notes (Optional)</label>
+            <textarea
+              id="session-notes"
+              rows="2"
+              placeholder="Key takeaways, quotes…"
+            ></textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-danger"
+              id="btn-delete-session"
+              hidden
+            >
+              Delete
+            </button>
+            <div class="footer-right">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                id="btn-cancel-session"
+              >
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-primary">
+                Save Session
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Book Detail / Progress Modal -->
+    <div class="modal-backdrop" id="detail-modal" hidden>
+      <div class="modal-card modal-card-wide">
+        <div class="modal-header">
+          <h2 id="detail-book-title">Book Details</h2>
+          <button
+            class="modal-close"
+            id="detail-modal-close"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+        <div id="detail-content">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <script src="tracker-logic.js"></script>
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

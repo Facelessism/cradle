@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CSS Shape Designer</title>
+    <meta name="description" content="CSS Shape Designer is an interactive web tool for visually creating custom clip-path polygons, organic border-radius blobs, circles, and ellipses. It provides r..." />
+
+    <meta
+      name="description"
+      content="Design complex CSS shapes visually and export the generated CSS code."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/editor/css-shape-designer/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CSS Shape Designer" />
+    <meta property="og:description" content="Design complex CSS shapes visually and export the generated CSS code." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/editor/css-shape-designer/" />
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <!-- Shared UI System Tokens -->
+    <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+    <!-- Project Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- ===================== HEADER ===================== -->
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="brand">
+          <span class="brand-icon"><i class="fa-solid fa-shapes"></i></span>
+          <div class="brand-text">
+            <h1>Shape Studio</h1>
+            <p>Visual CSS Shape Designer</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <!-- Theme Toggle -->
+          <button
+            type="button"
+            id="theme-toggle"
+            class="theme-toggle"
+            aria-label="Toggle dark mode"
+            aria-pressed="false"
+            title="Toggle dark mode"
+          >
+            <i class="fa-solid fa-moon" id="theme-icon"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===================== MAIN APP ===================== -->
+    <main class="app-container">
+      <!-- ----------- LEFT PANEL: CONTROLS ----------- -->
+      <aside class="panel controls-panel" aria-label="Editor Controls">
+        <!-- Shape Selection Card -->
+        <section class="card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-clone"></i> Choose Shape
+          </h2>
+          <div class="shape-selector-grid">
+            <button type="button" class="shape-btn active" data-shape="polygon">
+              <i class="fa-solid fa-draw-polygon"></i> Polygon
+            </button>
+            <button type="button" class="shape-btn" data-shape="blob">
+              <i class="fa-solid fa-circle-nodes"></i> Blob
+            </button>
+            <button type="button" class="shape-btn" data-shape="circle">
+              <i class="fa-solid fa-circle"></i> Circle
+            </button>
+            <button type="button" class="shape-btn" data-shape="ellipse">
+              <i class="fa-solid fa-egg"></i> Ellipse
+            </button>
+          </div>
+        </section>
+
+        <!-- Presets Selector Card -->
+        <section class="card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-sparkles"></i> Presets
+          </h2>
+          <!-- Presets load dynamically based on active shape category -->
+          <div id="presets-container" class="presets-grid-layout"></div>
+        </section>
+
+        <!-- Polygon Vertices Actions (Polygon Mode Only) -->
+        <section class="card" id="polygon-actions-card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-bezier-curve"></i> Vertex Controls
+          </h2>
+          <div class="btn-row">
+            <button
+              type="button"
+              id="btn-add-vertex"
+              class="btn btn-outline"
+              title="Add anchor point"
+            >
+              <i class="fa-solid fa-circle-plus"></i> Add Point
+            </button>
+            <button
+              type="button"
+              id="btn-delete-vertex"
+              class="btn btn-outline btn-danger-hover"
+              title="Delete selected anchor point"
+              disabled
+            >
+              <i class="fa-solid fa-trash-can"></i> Delete Point
+            </button>
+          </div>
+          <div class="coordinate-editor hidden" id="coord-editor-row">
+            <div class="form-row">
+              <div class="form-group half">
+                <label for="vertex-x">X (%)</label>
+                <input
+                  type="number"
+                  id="vertex-x"
+                  min="0"
+                  max="100"
+                  placeholder="50"
+                  class="num-input"
+                />
+              </div>
+              <div class="form-group half">
+                <label for="vertex-y">Y (%)</label>
+                <input
+                  type="number"
+                  id="vertex-y"
+                  min="0"
+                  max="100"
+                  placeholder="50"
+                  class="num-input"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Blob Radii Sliders (Blob Mode Only) -->
+        <section class="card hidden" id="blob-sliders-card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-sliders"></i> Blob Sliders
+          </h2>
+
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <label for="blob-r-top-left-h">Top Left - Horiz</label>
+              <span id="val-top-left-h" class="slider-val">50%</span>
+            </div>
+            <input
+              type="range"
+              id="blob-r-top-left-h"
+              aria-label="Top Left Horizontal Radius"
+              title="Top Left - Horiz: 50%"
+              min="0"
+              max="100"
+              value="50"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="50"
+              aria-valuetext="50%"
+              class="range-slider"
+            />
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <label for="blob-r-top-right-h">Top Right - Horiz</label>
+              <span id="val-top-right-h" class="slider-val">50%</span>
+            </div>
+            <input
+              type="range"
+              id="blob-r-top-right-h"
+              aria-label="Top Right Horizontal Radius"
+              title="Top Right - Horiz: 50%"
+              min="0"
+              max="100"
+              value="50"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="50"
+              aria-valuetext="50%"
+              class="range-slider"
+            />
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <label for="blob-r-bottom-right-h">Bottom Right - Horiz</label>
+              <span id="val-bottom-right-h" class="slider-val">50%</span>
+            </div>
+            <input
+              type="range"
+              id="blob-r-bottom-right-h"
+              aria-label="Bottom Right Horizontal Radius"
+              title="Bottom Right - Horiz: 50%"
+              min="0"
+              max="100"
+              value="50"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="50"
+              aria-valuetext="50%"
+              class="range-slider"
+            />
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <label for="blob-r-bottom-left-h">Bottom Left - Horiz</label>
+              <span id="val-bottom-left-h" class="slider-val">50%</span>
+            </div>
+            <input
+              type="range"
+              id="blob-r-bottom-left-h"
+              aria-label="Bottom Left Horizontal Radius"
+              title="Bottom Left - Horiz: 50%"
+              min="0"
+              max="100"
+              value="50"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="50"
+              aria-valuetext="50%"
+              class="range-slider"
+            />
+          </div>
+
+          <div class="slider-group slider-divider">
+            <div class="slider-label-row">
+              <label for="blob-r-top-left-v">Top Left - Vert</label>
+              <span id="val-top-left-v" class="slider-val">50%</span>
+            </div>
+            <input
+              type="range"
+              id="blob-r-top-left-v"
+              aria-label="Top Left Vertical Radius"
+              title="Top Left - Vert: 50%"
+              min="0"
+              max="100"
+              value="50"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="50"
+              aria-valuetext="50%"
+              class="range-slider"
+            />
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <label for="blob-r-top-right-v">Top Right - Vert</label>
+              <span id="val-top-right-v" class="slider-val">50%</span>
+            </div>
+            <input
+              type="range"
+              id="blob-r-top-right-v"
+              aria-label="Top Right Vertical Radius"
+              title="Top Right - Vert: 50%"
+              min="0"
+              max="100"
+              value="50"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="50"
+              aria-valuetext="50%"
+              class="range-slider"
+            />
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <label for="blob-r-bottom-right-v">Bottom Right - Vert</label>
+              <span id="val-bottom-right-v" class="slider-val">50%</span>
+            </div>
+            <input
+              type="range"
+              id="blob-r-bottom-right-v"
+              aria-label="Bottom Right Vertical Radius"
+              title="Bottom Right - Vert: 50%"
+              min="0"
+              max="100"
+              value="50"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="50"
+              aria-valuetext="50%"
+              class="range-slider"
+            />
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <label for="blob-r-bottom-left-v">Bottom Left - Vert</label>
+              <span id="val-bottom-left-v" class="slider-val">50%</span>
+            </div>
+            <input
+              type="range"
+              id="blob-r-bottom-left-v"
+              aria-label="Bottom Left Vertical Radius"
+              title="Bottom Left - Vert: 50%"
+              min="0"
+              max="100"
+              value="50"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="50"
+              aria-valuetext="50%"
+              class="range-slider"
+            />
+          </div>
+        </section>
+
+        <!-- Circle & Ellipse Sliders (Circle/Ellipse Mode Only) -->
+        <section class="card hidden" id="ellipse-sliders-card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-sliders"></i> Dimensions
+          </h2>
+
+          <div id="circle-radii-sliders">
+            <div class="slider-group">
+              <div class="slider-label-row">
+                <label for="radius-r">Radius (R)</label>
+                <span id="val-radius-r" class="slider-val">40%</span>
+              </div>
+              <input
+                type="range"
+                id="radius-r"
+                aria-label="Circle Radius"
+                title="Radius (R): 40%"
+                min="5"
+                max="50"
+                value="40"
+                aria-valuemin="5"
+                aria-valuemax="50"
+                aria-valuenow="40"
+                aria-valuetext="40%"
+                class="range-slider"
+              />
+            </div>
+          </div>
+
+          <div id="ellipse-radii-sliders" class="hidden">
+            <div class="slider-group">
+              <div class="slider-label-row">
+                <label for="radius-rx">Radius X (Rx)</label>
+                <span id="val-radius-rx" class="slider-val">40%</span>
+              </div>
+              <input
+                type="range"
+                id="radius-rx"
+                aria-label="Ellipse Radius X"
+                title="Radius X (Rx): 40%"
+                min="5"
+                max="50"
+                value="40"
+                aria-valuemin="5"
+                aria-valuemax="50"
+                aria-valuenow="40"
+                aria-valuetext="40%"
+                class="range-slider"
+              />
+            </div>
+            <div class="slider-group">
+              <div class="slider-label-row">
+                <label for="radius-ry">Radius Y (Ry)</label>
+                <span id="val-radius-ry" class="slider-val">30%</span>
+              </div>
+              <input
+                type="range"
+                id="radius-ry"
+                aria-label="Ellipse Radius Y"
+                title="Radius Y (Ry): 30%"
+                min="5"
+                max="50"
+                value="30"
+                aria-valuemin="5"
+                aria-valuemax="50"
+                aria-valuenow="30"
+                aria-valuetext="30%"
+                class="range-slider"
+              />
+            </div>
+          </div>
+
+          <div class="slider-group slider-divider">
+            <div class="slider-label-row">
+              <label for="center-cx">Center X (Cx)</label>
+              <span id="val-center-cx" class="slider-val">50%</span>
+            </div>
+            <input
+              type="range"
+              id="center-cx"
+              aria-label="Center X Coordinate"
+              title="Center X (Cx): 50%"
+              min="0"
+              max="100"
+              value="50"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="50"
+              aria-valuetext="50%"
+              class="range-slider"
+            />
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <label for="center-cy">Center Y (Cy)</label>
+              <span id="val-center-cy" class="slider-val">50%</span>
+            </div>
+            <input
+              type="range"
+              id="center-cy"
+              aria-label="Center Y Coordinate"
+              title="Center Y (Cy): 50%"
+              min="0"
+              max="100"
+              value="50"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="50"
+              aria-valuetext="50%"
+              class="range-slider"
+            />
+          </div>
+        </section>
+
+        <!-- Custom Stylings (Gradients / Image / Shadows) -->
+        <section class="card styling-card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-palette"></i> Customize Style
+          </h2>
+
+          <!-- Fill Mode selection -->
+          <div class="form-group space-mb-3">
+            <label for="fill-mode">Shape Fill</label>
+            <select id="fill-mode" class="select-input">
+              <option value="solid" selected>Solid Color</option>
+              <option value="gradient">Gradient Fill</option>
+              <option value="image">Background Image</option>
+            </select>
+          </div>
+
+          <!-- Solid Fill Inputs -->
+          <div id="fill-solid-group" class="form-row">
+            <div class="form-group half">
+              <label for="color-picker-solid">Color</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color-picker-solid" value="#6366f1" />
+                <input
+                  type="text"
+                  id="color-text-solid"
+                  aria-label="Solid fill color hex value"
+                  value="#6366f1"
+                  placeholder="#6366f1"
+                  class="text-input font-mono"
+                  maxlength="7"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Gradient Fill Inputs -->
+          <div id="fill-gradient-group" class="hidden">
+            <div class="form-row space-mb-2">
+              <div class="form-group half">
+                <label for="color-picker-grad1">Color 1</label>
+                <div class="color-picker-wrap">
+                  <input type="color" id="color-picker-grad1" value="#6366f1" />
+                  <input
+                    type="text"
+                    id="color-text-grad1"
+                    aria-label="Gradient first color hex value"
+                    value="#6366f1"
+                    placeholder="#6366f1"
+                    class="text-input font-mono"
+                    maxlength="7"
+                  />
+                </div>
+              </div>
+              <div class="form-group half">
+                <label for="color-picker-grad2">Color 2</label>
+                <div class="color-picker-wrap">
+                  <input type="color" id="color-picker-grad2" value="#a78bfa" />
+                  <input
+                    type="text"
+                    id="color-text-grad2"
+                    aria-label="Gradient second color hex value"
+                    value="#a78bfa"
+                    placeholder="#a78bfa"
+                    class="text-input font-mono"
+                    maxlength="7"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="slider-group">
+              <div class="slider-label-row">
+                <label for="grad-angle">Gradient Angle</label>
+                <span id="val-grad-angle" class="slider-val">135&deg;</span>
+              </div>
+              <input
+                type="range"
+                id="grad-angle"
+                aria-label="Gradient Angle"
+                title="Gradient Angle: 135°"
+                min="0"
+                max="360"
+                value="135"
+                aria-valuemin="0"
+                aria-valuemax="360"
+                aria-valuenow="135"
+                aria-valuetext="135°"
+                class="range-slider"
+              />
+            </div>
+          </div>
+
+          <!-- Image Fill Inputs -->
+          <div id="fill-image-group" class="form-group hidden">
+            <label for="image-url">Image URL</label>
+            <input
+              type="text"
+              id="image-url"
+              value="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=600&auto=format&fit=crop&q=80"
+              class="text-input"
+              placeholder="Enter image URL..."
+            />
+          </div>
+
+          <!-- Drop Shadows / Backdrop Filters styling -->
+          <div class="slider-group slider-divider">
+            <div class="slider-label-row">
+              <label for="shadow-blur">Glow Blur</label>
+              <span id="val-shadow-blur" class="slider-val">20px</span>
+            </div>
+            <input
+              type="range"
+              id="shadow-blur"
+              aria-label="Glow Blur"
+              title="Glow Blur: 20px"
+              min="0"
+              max="50"
+              value="20"
+              aria-valuemin="0"
+              aria-valuemax="50"
+              aria-valuenow="20"
+              aria-valuetext="20px"
+              class="range-slider"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="color-picker-shadow">Glow Color</label>
+            <div class="color-picker-wrap">
+              <input type="color" id="color-picker-shadow" value="#6366f1" />
+              <input
+                type="text"
+                id="color-text-shadow"
+                aria-label="Glow color hex value"
+                value="#6366f1"
+                placeholder="#6366f1"
+                class="text-input font-mono"
+                maxlength="7"
+              />
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <!-- ----------- INTERACTIVE CANVAS PANEL ----------- -->
+      <section class="panel canvas-panel" aria-label="Visual Workspace">
+        <!-- Preview Canvas Board -->
+        <div class="card canvas-card">
+          <h3 class="card-title">
+            <i class="fa-solid fa-eye"></i> Visual Editor
+          </h3>
+          <p class="canvas-help-text" id="canvas-instructions">
+            Drag handles to reshape. Double-click the canvas to add points;
+            double-click handles to delete them.
+          </p>
+
+          <div class="canvas-container" id="editor-canvas">
+            <!-- Grid Overlay Line overlays -->
+            <div class="canvas-grid-overlay"></div>
+
+            <!-- Outer Reference Boundary (representing 100% boundary) -->
+            <div class="canvas-bounds-border"></div>
+
+            <!-- Preview Shape Element -->
+            <div id="shape-preview" class="shape-preview"></div>
+
+            <!-- SVG Boundary Line Tracers -->
+            <svg class="svg-outline-tracer" id="svg-tracer">
+              <polygon
+                id="svg-polygon-trace"
+                points=""
+                class="hidden"
+              ></polygon>
+              <circle
+                id="svg-circle-trace"
+                cx="0"
+                cy="0"
+                r="0"
+                class="hidden"
+              ></circle>
+              <ellipse
+                id="svg-ellipse-trace"
+                cx="0"
+                cy="0"
+                rx="0"
+                ry="0"
+                class="hidden"
+              ></ellipse>
+            </svg>
+
+            <!-- Handles container (positioned dynamically in JS) -->
+            <div id="handles-container" class="handles-container"></div>
+          </div>
+        </div>
+
+        <!-- Exporter Card -->
+        <div class="card exporter-card">
+          <h3 class="card-title text-accent">
+            <i class="fa-solid fa-code"></i> Generated Code
+          </h3>
+
+          <div class="tabs-header">
+            <button type="button" class="tab-btn active" data-tab="css">
+              CSS Properties
+            </button>
+            <button type="button" class="tab-btn" data-tab="html">
+              HTML Layout
+            </button>
+          </div>
+
+          <div class="tabs-content">
+            <!-- CSS Tab -->
+            <div class="tab-pane active" id="tab-pane-css">
+              <div class="code-box-wrapper">
+                <pre><code id="code-output-css" class="language-css font-mono">clip-path: polygon(50% 0%, 0% 100%, 100% 100%);</code></pre>
+                <button
+                  type="button"
+                  class="btn btn-copy"
+                  id="btn-copy-css"
+                  title="Copy CSS to Clipboard"
+                >
+                  <i class="fa-solid fa-copy"></i> Copy CSS
+                </button>
+              </div>
+            </div>
+
+            <!-- HTML Tab -->
+            <div class="tab-pane" id="tab-pane-html">
+              <div class="code-box-wrapper">
+                <pre><code id="code-output-html" class="language-html font-mono">&lt;div class="custom-shape"&gt;&lt;/div&gt;</code></pre>
+                <button
+                  type="button"
+                  class="btn btn-copy"
+                  id="btn-copy-html"
+                  title="Copy HTML to Clipboard"
+                >
+                  <i class="fa-solid fa-copy"></i> Copy HTML
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>Built with 💖 in Cradle Editor Showcase</p>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div
+      id="toast-container"
+      class="toast-container"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
+
+    <!-- ===================== Scripts ===================== -->
+    <!--
+      Script load order matters: shapeEngine.js MUST be loaded before
+      script.js because script.js calls ShapeEngine.generateClipPathCSS()
+      at runtime. We use classic scripts (not `defer`) so the browser
+      executes them strictly in document order, guaranteeing ShapeEngine
+      is defined before script.js runs its first render pass.
+    -->
+    <!-- Shared BackToHome UI Component -->
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+    <!-- Core shape calculation engine — required by script.js -->
+    <script src="shapeEngine.js"></script>
+    <script src="../../../src/components/ui/sanitizeCss.js"></script>
+    <!-- Application DOM logic — depends on ShapeEngine being defined -->
+    <script src="script.js"></script>
+  </body>
+</html>

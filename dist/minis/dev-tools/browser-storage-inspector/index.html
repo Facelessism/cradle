@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Browser Storage Inspector & Backup Manager | Cradle</title>
+    <meta name="description" content="Inspect, manage, and debug localStorage, sessionStorage, and browser cookies in real time." />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/dev-tools/browser-storage-inspector/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Browser Storage Inspector &amp; Backup Manager | Cradle" />
+    <meta property="og:description" content="Inspect, manage, and debug localStorage, sessionStorage, and browser cookies in real time." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/dev-tools/browser-storage-inspector/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="project-header">
+        <div>
+          <a href="../../../index.html" class="back-link">Back to Cradle</a>
+          <p class="eyebrow">Dev Tools Mini</p>
+          <h1>Browser Storage Inspector</h1>
+          <p class="subtitle">
+            Inspect, search, filter, edit, backup, and restore LocalStorage,
+            SessionStorage, Cookies, and IndexedDB data with size calculation.
+          </p>
+        </div>
+
+        <div class="summary-grid" aria-label="Storage item counts">
+          <article>
+            <span id="localCount">0</span>
+            <small>Local</small>
+          </article>
+          <article>
+            <span id="sessionCount">0</span>
+            <small>Session</small>
+          </article>
+          <article>
+            <span id="cookieCount">0</span>
+            <small>Cookies</small>
+          </article>
+          <article>
+            <span id="indexedCount">0</span>
+            <small>IndexedDB</small>
+          </article>
+        </div>
+      </header>
+
+      <section class="toolbar" aria-label="Inspector controls">
+        <label class="search-box">
+          <span>Search storage</span>
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="Search keys, values, stores..."
+          />
+        </label>
+
+        <label class="filter-box">
+          <span>Type Filter</span>
+          <select id="typeFilterSelect" class="select-input">
+            <option value="all">All Data Types</option>
+            <option value="json">JSON Objects</option>
+            <option value="string">Strings</option>
+            <option value="number">Numbers</option>
+            <option value="boolean">Booleans</option>
+            <option value="jwt">JWT Tokens</option>
+            <option value="base64">Base64</option>
+          </select>
+        </label>
+
+        <div class="toolbar-actions">
+          <button
+            id="refreshBtn"
+            data-cradle-btn
+            data-variant="secondary"
+            data-size="sm"
+            type="button"
+          >
+            Refresh
+          </button>
+          <button
+            id="seedBtn"
+            data-cradle-btn
+            data-variant="outline"
+            data-size="sm"
+            type="button"
+          >
+            Seed Demo Data
+          </button>
+          <button
+            id="exportJsonBtn"
+            data-cradle-btn
+            data-variant="secondary"
+            data-size="sm"
+            type="button"
+          >
+            Export JSON
+          </button>
+          <button
+            id="exportCsvBtn"
+            data-cradle-btn
+            data-variant="primary"
+            data-size="sm"
+            type="button"
+          >
+            Export CSV
+          </button>
+        </div>
+      </section>
+
+      <nav class="tabs" aria-label="Storage types">
+        <button class="tab active" data-panel="local" type="button">
+          LocalStorage
+        </button>
+        <button class="tab" data-panel="session" type="button">
+          SessionStorage
+        </button>
+        <button class="tab" data-panel="cookies" type="button">Cookies</button>
+        <button class="tab" data-panel="indexed" type="button">
+          IndexedDB
+        </button>
+      </nav>
+
+      <section
+        id="statusMessage"
+        class="status"
+        role="status"
+        aria-live="polite"
+      ></section>
+
+      <section id="local" class="panel active">
+        <div class="panel-header">
+          <div>
+            <h2>LocalStorage</h2>
+            <p>Persistent key-value data for this origin.</p>
+          </div>
+          <button
+            data-cradle-btn
+            data-variant="danger"
+            data-size="sm"
+            data-clear="local"
+            type="button"
+          >
+            Clear LocalStorage
+          </button>
+        </div>
+
+        <form class="editor-form" data-form="local">
+          <label>
+            Key
+            <input name="key" required placeholder="theme" />
+          </label>
+          <label>
+            Value
+            <textarea
+              name="value"
+              rows="3"
+              required
+              placeholder='{"mode":"dark"}'
+            ></textarea>
+          </label>
+          <button
+            data-cradle-btn
+            data-variant="success"
+            data-size="sm"
+            type="submit"
+          >
+            Save Entry
+          </button>
+        </form>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Type</th>
+                <th>Bytes</th>
+                <th>Value</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="localRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="session" class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>SessionStorage</h2>
+            <p>
+              Temporary key-value data that lasts for the current tab session.
+            </p>
+          </div>
+          <button
+            data-cradle-btn
+            data-variant="danger"
+            data-size="sm"
+            data-clear="session"
+            type="button"
+          >
+            Clear SessionStorage
+          </button>
+        </div>
+
+        <form class="editor-form" data-form="session">
+          <label>
+            Key
+            <input name="key" required placeholder="draft" />
+          </label>
+          <label>
+            Value
+            <textarea
+              name="value"
+              rows="3"
+              required
+              placeholder="Unsaved form text"
+            ></textarea>
+          </label>
+          <button
+            data-cradle-btn
+            data-variant="success"
+            data-size="sm"
+            type="submit"
+          >
+            Save Entry
+          </button>
+        </form>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Type</th>
+                <th>Bytes</th>
+                <th>Value</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="sessionRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="cookies" class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Cookies</h2>
+            <p>
+              Readable cookies for this page path. HttpOnly cookies are hidden
+              by browsers.
+            </p>
+          </div>
+          <button
+            data-cradle-btn
+            data-variant="danger"
+            data-size="sm"
+            data-clear="cookies"
+            type="button"
+          >
+            Clear Visible Cookies
+          </button>
+        </div>
+
+        <form class="editor-form" data-form="cookies">
+          <label>
+            Name
+            <input name="key" required placeholder="session_hint" />
+          </label>
+          <label>
+            Value
+            <textarea
+              name="value"
+              rows="3"
+              required
+              placeholder="active"
+            ></textarea>
+          </label>
+          <label>
+            Max age seconds
+            <input
+              name="maxAge"
+              type="number"
+              min="1"
+              value="86400"
+              placeholder="86400"
+            />
+          </label>
+          <button
+            data-cradle-btn
+            data-variant="success"
+            data-size="sm"
+            type="submit"
+          >
+            Save Cookie
+          </button>
+        </form>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Bytes</th>
+                <th>Value</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cookieRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="indexed" class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>IndexedDB</h2>
+            <p>
+              Object-store records from browser databases available to this
+              origin.
+            </p>
+          </div>
+          <div class="panel-actions">
+            <button
+              id="loadIndexedBtn"
+              data-cradle-btn
+              data-variant="secondary"
+              data-size="sm"
+              type="button"
+            >
+              Load Databases
+            </button>
+            <button
+              id="deleteDbBtn"
+              data-cradle-btn
+              data-variant="danger"
+              data-size="sm"
+              type="button"
+            >
+              Delete Selected DB
+            </button>
+          </div>
+        </div>
+
+        <div class="indexed-controls">
+          <label>
+            Database
+            <select id="dbSelect"></select>
+          </label>
+          <label>
+            Object Store
+            <select id="storeSelect"></select>
+          </label>
+        </div>
+
+        <form class="editor-form" data-form="indexed">
+          <label>
+            Key
+            <input
+              name="key"
+              placeholder="Leave blank for auto-generated keys"
+            />
+          </label>
+          <label>
+            JSON Value
+            <textarea
+              name="value"
+              rows="4"
+              required
+              placeholder='{"name":"Ada","role":"admin"}'
+            ></textarea>
+          </label>
+          <button
+            data-cradle-btn
+            data-variant="success"
+            data-size="sm"
+            type="submit"
+          >
+            Save Record
+          </button>
+        </form>
+
+        <div class="hint" id="indexedHint">
+          IndexedDB listing is supported in Chromium-based browsers and some
+          recent browsers.
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Database / Store</th>
+                <th>Key</th>
+                <th>Value</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="indexedRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="../../../src/components/ui/Button/Button.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+    <script src="storageEngine.js"></script>
+    <script src="storageExporter.js"></script>
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

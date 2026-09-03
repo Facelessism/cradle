@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Audio Waveform &amp; Tone Generator | Cradle</title>
+    <meta name="description" content="Audio Waveform & Tone Generator is an interactive browser-based audio synthesizer that uses the Web Audio API to generate four waveform types: Sine, Square, Saw..." />
+
+    <meta
+      name="description"
+      content="Interactive tone generator with real-time waveform visualization and on-screen piano keyboard using the Web Audio API."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/misc/audio-waveform-generator/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Audio Waveform &amp;amp; Tone Generator | Cradle" />
+    <meta property="og:description" content="Interactive tone generator with real-time waveform visualization and on-screen piano keyboard using the Web Audio API." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/misc/audio-waveform-generator/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <a href="../../../index.html" class="back-link">← Back to Cradle</a>
+          <h1>Audio Waveform &amp; Tone Generator</h1>
+          <p class="subtitle">
+            Synthesize waveforms, visualize oscillations, and play notes with an
+            interactive piano keyboard — all in your browser.
+          </p>
+        </div>
+      </header>
+
+      <!-- Controls -->
+      <main role="main">
+        <section class="controls-panel">
+          <!-- Wave Type Selector -->
+          <div class="control-row">
+            <label class="control-label">Wave Type</label>
+            <div
+              class="wave-toggles"
+              role="radiogroup"
+              aria-label="Waveform type"
+            >
+              <button
+                class="wave-btn active"
+                data-wave="sine"
+                aria-pressed="true"
+              >
+                Sine
+              </button>
+              <button class="wave-btn" data-wave="square" aria-pressed="false">
+                Square
+              </button>
+              <button
+                class="wave-btn"
+                data-wave="sawtooth"
+                aria-pressed="false"
+              >
+                Sawtooth
+              </button>
+              <button
+                class="wave-btn"
+                data-wave="triangle"
+                aria-pressed="false"
+              >
+                Triangle
+              </button>
+            </div>
+          </div>
+
+          <!-- Frequency Slider -->
+          <div class="control-row">
+            <label class="control-label" for="freqSlider">Frequency</label>
+            <div class="slider-group">
+              <input
+                type="range"
+                id="freqSlider"
+                min="20"
+                max="2000"
+                step="1"
+                value="440"
+                aria-label="Frequency in Hertz"
+                title="Frequency: 440 Hz"
+                aria-valuemin="20"
+                aria-valuemax="2000"
+                aria-valuenow="440"
+                aria-valuetext="440 Hz"
+              />
+              <span class="range-value mono" id="freqDisplay">440 Hz</span>
+            </div>
+          </div>
+
+          <!-- Volume Slider -->
+          <div class="control-row">
+            <label class="control-label" for="volSlider">Volume</label>
+            <div class="slider-group">
+              <input
+                type="range"
+                id="volSlider"
+                min="0"
+                max="100"
+                step="1"
+                value="60"
+                aria-label="Volume percentage"
+                title="Volume: 60%"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="60"
+                aria-valuetext="60%"
+              />
+              <span class="range-value mono" id="volDisplay">60%</span>
+            </div>
+          </div>
+
+          <!-- Play Button -->
+          <div class="control-row">
+            <div class="play-row">
+              <button class="btn btn-play" id="playBtn">▶ Play</button>
+              <span
+                class="status-text mono"
+                id="statusText"
+                role="status"
+                aria-live="polite"
+                >Stopped</span
+              >
+            </div>
+          </div>
+        </section>
+
+        <!-- Waveform Canvas -->
+        <section class="canvas-section">
+          <div class="canvas-header">
+            <h2 class="section-title">📉 Waveform Oscilloscope</h2>
+            <span class="canvas-meta mono" id="canvasMeta">—</span>
+          </div>
+          <div class="canvas-wrap">
+            <canvas
+              id="waveform"
+              aria-label="Real-time waveform visualization"
+            ></canvas>
+          </div>
+        </section>
+
+        <!-- Piano Keyboard -->
+        <section class="piano-section">
+          <h2 class="section-title">
+            🎹 Piano Keyboard <span class="piano-range">C4 – B4</span>
+          </h2>
+          <div class="piano-container" id="piano">
+            <!-- Keys are rendered by script.js -->
+          </div>
+          <p class="piano-hint">
+            Click a key to play — frequency and slider update automatically.
+          </p>
+        </section>
+      </main>
+    </div>
+
+    <script src="waveformEngine.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

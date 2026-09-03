@@ -1,0 +1,265 @@
+:root {
+  --bg: #030712;
+  --panel: rgba(15, 23, 42, 0.88);
+  --panel-soft: rgba(17, 24, 39, 0.82);
+  --border: rgba(148, 163, 184, 0.24);
+  --text: #f8fafc;
+  --muted: #9ca3af;
+  --accent: #0d9488;
+  --accent-soft: #2dd4bf;
+  --danger: #fb7185;
+  --success: #34d399;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 10% 15%, rgba(13, 148, 136, 0.22), transparent 32rem),
+    radial-gradient(circle at 88% 10%, rgba(45, 212, 191, 0.12), transparent 28rem),
+    var(--bg);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.app-shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 44px 0;
+}
+
+.hero {
+  max-width: 800px;
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--accent-soft);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 12px;
+  font-size: clamp(2.25rem, 5vw, 4.25rem);
+  line-height: 0.96;
+}
+
+.hero p,
+.label,
+.preview-heading p,
+.message {
+  color: var(--muted);
+}
+
+.hero p {
+  margin-bottom: 0;
+  line-height: 1.7;
+}
+
+code,
+pre {
+  font-family: "Fira Code", "SFMono-Regular", Consolas, monospace;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.control-panel,
+.output-panel,
+.preview-panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 22px 60px rgba(2, 6, 23, 0.34);
+}
+
+.control-panel,
+.output-panel,
+.preview-panel {
+  padding: 22px;
+}
+
+.panel-heading,
+.preview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+h2 {
+  margin-bottom: 0;
+  font-size: 1.2rem;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  color: #dbeafe;
+  font-weight: 800;
+}
+
+label span {
+  font-size: 0.88rem;
+}
+
+input,
+select {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+  background: #020617;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--accent-soft);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+button {
+  min-height: 44px;
+  padding: 0 15px;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.primary-button {
+  color: #042f2e;
+  border: 0;
+  background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+}
+
+.secondary-button {
+  color: var(--text);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.message {
+  min-height: 24px;
+  margin: 12px 0 0;
+  font-weight: 700;
+}
+
+.message[data-type="success"] {
+  color: var(--success);
+}
+
+.message[data-type="error"] {
+  color: var(--danger);
+}
+
+.output-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.result-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.label {
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#clampOutput,
+pre {
+  overflow-x: auto;
+  margin: 0;
+  color: #ccfbf1;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.preview-panel {
+  margin-top: 22px;
+}
+
+.preview-box {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  padding: clamp(1.5rem, calc(0rem + 4.1667vw), 4rem);
+  border: 1px dashed rgba(45, 212, 191, 0.45);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(13, 148, 136, 0.14), rgba(15, 23, 42, 0.8)),
+    #020617;
+}
+
+.preview-box span {
+  font-size: clamp(1rem, calc(0.5833rem + 2.0833vw), 2.25rem);
+  font-weight: 900;
+  text-align: center;
+}
+
+@media (max-width: 860px) {
+  .app-shell {
+    width: min(100% - 24px, 680px);
+    padding: 30px 0;
+  }
+
+  .workspace,
+  .field-grid,
+  .panel-heading,
+  .preview-heading {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .actions button {
+    width: 100%;
+  }
+}

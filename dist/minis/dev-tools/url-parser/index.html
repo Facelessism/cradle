@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>URL Parser</title>
+    <meta name="description" content="The URL Parser is a developer tool that breaks down a URL into its individual components." />
+
+    <meta
+      name="description"
+      content="Detailed URL component analysis, query string breakdown, and component encoder."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/dev-tools/url-parser/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="URL Parser" />
+    <meta property="og:description" content="Detailed URL component analysis, query string breakdown, and component encoder." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/dev-tools/url-parser/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <div class="app">
+      <main class="card">
+        <div class="header">
+          <h1>🔗 URL Parser</h1>
+          <p>Break URLs into readable components</p>
+        </div>
+        <div class="input-box">
+          <input
+            id="urlInput"
+            value="https://github.com/user/repo?tab=readme#install"
+            placeholder="Paste URL here..."
+          />
+          <button id="parseBtn">Parse</button>
+        </div>
+        <div id="result" role="status" aria-live="polite"></div>
+      </main>
+    </div>
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="urlEngine.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

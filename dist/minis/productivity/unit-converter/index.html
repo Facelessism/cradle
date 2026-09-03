@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/projects/productivity/unit-converter/index.html/" />
+
+  <title>Unit Converter</title>
+    <meta name="description" content="Unit Converter is a fast, accurate, client-side conversion tool that supports 8 categories (Length, Weight, Temperature, Volume, Speed, Data, Area, Time) with o..." />
+
+  <meta
+    name="description"
+    content="A fast, accurate unit converter supporting length, weight, temperature, volume, speed, data, area, and time conversions."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+  <link rel="stylesheet" href="style.css" />
+    <meta property="og:title" content="Unit Converter" />
+    <meta property="og:description" content="Unit Converter is a fast, accurate, client-side conversion tool that supports 8 categories (Length, Weight, Temperature, Volume, Speed, Data, Area, Time) with o..." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/productivity/unit-converter/" />
+</head>
+<body>
+  <main class="shell">
+    <!-- ==================== HEADER ==================== -->
+    <header class="project-header">
+      <div>
+        <a href="../../../index.html" class="back-link">
+          <i class="fa-solid fa-arrow-left"></i> Back to Cradle
+        </a>
+        <p class="eyebrow">Productivity</p>
+        <h1>Unit Converter</h1>
+        <p class="subtitle">
+          Convert between units of length, weight, temperature, volume, speed,
+          data, area, and time instantly. Supports 8 categories with 70+ units.
+        </p>
+      </div>
+      <div class="header-actions">
+        <button
+          id="btn-clear-history"
+          data-cradle-btn
+          data-variant="danger"
+          data-size="sm"
+          data-left-icon="🗑"
+          title="Clear conversion history"
+        >
+          Clear History
+        </button>
+      </div>
+    </header>
+
+    <!-- ==================== CATEGORY TABS ==================== -->
+    <nav class="category-tabs" id="categoryTabs" aria-label="Conversion categories">
+      <button class="cat-tab active" data-category="length">
+        <i class="fa-solid fa-ruler"></i> Length
+      </button>
+      <button class="cat-tab" data-category="weight">
+        <i class="fa-solid fa-weight-hanging"></i> Weight
+      </button>
+      <button class="cat-tab" data-category="temperature">
+        <i class="fa-solid fa-temperature-half"></i> Temperature
+      </button>
+      <button class="cat-tab" data-category="volume">
+        <i class="fa-solid fa-flask"></i> Volume
+      </button>
+      <button class="cat-tab" data-category="speed">
+        <i class="fa-solid fa-gauge-high"></i> Speed
+      </button>
+      <button class="cat-tab" data-category="data">
+        <i class="fa-solid fa-hard-drive"></i> Data
+      </button>
+      <button class="cat-tab" data-category="area">
+        <i class="fa-solid fa-expand"></i> Area
+      </button>
+      <button class="cat-tab" data-category="time">
+        <i class="fa-solid fa-clock"></i> Time
+      </button>
+    </nav>
+
+    <!-- ==================== CONVERTER PANEL ==================== -->
+    <section class="converter-panel" aria-label="Unit conversion">
+      <div class="converter-card">
+        <!-- FROM side -->
+        <div class="conv-side">
+          <label class="conv-label" for="fromValue">From</label>
+          <input
+            type="number"
+            id="fromValue"
+            class="conv-input"
+            placeholder="Enter value"
+            aria-label="Value to convert from"
+            inputmode="decimal"
+          />
+          <select id="fromUnit" class="conv-select" aria-label="Source unit"></select>
+        </div>
+
+        <!-- SWAP BUTTON -->
+        <button
+          id="swapBtn"
+          class="swap-btn"
+          title="Swap units (S)"
+          aria-label="Swap units"
+        >
+          <i class="fa-solid fa-right-left"></i>
+        </button>
+
+        <!-- TO side -->
+        <div class="conv-side">
+          <label class="conv-label" for="toValue">To</label>
+          <input
+            type="number"
+            id="toValue"
+            class="conv-input"
+            placeholder="Result"
+            aria-label="Converted result"
+            inputmode="decimal"
+            readonly
+          />
+          <select id="toUnit" class="conv-select" aria-label="Target unit"></select>
+        </div>
+      </div>
+
+      <!-- FORMULA DISPLAY -->
+      <div class="formula-bar" id="formulaBar" role="status" aria-live="polite">
+        <span class="formula-icon"><i class="fa-solid fa-square-root-variable"></i></span>
+        <span id="formulaText">Select a category and enter a value to see the formula.</span>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="quick-actions">
+        <button id="copyBtn" class="action-btn" title="Copy result (Ctrl+Shift+C)">
+          <i class="fa-regular fa-copy"></i> Copy Result
+        </button>
+        <button id="resetBtn" class="action-btn" title="Reset (Esc)">
+          <i class="fa-solid fa-rotate-left"></i> Reset
+        </button>
+        <span class="shortcut-hint">Press <kbd>S</kbd> to swap, <kbd>Esc</kbd> to reset</span>
+      </div>
+    </section>
+
+    <!-- ==================== CONVERSION TABLE ==================== -->
+    <section class="table-section" aria-label="Conversion reference table">
+      <div class="table-card">
+        <div class="table-header">
+          <h2>
+            <i class="fa-solid fa-table"></i> Quick Reference Table
+          </h2>
+          <span class="table-subtitle" id="tableSubtitle">Length conversions</span>
+        </div>
+        <div class="table-wrap">
+          <table id="refTable">
+            <thead id="refTableHead"></thead>
+            <tbody id="refTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== HISTORY ==================== -->
+    <section class="history-section" aria-label="Conversion history">
+      <div class="history-card">
+        <div class="table-header">
+          <h2>
+            <i class="fa-solid fa-clock-rotate-left"></i> Recent Conversions
+          </h2>
+          <span class="history-count" id="historyCount">0 entries</span>
+        </div>
+        <div class="history-list" id="historyList">
+          <p class="history-empty">No conversions yet. Start converting!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="project-footer">
+      <p>
+        Unit Converter &mdash; part of
+        <a href="../../../index.html" class="footer-link">Cradle</a>
+      </p>
+    </footer>
+  </main>
+
+  <!-- Shared BackToHome UI Component -->
+  <script
+    src="../../../src/components/ui/BackToHome/BackToHome.js"
+    defer
+  ></script>
+  <!-- Application Script -->
+  <script src="script.js"></script>
+</body>
+</html>

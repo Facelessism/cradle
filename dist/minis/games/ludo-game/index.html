@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ludo — Premium Board Game</title>
+    <meta name="description" content="A modular digital implementation of Ludo, the classic board game for up to four players. The board is drawn on an HTML5 Canvas element and redrawn every frame u..." />
+
+    <meta
+      name="description"
+      content="A premium digital Ludo board game with Canvas rendering, smooth animations, and 3D dice."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/games/ludo-game/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Ludo — Premium Board Game" />
+    <meta property="og:description" content="A premium digital Ludo board game with Canvas rendering, smooth animations, and 3D dice." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/games/ludo-game/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="top-bar">
+      <div class="logo">
+        <span class="logo-icon">🎲</span>
+        <h1>Ludo</h1>
+      </div>
+      <p id="status" class="status-badge" role="status" aria-live="polite">
+        Red's turn
+      </p>
+    </header>
+
+    <main class="game-layout">
+      <!-- LEFT PANEL -->
+      <aside class="side-panel left-panel">
+        <div class="panel-section">
+          <h2 class="panel-title">Controls</h2>
+          <button id="rollDice" class="btn btn-roll">
+            <span class="btn-icon">🎯</span> Roll Dice
+          </button>
+          <div class="dice-row">
+            <div class="scene">
+              <div class="cube" id="diceCube">
+                <div class="cube-face cube-face-front">1</div>
+                <div class="cube-face cube-face-back">6</div>
+                <div class="cube-face cube-face-right">3</div>
+                <div class="cube-face cube-face-left">4</div>
+                <div class="cube-face cube-face-top">5</div>
+                <div class="cube-face cube-face-bottom">2</div>
+              </div>
+            </div>
+          </div>
+          <div class="btn-group">
+            <button id="newGame" class="btn btn-secondary">
+              <span class="btn-icon">🔄</span> New Game
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h2 class="panel-title">Players</h2>
+          <div class="player-list">
+            <div class="player-row active" data-color="red">
+              <div class="player-dot red"></div>
+              <span>Red</span>
+              <span class="player-type-icon" id="icon-red">👤</span>
+            </div>
+            <div class="player-row" data-color="green">
+              <div class="player-dot green"></div>
+              <span>Green</span>
+              <span class="player-type-icon" id="icon-green">🤖</span>
+            </div>
+            <div class="player-row" data-color="blue">
+              <div class="player-dot blue"></div>
+              <span>Blue</span>
+              <span class="player-type-icon" id="icon-blue">🤖</span>
+            </div>
+            <div class="player-row" data-color="yellow">
+              <div class="player-dot yellow"></div>
+              <span>Yellow</span>
+              <span class="player-type-icon" id="icon-yellow">🤖</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CENTER: CANVAS -->
+      <div class="board-container">
+        <canvas id="ludoCanvas" width="600" height="600"></canvas>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <aside class="side-panel right-panel">
+        <div class="panel-section">
+          <h2 class="panel-title">Dashboard</h2>
+          <div class="stat-card">
+            <span class="stat-label">Current Turn</span>
+            <span class="stat-value" id="turnLabel">Red</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Total Moves</span>
+            <span class="stat-value" id="moveCount">0</span>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h2 class="panel-title">📜 Move History</h2>
+          <ol id="moveList"></ol>
+        </div>
+      </aside>
+    </main>
+
+    <!-- RESUME MODAL -->
+    <div id="resumeModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <h2>Session Detected</h2>
+        <p
+          style="
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+          "
+        >
+          It looks like you have an unfinished game. Would you like to resume?
+        </p>
+        <button id="resumeGameBtn" class="btn btn-roll">
+          <span class="btn-icon">▶️</span> Resume Game
+        </button>
+        <button id="startFreshBtn" class="btn btn-ghost">Start Fresh</button>
+      </div>
+    </div>
+
+    <!-- SETUP MODAL -->
+    <div id="setupModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <h2>Game Setup</h2>
+        <div class="player-config-list">
+          <div class="player-config-row">
+            <div class="player-dot red"></div>
+            <span>Red Player</span>
+            <select id="select-red">
+              <option value="human">Human 👤</option>
+              <option value="bot">Bot 🤖</option>
+            </select>
+          </div>
+          <div class="player-config-row">
+            <div class="player-dot green"></div>
+            <span>Green Player</span>
+            <select id="select-green">
+              <option value="human">Human 👤</option>
+              <option value="bot" selected>Bot 🤖</option>
+            </select>
+          </div>
+          <div class="player-config-row">
+            <div class="player-dot blue"></div>
+            <span>Blue Player</span>
+            <select id="select-blue">
+              <option value="human">Human 👤</option>
+              <option value="bot" selected>Bot 🤖</option>
+            </select>
+          </div>
+          <div class="player-config-row">
+            <div class="player-dot yellow"></div>
+            <span>Yellow Player</span>
+            <select id="select-yellow">
+              <option value="human">Human 👤</option>
+              <option value="bot" selected>Bot 🤖</option>
+            </select>
+          </div>
+        </div>
+        <button id="startGameBtn" class="btn btn-roll" style="margin-top: 20px">
+          <span class="btn-icon">▶️</span> Start Game
+        </button>
+        <button
+          id="closeModalBtn"
+          class="btn btn-ghost"
+          style="margin-top: 10px"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+    <script src="ludoEngine.js"></script>
+    <script src="ludoBot.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

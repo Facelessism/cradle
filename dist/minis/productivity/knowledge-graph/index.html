@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Graph | Cradle</title>
+    <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+    <link rel="stylesheet" href="style.css">
+    <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+</head>
+
+<body>
+    <main class="container">
+        <header class="header">
+            <h1>Local-First Knowledge Graph</h1>
+            <p class="subtitle">Write markdown with [[wikilinks]] and visualize connections in real-time.</p>
+        </header>
+
+        <div class="workspace">
+            <section class="editor-pane">
+                <div class="pane-header">
+                    <input type="text" id="note-title" placeholder="Note Title..." class="title-input">
+                    <div class="pane-actions">
+                        <button id="btn-save" class="btn btn-primary">Save</button>
+                        <button id="btn-delete" class="btn btn-danger">Delete</button>
+                    </div>
+                </div>
+                <textarea id="note-content"
+                    placeholder="Write your notes here... Use [[WikiLinks]] to connect ideas."></textarea>
+                <div id="note-list" class="note-list"></div>
+            </section>
+
+            <section class="graph-pane">
+                <div class="pane-header">
+                    <span>Graph Visualization</span>
+                    <button id="btn-reset-zoom" class="btn btn-small">Reset View</button>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="graph-canvas"></canvas>
+                </div>
+            </section>
+        </div>
+    </main>
+    <script type="module" src="parser.js"></script>
+    <script type="module" src="storage.js"></script>
+    <script type="module" src="graph-engine.js"></script>
+</body>
+
+</html>

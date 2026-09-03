@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chess Game</title>
+    <meta name="description" content="Interactive browser chess game with AI opponent, move history, and board state controls." />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/games/chess/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Chess Game" />
+    <meta property="og:description" content="Interactive browser chess game with AI opponent, move history, and board state controls." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/games/chess/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="game-shell" aria-labelledby="game-title">
+        <div class="header">
+          <div>
+            <p class="eyebrow">Classic Strategy</p>
+            <h1 id="game-title">Chess Game</h1>
+            <div class="feature-chips" aria-label="Game features">
+              <span>Legal Moves</span>
+              <span>Checkmate</span>
+              <span>Undo</span>
+            </div>
+          </div>
+          <div class="turn-card" id="turnCard">
+            <span>Turn</span>
+            <strong id="turnLabel">White</strong>
+          </div>
+        </div>
+
+        <div class="layout">
+          <section class="board-panel" aria-label="Chess board area">
+            <div class="player-strip top-player">
+              <span>Black</span>
+              <strong>♚</strong>
+            </div>
+            <div class="board-frame">
+              <div
+                id="board"
+                class="board"
+                role="grid"
+                aria-label="Chess board"
+              ></div>
+            </div>
+            <div class="player-strip bottom-player">
+              <span>White</span>
+              <strong>♔</strong>
+            </div>
+          </section>
+
+          <aside class="side-panel">
+            <div class="status-card">
+              <span>Game Status</span>
+              <p id="status" class="status" role="status" aria-live="polite">
+                White to move.
+              </p>
+            </div>
+
+            <div class="controls" aria-label="Game controls">
+              <button id="newGame" type="button">
+                <span aria-hidden="true">↻</span> New Game
+              </button>
+              <button id="undoMove" type="button" disabled>
+                <span aria-hidden="true">↶</span> Undo
+              </button>
+              <button id="redoMove" type="button" disabled>
+                <span aria-hidden="true">↷</span> Redo
+              </button>
+              <button id="copyPGN" type="button">
+                <span aria-hidden="true">📋</span> Copy PGN
+              </button>
+              <button id="flipBoard" type="button">
+                <span aria-hidden="true">⇅</span> Flip Board
+              </button>
+
+              <select id="gameMode" aria-label="Game Mode">
+                <option value="local">Local 2-Player</option>
+                <option value="computer">Player vs Computer</option>
+              </select>
+              <select
+                id="aiDifficulty"
+                aria-label="AI Difficulty"
+                class="hidden"
+              >
+                <option value="1">Easy</option>
+                <option value="3">Medium</option>
+                <option value="4">Hard</option>
+              </select>
+            </div>
+
+            <div class="fen-panel">
+              <span class="fen-title">FEN Position Setup</span>
+              <div class="fen-input-wrapper">
+                <input
+                  type="text"
+                  id="fenInput"
+                  placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
+                  aria-label="FEN String"
+                />
+              </div>
+              <div class="fen-buttons">
+                <button id="loadFEN" type="button">Load FEN</button>
+                <button id="copyFEN" type="button">Copy FEN</button>
+              </div>
+            </div>
+
+            <div class="info-grid">
+              <div>
+                <span>White Captures</span>
+                <p id="whiteCaptures" class="captures">None</p>
+              </div>
+              <div>
+                <span>Black Captures</span>
+                <p id="blackCaptures" class="captures">None</p>
+              </div>
+            </div>
+
+            <div class="moves-box">
+              <div class="moves-title">
+                <span>Moves</span>
+                <strong id="moveCount">0</strong>
+              </div>
+              <ol id="moveList" class="move-list"></ol>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <!-- ─── PAWN PROMOTION MODAL ─── -->
+    <div
+      id="promotionModal"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="promotionTitle"
+    >
+      <div class="modal-content">
+        <h2 id="promotionTitle">Choose Promotion</h2>
+        <p style="margin-bottom: 16px; color: var(--muted); font-size: 0.9rem">
+          Select a piece to promote your pawn to:
+        </p>
+        <div class="promotion-options" id="promotionOptions">
+          <button
+            type="button"
+            data-piece="queen"
+            aria-label="Promote to Queen"
+          >
+            ♛
+          </button>
+          <button type="button" data-piece="rook" aria-label="Promote to Rook">
+            ♜
+          </button>
+          <button
+            type="button"
+            data-piece="bishop"
+            aria-label="Promote to Bishop"
+          >
+            ♝
+          </button>
+          <button
+            type="button"
+            data-piece="knight"
+            aria-label="Promote to Knight"
+          >
+            ♞
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+    <script src="chessLogic.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

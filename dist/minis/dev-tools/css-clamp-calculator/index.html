@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CSS Clamp Calculator</title>
+    <meta name="description" content="Calculate fluid CSS clamp() values with minimum, preferred, and maximum viewport parameters." />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/dev-tools/css-clamp-calculator/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CSS Clamp Calculator" />
+    <meta property="og:description" content="Calculate fluid CSS clamp() values with minimum, preferred, and maximum viewport parameters." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/dev-tools/css-clamp-calculator/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">Dev Tools</p>
+        <h1>CSS Clamp Calculator</h1>
+        <p>
+          Generate responsive <code>clamp()</code> values for type, spacing,
+          widths, and layout tokens with a live preview and copy-ready CSS.
+        </p>
+      </header>
+
+      <section class="workspace">
+        <form class="control-panel" id="calculatorForm">
+          <div class="panel-heading">
+            <h2>Fluid Range</h2>
+            <select id="presetSelect" aria-label="Choose preset"></select>
+          </div>
+
+          <div class="field-grid">
+            <label>
+              <span>CSS Property</span>
+              <input id="propertyInput" type="text" value="font-size" />
+            </label>
+            <label>
+              <span>Unit</span>
+              <select id="unitSelect">
+                <option value="rem">rem</option>
+                <option value="px">px</option>
+              </select>
+            </label>
+            <label>
+              <span>Min Viewport (px)</span>
+              <input id="minViewport" type="number" min="1" value="320" />
+            </label>
+            <label>
+              <span>Max Viewport (px)</span>
+              <input id="maxViewport" type="number" min="1" value="1280" />
+            </label>
+            <label>
+              <span>Min Value</span>
+              <input id="minValue" type="number" step="0.01" value="1" />
+            </label>
+            <label>
+              <span>Max Value</span>
+              <input id="maxValue" type="number" step="0.01" value="2.25" />
+            </label>
+          </div>
+
+          <div class="actions">
+            <button id="copyCssBtn" class="primary-button" type="button">Copy CSS</button>
+            <button id="swapUnitBtn" class="secondary-button" type="button">Convert px/rem</button>
+          </div>
+          <p id="message" class="message" role="status"></p>
+        </form>
+
+        <section class="output-panel" aria-label="Generated clamp output">
+          <div class="result-card">
+            <span class="label">Generated Formula</span>
+            <code id="clampOutput">clamp(1rem, calc(0.5833rem + 2.0833vw), 2.25rem)</code>
+          </div>
+          <div class="result-card">
+            <span class="label">CSS Rule</span>
+            <pre id="cssOutput">font-size: clamp(1rem, calc(0.5833rem + 2.0833vw), 2.25rem);</pre>
+          </div>
+          <div class="result-card">
+            <span class="label">Preferred Value Explanation</span>
+            <p id="explanation"></p>
+          </div>
+        </section>
+      </section>
+
+      <section class="preview-panel">
+        <div class="preview-heading">
+          <h2>Live Preview</h2>
+          <p id="previewMeta">Resize the browser or adjust values to test the formula.</p>
+        </div>
+        <div id="previewBox" class="preview-box">
+          <span>Fluid design should feel steady, not jumpy.</span>
+        </div>
+      </section>
+    </main>
+
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+    <script src="../../../src/components/ui/sanitizeCss.js"></script>
+    <script src="clampCalculator.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

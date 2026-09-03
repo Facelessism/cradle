@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Advanced QR Code Generator</title>
+    <meta name="description" content="Advanced QR Code Generator is a web application for creating, customizing, previewing, and downloading QR codes in real time. It supports payload construction f..." />
+
+    <meta
+      name="description"
+      content="Generate, customize, and download beautiful QR codes instantly."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/productivity/advanced-qr-code-generator/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Advanced QR Code Generator" />
+    <meta property="og:description" content="Generate, customize, and download beautiful QR codes instantly." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/productivity/advanced-qr-code-generator/" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- ===================== HEADER ===================== -->
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="brand">
+          <span class="brand-icon"><i class="fa-solid fa-qrcode"></i></span>
+          <div class="brand-text">
+            <h1>QR Studio</h1>
+            <p>Advanced QR Code Generator</p>
+          </div>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button
+          type="button"
+          id="theme-toggle"
+          class="theme-toggle"
+          aria-label="Toggle dark mode"
+          aria-pressed="false"
+          title="Toggle dark mode"
+        >
+          <i class="fa-solid fa-moon" id="theme-icon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ===================== MAIN APP ===================== -->
+    <main class="app-container">
+      <!-- ----------- LEFT PANEL: CONTROLS ----------- -->
+      <section class="panel controls-panel" aria-label="QR Code Controls">
+        <!-- Content Input -->
+        <div class="card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-pen-to-square"></i> Content
+          </h2>
+          <div class="form-group">
+            <label for="qr-text">Text or URL</label>
+            <textarea
+              id="qr-text"
+              class="text-input"
+              rows="3"
+              placeholder="Type a URL or any text to generate your QR code..."
+              aria-required="true"
+              aria-describedby="input-help"
+            ></textarea>
+            <span id="input-help" class="input-help"
+              >QR code updates live as you type</span
+            >
+          </div>
+        </div>
+
+        <!-- Color Customization -->
+        <div class="card">
+          <h2 class="card-title"><i class="fa-solid fa-palette"></i> Colors</h2>
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="fg-color">Foreground</label>
+              <div class="color-input-wrap">
+                <input
+                  type="color"
+                  id="fg-color"
+                  value="#2B2D42"
+                  aria-label="Foreground color"
+                />
+                <input
+                  type="text"
+                  id="fg-color-text"
+                  class="color-text"
+                  value="#2B2D42"
+                  placeholder="#2B2D42"
+                  maxlength="7"
+                  aria-label="Foreground color hex value"
+                />
+              </div>
+            </div>
+            <div class="form-group half">
+              <label for="bg-color">Background</label>
+              <div class="color-input-wrap">
+                <input
+                  type="color"
+                  id="bg-color"
+                  value="#FFFFFF"
+                  aria-label="Background color"
+                />
+                <input
+                  type="text"
+                  id="bg-color-text"
+                  class="color-text"
+                  value="#FFFFFF"
+                  placeholder="#FFFFFF"
+                  maxlength="7"
+                  aria-label="Background color hex value"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Size & Margin -->
+        <div class="card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-ruler-combined"></i> Dimensions
+          </h2>
+          <div class="form-group">
+            <label for="qr-size">
+              Size <span class="value-badge" id="size-value">300px</span>
+            </label>
+            <input
+              type="range"
+              id="qr-size"
+              min="150"
+              max="600"
+              step="10"
+              value="300"
+              aria-label="QR code size"
+              title="QR code size: 300px"
+              aria-valuemin="150"
+              aria-valuemax="600"
+              aria-valuenow="300"
+              aria-valuetext="300px"
+            />
+          </div>
+          <div class="form-group">
+            <label for="qr-margin">
+              Margin <span class="value-badge" id="margin-value">10px</span>
+            </label>
+            <input
+              type="range"
+              id="qr-margin"
+              min="0"
+              max="50"
+              step="1"
+              value="10"
+              aria-label="QR code margin"
+              title="QR code margin: 10px"
+              aria-valuemin="0"
+              aria-valuemax="50"
+              aria-valuenow="10"
+              aria-valuetext="10px"
+            />
+          </div>
+        </div>
+
+        <!-- Error Correction -->
+        <div class="card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-shield-halved"></i> Error Correction
+          </h2>
+          <div class="form-group">
+            <label for="error-level">Correction Level</label>
+            <select
+              id="error-level"
+              class="select-input"
+              aria-label="Error correction level"
+            >
+              <option value="L">Low (L) — 7%</option>
+              <option value="M" selected>Medium (M) — 15%</option>
+              <option value="Q">Quartile (Q) — 25%</option>
+              <option value="H">High (H) — 30%</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Logo Upload -->
+        <div class="card">
+          <h2 class="card-title"><i class="fa-solid fa-image"></i> Logo</h2>
+          <div class="form-group">
+            <label for="logo-upload" class="upload-label" tabindex="0">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span id="upload-text">Click to upload logo</span>
+              <small>PNG, JPG, JPEG, SVG</small>
+            </label>
+            <input
+              type="file"
+              id="logo-upload"
+              accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml"
+              aria-label="Upload logo image"
+            />
+            <button
+              type="button"
+              id="remove-logo-btn"
+              class="btn btn-outline btn-small"
+              disabled
+            >
+              <i class="fa-solid fa-trash"></i> Remove Logo
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card action-card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-download"></i> Export
+          </h2>
+          <div class="btn-grid">
+            <button
+              type="button"
+              id="download-png-btn"
+              class="btn btn-primary"
+              disabled
+            >
+              <i class="fa-solid fa-file-image"></i> Download PNG
+            </button>
+            <button
+              type="button"
+              id="download-svg-btn"
+              class="btn btn-primary"
+              disabled
+            >
+              <i class="fa-solid fa-file-code"></i> Download SVG
+            </button>
+            <button
+              type="button"
+              id="copy-image-btn"
+              class="btn btn-secondary"
+              disabled
+            >
+              <i class="fa-solid fa-copy"></i> Copy QR Image
+            </button>
+            <button type="button" id="reset-btn" class="btn btn-outline">
+              <i class="fa-solid fa-rotate-left"></i> Reset All
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ----------- RIGHT PANEL: PREVIEW ----------- -->
+      <section class="panel preview-panel" aria-label="QR Code Preview">
+        <div class="preview-card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-eye"></i> Live Preview
+          </h2>
+
+          <div class="qr-stage">
+            <!-- Empty / Validation State -->
+            <div class="empty-state" id="empty-state">
+              <i class="fa-solid fa-qrcode empty-icon"></i>
+              <p>Enter text or a URL above to generate your QR code</p>
+            </div>
+
+            <!-- QR Code Render Target -->
+            <div id="qr-code-container" class="qr-code-container" hidden></div>
+          </div>
+
+          <p class="preview-hint">
+            <i class="fa-solid fa-circle-info"></i>
+            Your QR code updates instantly as you customize it.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>Built with 💗 by Prince Hans</p>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div
+      id="toast-container"
+      class="toast-container"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
+
+    <!-- QR Code Styling Library -->
+    <script
+      src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"
+      integrity="sha384-50pczvCB0no/P1Foou0eD0Bul/9JKfIgx04I0bMpay6npYYwWTUgQxlGS5T7yKmn"
+      crossorigin="anonymous"
+    ></script>
+    <!-- QR Engine Module -->
+    <script src="../../../src/components/ui/storage.js"></script>
+    <script src="qrEngine.js"></script>
+    <!-- App Script -->
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

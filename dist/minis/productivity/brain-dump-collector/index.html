@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Brain Dump Collector | Cradle</title>
+    <meta name="description" content="Brain Dump Collector is a fast, distraction-free productivity app designed to capture unorganized thoughts, tasks, and ideas in real-time. It automatically cate..." />
+
+    <meta
+      name="description"
+      content="Quick-note brain dump collector for categorizing, tagging, and organizing ideas."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/productivity/brain-dump-collector/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Brain Dump Collector | Cradle" />
+    <meta property="og:description" content="Quick-note brain dump collector for categorizing, tagging, and organizing ideas." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/productivity/brain-dump-collector/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <div>
+          <a class="back-link" href="../../../index.html">Back to Cradle</a>
+          <p class="eyebrow">Productivity Mini</p>
+          <h1>Brain Dump Collector</h1>
+          <p class="subtitle">
+            Capture messy thoughts quickly, then let the app group them into
+            useful categories you can search, edit, finish, pin, export, and
+            revisit later.
+          </p>
+        </div>
+
+        <section class="stats" aria-label="Brain dump statistics">
+          <article>
+            <span id="totalCount">0</span>
+            <small>Total</small>
+          </article>
+          <article>
+            <span id="openCount">0</span>
+            <small>Open</small>
+          </article>
+          <article>
+            <span id="doneCount">0</span>
+            <small>Done</small>
+          </article>
+          <article>
+            <span id="categoryCount">0</span>
+            <small>Groups</small>
+          </article>
+        </section>
+      </header>
+
+      <section class="capture-panel" aria-labelledby="captureTitle">
+        <div class="capture-header">
+          <div>
+            <h2 id="captureTitle">Fast Capture</h2>
+            <p>
+              Write one thought per line, or paste a messy list and capture all
+              at once.
+            </p>
+          </div>
+          <button id="sampleBtn" class="secondary" type="button">
+            Load Sample
+          </button>
+        </div>
+
+        <div
+          id="alertContainer"
+          class="alert-container"
+          role="status"
+          aria-live="polite"
+          style="display: none"
+        >
+          <span class="alert-icon">⚠️</span>
+          <span id="alertMessage"></span>
+        </div>
+
+        <form id="captureForm" class="capture-form">
+          <label for="thoughtInput">Brain dump</label>
+          <textarea
+            id="thoughtInput"
+            rows="6"
+            placeholder="Example: Fix portfolio CSS bug&#10;Buy notebooks after class&#10;Research internship interview questions"
+            required
+          ></textarea>
+
+          <div class="capture-actions">
+            <label for="categoryOverride">
+              Optional category
+              <select id="categoryOverride">
+                <option value="">Auto group</option>
+                <option value="Work">Work</option>
+                <option value="Study">Study</option>
+                <option value="Ideas">Ideas</option>
+                <option value="Personal">Personal</option>
+                <option value="Health">Health</option>
+                <option value="Finance">Finance</option>
+                <option value="Errands">Errands</option>
+                <option value="Later">Later</option>
+              </select>
+            </label>
+
+            <button type="submit">Capture Thought</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="controls" aria-label="Brain dump controls">
+        <label class="search-box" for="searchInput">
+          Search
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="Search thoughts, categories, tags..."
+          />
+        </label>
+
+        <label for="filterCategory">
+          Group
+          <select id="filterCategory">
+            <option value="">All groups</option>
+          </select>
+        </label>
+
+        <label for="statusFilter">
+          Status
+          <select id="statusFilter">
+            <option value="all">All</option>
+            <option value="open">Open</option>
+            <option value="done">Done</option>
+            <option value="pinned">Pinned</option>
+          </select>
+        </label>
+
+        <div class="control-buttons">
+          <button id="exportBtn" class="secondary" type="button">
+            Export JSON
+          </button>
+          <label class="import-label" for="importFile">Import JSON</label>
+          <input id="importFile" type="file" accept="application/json,.json" />
+          <button id="clearBtn" class="danger" type="button">Clear All</button>
+        </div>
+      </section>
+
+      <section class="insights-grid" aria-label="Category overview">
+        <article class="focus-card">
+          <h2>Focus Queue</h2>
+          <p>Newest open thoughts that probably deserve attention next.</p>
+          <div id="focusList" class="focus-list"></div>
+        </article>
+
+        <article class="category-card">
+          <h2>Auto Grouping</h2>
+          <p>
+            Categories are assigned using lightweight keywords. You can edit any
+            card.
+          </p>
+          <div id="categorySummary" class="category-summary"></div>
+        </article>
+      </section>
+
+      <section class="board-section" aria-labelledby="boardTitle">
+        <div class="board-header">
+          <div>
+            <h2 id="boardTitle">Grouped Thoughts</h2>
+            <p id="resultMeta" role="status" aria-live="polite">
+              No thoughts captured yet.
+            </p>
+          </div>
+          <button id="sortBtn" class="secondary" type="button">
+            Newest First
+          </button>
+        </div>
+
+        <div id="board" class="board"></div>
+      </section>
+    </main>
+
+    <template id="noteTemplate">
+      <article class="note-card">
+        <div class="note-topline">
+          <span class="note-category"></span>
+          <span class="note-time"></span>
+        </div>
+        <p class="note-text"></p>
+        <div class="note-tags"></div>
+        <div class="note-actions">
+          <button class="secondary" data-action="pin" type="button">Pin</button>
+          <button class="secondary" data-action="done" type="button">
+            Done
+          </button>
+          <button class="secondary" data-action="edit" type="button">
+            Edit
+          </button>
+          <button class="danger" data-action="delete" type="button">
+            Delete
+          </button>
+        </div>
+      </article>
+    </template>
+
+    <script src="brainDumpEngine.js"></script>
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

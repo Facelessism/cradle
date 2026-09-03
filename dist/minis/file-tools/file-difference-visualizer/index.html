@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>File Difference Visualizer</title>
+    <meta name="description" content="File Difference Visualizer is a web-based utility for comparing two text files or code snippets side-by-side or in a unified inline format. It highlights line-b..." />
+
+    <meta
+      name="description"
+      content="Visual file comparison tool for inspecting text differences, diff statistics, and line edits."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/file-tools/file-difference-visualizer/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="File Difference Visualizer" />
+    <meta property="og:description" content="Visual file comparison tool for inspecting text differences, diff statistics, and line edits." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/file-tools/file-difference-visualizer/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="glow-bg"></div>
+
+    <div class="app-container">
+      <header class="app-header">
+        <div class="logo">
+          <span class="icon">📁</span>
+          <h1>DiffVisualizer</h1>
+        </div>
+        <p class="subtitle">
+          Compare files side-by-side or unified with syntax-highlighted line
+          comparisons
+        </p>
+      </header>
+
+      <main class="main-content">
+        <div class="control-panel">
+          <div class="view-toggle">
+            <button id="sideBySideBtn" class="active">Side-by-Side</button>
+            <button id="unifiedBtn">Unified</button>
+          </div>
+
+          <div class="options-toggle">
+            <label class="checkbox-label">
+              <input type="checkbox" id="ignoreWhitespace" /> Ignore Whitespace
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ignoreCase" /> Ignore Case
+            </label>
+          </div>
+
+          <div class="actions">
+            <button id="exportPatchBtn" class="btn btn-secondary">
+              Export Patch
+            </button>
+            <button id="clearBtn" class="btn btn-secondary">Clear</button>
+            <button id="demoBtn" class="btn btn-accent">Load Demo</button>
+          </div>
+        </div>
+
+        <!-- Inputs Section -->
+        <section class="inputs-grid" id="inputsSection">
+          <div class="input-card" id="dropzoneA">
+            <div class="card-header">
+              <h2>Original File (A)</h2>
+              <label class="file-input-label">
+                Browse
+                <input
+                  type="file"
+                  id="fileInputA"
+                  accept=".txt,.js,.ts,.html,.css,.json,.md,.csv,.py"
+                />
+              </label>
+            </div>
+            <textarea
+              id="textInputA"
+              placeholder="Paste content or drag & drop file A here..."
+            ></textarea>
+            <div class="file-info" id="fileInfoA">No file loaded</div>
+          </div>
+
+          <div class="input-card" id="dropzoneB">
+            <div class="card-header">
+              <h2>Modified File (B)</h2>
+              <label class="file-input-label">
+                Browse
+                <input
+                  type="file"
+                  id="fileInputB"
+                  accept=".txt,.js,.ts,.html,.css,.json,.md,.csv,.py"
+                />
+              </label>
+            </div>
+            <textarea
+              id="textInputB"
+              placeholder="Paste content or drag & drop file B here..."
+            ></textarea>
+            <div class="file-info" id="fileInfoB">No file loaded</div>
+          </div>
+        </section>
+
+        <!-- Visualizer Section -->
+        <section class="diff-viewer card">
+          <div class="diff-header">
+            <span
+              class="diff-status"
+              id="diffStatus"
+              role="status"
+              aria-live="polite"
+              >Paste or load files to see differences</span
+            >
+          </div>
+
+          <!-- Side-by-Side View -->
+          <div class="diff-container side-by-side" id="sideBySideView">
+            <div class="diff-pane" id="paneOriginal">
+              <div class="pane-header">Original</div>
+              <div class="pane-content code-font" id="originalContent">
+                <!-- Line-by-line diff -->
+              </div>
+            </div>
+            <div class="diff-pane" id="paneModified">
+              <div class="pane-header">Modified</div>
+              <div class="pane-content code-font" id="modifiedContent">
+                <!-- Line-by-line diff -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Unified View (hidden by default) -->
+          <div class="diff-container unified hidden" id="unifiedView">
+            <div class="diff-pane">
+              <div class="pane-header">Unified Diff</div>
+              <div class="pane-content code-font" id="unifiedContent">
+                <!-- Inline diff -->
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="diffEngine.js"></script>
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

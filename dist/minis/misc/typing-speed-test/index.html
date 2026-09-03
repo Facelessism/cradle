@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/projects/misc/typing-speed-test/index.html/" />
+
+  <title>Typing Speed Test</title>
+    <meta name="description" content="Typing Speed Test measures your typing speed (WPM), accuracy, and error count in real time. Choose from four difficulty levels (Easy, Medium, Hard, Code), set a..." />
+
+  <meta
+    name="description"
+    content="Test your typing speed with real-time WPM, accuracy tracking, and multiple difficulty levels."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+  <link rel="stylesheet" href="style.css" />
+    <meta property="og:title" content="Typing Speed Test" />
+    <meta property="og:description" content="Typing Speed Test measures your typing speed (WPM), accuracy, and error count in real time. Choose from four difficulty levels (Easy, Medium, Hard, Code), set a..." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/misc/typing-speed-test/" />
+</head>
+<body>
+  <main class="shell">
+    <!-- ==================== HEADER ==================== -->
+    <header class="project-header">
+      <div>
+        <a href="../../../index.html" class="back-link">
+          <i class="fa-solid fa-arrow-left"></i> Back to Cradle
+        </a>
+        <p class="eyebrow">Misc</p>
+        <h1>Typing Speed Test</h1>
+        <p class="subtitle">
+          Measure your words per minute and accuracy in real time.
+          Choose a difficulty and start typing!
+        </p>
+      </div>
+    </header>
+
+    <!-- ==================== STATS BAR ==================== -->
+    <section class="stats-bar" aria-label="Live statistics">
+      <article class="stat-card">
+        <span class="stat-label">WPM</span>
+        <strong class="stat-value" id="statWpm">0</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Accuracy</span>
+        <strong class="stat-value" id="statAccuracy">100%</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Time</span>
+        <strong class="stat-value" id="statTime">0s</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Errors</span>
+        <strong class="stat-value" id="statErrors">0</strong>
+      </article>
+    </section>
+
+    <!-- ==================== CONTROLS ==================== -->
+    <div class="controls">
+      <div class="difficulty-selector">
+        <button class="diff-btn active" data-difficulty="easy" title="Short, simple words">
+          <i class="fa-solid fa-feather"></i> Easy
+        </button>
+        <button class="diff-btn" data-difficulty="medium" title="Average sentences">
+          <i class="fa-solid fa-pen-nib"></i> Medium
+        </button>
+        <button class="diff-btn" data-difficulty="hard" title="Complex paragraphs">
+          <i class="fa-solid fa-keyboard"></i> Hard
+        </button>
+        <button class="diff-btn" data-difficulty="code" title="Programming snippets">
+          <i class="fa-solid fa-code"></i> Code
+        </button>
+      </div>
+      <div class="time-selector">
+        <label class="time-label">Duration:</label>
+        <button class="time-btn active" data-seconds="30">30s</button>
+        <button class="time-btn" data-seconds="60">60s</button>
+        <button class="time-btn" data-seconds="120">120s</button>
+      </div>
+    </div>
+
+    <!-- ==================== TYPING AREA ==================== -->
+    <section class="typing-section" aria-label="Typing test area">
+      <div class="text-display" id="textDisplay" aria-label="Text to type"></div>
+      <textarea
+        id="typingInput"
+        class="typing-input"
+        placeholder="Click here and start typing..."
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        aria-label="Type the text above"
+      ></textarea>
+      <div class="typing-actions">
+        <button id="btnRestart" class="action-btn">
+          <i class="fa-solid fa-rotate-right"></i> Restart
+        </button>
+        <span class="status-indicator" id="statusIndicator" role="status" aria-live="polite">
+          <span class="status-dot"></span> Ready
+        </span>
+      </div>
+    </section>
+
+    <!-- ==================== RESULTS (hidden by default) ==================== -->
+    <section class="results-section hidden" id="resultsSection" aria-label="Test results">
+      <div class="results-card">
+        <h2><i class="fa-solid fa-trophy"></i> Results</h2>
+        <div class="results-grid">
+          <div class="result-item">
+            <span class="result-value" id="resultWpm">0</span>
+            <span class="result-label">Words / Min</span>
+          </div>
+          <div class="result-item">
+            <span class="result-value" id="resultAccuracy">0%</span>
+            <span class="result-label">Accuracy</span>
+          </div>
+          <div class="result-item">
+            <span class="result-value" id="resultChars">0</span>
+            <span class="result-label">Characters</span>
+          </div>
+          <div class="result-item">
+            <span class="result-value" id="resultErrors">0</span>
+            <span class="result-label">Errors</span>
+          </div>
+          <div class="result-item">
+            <span class="result-value" id="resultTime">0s</span>
+            <span class="result-label">Time</span>
+          </div>
+          <div class="result-item">
+            <span class="result-value" id="resultRawWpm">0</span>
+            <span class="result-label">Raw WPM</span>
+          </div>
+        </div>
+        <div class="results-grade" id="resultsGrade"></div>
+        <button id="btnTryAgain" class="action-btn primary">
+          <i class="fa-solid fa-rotate-right"></i> Try Again
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== HISTORY ==================== -->
+    <section class="history-section" aria-label="Recent test history">
+      <div class="history-card">
+        <div class="section-header">
+          <h2><i class="fa-solid fa-clock-rotate-left"></i> Recent Tests</h2>
+          <button id="btnClearHistory" class="action-btn danger-sm">Clear</button>
+        </div>
+        <div class="history-list" id="historyList">
+          <p class="empty-state">No tests yet. Start typing!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="project-footer">
+      <p>
+        Typing Speed Test &mdash; part of
+        <a href="../../../index.html" class="footer-link">Cradle</a>
+      </p>
+    </footer>
+  </main>
+
+  <!-- Shared BackToHome UI Component -->
+  <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+  <!-- Application Script -->
+  <script src="script.js"></script>
+</body>
+</html>

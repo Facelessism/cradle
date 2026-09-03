@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/projects/editor/color-palette-generator/index.html/" />
+     
+    <title>Color Palette Generator</title>
+    <meta name="description" content="Color Palette Generator is an interactive browser-based tool for creating harmonious color palettes" />
+
+    <meta
+      name="description"
+      content="Generate beautiful color palettes with harmony modes, WCAG contrast checks, and export to CSS/Tailwind/JSON."
+    />
+    <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+      <meta property="og:title" content="Color Palette Generator" />
+      <meta property="og:url" content="https://facelessism.github.io/cradle/projects/projects/editor/color-palette-generator/index.html/" />
+    <meta property="og:description" content="Color Palette Generator is an interactive browser-based tool for creating harmonious color palettes" />
+</head>
+  <body>
+    <div class="glow-bg"></div>
+
+    <div class="app-container">
+      <header class="app-header">
+        <div class="logo">
+          <span class="icon">🎨</span>
+          <h1>Color Palette Generator</h1>
+        </div>
+        <p class="subtitle">
+          Craft harmonious color palettes, check WCAG contrast, and export to
+          CSS variables, Tailwind config, or raw JSON.
+        </p>
+      </header>
+
+      <main class="main-content">
+        <!-- Controls Row -->
+        <section class="controls-row">
+          <div class="card control-card">
+            <h2>🎯 Base Color</h2>
+            <div class="color-picker-row">
+              <input type="color" id="baseColor" value="#38bdf8" />
+              <div class="hex-input-group">
+                <span class="prefix">#</span>
+                <input
+                  type="text"
+                  id="hexInput"
+                  value="38bdf8"
+                  maxlength="6"
+                  placeholder="hex"
+                />
+              </div>
+              <button class="btn btn-random" id="randomBtn" title="Random color">
+                🎲
+              </button>
+            </div>
+          </div>
+
+          <div class="card control-card">
+            <h2>🔁 Harmony Mode</h2>
+            <div class="harmony-buttons">
+              <button class="btn btn-harmony active" data-mode="complementary">
+                Complementary
+              </button>
+              <button class="btn btn-harmony" data-mode="analogous">
+                Analogous
+              </button>
+              <button class="btn btn-harmony" data-mode="triadic">
+                Triadic
+              </button>
+              <button class="btn btn-harmony" data-mode="split-complementary">
+                Split-Comp
+              </button>
+              <button class="btn btn-harmony" data-mode="tetradic">
+                Tetradic
+              </button>
+              <button class="btn btn-harmony" data-mode="monochromatic">
+                Mono
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Palette Display -->
+        <section class="palette-section">
+          <div class="card palette-card">
+            <div class="palette-header">
+              <h2>🎯 Generated Palette</h2>
+              <div class="palette-actions">
+                <button class="btn btn-action" id="regenerateBtn">
+                  ↻ Regenerate
+                </button>
+              </div>
+            </div>
+            <div class="palette-grid" id="paletteGrid">
+              <!-- Swatches rendered by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Contrast Checker -->
+        <section class="contrast-section">
+          <div class="card contrast-card">
+            <h2>♿ WCAG Contrast Checker</h2>
+            <p class="section-desc">
+              Check any generated color against a foreground or background.
+            </p>
+            <div class="contrast-controls">
+              <div class="contrast-pick">
+                <label>Background</label>
+                <input type="color" id="contrastBg" value="#ffffff" />
+              </div>
+              <div class="contrast-pick">
+                <label>Foreground</label>
+                <input type="color" id="contrastFg" value="#38bdf8" />
+              </div>
+              <button class="btn btn-action" id="useFromPalette">
+                Use from palette
+              </button>
+            </div>
+            <div class="contrast-results" id="contrastResults" role="status" aria-live="polite">
+              <!-- Contrast ratio & pass/fail badges -->
+            </div>
+            <div class="contrast-preview" id="contrastPreview">
+              <span>Sample Text</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Export -->
+        <section class="export-section">
+          <div class="card export-card">
+            <h2>📦 Export Palette</h2>
+            <div class="export-tabs">
+              <button class="btn btn-tab active" data-format="css">CSS Vars</button>
+              <button class="btn btn-tab" data-format="tailwind">Tailwind</button>
+              <button class="btn btn-tab" data-format="json">JSON</button>
+              <button class="btn btn-tab" data-format="scss">SCSS</button>
+            </div>
+            <div class="export-code-wrap">
+              <pre class="export-code" id="exportCode"></pre>
+              <button class="btn btn-copy" id="copyExport">📋 Copy</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

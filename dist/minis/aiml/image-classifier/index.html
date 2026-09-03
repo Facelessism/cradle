@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>AI Image Classifier</title>
+    <meta name="description" content="Client-side image classification tool powered by browser-based machine learning models." />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/aiml/image-classifier/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="AI Image Classifier" />
+    <meta property="og:description" content="Client-side image classification tool powered by browser-based machine learning models." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/aiml/image-classifier/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script
+      src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0"
+      integrity="sha384-vE8hbVJ4lezako5rlvE7bY0BVzWlFhZncPlckrqNwcUQpVtgbENTgZ8TBbnPjZre"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1"
+      integrity="sha384-oBAqwJ0tv9zzKlbIZyBhhXlEvU/PMrSMqDyOHlEZVC8xWHx4yPySuS7vRikRcYFq"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier@1.2.6"
+      integrity="sha384-QX5hO7OKW55Yg3mgMQWqTFoY7F2+KqUVUtYQj5Stb1s0eFhCVewoJBaaJEXVbzLI"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <div class="bg-blur blur1"></div>
+    <div class="bg-blur blur2"></div>
+    <main class="main-layout">
+      <div class="container">
+        <!-- Status Toast / Alert Banner -->
+        <div
+          id="statusToast"
+          class="status-toast"
+          role="status"
+          aria-live="polite"
+          style="display: none;"
+        >
+          <i aria-hidden="true" class="fas fa-exclamation-circle"></i>
+          <span id="statusToastMessage" class="toast-message"></span>
+        </div>
+        <div class="top-section">
+          <div class="ai-badge">AI Powered</div>
+          <h1>AI Image Classifier</h1>
+          <button
+            id="themeToggle"
+            class="theme-toggle-btn p-2 rounded-lg hover:bg-gray-800 transition"
+            title="Toggle dark/light theme"
+            aria-label="Toggle theme"
+          >
+            🌙
+          </button>
+          <p class="subtitle">
+            Upload any image and let AI identify objects instantly with smart AI
+            predictions.
+          </p>
+
+          <div class="mode-toggle">
+            <button id="standardModeBtn" class="mode-btn active">
+              Standard
+            </button>
+            <button id="customModeBtn" class="mode-btn">Custom Training</button>
+          </div>
+        </div>
+
+        <!-- Standard Mode Content -->
+        <div id="standardContent">
+          <div class="upload-area">
+            <img
+              id="preview"
+              src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
+              alt="Preview"
+            />
+            <div class="upload-content" id="uploadContent">
+              <div class="upload-icon">📸</div>
+              <h2>Upload Your Image</h2>
+              <p>Choose any image to analyze</p>
+            </div>
+          </div>
+          <div class="btn-group">
+            <label for="imageUpload" class="upload-btn"> Choose Image </label>
+            <input type="file" id="imageUpload" accept="image/*" hidden />
+            <button id="classifyBtn">Analyze</button>
+          </div>
+        </div>
+
+        <!-- Custom Mode Content -->
+        <div id="customContent" style="display: none">
+          <div class="custom-controls">
+            <div class="add-class-group">
+              <input
+                type="text"
+                id="newClassName"
+                placeholder="New Class Name (e.g. Mug)"
+              />
+              <button id="addClassBtn">Add Class</button>
+            </div>
+          </div>
+          <div class="classes-container" id="classesContainer">
+            <!-- Custom class cards will go here -->
+          </div>
+          <div class="btn-group" style="margin-top: 15px">
+            <label for="customImageUpload" class="upload-btn">
+              Test Image
+            </label>
+            <input type="file" id="customImageUpload" accept="image/*" hidden />
+            <button id="customClassifyBtn" disabled>Predict Custom</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="prediction-panel" id="predictionPanel">
+        <div class="prediction-header">
+          <h2>Predictions</h2>
+        </div>
+        <div id="result" role="status" aria-live="polite" aria-atomic="true"></div>
+      </div>
+    </main>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+    <script src="classifierEngine.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

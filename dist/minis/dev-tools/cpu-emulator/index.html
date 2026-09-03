@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Core8 - 8-Bit Virtual Machine CPU Emulator</title>
+    <meta name="description" content="Interactive 8-bit CPU emulator demonstrating register state, instruction cycles, and memory execution." />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/dev-tools/cpu-emulator/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Core8 - 8-Bit Virtual Machine CPU Emulator" />
+    <meta property="og:description" content="Interactive 8-bit CPU emulator demonstrating register state, instruction cycles, and memory execution." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/dev-tools/cpu-emulator/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+  </head>
+
+  <body>
+    <h1 class="sr-only" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">Core8 - 8-Bit Virtual Machine CPU Emulator</h1>
+    <div class="emulator-container">
+      <!-- SVG Layer for Data Flow Animations -->
+      <svg id="animation-layer"></svg>
+
+      <main class="ide-panel">
+        <header class="panel-header">
+          <h2>Assembly Editor</h2>
+          <div class="preset-controls">
+            <select
+              id="preset-selector"
+              data-cradle-select
+              style="
+                padding: 4px 8px;
+                border-radius: 4px;
+                background: var(--bg-card);
+                color: var(--text-main);
+                border: 1px solid var(--border-color);
+                font-size: 0.8rem;
+                color-scheme: dark;
+              "
+            >
+              <option
+                value="default"
+                disabled
+                selected
+                style="background: #0f172a; color: #e2e8f0"
+              >
+                Examples
+              </option>
+              <option
+                value="counter"
+                style="background: #0f172a; color: #e2e8f0"
+              >
+                Counter
+              </option>
+              <option
+                value="fibonacci"
+                style="background: #0f172a; color: #e2e8f0"
+              >
+                Fibonacci
+              </option>
+              <option
+                value="memcpy"
+                style="background: #0f172a; color: #e2e8f0"
+              >
+                Memory Copy
+              </option>
+              <option value="cond" style="background: #0f172a; color: #e2e8f0">
+                Conditional Logic
+              </option>
+            </select>
+          </div>
+          <div class="execution-controls">
+            <label
+              class="toggle-label"
+              style="
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                margin-right: 15px;
+                color: var(--text-light);
+                font-size: 0.8rem;
+                cursor: pointer;
+              "
+            >
+              <input type="checkbox" id="chk-animate" checked />
+              Animate Data Flow
+            </label>
+            <button
+              id="btn-assemble"
+              data-cradle-btn
+              data-variant="primary"
+              data-size="sm"
+            >
+              compile
+            </button>
+            <button
+              id="btn-step"
+              data-cradle-btn
+              data-variant="secondary"
+              data-size="sm"
+              disabled
+            >
+              Step
+            </button>
+            <button
+              id="btn-run"
+              data-cradle-btn
+              data-variant="success"
+              data-size="sm"
+              disabled
+            >
+              ▶Run Machine
+            </button>
+            <button
+              id="btn-reset"
+              data-cradle-btn
+              data-variant="danger"
+              data-size="sm"
+            >
+              Reset
+            </button>
+          </div>
+        </header>
+
+        <div class="editor-area">
+          <textarea
+            id="assembly-input"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="; Write 8-bit Assembly code here...&#10;MOV A, 5       ; Load 5 into Register A&#10;MOV B, 3       ; Load 3 into Register B&#10;ADD A, B       ; Add B to A (A = A + B)&#10;HALT           ; Terminate execution loop"
+          ></textarea>
+        </div>
+
+        <footer class="console-log">
+          <div class="console-title">Compiler Output Logs</div>
+          <div id="console-output" role="log" aria-live="polite" aria-label="Compiler output logs">
+            System idle. Awaiting compilation pass...
+          </div>
+        </footer>
+      </main>
+
+      <aside class="hardware-panel">
+        <section class="hardware-section">
+          <h2>Instruction Pipeline</h2>
+          <div class="pipeline-grid">
+            <div class="pipeline-stage" id="stage-if">
+              <span class="stage-label">IF (Fetch)</span>
+              <span class="stage-instr" id="instr-if">NOP</span>
+            </div>
+            <div class="pipeline-stage" id="stage-id">
+              <span class="stage-label">ID (Decode)</span>
+              <span class="stage-instr" id="instr-id">NOP</span>
+            </div>
+            <div class="pipeline-stage" id="stage-ex">
+              <span class="stage-label">EX (Execute)</span>
+              <span class="stage-instr" id="instr-ex">NOP</span>
+            </div>
+            <div class="pipeline-stage" id="stage-mem">
+              <span class="stage-label">MEM (Memory)</span>
+              <span class="stage-instr" id="instr-mem">NOP</span>
+            </div>
+            <div class="pipeline-stage" id="stage-wb">
+              <span class="stage-label">WB (Write-back)</span>
+              <span class="stage-instr" id="instr-wb">NOP</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="hardware-section">
+          <h2>CPU Registers</h2>
+          <div class="registers-grid">
+            <div class="register-card">
+              <span class="reg-label">Reg A (Accumulator)</span
+              ><span class="reg-val" id="reg-a">00</span>
+            </div>
+            <div class="register-card">
+              <span class="reg-label">Reg B</span
+              ><span class="reg-val" id="reg-b">00</span>
+            </div>
+            <div class="register-card">
+              <span class="reg-label">Reg C</span
+              ><span class="reg-val" id="reg-c">00</span>
+            </div>
+            <div class="register-card">
+              <span class="reg-label">Reg D</span
+              ><span class="reg-val" id="reg-d">00</span>
+            </div>
+            <div class="register-card highlighted">
+              <span class="reg-label">Program Counter (PC)</span
+              ><span class="reg-val" id="reg-pc">00</span>
+            </div>
+            <div class="register-card">
+              <span class="reg-label">Status Flags (Z | C)</span
+              ><span class="reg-val" id="reg-flags">Z:0 C:0</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="hardware-section">
+          <h2>Virtual System RAM Array</h2>
+          <div class="ram-grid" id="ram-matrix"></div>
+        </section>
+      </aside>
+    </div>
+    <script src="../../../src/components/ui/Button/Button.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+    <script src="emulatorCore.js"></script>
+    <script src="assembler.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fourier Series Visualizer</title>
+    <meta name="description" content="Fourier Series Visualizer is an interactive browser-based tool that demonstrates how periodic waveforms are constructed from harmonic sine and cosine components..." />
+
+    <meta
+      name="description"
+      content="Visualise how complex waveforms are constructed from harmonic sine waves using Fourier series decomposition."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/math/fourier-series-visualizer/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Fourier Series Visualizer" />
+    <meta property="og:description" content="Visualise how complex waveforms are constructed from harmonic sine waves using Fourier series decomposition." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/math/fourier-series-visualizer/" />
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <!-- Shared UI System Tokens -->
+    <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+    <!-- Project Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- ===================== HEADER ===================== -->
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="brand">
+          <span class="brand-icon"><i class="fa-solid fa-chart-line"></i></span>
+          <div class="brand-text">
+            <h1>Fourier Series</h1>
+            <p>Harmonic Waveform Visualizer</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button
+            type="button"
+            id="theme-toggle"
+            class="theme-toggle"
+            aria-label="Toggle dark mode"
+            aria-pressed="false"
+            title="Toggle dark mode"
+          >
+            <i class="fa-solid fa-moon" id="theme-icon"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===================== MAIN APP ===================== -->
+    <main class="app-container">
+      <!-- ----------- CONTROLS PANEL ----------- -->
+      <aside class="panel controls-panel" aria-label="Controls">
+        <!-- Wave Type -->
+        <section class="card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-wave-square"></i> Wave Type
+          </h2>
+          <div class="wave-grid">
+            <button type="button" class="wave-btn active" data-wave="square">
+              <i class="fa-solid fa-grip-lines"></i> Square
+            </button>
+            <button type="button" class="wave-btn" data-wave="sawtooth">
+              <i class="fa-solid fa-chart-line"></i> Sawtooth
+            </button>
+            <button type="button" class="wave-btn" data-wave="triangle">
+              <i class="fa-solid fa-chart-gantt"></i> Triangle
+            </button>
+            <button type="button" class="wave-btn" data-wave="sine">
+              <i class="fa-solid fa-wave-sine"></i> Sine
+            </button>
+          </div>
+        </section>
+
+        <!-- Frequency -->
+        <section class="card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-sliders"></i> Frequency
+          </h2>
+          <div class="harmonic-control">
+            <label for="freqSlider">Hz</label>
+            <input
+              type="range"
+              id="freqSlider"
+              min="20"
+              max="500"
+              step="1"
+              value="100"
+              aria-label="Fundamental frequency"
+              title="Fundamental frequency: 100 Hz"
+              aria-valuemin="20"
+              aria-valuemax="500"
+              aria-valuenow="100"
+              aria-valuetext="100 Hz"
+            />
+            <span class="range-value" id="freqDisplay">100 Hz</span>
+          </div>
+        </section>
+
+        <!-- Harmonics Count -->
+        <section class="card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-layer-group"></i> Harmonics
+          </h2>
+          <div class="harmonic-control">
+            <label for="harmCount">Count</label>
+            <input
+              type="range"
+              id="harmCount"
+              min="1"
+              max="20"
+              step="1"
+              value="5"
+              aria-label="Number of harmonics"
+              title="Number of harmonics: 5"
+              aria-valuemin="1"
+              aria-valuemax="20"
+              aria-valuenow="5"
+              aria-valuetext="5 harmonics"
+            />
+            <span class="range-value" id="harmDisplay">5</span>
+          </div>
+        </section>
+
+        <!-- Animation -->
+        <section class="card">
+          <h2 class="card-title"><i class="fa-solid fa-play"></i> Animation</h2>
+          <div class="harmonic-control">
+            <label for="speedSlider">Speed</label>
+            <input
+              type="range"
+              id="speedSlider"
+              min="200"
+              max="3000"
+              step="100"
+              value="1200"
+              aria-label="Animation speed"
+              title="Animation speed: 1.2s"
+              aria-valuemin="200"
+              aria-valuemax="3000"
+              aria-valuenow="1200"
+              aria-valuetext="1.2s"
+            />
+            <span class="range-value" id="speedDisplay">1.2s</span>
+          </div>
+          <div class="form-row" style="margin-top: var(--cradle-space-2)">
+            <button type="button" class="btn btn-primary" id="animateBtn">
+              <i class="fa-solid fa-play" id="animateIcon"></i> Animate Build
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="resetBtn"
+              aria-label="Reset waveform"
+            >
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+          </div>
+        </section>
+
+        <!-- Harmonic List -->
+        <section class="card">
+          <h2 class="card-title">
+            <i class="fa-solid fa-list"></i> Harmonic Toggle
+          </h2>
+          <div class="harmonic-list" id="harmonicList">
+            <!-- Populated by script.js -->
+          </div>
+        </section>
+      </aside>
+
+      <!-- ----------- WORKSPACE PANEL ----------- -->
+      <section class="panel workspace-panel" aria-label="Visualization">
+        <!-- Composite Waveform -->
+        <div class="canvas-card">
+          <div class="canvas-header">
+            <h3 class="canvas-title">
+              <i
+                class="fa-solid fa-chart-line"
+                style="color: var(--theme-accent)"
+              ></i>
+              Composite Waveform
+            </h3>
+            <span class="canvas-meta" id="compositeMeta">—</span>
+          </div>
+          <div class="canvas-wrap">
+            <canvas
+              id="compositeCanvas"
+              aria-label="Composite Fourier waveform"
+            ></canvas>
+          </div>
+          <div class="legend" id="compositeLegend">
+            <span class="legend-item">
+              <span
+                class="legend-swatch"
+                style="background: var(--theme-accent)"
+              ></span>
+              Composite
+            </span>
+          </div>
+        </div>
+
+        <!-- Individual Harmonics -->
+        <div class="canvas-card">
+          <div class="canvas-header">
+            <h3 class="canvas-title">
+              <i
+                class="fa-solid fa-bars-progress"
+                style="color: var(--theme-accent)"
+              ></i>
+              Individual Harmonics
+            </h3>
+            <span class="canvas-meta" id="harmonicsMeta">—</span>
+          </div>
+          <div class="canvas-wrap">
+            <canvas
+              id="harmonicsCanvas"
+              aria-label="Individual harmonic waveforms"
+            ></canvas>
+          </div>
+          <div class="status-bar" role="status" aria-live="polite">
+            <span id="statusLeft">Drag sliders to adjust parameters</span>
+            <span id="statusRight">Fourier Series: f(t) = Σ aₙ·sin(nωt)</span>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="info-card">
+          <h3><i class="fa-solid fa-lightbulb"></i> How it works</h3>
+          <p>
+            The Fourier series decomposes any periodic waveform into a sum of
+            sine and cosine waves (harmonics). The fundamental frequency
+            determines the pitch, and each harmonic contributes at an integer
+            multiple of that frequency. <strong>Square</strong> waves use odd
+            harmonics, <strong>Sawtooth</strong> uses all harmonics, and
+            <strong>Triangle</strong> uses odd harmonics that decay more
+            rapidly.
+          </p>
+          <span class="formula">f(t) = Σ bₙ · sin(n · ω₀ · t)</span>
+        </div>
+      </section>
+    </main>
+
+    <!-- Shared BackToHome UI Component -->
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+    <!-- Engine -->
+    <script src="fourierEngine.js"></script>
+    <!-- Application Script -->
+    <script src="script.js"></script>
+  </body>
+</html>

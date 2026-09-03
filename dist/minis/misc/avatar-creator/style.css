@@ -1,0 +1,65 @@
+body {
+  font-family: sans-serif;
+  text-align: center;
+  background: #f4f4f4;
+  padding: 20px;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+#avatar-preview {
+  width: 200px;
+  height: 200px;
+}
+
+#avatar-svg {
+  width: 200px;
+  height: 200px;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  shape-rendering: crispEdges; /* keeps pixel edges sharp, not blurry */
+}
+
+#controls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+#controls label {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  gap: 5px;
+}
+
+#download-btn,
+#randomize-btn {
+  padding: 10px 20px;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#download-btn:hover,
+#randomize-btn:hover {
+  background: #357abd;
+}
+
+.error-message {
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: bold;
+  margin: 10px 0;
+  display: none;
+}

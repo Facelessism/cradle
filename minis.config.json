@@ -1,0 +1,18 @@
+{
+  "root": "projects",
+  "output": "dist/minis",
+  "defaultMode": "static",
+  "clean": true,
+  "modes": {
+    "static": {
+      "description": "Copy mini files without bundling."
+    },
+    "individual": {
+      "description": "Build each mini independently using its own build configuration."
+    },
+    "central": {
+      "description": "Build minis through the repository-level build strategy."
+    }
+  },
+  "overrides": {}
+}

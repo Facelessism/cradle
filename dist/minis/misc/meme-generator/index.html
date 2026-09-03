@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meme Generator Studio</title>
+    <meta name="description" content="Create, edit, caption, and download custom visual memes directly in your browser." />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/misc/meme-generator/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Meme Generator Studio" />
+    <meta property="og:description" content="Create, edit, caption, and download custom visual memes directly in your browser." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/misc/meme-generator/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <div class="meme-studio-container">
+      <header class="studio-header">
+        <h1>Meme Generator Studio</h1>
+        <p>Create, customize, and export high-quality custom memes</p>
+      </header>
+
+      <main class="studio-workspace">
+        <!-- Control Panel -->
+        <section class="controls-card">
+          <h2>Meme Customization Controls</h2>
+
+          <div class="form-group">
+            <label for="inputTopText">Top Header Text</label>
+            <input
+              type="text"
+              id="inputTopText"
+              placeholder="WHEN THE CODE BUILDS..."
+              value="WHEN THE BUILD PASSES"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="inputBottomText">Bottom Footer Text</label>
+            <input
+              type="text"
+              id="inputBottomText"
+              placeholder="FIRST TRY WITHOUT BUGS"
+              value="FIRST TRY WITHOUT BUGS"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="inputFontSize"
+                >Font Size (<span id="fontSizeVal">36</span>px)</label
+              >
+              <input
+                type="range"
+                id="inputFontSize"
+                aria-label="Font Size"
+                title="Font Size: 36px"
+                min="16"
+                max="72"
+                value="36"
+                aria-valuemin="16"
+                aria-valuemax="72"
+                aria-valuenow="36"
+                aria-valuetext="36px"
+              />
+            </div>
+
+            <div class="form-group flex-1">
+              <label for="inputTextColor">Text Fill Color</label>
+              <input
+                type="color"
+                id="inputTextColor"
+                value="#FFFFFF"
+                aria-label="Text fill color"
+              />
+            </div>
+
+            <div class="form-group flex-1">
+              <label for="inputStrokeColor">Outline Color</label>
+              <input type="color" id="inputStrokeColor" value="#000000" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="fileUpload">Upload Custom Background Image</label>
+            <input type="file" id="fileUpload" accept="image/*" />
+          </div>
+
+          <div class="actions-grid">
+            <button id="loadBtn" type="button" class="btn btn-secondary">
+              <span>Get Random Meme</span>
+            </button>
+            <button id="savePresetBtn" type="button" class="btn btn-outline">
+              <span>Save Preset</span>
+            </button>
+            <button id="downloadBtn" type="button" class="btn btn-primary">
+              <span>Download Meme</span>
+            </button>
+          </div>
+          <div
+            id="errorContainer"
+            class="error-container"
+            role="status"
+            aria-live="polite"
+            style="display: none;"
+          >
+            <span class="error-icon">⚠️</span>
+            <span id="errorMessage"></span>
+          </div>
+        </section>
+
+        <!-- Canvas Preview Area -->
+        <section class="preview-card">
+          <h2>Live Canvas Preview</h2>
+          <div class="canvas-wrapper">
+            <canvas id="memeCanvas"></canvas>
+            <img
+              id="memeHiddenImg"
+              alt="Hidden Source Image"
+              style="display: none"
+            />
+          </div>
+        </section>
+      </main>
+
+      <!-- Saved Presets Gallery -->
+      <section class="presets-section">
+        <h2>Saved Meme Presets</h2>
+        <div id="presetsList" class="presets-grid">
+          <p class="empty-presets">
+            No saved presets yet. Customize text and click "Save Preset".
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+    <script src="memeEngine.js"></script>
+    <script src="../../../src/components/ui/storage.js"></script>
+    <script src="memeStorage.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

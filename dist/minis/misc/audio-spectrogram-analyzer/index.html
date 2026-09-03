@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Spectrogram Analyzer | Cradle</title>
+    <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+    <link rel="stylesheet" href="style.css">
+    <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+</head>
+
+<body>
+    <main class="container">
+        <header class="header">
+            <h1>Real-time Audio Spectrogram Analyzer</h1>
+            <p class="subtitle">Visualize frequency data as a scrolling heatmap and record your session.</p>
+        </header>
+
+        <section class="controls">
+            <div class="control-group">
+                <button id="btn-mic" class="btn btn-primary">Start Microphone</button>
+                <button id="btn-file" class="btn btn-secondary">Upload Audio File</button>
+                <input type="file" id="file-input" accept="audio/*" hidden>
+            </div>
+            <div class="control-group">
+                <button id="btn-record" class="btn btn-danger" disabled>Start Recording</button>
+                <button id="btn-stop-record" class="btn btn-secondary" disabled>Stop & Download</button>
+            </div>
+            <div class="control-group">
+                <label for="fft-size">FFT Size:</label>
+                <select id="fft-size">
+                    <option value="512">512 (Low Res)</option>
+                    <option value="1024">1024</option>
+                    <option value="2048" selected>2048 (Balanced)</option>
+                    <option value="4096">4096 (High Res)</option>
+                </select>
+            </div>
+        </section>
+
+        <div class="canvas-container">
+            <canvas id="spectrogram-canvas"></canvas>
+            <div id="error-banner" class="error-banner" hidden>
+                Microphone access denied or unsupported. Please check browser permissions or use an audio file.
+            </div>
+        </div>
+
+        <section class="legend">
+            <div class="legend-item"><span class="box low"></span> Low Freq</div>
+            <div class="legend-item"><span class="box mid"></span> Mid Freq</div>
+            <div class="legend-item"><span class="box high"></span> High Freq</div>
+        </section>
+    </main>
+    <script type="module" src="audio-processor.js"></script>
+    <script type="module" src="visualizer.js"></script>
+    <script type="module" src="recorder.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#0d0d1a"/>
+    </linearGradient>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff00ff"/>
+      <stop offset="50%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#00ffff"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg)" rx="16"/>
+  <!-- Infinity loop -->
+  <path d="M200,130 C200,70 130,70 130,130 C130,190 200,190 200,130 C200,70 270,70 270,130 C270,190 200,190 200,130"
+    fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="6"/>
+  <path d="M200,130 C200,70 130,70 130,130 C130,190 200,190 200,130 C200,70 270,70 270,130 C270,190 200,190 200,130"
+    fill="none" stroke="url(#grad)" stroke-width="6" stroke-linecap="round" filter="url(#glow)"
+    stroke-dasharray="280" stroke-dashoffset="80"/>
+  <!-- Dot -->
+  <circle cx="270" cy="130" r="6" fill="#00ffff" filter="url(#glow)"/>
+  <!-- Timer -->
+  <text x="200" y="135" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="800" font-size="28">18:42</text>
+  <!-- Label -->
+  <text x="200" y="215" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="12" font-weight="600">FOCUS TIME</text>
+  <!-- Session dots -->
+  <circle cx="182" cy="245" r="5" fill="#6366f1"/>
+  <circle cx="200" cy="245" r="5" fill="#6366f1"/>
+  <circle cx="218" cy="245" r="5" fill="#6366f1" stroke="#6366f1" stroke-width="1.5" fill="none"/>
+  <circle cx="236" cy="245" r="5" fill="none" stroke="#334155" stroke-width="1.5"/>
+  <!-- Stats -->
+  <text x="80" y="270" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="10">🔥 3</text>
+  <text x="160" y="270" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="10">⏱️ 1h 15m</text>
+  <text x="250" y="270" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="10">✅ 3</text>
+  <text x="330" y="270" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="10">🏆 5</text>
+  <!-- Title -->
+  <text x="200" y="50" text-anchor="middle" fill="#6366f1" font-family="sans-serif" font-weight="800" font-size="16">POMODORO INFINITY</text>
+</svg>

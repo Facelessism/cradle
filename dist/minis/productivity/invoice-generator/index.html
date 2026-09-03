@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoice Generator | Cradle</title>
+    <meta name="description" content="Create, calculate line items, style, and export professional client invoices." />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/productivity/invoice-generator/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Invoice Generator | Cradle" />
+    <meta property="og:description" content="Create, calculate line items, style, and export professional client invoices." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/productivity/invoice-generator/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div>
+          <a class="back-link" href="../../../index.html">Back to Cradle</a>
+          <p class="eyebrow">Productivity Mini</p>
+          <h1>Invoice Generator</h1>
+          <p class="subtitle">
+            Create professional invoices in the browser with itemized totals,
+            tax calculation, logo upload, reusable templates, print support, and
+            PDF export.
+          </p>
+        </div>
+
+        <section class="total-card" aria-label="Invoice total">
+          <span id="headerTotal">$0.00</span>
+          <small>Current invoice total</small>
+        </section>
+      </header>
+
+      <section class="toolbar no-print" aria-label="Invoice actions">
+        <label>
+          Template
+          <select id="templateSelect">
+            <option value="classic">Classic</option>
+            <option value="modern">Modern</option>
+            <option value="compact">Compact</option>
+          </select>
+        </label>
+
+        <label>
+          Currency
+          <select id="currencySelect">
+            <option value="USD">USD - Dollar</option>
+            <option value="INR">INR - Rupee</option>
+            <option value="EUR">EUR - Euro</option>
+            <option value="GBP">GBP - Pound</option>
+          </select>
+        </label>
+
+        <div class="toolbar-actions">
+          <button
+            id="sampleBtn"
+            data-cradle-btn
+            data-variant="secondary"
+            data-size="sm"
+            type="button"
+          >
+            Load Sample
+          </button>
+          <button
+            id="addItemBtn"
+            data-cradle-btn
+            data-variant="outline"
+            data-size="sm"
+            type="button"
+          >
+            Add Item
+          </button>
+          <button
+            id="exportJsonBtn"
+            data-cradle-btn
+            data-variant="outline"
+            data-size="sm"
+            type="button"
+          >
+            Export JSON
+          </button>
+          <label class="import-button" for="importJsonInput">Import JSON</label>
+          <input
+            id="importJsonInput"
+            type="file"
+            accept="application/json,.json"
+          />
+          <button
+            id="printBtn"
+            data-cradle-btn
+            data-variant="primary"
+            data-size="sm"
+            type="button"
+          >
+            Export PDF
+          </button>
+        </div>
+      </section>
+
+      <main class="workspace">
+        <section class="editor-panel no-print" aria-labelledby="editorTitle">
+          <div class="panel-header">
+            <div>
+              <h2 id="editorTitle">Invoice Details</h2>
+              <p>Fill business, client, items, tax, and payment details.</p>
+            </div>
+            <span id="statusMessage" role="status" aria-live="polite"
+              >Ready</span
+            >
+          </div>
+
+          <form id="invoiceForm" class="invoice-form">
+            <section class="form-grid">
+              <label>
+                Business name
+                <input
+                  id="businessName"
+                  name="businessName"
+                  placeholder="Acme Studio"
+                />
+              </label>
+              <label>
+                Client name
+                <input
+                  id="clientName"
+                  name="clientName"
+                  placeholder="Client Company"
+                />
+              </label>
+              <label>
+                Invoice number
+                <input
+                  id="invoiceNumber"
+                  name="invoiceNumber"
+                  placeholder="INV-001"
+                />
+              </label>
+              <label>
+                Issue date
+                <input id="issueDate" name="issueDate" type="date" />
+              </label>
+              <label>
+                Due date
+                <input id="dueDate" name="dueDate" type="date" />
+              </label>
+              <label>
+                Logo
+                <input
+                  id="logoInput"
+                  name="logoInput"
+                  type="file"
+                  accept="image/*"
+                />
+              </label>
+            </section>
+
+            <section class="form-grid two-col">
+              <label>
+                Business address
+                <textarea
+                  id="businessAddress"
+                  name="businessAddress"
+                  rows="3"
+                  placeholder="Street, city, country"
+                ></textarea>
+              </label>
+              <label>
+                Client address
+                <textarea
+                  id="clientAddress"
+                  name="clientAddress"
+                  rows="3"
+                  placeholder="Client billing address"
+                ></textarea>
+              </label>
+            </section>
+
+            <section class="items-editor">
+              <div class="items-heading">
+                <h3>Line Items</h3>
+                <button
+                  id="inlineAddItemBtn"
+                  data-cradle-btn
+                  data-variant="secondary"
+                  data-size="sm"
+                  type="button"
+                >
+                  Add Item
+                </button>
+              </div>
+              <div id="itemsList" class="items-list"></div>
+            </section>
+
+            <section class="form-grid totals-grid">
+              <label>
+                Tax rate (%)
+                <input
+                  id="taxRate"
+                  name="taxRate"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0"
+                />
+              </label>
+              <label>
+                Discount
+                <input
+                  id="discount"
+                  name="discount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                />
+              </label>
+              <label>
+                Shipping / fees
+                <input
+                  id="shipping"
+                  name="shipping"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                />
+              </label>
+            </section>
+
+            <label>
+              Payment terms
+              <textarea
+                id="paymentTerms"
+                name="paymentTerms"
+                rows="2"
+                placeholder="Payment due within 15 days."
+              ></textarea>
+            </label>
+
+            <label>
+              Notes
+              <textarea
+                id="notes"
+                name="notes"
+                rows="3"
+                placeholder="Thank you for your business."
+              ></textarea>
+            </label>
+          </form>
+        </section>
+
+        <section class="preview-panel" aria-labelledby="previewTitle">
+          <div class="panel-header no-print">
+            <div>
+              <h2 id="previewTitle">Invoice Preview</h2>
+              <p>Print or save this invoice as PDF from your browser.</p>
+            </div>
+          </div>
+
+          <article
+            id="invoicePreview"
+            class="invoice-preview template-classic"
+          ></article>
+        </section>
+      </main>
+    </div>
+    
+ <template id="itemRowTemplate">
+      <div class="item-row">
+        <label>
+          Description
+          <input class="item-description" placeholder="Website design" />
+        </label>
+        <label>
+          Qty
+          <input
+            class="item-quantity"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="1"
+          />
+        </label>
+        <label>
+          Rate
+          <input
+            class="item-rate"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+          />
+        </label>
+        <strong class="item-total">$0.00</strong>
+        <button class="remove-item" type="button" aria-label="Remove item">
+          Remove
+        </button>
+      </div>
+    </template>
+
+    <script src="../../../src/components/ui/Button/Button.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+    <script src="invoiceEngine.js"></script>
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

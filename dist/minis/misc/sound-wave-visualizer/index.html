@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sound Wave Visualizer | Cradle</title>
+    <meta name="description" content="Sound Wave Visualizer records microphone input and renders three real-time visualisations: a waveform, a frequency spectrum (FFT), and a scrolling spectrogram...." />
+
+    <meta
+      name="description"
+      content="Record microphone input and visualize waveform, frequency spectrum and spectrogram in real time with FFT analysis and recording playback."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/misc/sound-wave-visualizer/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Sound Wave Visualizer | Cradle" />
+    <meta property="og:description" content="Record microphone input and visualize waveform, frequency spectrum and spectrogram in real time with FFT analysis and recording playback." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/misc/sound-wave-visualizer/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <div class="app-container">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <a href="../../../index.html" class="back-link">← Back to Cradle</a>
+          <h1>Sound Wave Visualizer</h1>
+          <p class="subtitle">
+            Record microphone input and visualize waveform, frequency spectrum
+            and spectrogram in real time.
+          </p>
+        </div>
+        <div class="header-right">
+          <div
+            class="status-pill"
+            id="status-pill"
+            role="status"
+            aria-live="polite"
+          >
+            <span class="status-dot" id="status-dot"></span>
+            <span id="status-text">Ready</span>
+          </div>
+        </div>
+      </header>
+
+      <script src="visualizerEngine.js"></script>
+      <!-- Control Bar -->
+      <div class="control-bar">
+        <div class="controls-left">
+          <button
+            class="btn btn-record"
+            id="btn-record"
+            aria-label="Start recording"
+          >
+            <span class="record-icon" id="record-icon">⏺</span>
+            <span id="btn-record-label">Record</span>
+          </button>
+          <button class="btn btn-secondary" id="btn-stop" disabled>
+            ⏹ Stop
+          </button>
+          <button class="btn btn-play" id="btn-play" disabled>▶ Play</button>
+          <button class="btn btn-secondary" id="btn-download" disabled>
+            💾 Download
+          </button>
+        </div>
+
+        <div class="controls-right">
+          <div class="timer-display mono" id="timer">00:00.0</div>
+        </div>
+      </div>
+
+      <!-- Settings Row -->
+      <div class="settings-bar">
+        <div class="setting-group">
+          <label for="fft-size">FFT Size:</label>
+          <select id="fft-size">
+            <option value="512">512</option>
+            <option value="1024">1024</option>
+            <option value="2048" selected>2048</option>
+            <option value="4096">4096</option>
+          </select>
+        </div>
+        <div class="setting-group">
+          <label for="smoothing">Smoothing:</label>
+          <input
+            type="range"
+            id="smoothing"
+            aria-label="Smoothing factor"
+            title="Smoothing: 0.80"
+            min="0"
+            max="0.99"
+            step="0.01"
+            value="0.8"
+            aria-valuemin="0"
+            aria-valuemax="0.99"
+            aria-valuenow="0.8"
+            aria-valuetext="0.80"
+          />
+          <span class="range-val mono" id="smoothing-val">0.80</span>
+        </div>
+        <div class="setting-group">
+          <label for="gain">Gain:</label>
+          <input
+            type="range"
+            id="gain"
+            aria-label="Gain multiplier"
+            title="Gain: 1.0×"
+            min="1"
+            max="10"
+            step="0.5"
+            value="1"
+            aria-valuemin="1"
+            aria-valuemax="10"
+            aria-valuenow="1"
+            aria-valuetext="1.0×"
+          />
+          <span class="range-val mono" id="gain-val">1.0×</span>
+        </div>
+        <div class="setting-group">
+          <label for="color-scheme">Color:</label>
+          <select id="color-scheme">
+            <option value="cyan">Cyan</option>
+            <option value="violet" selected>Violet</option>
+            <option value="amber">Amber</option>
+            <option value="green">Green</option>
+            <option value="rainbow">Rainbow</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Visualizer Canvases -->
+      <main class="visualizer-grid">
+        <!-- Waveform -->
+        <section class="vis-panel" id="panel-waveform">
+          <div class="vis-header">
+            <h2 class="vis-title">📉 Waveform</h2>
+            <div class="vis-meta mono" id="waveform-meta">— dB RMS</div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas
+              id="canvas-waveform"
+              aria-label="Real-time audio waveform"
+            ></canvas>
+          </div>
+        </section>
+
+        <!-- Frequency Spectrum -->
+        <section class="vis-panel" id="panel-spectrum">
+          <div class="vis-header">
+            <h2 class="vis-title">📊 Frequency Spectrum</h2>
+            <div class="vis-meta mono" id="spectrum-meta">Peak: —</div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas
+              id="canvas-spectrum"
+              aria-label="Real-time frequency spectrum"
+            ></canvas>
+          </div>
+          <!-- Frequency axis labels -->
+          <div class="freq-axis" id="freq-axis"></div>
+        </section>
+
+        <!-- Spectrogram -->
+        <section class="vis-panel wide" id="panel-spectrogram">
+          <div class="vis-header">
+            <h2 class="vis-title">🌈 Spectrogram</h2>
+            <div class="vis-meta">Time → | Freq ↑ | Color = Intensity</div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas
+              id="canvas-spectrogram"
+              aria-label="Spectrogram time-frequency view"
+            ></canvas>
+          </div>
+        </section>
+      </main>
+
+      <!-- Recordings List -->
+      <section class="recordings-section" id="recordings-section">
+        <h2 class="section-title">🎙️ Recordings</h2>
+        <div class="recordings-list" id="recordings-list">
+          <!-- Dynamic -->
+        </div>
+        <div class="empty-state" id="empty-recordings">
+          <div class="empty-icon">🎙️</div>
+          <p>
+            No recordings yet. Press <strong>Record</strong> to capture audio.
+          </p>
+        </div>
+      </section>
+    </div>
+    <!-- end app-container -->
+
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

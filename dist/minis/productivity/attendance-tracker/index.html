@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendance Pro</title>
+  <meta name="description"
+    content="Track student or team attendance percentages, absent records, and summary reports." />
+  <link rel="canonical" href="https://facelessism.github.io/cradle/projects/productivity/attendance-tracker/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Attendance Pro" />
+  <meta property="og:description" content="Track student or team attendance percentages, absent records, and summary reports." />
+  <meta property="og:url" content="https://facelessism.github.io/cradle/projects/productivity/attendance-tracker/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <main class="shell">
+    <header class="project-header">
+      <div>
+        <a href="../../../index.html" class="back-link">Back to Cradle</a>
+        <p class="eyebrow">Productivity Mini</p>
+        <h1>Attendance Dashboard</h1>
+        <p class="subtitle">
+          Track subject-wise attendance percentages, log present/absent
+          changes, and see how many classes you can still miss and stay
+          on target.
+        </p>
+      </div>
+      <div class="header-actions">
+        <button class="btn-export-action" data-cradle-btn data-variant="success" data-size="sm" data-left-icon="⬇">
+          Export CSV
+        </button>
+        <button class="btn-import-action" data-cradle-btn data-variant="outline" data-size="sm" data-left-icon="⬆">
+          Import CSV
+        </button>
+        <input type="file" id="csvFileInput" accept=".csv" aria-label="Import attendance CSV file"
+          style="display: none" />
+        <button id="btn-new-subject" data-cradle-btn data-variant="primary" data-size="sm" data-left-icon="+">
+          New Subject
+        </button>
+      </div>
+    </header>
+
+    <div id="alertBanner" class="alert-banner" role="status" aria-live="polite" style="display: none;">
+      <span class="alert-icon">⚠️</span>
+      <span id="alertMessage"></span>
+    </div>
+
+    <section class="stats-dashboard" id="statsDashboard" aria-label="Attendance summary">
+      <article class="stat-card">
+        <span class="stat-label">Overall Attendance</span>
+        <strong class="stat-value" id="overallAttendance">0%</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Total Conducted</span>
+        <strong class="stat-value" id="totalConducted">0</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Below Target</span>
+        <strong class="stat-value" id="belowTargetCount">0</strong>
+      </article>
+    </section>
+
+    <section id="subjectsCard" class="card" data-cradle-card data-title="Subjects">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>Total Classes</th>
+              <th>Present</th>
+              <th>Absent</th>
+              <th>Current %</th>
+              <th>Required / Remaining</th>
+              <th>Update</th>
+            </tr>
+          </thead>
+          <tbody id="attendance-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="side-grid">
+      <section id="historyCard" class="card" data-cradle-card data-title="Recent History">
+        <div class="history-header">
+          <button class="btn-clear-history-action" data-cradle-btn data-variant="danger" data-size="sm"
+            aria-label="Clear all attendance history">
+            Clear History
+          </button>
+        </div>
+        <div id="history-log" class="history-list"></div>
+      </section>
+
+      <section id="overviewCard" class="card" data-cradle-card data-title="Attendance Overview">
+        <div class="chart-container">
+          <canvas id="attendanceChart"></canvas>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="addModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>Add New Subject</h2>
+        <button class="close-btn" aria-label="Close">
+          &times;
+        </button>
+      </div>
+      <form id="newSubjectForm">
+        <div class="form-group">
+          <label for="subName">Subject Name</label>
+          <input type="text" id="subName" placeholder="enter subject name" required />
+        </div>
+        <div class="form-group">
+          <label for="subTotal">Estimated Total Classes</label>
+          <input type="number" id="subTotal" value="45" min="1" placeholder="e.g., 45" required />
+        </div>
+        <div class="form-group">
+          <label for="subTarget">Target Percentage (%)</label>
+          <input type="number" id="subTarget" value="75" min="1" max="100" placeholder="e.g., 75" required />
+        </div>
+        <button type="submit" data-cradle-btn data-variant="primary" data-size="md" data-full-width="true"
+          style="margin-top: 10px">
+          Add Subject
+        </button>
+      </form>
+    </div>
+  </div>
+  <script
+    src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"
+    integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ"
+    crossorigin="anonymous"
+  ></script>
+  <script src="../../../src/components/ui/Button/Button.js"></script>
+  <script src="../../../src/components/ui/Card/Card.js"></script>
+  <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+  <script src="data-handler.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>

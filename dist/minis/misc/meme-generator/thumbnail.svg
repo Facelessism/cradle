@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18001e" />
+      <stop offset="100%" stop-color="#581c87" />
+    </linearGradient>
+
+    <!-- Aurora Blur Filter -->
+    <filter id="auroraGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="80" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Card Shadow -->
+    <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#000000" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Base background -->
+  <rect width="1200" height="675" rx="0" fill="url(#bgGrad)" />
+
+  <!-- Aurora Glows -->
+  <circle cx="250" cy="200" r="300" fill="#c084fc" opacity="0.3" filter="url(#auroraGlow)" />
+  <circle cx="950" cy="450" r="350" fill="#c084fc" opacity="0.25" filter="url(#auroraGlow)" />
+
+  <!-- Decorative Pattern -->
+  <g opacity="0.15">
+      <circle cx="600" cy="337" r="100" fill="none" stroke="#c084fc" stroke-width="1.5" />
+      <circle cx="600" cy="337" r="200" fill="none" stroke="#c084fc" stroke-width="2" />
+      <circle cx="600" cy="337" r="300" fill="none" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="10 15" />
+      <circle cx="600" cy="337" r="400" fill="none" stroke="#c084fc" stroke-width="1" />
+      <line x1="600" y1="37" x2="600" y2="637" stroke="#c084fc" stroke-width="1" opacity="0.3" />
+      <line x1="300" y1="337" x2="900" y2="337" stroke="#c084fc" stroke-width="1" opacity="0.3" />
+    </g>
+
+  <!-- Border Frame -->
+  <rect x="25" y="25" width="1150" height="625" rx="20" fill="none" stroke="#c084fc" stroke-opacity="0.25" stroke-width="2" />
+
+  <!-- Accent Corner Highlights -->
+  <path d="M 25 100 L 25 45 A 20 20 0 0 1 45 25 L 100 25" fill="none" stroke="#c084fc" stroke-width="4" stroke-linecap="round" />
+  <path d="M 1175 575 L 1175 630 A 20 20 0 0 1 1155 650 L 1100 650" fill="none" stroke="#c084fc" stroke-width="4" stroke-linecap="round" />
+
+  <!-- Glassmorphic Card Container -->
+  <rect x="75" y="75" width="1050" height="525" rx="16" fill="#ffffff" fill-opacity="0.03" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1" filter="url(#cardShadow)" />
+
+  <!-- Category Icon (Decor) -->
+  <g transform="translate(1000, 100) scale(4)" stroke="#c084fc" fill="none" opacity="0.35">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 01-2 2h0a2 2 0 01-2-2v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+  </g>
+
+  <!-- Category Badge -->
+  <g transform="translate(100, 130)">
+    <rect width="120" height="40" rx="20" fill="#c084fc" fill-opacity="0.2" stroke="#c084fc" stroke-opacity="0.4" stroke-width="1.5" />
+    <text x="60" y="24" font-family="'Space Grotesk', Inter, system-ui, sans-serif" font-size="12" font-weight="800" fill="#ffffff" fill-opacity="0.9" letter-spacing="2" text-anchor="middle">MISC</text>
+  </g>
+
+  <!-- Project Title -->
+  <text x="100" y="330" font-family="'Space Grotesk', Inter, system-ui, sans-serif" font-size="64" font-weight="800" fill="#ffffff" letter-spacing="-1.5">Meme Generator</text>
+
+  <!-- Watermark logo -->
+  <g transform="translate(1100, 560)" text-anchor="end">
+    <text font-family="'Space Grotesk', Inter, system-ui, sans-serif" font-size="20" font-weight="800" fill="#ffffff" fill-opacity="0.45" letter-spacing="4">CRADLE</text>
+    <text y="22" font-family="'Space Grotesk', Inter, system-ui, sans-serif" font-size="10" font-weight="600" fill="#ffffff" fill-opacity="0.25" letter-spacing="1">EXPERIMENT SHOWCASE</text>
+  </g>
+</svg>

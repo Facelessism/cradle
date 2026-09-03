@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terminal Portfolio Generator</title>
+    <meta name="description" content="The Terminal Portfolio Generator is a browser-based web application that allows users to create, customize, preview, and download a terminal-style portfolio. It..." />
+
+    <meta
+      name="description"
+      content="Generate interactive CLI terminal portfolios with custom command suites."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/productivity/terminal-portfolio-generator/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Terminal Portfolio Generator" />
+    <meta property="og:description" content="Generate interactive CLI terminal portfolios with custom command suites." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/productivity/terminal-portfolio-generator/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1 class="sr-only" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">Terminal Portfolio Generator</h1>
+    <main class="app">
+      <div class="pane" id="formPanel">
+        <div class="pane-titlebar">
+          <span class="dots"><i></i><i></i><i></i></span>
+          <span class="pane-title">~/portfolio.conf</span>
+        </div>
+
+        <div class="pane-body">
+          <div class="theme-row" id="themeRow"></div>
+
+          <div class="form-editor">
+            <div class="field">
+              <label for="nameInput">name</label>
+              <input id="nameInput" type="text" placeholder="Ada Lovelace" />
+            </div>
+
+            <div class="field">
+              <label for="roleInput">role</label>
+              <input
+                id="roleInput"
+                type="text"
+                placeholder="Software Engineer"
+              />
+            </div>
+
+            <div class="field">
+              <label for="aboutInput">about</label>
+              <textarea id="aboutInput" placeholder="A short bio..."></textarea>
+            </div>
+
+            <div class="field">
+              <label for="skillsInput">skills (comma-separated)</label>
+              <input
+                id="skillsInput"
+                type="text"
+                placeholder="JavaScript, Python, Git"
+              />
+            </div>
+
+            <h2 class="section-divider">
+              <span class="marker">## </span>projects
+            </h2>
+            <div id="projectsGroup"></div>
+            <button type="button" class="add-entry-btn" id="addProjectBtn">
+              + push project
+            </button>
+
+            <h2 class="section-divider">
+              <span class="marker">## </span>experience
+            </h2>
+            <div id="experienceGroup"></div>
+            <button type="button" class="add-entry-btn" id="addExperienceBtn">
+              + push experience
+            </button>
+
+            <h2 class="section-divider">
+              <span class="marker">## </span>education
+            </h2>
+            <div id="educationGroup"></div>
+            <button type="button" class="add-entry-btn" id="addEducationBtn">
+              + push education
+            </button>
+
+            <h2 class="section-divider">
+              <span class="marker">## </span>contact
+            </h2>
+            <div class="field">
+              <label for="emailInput">email</label>
+              <input
+                id="emailInput"
+                type="text"
+                placeholder="you@example.com"
+              />
+            </div>
+            <div class="field">
+              <label for="githubInput">github</label>
+              <input
+                id="githubInput"
+                type="text"
+                placeholder="github.com/username"
+              />
+            </div>
+            <div class="field">
+              <label for="linkedinInput">linkedin</label>
+              <input
+                id="linkedinInput"
+                type="text"
+                placeholder="linkedin.com/in/username"
+              />
+            </div>
+            <div class="field">
+              <label for="websiteInput">website</label>
+              <input id="websiteInput" type="text" placeholder="yoursite.com" />
+            </div>
+          </div>
+
+          <div class="validation-errors" id="validationErrors"></div>
+
+          <button type="button" class="export-btn" id="exportBtn">
+            ↓ export standalone .html
+          </button>
+        </div>
+      </div>
+
+      <div class="pane terminal-wrap">
+        <div class="pane-titlebar">
+          <span class="dots"><i></i><i></i><i></i></span>
+          <span class="pane-title">~/preview — bash</span>
+        </div>
+        <div class="terminal-body">
+          <div class="terminal" id="terminalOutput"></div>
+          <div class="terminal-input-row">
+            <span class="prompt">guest@portfolio:~$</span>
+            <input
+              id="terminalInput"
+              type="text"
+              placeholder="type a command, e.g. help"
+              autocomplete="off"
+            />
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <span>Terminal Portfolio Generator</span>
+    </footer>
+
+    <template id="projectTemplate">
+      <div class="repeatable-group" data-entry>
+        <button
+          type="button"
+          class="remove-entry"
+          aria-label="Remove project entry"
+        >
+          ✕
+        </button>
+        <div class="field">
+          <label>name</label
+          ><input
+            data-field="name"
+            type="text"
+            aria-label="Project name"
+            placeholder="Awesome Project"
+          />
+        </div>
+        <div class="field">
+          <label>description</label
+          ><input
+            data-field="description"
+            type="text"
+            aria-label="Project description"
+            placeholder="A cool web app built with JS"
+          />
+        </div>
+        <div class="field">
+          <label>tech (comma-separated)</label
+          ><input
+            data-field="tech"
+            type="text"
+            aria-label="Project technologies"
+            placeholder="JavaScript, CSS, HTML"
+          />
+        </div>
+        <div class="field">
+          <label>link</label
+          ><input
+            data-field="link"
+            type="text"
+            aria-label="Project link"
+            placeholder="github.com/user/repo"
+          />
+        </div>
+      </div>
+    </template>
+
+    <template id="experienceTemplate">
+      <div class="repeatable-group" data-entry>
+        <button
+          type="button"
+          class="remove-entry"
+          aria-label="Remove experience entry"
+        >
+          ✕
+        </button>
+        <div class="field">
+          <label>role</label
+          ><input
+            data-field="role"
+            type="text"
+            aria-label="Experience role"
+            placeholder="Software Engineer"
+          />
+        </div>
+        <div class="field">
+          <label>company</label
+          ><input
+            data-field="company"
+            type="text"
+            aria-label="Experience company"
+            placeholder="Tech Corp"
+          />
+        </div>
+        <div class="field">
+          <label>period</label
+          ><input
+            data-field="period"
+            type="text"
+            placeholder="2023 - Present"
+          />
+        </div>
+        <div class="field">
+          <label>description</label
+          ><input
+            data-field="description"
+            type="text"
+            aria-label="Experience description"
+            placeholder="Built web applications"
+          />
+        </div>
+      </div>
+    </template>
+
+    <template id="educationTemplate">
+      <div class="repeatable-group" data-entry>
+        <button
+          type="button"
+          class="remove-entry"
+          aria-label="Remove education entry"
+        >
+          ✕
+        </button>
+        <div class="field">
+          <label>degree</label
+          ><input
+            data-field="degree"
+            type="text"
+            aria-label="Education degree"
+            placeholder="B.S. Computer Science"
+          />
+        </div>
+        <div class="field">
+          <label>institution</label
+          ><input
+            data-field="institution"
+            type="text"
+            aria-label="Education institution"
+            placeholder="University Name"
+          />
+        </div>
+        <div class="field">
+          <label>period</label
+          ><input data-field="period" type="text" placeholder="2021 - 2025" />
+        </div>
+      </div>
+    </template>
+
+    <script src="theme.js"></script>
+    <script src="portfolioEngine.js"></script>
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="exportHtml.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

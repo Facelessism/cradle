@@ -1,0 +1,1145 @@
+/* =========================================
+   SUDOKU SOLVER
+   Cradle-style dashboard UI
+========================================= */
+
+:root {
+    --bg: #0d1120;
+    --bg-secondary: #11182b;
+
+    --panel: #151e34;
+    --panel-light: #1a2540;
+
+    --border: #273452;
+    --border-light: #33415f;
+
+    --text: #f4f7ff;
+    --muted: #8792b0;
+
+    --primary: #8b3dff;
+    --primary-light: #a855f7;
+
+    --blue: #38bdf8;
+    --blue-dark: #2563eb;
+
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+
+    --cell: #17213a;
+    --cell-hover: #222e4c;
+    --cell-selected: #273a69;
+
+    --fixed: #dbe5ff;
+    --user: #72c8ff;
+}
+
+
+/* =========================================
+   RESET
+========================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+
+    font-family:
+        "Segoe UI",
+        Inter,
+        Arial,
+        sans-serif;
+
+    background:
+        radial-gradient(circle at 15% 20%,
+            rgba(103, 44, 177, 0.13),
+            transparent 32%),
+        radial-gradient(circle at 85% 70%,
+            rgba(37, 99, 235, 0.08),
+            transparent 30%),
+        var(--bg);
+
+    color: var(--text);
+}
+
+
+/* =========================================
+   APP
+========================================= */
+
+.app {
+    width: 100%;
+    min-height: 100vh;
+}
+
+
+/* =========================================
+   TOP BAR
+========================================= */
+
+.topbar {
+    min-height: 92px;
+
+    padding: 18px 5%;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+    background: rgba(10, 14, 28, 0.8);
+
+    backdrop-filter: blur(12px);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.brand-icon {
+    width: 48px;
+    height: 48px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 13px;
+
+    background:
+        linear-gradient(135deg,
+            #8b3dff,
+            #5b21b6);
+
+    font-size: 25px;
+
+    box-shadow:
+        0 8px 25px rgba(139, 61, 255, 0.25);
+}
+
+.brand h1 {
+    margin: 0;
+
+    font-size: 27px;
+    font-weight: 750;
+
+    letter-spacing: -0.5px;
+}
+
+.brand p {
+    margin: 3px 0 0;
+
+    color: #8d98b7;
+
+    font-size: 13px;
+}
+
+.header-status {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    padding: 10px 18px;
+
+    background: #18233d;
+
+    border: 1px solid #293654;
+
+    border-radius: 25px;
+
+    color: #d7def0;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+
+    background: var(--success);
+
+    box-shadow:
+        0 0 10px rgba(34, 197, 94, 0.6);
+}
+
+
+/* =========================================
+   MAIN GRID
+========================================= */
+
+.game-layout {
+    width: 92%;
+    max-width: 1500px;
+
+    margin: 28px auto;
+
+    display: grid;
+
+    grid-template-columns:
+        250px minmax(480px, 1fr) 250px;
+
+    gap: 20px;
+
+    align-items: start;
+}
+
+
+/* =========================================
+   PANELS
+========================================= */
+
+.panel,
+.board-panel {
+    background:
+        linear-gradient(145deg,
+            rgba(23, 31, 55, 0.98),
+            rgba(17, 25, 45, 0.98));
+
+    border: 1px solid var(--border);
+
+    border-radius: 17px;
+
+    box-shadow:
+        0 12px 30px rgba(0, 0, 0, 0.16);
+}
+
+.panel {
+    padding: 18px;
+
+    margin-bottom: 16px;
+}
+
+.panel-title {
+    margin-bottom: 16px;
+
+    color: #727c9d;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    letter-spacing: 1.7px;
+}
+
+
+/* =========================================
+   LEFT CONTROLS
+========================================= */
+
+.control-group {
+    margin-bottom: 12px;
+}
+
+.control-group label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #8994b2;
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+select {
+    width: 100%;
+    height: 43px;
+
+    padding: 0 12px;
+
+    background: #111a2e;
+
+    color: #eef2ff;
+
+    border: 1px solid #2e3c5b;
+
+    border-radius: 9px;
+
+    outline: none;
+
+    font-family: inherit;
+    font-size: 13px;
+
+    cursor: pointer;
+}
+
+select:focus {
+    border-color: var(--primary);
+}
+
+
+/* =========================================
+   BUTTONS
+========================================= */
+
+button {
+    font-family: inherit;
+}
+
+.primary-btn,
+.secondary-btn {
+    width: 100%;
+    min-height: 43px;
+
+    border-radius: 10px;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.15s ease,
+        background 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.primary-btn {
+    margin-bottom: 9px;
+
+    border: none;
+
+    color: white;
+
+    background:
+        linear-gradient(135deg,
+            #a34cff,
+            #7430e9);
+
+    box-shadow:
+        0 8px 20px rgba(139, 61, 255, 0.22);
+}
+
+.primary-btn:hover {
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 10px 25px rgba(139, 61, 255, 0.3);
+}
+
+.secondary-btn {
+    margin-top: 8px;
+
+    background: #18243e;
+
+    color: #dbe4ff;
+
+    border: 1px solid #2d3b5b;
+}
+
+.secondary-btn:hover {
+    background: #202e4d;
+
+    border-color: #40527a;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+
+/* =========================================
+   NUMBER PAD
+========================================= */
+
+.number-pad {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 7px;
+}
+
+.number-pad button {
+    height: 42px;
+
+    background: #19243c;
+
+    color: #dce5ff;
+
+    border: 1px solid #2c3a59;
+
+    border-radius: 8px;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.number-pad button:hover {
+    background: #273655;
+
+    border-color: #49618c;
+
+    color: white;
+}
+
+.number-pad .erase-btn {
+    grid-column: 1 / -1;
+
+    color: #fca5a5;
+}
+
+
+/* =========================================
+   STATS
+========================================= */
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 10px 0;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+    font-size: 12px;
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-row span {
+    color: #7e89a8;
+}
+
+.stat-row strong {
+    color: #e5eaff;
+}
+
+
+/* =========================================
+   CENTER BOARD
+========================================= */
+
+.board-panel {
+    min-height: 720px;
+
+    padding: 22px;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.board-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding-bottom: 17px;
+
+    margin-bottom: 18px;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.eyebrow {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #6d78a0;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    letter-spacing: 1.5px;
+}
+
+.board-header h2 {
+    margin: 0;
+
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.timer-box {
+    min-width: 86px;
+
+    padding: 8px 13px;
+
+    text-align: center;
+
+    background: #121b30;
+
+    border: 1px solid #293754;
+
+    border-radius: 10px;
+}
+
+.timer-box span {
+    display: block;
+
+    color: #707b9b;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    letter-spacing: 1px;
+}
+
+.timer-box strong {
+    display: block;
+
+    margin-top: 2px;
+
+    color: #c9d7ff;
+
+    font-size: 16px;
+}
+
+
+/* =========================================
+   BOARD
+========================================= */
+
+.sudoku-container {
+    flex: 1;
+
+    min-height: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 5px;
+}
+
+.sudoku-board {
+    width: min(580px, 100%);
+
+    aspect-ratio: 1 / 1;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(9, 1fr);
+
+    grid-template-rows:
+        repeat(9, 1fr);
+
+    background: #56617a;
+
+    border: 3px solid #56617a;
+
+    border-radius: 9px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 20px 45px rgba(0, 0, 0, 0.25);
+}
+
+
+/* =========================================
+   SUDOKU CELL
+========================================= */
+
+.cell {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 0;
+    min-height: 0;
+
+    background: var(--cell);
+
+    color: #f3f6ff;
+
+    border-right: 1px solid #39465f;
+    border-bottom: 1px solid #39465f;
+
+    font-size: clamp(17px, 2.7vw, 27px);
+    font-weight: 650;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.cell:hover {
+    background: var(--cell-hover);
+}
+
+
+/* Remove outside borders */
+
+.cell:nth-child(9n) {
+    border-right: none;
+}
+
+.cell:nth-child(n+73) {
+    border-bottom: none;
+}
+
+
+/* =========================================
+   3 × 3 GRID BORDERS
+========================================= */
+
+.cell:nth-child(3n) {
+    border-right: 2px solid #66718a;
+}
+
+.cell:nth-child(9n) {
+    border-right: none;
+}
+
+
+/*
+    Horizontal separators:
+    rows 3, 6
+*/
+
+.cell:nth-child(n+19):nth-child(-n+27),
+.cell:nth-child(n+46):nth-child(-n+54) {
+    border-bottom: 2px solid #66718a;
+}
+
+
+/* =========================================
+   FIXED CELLS
+========================================= */
+
+.cell.fixed {
+    background: #202c46;
+
+    color: #f1f5ff;
+
+    font-weight: 800;
+}
+
+
+/* =========================================
+   USER CELLS
+========================================= */
+
+.cell.user-input {
+    color: var(--user);
+}
+
+
+/* =========================================
+   SELECTED
+========================================= */
+
+.cell.selected {
+    background:
+        rgba(139, 61, 255, 0.25);
+
+    box-shadow:
+        inset 0 0 0 2px #a855f7;
+
+    z-index: 2;
+}
+
+
+/* =========================================
+   RELATED CELLS
+========================================= */
+
+.cell.related {
+    background: #1d2944;
+}
+
+
+/* =========================================
+   SAME NUMBER
+========================================= */
+
+.cell.same-number {
+    background: #29395b;
+
+    color: #8ed5ff;
+}
+
+
+/* =========================================
+   HINT
+========================================= */
+
+.cell.hint {
+    background:
+        rgba(34, 197, 94, 0.16);
+
+    color: #86efac;
+
+    box-shadow:
+        inset 0 0 0 2px #22c55e;
+}
+
+
+/* =========================================
+   ERROR
+========================================= */
+
+.cell.error {
+    background:
+        rgba(239, 68, 68, 0.18);
+
+    color: #fecaca;
+
+    box-shadow:
+        inset 0 0 0 2px #ef4444;
+}
+
+
+/* =========================================
+   BOARD FOOTER
+========================================= */
+
+.board-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    margin-top: 17px;
+    padding-top: 14px;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+
+    color: #75809f;
+
+    font-size: 11px;
+}
+
+#message {
+    color: #a9b6d7;
+
+    font-weight: 600;
+
+    text-align: right;
+}
+
+
+/* =========================================
+   RIGHT STATUS
+========================================= */
+
+.status-card {
+    padding: 13px;
+
+    margin-bottom: 9px;
+
+    background: #18233b;
+
+    border: 1px solid #293754;
+
+    border-radius: 10px;
+}
+
+.status-card:last-child {
+    margin-bottom: 0;
+}
+
+.status-label {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: #687594;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    letter-spacing: 1px;
+}
+
+.status-card strong {
+    color: #e9edff;
+
+    font-size: 16px;
+}
+
+
+/* =========================================
+   INSTRUCTIONS
+========================================= */
+
+.instruction {
+    display: flex;
+
+    gap: 10px;
+
+    padding: 10px 0;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.instruction:last-child {
+    border-bottom: none;
+}
+
+.instruction-icon {
+    flex-shrink: 0;
+
+    width: 23px;
+    height: 23px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #242f4b;
+
+    border-radius: 6px;
+
+    color: #9f6cff;
+
+    font-size: 11px;
+}
+
+.instruction p {
+    margin: 0;
+
+    color: #8994b1;
+
+    font-size: 11px;
+
+    line-height: 1.45;
+}
+
+
+/* =========================================
+   KEYBOARD
+========================================= */
+
+.key-row {
+    display: flex;
+
+    gap: 5px;
+
+    margin-bottom: 6px;
+}
+
+kbd {
+    min-width: 28px;
+    height: 27px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #202b45;
+
+    border: 1px solid #33415e;
+
+    border-radius: 5px;
+
+    color: #bfc9e3;
+
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.keyboard-help p {
+    margin: 10px 0 0;
+
+    color: #707b99;
+
+    font-size: 10px;
+}
+
+
+/* =========================================
+   LIGHT THEME
+========================================= */
+
+html.light-theme {
+    --bg: #f4f7fb;
+    --bg-secondary: #ffffff;
+
+    --panel: #ffffff;
+    --panel-light: #f8fafc;
+
+    --border: #dce3ee;
+    --border-light: #cbd5e1;
+
+    --text: #111827;
+    --muted: #64748b;
+
+    --cell: #f8fafc;
+    --cell-hover: #eef2f7;
+
+    --fixed: #e2e8f0;
+}
+
+html.light-theme body {
+    background:
+        radial-gradient(circle at 10% 20%,
+            rgba(139, 61, 255, 0.06),
+            transparent 30%),
+        #f4f7fb;
+
+    color: var(--text);
+}
+
+html.light-theme .topbar {
+    background: rgba(255, 255, 255, 0.88);
+
+    border-color: #e2e8f0;
+}
+
+html.light-theme .panel,
+html.light-theme .board-panel {
+    background: #ffffff;
+
+    border-color: #dce3ee;
+
+    box-shadow:
+        0 8px 25px rgba(15, 23, 42, 0.06);
+}
+
+html.light-theme .brand p,
+html.light-theme .panel-title,
+html.light-theme .instruction p {
+    color: #64748b;
+}
+
+html.light-theme select {
+    background: #ffffff;
+
+    color: #111827;
+
+    border-color: #cbd5e1;
+}
+
+html.light-theme .secondary-btn {
+    background: #f1f5f9;
+
+    color: #334155;
+
+    border-color: #d2dbe8;
+}
+
+html.light-theme .number-pad button {
+    background: #f1f5f9;
+
+    color: #334155;
+
+    border-color: #d2dbe8;
+}
+
+html.light-theme .status-card {
+    background: #f8fafc;
+
+    border-color: #e2e8f0;
+}
+
+html.light-theme .cell {
+    background: #f8fafc;
+
+    color: #111827;
+
+    border-color: #cbd5e1;
+}
+
+html.light-theme .cell.fixed {
+    background: #e2e8f0;
+}
+
+html.light-theme .cell:hover {
+    background: #eef2f7;
+}
+
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 1100px) {
+
+    .game-layout {
+        grid-template-columns:
+            210px minmax(420px, 1fr) 210px;
+
+        gap: 14px;
+    }
+
+    .panel {
+        padding: 14px;
+    }
+
+    .board-panel {
+        padding: 18px;
+    }
+
+}
+
+
+/* =========================================
+   SMALL TABLET
+========================================= */
+
+@media (max-width: 900px) {
+
+    .game-layout {
+        grid-template-columns:
+            200px minmax(380px, 1fr);
+
+        grid-template-areas:
+            "left board"
+            "right board";
+    }
+
+    .left-sidebar {
+        grid-area: left;
+    }
+
+    .board-panel {
+        grid-area: board;
+    }
+
+    .right-sidebar {
+        grid-area: right;
+    }
+
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 700px) {
+
+    .topbar {
+        padding: 15px 4%;
+
+        min-height: 76px;
+    }
+
+    .brand-icon {
+        width: 40px;
+        height: 40px;
+
+        font-size: 20px;
+    }
+
+    .brand h1 {
+        font-size: 21px;
+    }
+
+    .brand p {
+        display: none;
+    }
+
+    .header-status {
+        padding: 8px 12px;
+
+        font-size: 11px;
+    }
+
+    .game-layout {
+        width: 94%;
+
+        margin: 15px auto;
+
+        display: flex;
+
+        flex-direction: column;
+    }
+
+    .board-panel {
+        order: 1;
+
+        width: 100%;
+
+        min-height: auto;
+    }
+
+    .left-sidebar {
+        order: 2;
+
+        width: 100%;
+    }
+
+    .right-sidebar {
+        order: 3;
+
+        width: 100%;
+    }
+
+    .sudoku-board {
+        width: min(94vw, 540px);
+    }
+
+    .board-footer {
+        flex-direction: column;
+
+        align-items: flex-start;
+    }
+
+    #message {
+        text-align: left;
+    }
+
+}
+
+
+/* =========================================
+   VERY SMALL DEVICES
+========================================= */
+
+@media (max-width: 400px) {
+
+    body {
+        font-size: 13px;
+    }
+
+    .topbar {
+        padding: 12px;
+    }
+
+    .brand h1 {
+        font-size: 19px;
+    }
+
+    .header-status {
+        display: none;
+    }
+
+    .board-panel {
+        padding: 12px;
+    }
+
+    .board-header {
+        margin-bottom: 10px;
+    }
+
+    .sudoku-board {
+        width: 94vw;
+    }
+
+    .cell {
+        font-size: 15px;
+    }
+
+}

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Markdown Resume Generator | Cradle</title>
+  <meta name="description" content="Build, style, preview, and export professional markdown resumes to PDF or HTML." />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/editor/markdown-resume-generator/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Markdown Resume Generator | Cradle" />
+    <meta property="og:description" content="Build, style, preview, and export professional markdown resumes to PDF or HTML." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/editor/markdown-resume-generator/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div>
+        <a class="back-link" href="../../../index.html">Back to Cradle</a>
+        <p class="eyebrow">Editor Mini</p>
+        <h1>Markdown Resume Generator</h1>
+        <p class="subtitle">
+          Write a resume in Markdown, preview it instantly, switch templates
+          and themes, then export a professional print-ready PDF.
+        </p>
+      </div>
+
+      <div class="header-card" aria-label="Resume generator summary">
+        <span id="wordCount">0 words</span>
+        <small>Live Markdown Resume</small>
+      </div>
+    </header>
+
+    <section class="toolbar" aria-label="Resume controls">
+      <label>
+        Template
+        <select id="templateSelect">
+          <option value="classic">Classic</option>
+          <option value="modern">Modern</option>
+          <option value="compact">Compact</option>
+        </select>
+      </label>
+
+      <label>
+        Theme
+        <select id="themeSelect">
+          <option value="slate">Slate</option>
+          <option value="indigo">Indigo</option>
+          <option value="emerald">Emerald</option>
+          <option value="rose">Rose</option>
+        </select>
+      </label>
+
+      <div class="toolbar-actions">
+        <button id="sampleBtn" data-cradle-btn data-variant="secondary" data-size="sm" type="button">
+          Load Sample
+        </button>
+        <button id="copyBtn" data-cradle-btn data-variant="outline" data-size="sm" type="button">
+          Copy Markdown
+        </button>
+        <button id="downloadMdBtn" data-cradle-btn data-variant="outline" data-size="sm" type="button">
+          Download MD
+        </button>
+        <button id="downloadHtmlBtn" data-cradle-btn data-variant="secondary" data-size="sm" type="button">
+          Export HTML
+        </button>
+        <button id="printBtn" data-cradle-btn data-variant="primary" data-size="sm" type="button">
+          Export PDF
+        </button>
+      </div>
+    </section>
+
+    <main class="workspace">
+      <section class="editor-pane" aria-labelledby="editorTitle">
+        <div class="pane-header">
+          <div>
+            <h2 id="editorTitle">Markdown Editor</h2>
+            <p>
+              Use headings, bullets, links, bold text, and contact details.
+            </p>
+          </div>
+          <span id="statusMessage" role="status" aria-live="polite">Ready</span>
+        </div>
+
+        <script src="resumeEngine.js"></script>
+        <textarea id="markdownInput" spellcheck="true" aria-label="Markdown resume input"
+          placeholder="Type your resume in Markdown here..."></textarea>
+      </section>
+
+      <section class="preview-pane" aria-labelledby="previewTitle">
+        <div class="pane-header no-print">
+          <div>
+            <h2 id="previewTitle">Live Preview</h2>
+            <p>The PDF export uses this resume layout.</p>
+          </div>
+        </div>
+
+        <article id="resumePreview" class="resume-preview template-classic theme-slate"></article>
+      </section>
+    </main>
+  </div>
+
+  <script src="../../../src/components/ui/Button/Button.js"></script>
+  <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+  <script src="../../../src/components/ui/escapeHtml.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,735 @@
+:root {
+  --bg: #f3ede5;
+  --bg-deep: #e8dfd5;
+  --surface: #faf6f1;
+  --surface-light: #fffaf5;
+  --panel: #f5eee7;
+  --border: #d8c9bb;
+  --text: #302820;
+  --muted: #75685d;
+  --accent: #c87535;
+  --accent-light: #dc8d4d;
+  --accent-dark: #a45725;
+  --white-key: #f8f3ec;
+  --white-key-light: #fffdf9;
+  --white-key-shadow: #b9afa5;
+  --black-key: #29221d;
+  --black-key-light: #51463d;
+  --black-active: #c86d32;
+  --shadow: 0 24px 60px rgba(80, 55, 35, 0.18);
+  --radius: 22px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  min-height: 100%;
+  background: var(--bg-deep);
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  padding: 32px 20px;
+  color: var(--text);
+  background:
+    radial-gradient(
+      circle at 50% -10%,
+      rgba(216, 138, 74, 0.12),
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      #faf6f1 0%,
+      #e9e0d6 100%
+    );
+  font-family:
+    "Segoe UI",
+    Tahoma,
+    Geneva,
+    Verdana,
+    sans-serif;
+  overflow-x: hidden;
+}
+
+button {
+  font: inherit;
+}
+
+.piano-app {
+  width: min(1280px, 100%);
+  margin: 0 auto;
+}
+
+.piano-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.header-content {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin-bottom: 8px;
+  color: var(--accent-light);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.piano-header h1 {
+  margin-bottom: 8px;
+  color: #5f3808;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.piano-header p:not(.eyebrow) {
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.status {
+  flex-shrink: 0;
+  min-width: 120px;
+  padding: 11px 18px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #181411;
+  color: var(--accent-light);
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-align: center;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.04),
+    0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.piano-card {
+  padding: clamp(12px, 2.5vw, 24px);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(
+      145deg,
+      #29221d,
+      #171310
+    );
+  box-shadow: var(--shadow);
+}
+
+.piano {
+  position: relative;
+  width: 100%;
+  min-height: 360px;
+  padding: 16px;
+  overflow: hidden;
+  border: 2px solid #0a0807;
+  border-radius: 16px;
+  background:
+    linear-gradient(
+      145deg,
+      #3b3028,
+      #15110f 55%,
+      #080706
+    );
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -10px 20px rgba(0, 0, 0, 0.55),
+    0 15px 35px rgba(0, 0, 0, 0.5);
+}
+
+.piano-keyboard {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  scroll-behavior: smooth;
+}
+
+.piano-inner {
+  position: relative;
+  width: 100%;
+  height: 328px;
+}
+
+.white-keys {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+  width: 100%;
+  height: 328px;
+}
+
+.key {
+  position: relative;
+  border: 0;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  cursor: pointer;
+}
+
+.white-key {
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  height: 328px;
+  padding: 18px 3px;
+  border-right: 1px solid #aaa096;
+  border-bottom: 7px solid var(--white-key-shadow);
+  border-radius: 0 0 9px 9px;
+  background:
+    linear-gradient(
+      90deg,
+      #ddd5ca 0%,
+      var(--white-key-light) 12%,
+      #fffdf8 50%,
+      #e3dbd0 100%
+    );
+  color: #5f554d;
+  box-shadow:
+    inset 2px 0 rgba(255, 255, 255, 0.9),
+    inset -2px 0 rgba(0, 0, 0, 0.08);
+  transition:
+    transform 70ms ease,
+    background 70ms ease,
+    box-shadow 70ms ease,
+    border-color 70ms ease;
+}
+
+.white-key:last-child {
+  border-right: 0;
+}
+
+.white-key:hover {
+  background:
+    linear-gradient(
+      90deg,
+      #e6ded4,
+      #fffdf9 45%,
+      #ebe4db
+    );
+}
+
+.white-key.active,
+.white-key:active {
+  transform: translateY(7px);
+  border-bottom-width: 2px;
+  background:
+    linear-gradient(
+      180deg,
+      #ffe8d0 0%,
+      #e4a26f 55%,
+      #bd6935 100%
+    );
+  color: #3c2114;
+  box-shadow:
+    inset 0 4px 8px rgba(92, 43, 17, 0.2),
+    inset 0 -2px rgba(255, 255, 255, 0.25);
+}
+
+.black-keys {
+  position: absolute;
+  z-index: 5;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  height: 205px;
+  pointer-events: none;
+}
+
+.black-key {
+  position: absolute;
+  top: 0;
+  width: 2.8%;
+  height: 205px;
+  border: 1px solid #050403;
+  border-radius: 0 0 8px 8px;
+  background:
+    linear-gradient(
+      90deg,
+      #050403 0%,
+      var(--black-key-light) 42%,
+      #090807 100%
+    );
+  box-shadow:
+    inset 2px 0 rgba(255, 255, 255, 0.06),
+    inset -4px 0 rgba(0, 0, 0, 0.65),
+    0 9px 13px rgba(0, 0, 0, 0.55);
+  color: #bdb0a4;
+  pointer-events: auto;
+  transition:
+    transform 70ms ease,
+    background 70ms ease,
+    box-shadow 70ms ease;
+}
+
+/* 17 black keys: C#3 D#3 F#3 G#3 A#3 C#4 D#4 F#4 G#4 A#4 C#5 D#5 F#5 G#5 A#5 C#6 D#6
+   left % = (boundary column / 24 * 100) - (black key width / 2) */
+.black-key:nth-child(1)  { left: 2.77%; }  /* C#3 */
+.black-key:nth-child(2)  { left: 6.93%; }  /* D#3 */
+.black-key:nth-child(3)  { left: 15.27%; } /* F#3 */
+.black-key:nth-child(4)  { left: 19.43%; } /* G#3 */
+.black-key:nth-child(5)  { left: 23.60%; } /* A#3 */
+.black-key:nth-child(6)  { left: 31.93%; } /* C#4 */
+.black-key:nth-child(7)  { left: 36.10%; } /* D#4 */
+.black-key:nth-child(8)  { left: 44.43%; } /* F#4 */
+.black-key:nth-child(9)  { left: 48.60%; } /* G#4 */
+.black-key:nth-child(10) { left: 52.77%; } /* A#4 */
+.black-key:nth-child(11) { left: 61.10%; } /* C#5 */
+.black-key:nth-child(12) { left: 65.27%; } /* D#5 */
+.black-key:nth-child(13) { left: 73.60%; } /* F#5 */
+.black-key:nth-child(14) { left: 77.77%; } /* G#5 */
+.black-key:nth-child(15) { left: 81.93%; } /* A#5 */
+.black-key:nth-child(16) { left: 90.27%; } /* C#6 */
+.black-key:nth-child(17) { left: 94.43%; } /* D#6 */
+
+.black-key:hover {
+  background:
+    linear-gradient(
+      90deg,
+      #0c0a09,
+      #443a33 45%,
+      #100e0c
+    );
+}
+
+.black-key.active,
+.black-key:active {
+  transform: translateY(7px);
+  background:
+    linear-gradient(
+      90deg,
+      #743c20,
+      var(--black-active) 48%,
+      #7e411f
+    );
+  color: #fff2e6;
+  box-shadow:
+    inset 0 2px 5px rgba(255, 205, 160, 0.2),
+    0 4px 7px rgba(0, 0, 0, 0.45);
+}
+
+.note {
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.white-key kbd {
+  min-width: 26px;
+  margin-top: 6px;
+  padding: 4px 5px;
+  border: 1px solid #c7bdb1;
+  border-radius: 6px;
+  background: #e8e0d6;
+  color: #514840;
+  font-size: 0.62rem;
+  font-weight: 900;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
+}
+
+.white-key.active kbd {
+  border-color: rgba(96, 48, 23, 0.4);
+  background: rgba(255, 239, 220, 0.65);
+  color: #542b19;
+}
+
+.black-key .note {
+  font-size: 0.55rem;
+}
+
+.black-key kbd {
+  margin-top: 5px;
+  padding: 3px 5px;
+  border: 1px solid #4d423a;
+  border-radius: 5px;
+  background: #151210;
+  color: #bfb2a6;
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+
+.black-key.active kbd {
+  border-color: rgba(255, 220, 190, 0.4);
+  background: rgba(70, 30, 16, 0.7);
+  color: #fff0e4;
+}
+
+.key.active {
+  will-change: transform;
+}
+
+.instructions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.instruction {
+  padding: 17px 18px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background:
+    linear-gradient(
+      145deg,
+      #251f1b,
+      #191512
+    );
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.035),
+    0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.instruction strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #f4e9dc;
+  font-size: 0.88rem;
+}
+
+.instruction span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.keyboard-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.keyboard-hint kbd {
+  padding: 3px 7px;
+  border: 1px solid #bcaea1;
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: #eee5dc;
+  color: #594d44;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.key:focus-visible {
+  z-index: 10;
+  box-shadow:
+    0 0 0 3px var(--accent-light),
+    0 0 0 6px rgba(216, 138, 74, 0.25);
+}
+
+@media (max-width: 1100px) {
+  body {
+    padding: 24px 14px;
+  }
+
+  .piano-app {
+    width: min(100%, 1050px);
+  }
+
+  .piano-card {
+    padding: 14px;
+  }
+
+  .piano {
+    padding: 10px;
+  }
+
+  .piano-inner {
+    height: 290px;
+  }
+
+  .white-keys {
+    height: 290px;
+  }
+
+  .white-key {
+    height: 290px;
+  }
+
+  .black-keys {
+    height: 180px;
+  }
+
+  .black-key {
+    height: 180px;
+    width: 2.8%;
+  }
+
+  .note {
+    font-size: 0.64rem;
+  }
+
+  .white-key kbd {
+    min-width: 24px;
+    padding: 3px 4px;
+    font-size: 0.58rem;
+  }
+
+  .black-key .note {
+    font-size: 0.5rem;
+  }
+
+  .black-key kbd {
+    padding: 2px 4px;
+    font-size: 0.54rem;
+  }
+}
+
+@media (max-width: 760px) {
+  body {
+    padding: 18px 8px;
+    overflow-x: hidden;
+  }
+
+  .piano-card {
+    padding: 7px;
+    border-radius: 16px;
+  }
+
+  .piano {
+    padding: 5px;
+    border-radius: 11px;
+  }
+
+  /* The phone is only the viewport */
+  .piano-keyboard {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scroll-behavior: smooth;
+  }
+
+  .piano-keyboard::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .piano-keyboard::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 10px;
+  }
+
+  .piano-keyboard::-webkit-scrollbar-thumb {
+    background: rgba(200, 117, 53, 0.6);
+    border-radius: 10px;
+  }
+
+  /*
+   * IMPORTANT:
+   * Fixed piano width means the keys DON'T shrink.
+   */
+  .piano-inner {
+    width: 720px;
+    min-width: 720px;
+    height: 230px;
+  }
+
+  .white-keys {
+    width: 720px;
+    height: 230px;
+    grid-template-columns: repeat(24, 30px);
+  }
+
+  .white-key {
+    width: 30px;
+    min-width: 30px;
+    height: 230px;
+    padding: 10px 2px;
+    border-right: 1px solid #aaa096;
+    border-bottom-width: 5px;
+    border-radius: 0 0 6px 6px;
+  }
+
+  .white-key.active,
+  .white-key:active {
+    transform: translateY(5px);
+    border-bottom-width: 1px;
+  }
+
+  /*
+   * Black keys use the SAME 720px coordinate space.
+   * This keeps them perfectly aligned while scrolling.
+   */
+  .black-keys {
+    top: 0;
+    left: 0;
+    right: auto;
+    width: 720px;
+    height: 145px;
+  }
+
+  .black-key {
+    width: 22px;
+    height: 145px;
+    border-radius: 0 0 5px 5px;
+  }
+
+  .black-key.active,
+  .black-key:active {
+    transform: translateY(5px);
+  }
+
+  /* Hide note names to keep the small keys clean */
+  .white-key .note,
+  .black-key .note {
+    display: none;
+  }
+
+  .white-key kbd {
+    min-width: 19px;
+    padding: 2px 3px;
+    margin-top: 4px;
+    font-size: 0.48rem;
+  }
+
+  .black-key kbd {
+    padding: 2px 3px;
+    margin-top: 4px;
+    font-size: 0.43rem;
+  }
+
+  .instructions {
+    grid-template-columns: 1fr;
+    gap: 9px;
+    margin-top: 14px;
+  }
+
+  .instruction {
+    padding: 13px 14px;
+  }
+
+  .keyboard-hint {
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 11px;
+    font-size: 0.7rem;
+  }
+}
+
+
+@media (max-width: 480px) {
+  body {
+    padding: 12px 5px;
+  }
+
+  .piano-header {
+    gap: 10px;
+    margin-bottom: 13px;
+  }
+
+  .piano-header h1 {
+    font-size: 1.85rem;
+  }
+
+  .piano-header p:not(.eyebrow) {
+    font-size: 0.82rem;
+  }
+
+  .piano-card {
+    padding: 5px;
+    border-radius: 13px;
+  }
+
+  .piano {
+    padding: 4px;
+    border-radius: 9px;
+  }
+
+  /*
+   * DO NOT reduce the key width here.
+   *
+   * The piano stays 720px wide.
+   * The phone simply shows a smaller viewport.
+   */
+  .piano-inner {
+    width: 720px;
+    min-width: 720px;
+    height: 200px;
+  }
+
+  .white-keys {
+    width: 720px;
+    height: 200px;
+    grid-template-columns: repeat(24, 30px);
+  }
+
+  .white-key {
+    width: 30px;
+    min-width: 30px;
+    height: 200px;
+    padding-bottom: 8px;
+  }
+
+  .black-keys {
+    width: 720px;
+    height: 125px;
+  }
+
+  .black-key {
+    width: 22px;
+    height: 125px;
+  }
+
+  .white-key kbd {
+    min-width: 18px;
+    padding: 2px;
+    font-size: 0.43rem;
+  }
+
+  .black-key kbd {
+    padding: 1px 2px;
+    font-size: 0.39rem;
+  }
+
+  .instructions {
+    gap: 7px;
+    margin-top: 11px;
+  }
+
+  .instruction {
+    padding: 11px 12px;
+  }
+
+  .keyboard-hint {
+    margin-top: 9px;
+    font-size: 0.66rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

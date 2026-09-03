@@ -1,0 +1,444 @@
+/* ============================================================
+   Terminal Portfolio Generator
+   Design concept: the form IS a config file (~/portfolio.conf)
+   being edited live in one pane while a second pane runs it as
+   a shell session. Two panes, one editor, one terminal — same
+   world, same materials (monospace throughout, no sans-serif).
+   ============================================================ */
+
+:root {
+  /* editor/chrome tokens — separate from the terminal theme
+     tokens below, which stay dynamic (swapped by themes.js) */
+  --chrome-bg: #0b0d10;
+  --chrome-pane: #14171c;
+  --chrome-pane-alt: #101317;
+  --chrome-border: #262a31;
+  --chrome-text: #d7dbe0;
+  --chrome-dim: #6b7280;
+  --chrome-dim-2: #454b54;
+  --chrome-accent: #5eead4;
+  --chrome-danger: #f87171;
+
+  /* terminal theme tokens — overwritten at runtime by
+     Themes.themeToCssVars(), these are just startup defaults */
+  --term-bg: #0c0c0c;
+  --term-fg: #33ff33;
+  --term-accent: #00ff00;
+  --term-cursor: #33ff33;
+  --term-dim: #1f7a1f;
+  --term-error: #ff5555;
+
+  --font-label: "IBM Plex Mono", "Courier New", monospace;
+  --font-body: "JetBrains Mono", "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--chrome-bg);
+  background-image:
+    radial-gradient(circle at 15% 0%, rgba(94, 234, 212, 0.05), transparent 45%),
+    radial-gradient(circle at 100% 100%, rgba(94, 234, 212, 0.04), transparent 40%);
+  color: var(--chrome-text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 920px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- pane chrome (shared by both panes) ---------- */
+
+.pane {
+  background: var(--chrome-pane);
+  border: 1px solid var(--chrome-border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px -30px rgba(0, 0, 0, 0.6);
+}
+
+.pane-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.8rem;
+  background: var(--chrome-pane-alt);
+  border-bottom: 1px solid var(--chrome-border);
+}
+
+.dots {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--chrome-dim-2);
+  display: block;
+}
+
+.dots i:nth-child(1) { background: #4b3535; }
+.dots i:nth-child(2) { background: #4b4635; }
+.dots i:nth-child(3) { background: #354b3b; }
+
+.pane-title {
+  font-family: var(--font-label);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--chrome-dim);
+  letter-spacing: 0.02em;
+}
+
+.pane-body {
+  padding: 1.1rem 1.2rem 1.4rem;
+}
+
+/* ---------- form-editor: the signature element ----------
+   Fields are numbered like lines in a config file, via CSS
+   counters — no JS needed, renumbers itself as entries are
+   added/removed. Labels read as comments ("# name"), inputs
+   read as the value on that line, not a boxed form control. */
+
+.form-editor {
+  counter-reset: line;
+}
+
+.theme-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px dashed var(--chrome-border);
+}
+
+.field {
+  counter-increment: line;
+  position: relative;
+  padding-left: 2.4rem;
+  margin-bottom: 1rem;
+}
+
+.field::before {
+  content: counter(line, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 0.15rem;
+  width: 1.9rem;
+  text-align: right;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--chrome-dim-2);
+}
+
+.field label {
+  display: block;
+  font-family: var(--font-label);
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--chrome-accent);
+  margin-bottom: 0.3rem;
+  text-transform: lowercase;
+}
+
+.field label::before {
+  content: "# ";
+  color: var(--chrome-dim);
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  padding: 0.4rem 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--chrome-border);
+  border-radius: 0;
+  color: var(--chrome-text);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease;
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 60px;
+  border: 1px solid var(--chrome-border);
+  padding: 0.5rem 0.6rem;
+  border-radius: 4px;
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--chrome-accent);
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--chrome-dim-2);
+}
+
+.section-divider {
+  counter-increment: line;
+  position: relative;
+  padding-left: 2.4rem;
+  margin: 1.6rem 0 0.7rem;
+  font-family: var(--font-label);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--chrome-dim);
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+}
+
+.section-divider::before {
+  content: counter(line, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 0.05rem;
+  width: 1.9rem;
+  text-align: right;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--chrome-dim-2);
+}
+
+.section-divider .marker {
+  color: var(--chrome-dim-2);
+}
+
+/* ---------- repeatable entries: indented like a YAML array ---------- */
+
+.repeatable-group {
+  border-left: 2px solid var(--chrome-border);
+  padding: 0.2rem 0 0.2rem 1rem;
+  margin: 0 0 1rem 0.4rem;
+  position: relative;
+}
+
+.repeatable-group .field {
+  padding-left: 0;
+  margin-bottom: 0.6rem;
+}
+
+.repeatable-group .field::before {
+  display: none;
+}
+
+.repeatable-group button.remove-entry {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: transparent;
+  border: none;
+  color: var(--chrome-danger);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  opacity: 0.6;
+}
+
+.repeatable-group button.remove-entry:hover {
+  opacity: 1;
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+.add-entry-btn {
+  background: transparent;
+  border: 1px dashed var(--chrome-border);
+  color: var(--chrome-dim);
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  margin: 0 0 1.2rem 0.4rem;
+}
+
+.add-entry-btn:hover {
+  border-color: var(--chrome-accent);
+  color: var(--chrome-accent);
+}
+
+.theme-btn {
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--chrome-border);
+  background: transparent;
+  color: var(--chrome-dim);
+  font-size: 0.76rem;
+  font-family: var(--font-label);
+}
+
+.theme-btn:hover {
+  border-color: var(--chrome-accent);
+  color: var(--chrome-text);
+}
+
+.theme-btn.active {
+  border-color: var(--chrome-accent);
+  color: var(--chrome-accent);
+  background: rgba(94, 234, 212, 0.08);
+}
+
+.export-btn {
+  margin-top: 0.5rem;
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  border-radius: 5px;
+  border: 1px solid var(--chrome-accent);
+  background: rgba(94, 234, 212, 0.1);
+  color: var(--chrome-accent);
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.export-btn:hover {
+  background: rgba(94, 234, 212, 0.18);
+}
+
+.validation-errors {
+  color: var(--chrome-danger);
+  font-size: 0.78rem;
+  margin: 0.6rem 0 0.8rem 0.4rem;
+  min-height: 1em;
+}
+
+/* ---------- terminal pane ---------- */
+
+.terminal-wrap {
+  position: sticky;
+  top: 1.5rem;
+}
+
+.terminal-body {
+  position: relative;
+  padding: 0.9rem 0.9rem 0.7rem;
+}
+
+.terminal {
+  position: relative;
+  background: var(--term-bg);
+  color: var(--term-fg);
+  border-radius: 5px;
+  padding: 1rem;
+  font-family: var(--font-body);
+  font-size: 0.87rem;
+  min-height: 400px;
+  max-height: 64vh;
+  overflow-y: auto;
+  text-shadow: 0 0 6px currentColor;
+}
+
+.terminal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.025) 0px,
+    rgba(255, 255, 255, 0.025) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  border-radius: inherit;
+}
+
+.terminal .block {
+  margin-bottom: 1rem;
+}
+
+.terminal .prompt {
+  color: var(--term-accent);
+}
+
+.terminal .line {
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+
+.terminal .error-line {
+  color: var(--term-error);
+  text-shadow: none;
+}
+
+.terminal-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1rem 0.3rem;
+}
+
+.terminal-input-row .prompt {
+  color: var(--term-accent);
+  white-space: nowrap;
+  font-size: 0.87rem;
+}
+
+.terminal-input-row input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--term-fg);
+  font-family: var(--font-body);
+  font-size: 0.87rem;
+  caret-color: var(--term-cursor);
+}
+
+.terminal-input-row input:focus {
+  animation: caret-blink 1s step-end infinite;
+}
+
+@keyframes caret-blink {
+  0%, 100% { caret-color: var(--term-cursor); }
+  50% { caret-color: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal-input-row input:focus {
+    animation: none;
+  }
+}
+
+/* Site Footer */
+.site-footer {
+  text-align: center;
+  padding: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--term-dim);
+  background: var(--bg);
+}
+.site-footer a {
+  color: var(--term-accent);
+  text-decoration: none;
+}
+.site-footer a:hover {
+  text-decoration: underline;
+}
+.site-footer-sep {
+  margin: 0 0.5rem;
+}

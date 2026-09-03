@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#0d0d1a"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg)" rx="16"/>
+  <!-- Title -->
+  <text x="200" y="35" text-anchor="middle" fill="#10b981" font-family="sans-serif" font-weight="800" font-size="16">JSON TREE VIEWER</text>
+  <!-- Tree lines -->
+  <g transform="translate(40, 55)" font-family="monospace" font-size="12">
+    <text fill="#64748b">▼</text>
+    <text x="20" fill="#00ffff">"app"</text>
+    <text x="65" fill="#64748b">:</text>
+    <text x="80" fill="#64748b">{</text>
+    <text x="120" fill="#64748b">(4)</text>
+
+    <text y="20" fill="#64748b" x="20">▼</text>
+    <text x="40" y="20" fill="#00ffff">"name"</text>
+    <text x="95" y="20" fill="#64748b">:</text>
+    <text x="110" y="20" fill="#10b981">"Cradle"</text>
+
+    <text y="40" fill="#64748b" x="20">▼</text>
+    <text x="40" y="40" fill="#00ffff">"version"</text>
+    <text x="110" y="40" fill="#64748b">:</text>
+    <text x="125" y="40" fill="#f59e0b">"1.0.0"</text>
+
+    <text y="60" fill="#64748b" x="20">▼</text>
+    <text x="40" y="60" fill="#00ffff">"features"</text>
+    <text x="120" y="60" fill="#64748b">:</text>
+    <text x="135" y="60" fill="#64748b">[</text>
+    <text x="170" y="60" fill="#64748b">(3)</text>
+
+    <text y="80" fill="#f59e0b" x="40">0</text>
+    <text x="55" y="80" fill="#64748b">:</text>
+    <text x="70" y="80" fill="#10b981">"viewer"</text>
+
+    <text y="100" fill="#f59e0b" x="40">1</text>
+    <text x="55" y="100" fill="#64748b">:</text>
+    <text x="70" y="100" fill="#10b981">"editor"</text>
+
+    <text y="125" fill="#64748b">}</text>
+  </g>
+  <!-- Search bar mockup -->
+  <rect x="250" y="55" width="130" height="24" fill="#16213e" rx="4" stroke="#f59e0b" stroke-width="0.5"/>
+  <text x="260" y="71" fill="#f59e0b" font-family="sans-serif" font-size="10">🔍 "name"</text>
+  <text x="345" y="71" fill="#f59e0b" font-family="sans-serif" font-size="9" font-weight="600">3 found</text>
+  <!-- Stats bar -->
+  <rect x="30" y="200" width="340" height="40" fill="#16213e" rx="8"/>
+  <text x="60" y="215" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="8">TYPE</text>
+  <text x="60" y="230" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="10" font-weight="700">Object</text>
+  <text x="135" y="215" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="8">KEYS</text>
+  <text x="135" y="230" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="10" font-weight="700">24</text>
+  <text x="210" y="215" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="8">DEPTH</text>
+  <text x="210" y="230" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="10" font-weight="700">4</text>
+  <text x="285" y="215" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="8">SIZE</text>
+  <text x="285" y="230" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="10" font-weight="700">1.2 KB</text>
+  <text x="355" y="215" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="8">PATH</text>
+  <text x="355" y="230" text-anchor="middle" fill="#10b981" font-family="monospace" font-size="8" font-weight="700">$.app.name</text>
+  <!-- Buttons -->
+  <rect x="30" y="260" width="75" height="22" fill="#16213e" rx="4" stroke="#334155" stroke-width="0.5"/>
+  <text x="67" y="275" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="9">🔽 Expand</text>
+  <rect x="115" y="260" width="75" height="22" fill="#16213e" rx="4" stroke="#334155" stroke-width="0.5"/>
+  <text x="152" y="275" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="9">🔼 Collapse</text>
+  <rect x="200" y="260" width="75" height="22" fill="#16213e" rx="4" stroke="#334155" stroke-width="0.5"/>
+  <text x="237" y="275" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="9">📋 Copy Path</text>
+  <rect x="285" y="260" width="85" height="22" fill="#16213e" rx="4" stroke="#10b981" stroke-width="0.5"/>
+  <text x="327" y="275" text-anchor="middle" fill="#10b981" font-family="sans-serif" font-size="9">🎲 Sample</text>
+</svg>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pixel Avatar Creator</title>
+    <meta name="description" content="Avatar Creator is a lightweight, interactive 16x16 pixel-art vector avatar generator. It allows users to customize background colors, skin tones, hair colors, a..." />
+
+    <meta
+      name="description"
+      content="Generate custom SVG user avatars with background colors, features, and export options."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/misc/avatar-creator/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Pixel Avatar Creator" />
+    <meta property="og:description" content="Generate custom SVG user avatars with background colors, features, and export options." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/misc/avatar-creator/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>Pixel Avatar Creator</h1>
+
+    <main class="container">
+      <!-- Live pixel-grid preview -->
+      <div id="avatar-preview">
+        <svg
+          id="avatar-svg"
+          viewBox="0 0 200 200"
+          xmlns="http://www.w3.org/2000/svg"
+        ></svg>
+      </div>
+
+      <!-- Controls -->
+      <div id="controls">
+        <label>
+          Background Color:
+          <input type="color" id="bg-color" value="#a1e3ff" />
+        </label>
+
+        <label>
+          Skin Tone:
+          <input type="color" id="skin-color" value="#f1c27d" />
+        </label>
+
+        <label>
+          Hair Color:
+          <input type="color" id="hair-color" value="#3b2f2f" />
+        </label>
+
+        <label>
+          Hair Style:
+          <select id="hair-style">
+            <option value="0">Bowl Cut</option>
+            <option value="1">Spiky</option>
+            <option value="2">Bald</option>
+          </select>
+        </label>
+
+        <button id="randomize-btn">🎲 Randomize</button>
+        <button id="download-btn">Download Avatar</button>
+
+        <label>
+          Import SVG Avatar:
+          <input type="file" id="import-svg-input" accept=".svg,image/svg+xml" />
+        </label>
+        <p id="error-message" class="error-message"></p>
+      </div>
+    </main>
+
+    <script src="avatarEngine.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

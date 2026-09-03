@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Time Blocking Planner | Cradle</title>
+    <meta name="description" content="Daily Productivity Planner is a tool for planning your daily activities and managing your time. You can create a schedule by placing tasks on a 24-hour timeline..." />
+
+    <meta
+      name="description"
+      content="Time blocking schedule planner for organizing daily tasks, deep work, and category stats."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/productivity/time-blocking-planner/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Time Blocking Planner | Cradle" />
+    <meta property="og:description" content="Time blocking schedule planner for organizing daily tasks, deep work, and category stats." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/productivity/time-blocking-planner/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <a href="../../../index.html" class="back-link">← Back to Cradle</a>
+          <h1>Time Blocking Planner</h1>
+          <p class="subtitle">
+            Plan your daily schedule with interactive drag & resize time blocks,
+            categories, and calendar exports.
+          </p>
+        </div>
+        <div class="header-right">
+          <div class="date-selector-wrapper">
+            <label for="schedule-date">Select Date:</label>
+            <input type="date" id="schedule-date" />
+          </div>
+        </div>
+      </header>
+
+      <div
+        id="alertContainer"
+        class="alert-container"
+        role="status"
+        aria-live="polite"
+        style="display: none"
+      >
+        <span class="alert-icon">⚠️</span>
+        <span id="alertMessage"></span>
+      </div>
+
+      <!-- Toolbar & Stats -->
+      <div class="toolbar-panel">
+        <div class="toolbar-left">
+          <button id="btn-add-block" class="btn btn-primary">
+            ➕ Add Time Block
+          </button>
+          <button id="btn-sample" class="btn btn-secondary">
+            ⚡ Load Sample Routine
+          </button>
+          <button id="btn-clear" class="btn btn-danger-outline">
+            🗑️ Clear All
+          </button>
+        </div>
+
+        <div class="toolbar-right">
+          <div class="export-dropdown">
+            <button class="btn btn-outline" id="btn-export-menu">
+              📤 Export Schedule ▾
+            </button>
+            <div class="dropdown-content" id="export-dropdown-content" hidden>
+              <button id="btn-export-ics">📅 Export iCalendar (.ics)</button>
+              <button id="btn-export-json">💾 Export Data (.json)</button>
+              <button id="btn-export-text">📝 Export Text Summary (.md)</button>
+              <label for="import-json-file" class="dropdown-file-label"
+                >📥 Import Data (.json)</label
+              >
+              <input
+                type="file"
+                id="import-json-file"
+                accept=".json"
+                style="display: none"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category Stats Summary Bar -->
+      <div class="stats-bar" id="stats-bar">
+        <!-- Dynamic category breakdown badges -->
+      </div>
+
+      <!-- Main Workspace: Sidebar & Timeline -->
+      <main class="planner-workspace">
+        <!-- Sidebar / Preset Activity Palette -->
+        <aside class="sidebar">
+          <h2>Activity Palette</h2>
+          <p class="sidebar-help">
+            Drag preset activities onto the timeline or click to add.
+          </p>
+
+          <div class="preset-list" id="preset-list">
+            <div
+              class="preset-item"
+              data-category="deep-work"
+              data-color="#8b5cf6"
+              draggable="true"
+            >
+              <span class="preset-dot" style="background: #8b5cf6"></span>
+              <span class="preset-name">Deep Work</span>
+              <span class="preset-duration">1.5 hrs</span>
+            </div>
+            <div
+              class="preset-item"
+              data-category="work"
+              data-color="#3b82f6"
+              draggable="true"
+            >
+              <span class="preset-dot" style="background: #3b82f6"></span>
+              <span class="preset-name">General Work / Admin</span>
+              <span class="preset-duration">1 hr</span>
+            </div>
+            <div
+              class="preset-item"
+              data-category="meeting"
+              data-color="#f59e0b"
+              draggable="true"
+            >
+              <span class="preset-dot" style="background: #f59e0b"></span>
+              <span class="preset-name">Meeting / Call</span>
+              <span class="preset-duration">30 mins</span>
+            </div>
+            <div
+              class="preset-item"
+              data-category="study"
+              data-color="#06b6d4"
+              draggable="true"
+            >
+              <span class="preset-dot" style="background: #06b6d4"></span>
+              <span class="preset-name">Study / Learning</span>
+              <span class="preset-duration">1 hr</span>
+            </div>
+            <div
+              class="preset-item"
+              data-category="exercise"
+              data-color="#10b981"
+              draggable="true"
+            >
+              <span class="preset-dot" style="background: #10b981"></span>
+              <span class="preset-name">Exercise / Fitness</span>
+              <span class="preset-duration">45 mins</span>
+            </div>
+            <div
+              class="preset-item"
+              data-category="break"
+              data-color="#ec4899"
+              draggable="true"
+            >
+              <span class="preset-dot" style="background: #ec4899"></span>
+              <span class="preset-name">Break / Coffee</span>
+              <span class="preset-duration">15 mins</span>
+            </div>
+            <div
+              class="preset-item"
+              data-category="meal"
+              data-color="#f97316"
+              draggable="true"
+            >
+              <span class="preset-dot" style="background: #f97316"></span>
+              <span class="preset-name">Meal / Lunch</span>
+              <span class="preset-duration">45 mins</span>
+            </div>
+            <div
+              class="preset-item"
+              data-category="personal"
+              data-color="#64748b"
+              draggable="true"
+            >
+              <span class="preset-dot" style="background: #64748b"></span>
+              <span class="preset-name">Personal / Chores</span>
+              <span class="preset-duration">1 hr</span>
+            </div>
+          </div>
+
+          <div class="legend-card">
+            <h3>Tip: Timeline Dragging</h3>
+            <ul>
+              <li>Click & drag any block by its header to move time.</li>
+              <li>Drag top or bottom edge handles to resize duration.</li>
+              <li>Double-click a block to edit details.</li>
+            </ul>
+          </div>
+        </aside>
+
+        <!-- 24-Hour Timeline Grid Container -->
+        <section class="timeline-container">
+          <div class="timeline-header">
+            <div class="time-col-header">Time</div>
+            <div class="schedule-col-header">Schedule (00:00 - 24:00)</div>
+          </div>
+
+          <div class="timeline-body" id="timeline-body">
+            <!-- Hours scale 00:00 -> 23:00 -->
+            <div class="time-scale" id="time-scale"></div>
+
+            <!-- Interactive Track for Time Blocks -->
+            <div class="timeline-track" id="timeline-track">
+              <!-- Current Time Line Indicator -->
+              <div class="current-time-line" id="current-time-line" hidden>
+                <span class="current-time-badge" id="current-time-badge"
+                  >12:00</span
+                >
+              </div>
+
+              <!-- Time Blocks rendered dynamically -->
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Modal for Adding / Editing Time Block -->
+      <div class="modal-backdrop" id="block-modal" hidden>
+        <div class="modal-card">
+          <div class="modal-header">
+            <h2 id="modal-title-text">Add Time Block</h2>
+            <button
+              class="modal-close"
+              id="modal-close"
+              aria-label="Close modal dialog"
+            >
+              ✕
+            </button>
+          </div>
+          <form id="block-form" class="modal-form">
+            <input type="hidden" id="block-id" />
+
+            <div class="form-group">
+              <label for="block-title">Activity Title</label>
+              <input
+                type="text"
+                id="block-title"
+                placeholder="e.g. Team Standup & Sprint Planning"
+                required
+              />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="block-category">Category</label>
+                <select id="block-category">
+                  <option value="deep-work">Deep Work</option>
+                  <option value="work">General Work</option>
+                  <option value="meeting">Meeting</option>
+                  <option value="study">Study</option>
+                  <option value="exercise">Exercise</option>
+                  <option value="meal">Meal</option>
+                  <option value="break">Break</option>
+                  <option value="personal">Personal</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="block-color">Color</label>
+                <input type="color" id="block-color" value="#8b5cf6" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="block-start">Start Time</label>
+                <input type="time" id="block-start" step="900" required />
+              </div>
+
+              <div class="form-group">
+                <label for="block-end">End Time</label>
+                <input type="time" id="block-end" step="900" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="block-notes">Notes / Tasks (Optional)</label>
+              <textarea
+                id="block-notes"
+                rows="3"
+                placeholder="Add details, links, or sub-tasks..."
+              ></textarea>
+            </div>
+
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-danger"
+                id="btn-delete-block"
+                hidden
+              >
+                Delete
+              </button>
+              <div class="footer-right">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  id="btn-cancel-block"
+                >
+                  Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  Save Block
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="plannerEngine.js"></script>
+    <script src="../../../src/components/ui/storage.js"></script>
+    <script src="plannerStorage.js"></script>
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

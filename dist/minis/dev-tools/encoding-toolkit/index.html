@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Encoding Toolkit</title>
+    <meta name="description" content="Encoding Toolkit is a browser-based utility that converts text between six formats — Base64, URL encoding, HTML entities, Unicode escapes, Hex, and Binary. Co..." />
+
+    <meta
+      name="description"
+      content="Multi-format encoder and decoder supporting Base64, URL encoding, Hex, HTML entities, and JWTs."
+    />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/dev-tools/encoding-toolkit/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Encoding Toolkit" />
+    <meta property="og:description" content="Multi-format encoder and decoder supporting Base64, URL encoding, Hex, HTML entities, and JWTs." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/dev-tools/encoding-toolkit/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <h1>Encoding Toolkit</h1>
+        <p>
+          Encode and decode Base64, URL, HTML, Unicode, Hex &amp; Binary - live,
+          as you type.
+        </p>
+      </header>
+
+      <main class="card">
+        <div class="controls">
+          <div class="control-group">
+            <label for="formatSelect">Format</label>
+            <select id="formatSelect">
+              <option value="base64">Base64</option>
+              <option value="url">URL</option>
+              <option value="html">HTML Entities</option>
+              <option value="unicode">Unicode Escapes</option>
+              <option value="hex">Hex</option>
+              <option value="binary">Binary</option>
+            </select>
+          </div>
+
+          <div
+            class="control-group mode-toggle"
+            role="radiogroup"
+            aria-label="Conversion mode"
+          >
+            <button
+              type="button"
+              id="encodeModeBtn"
+              class="mode-btn active"
+              role="radio"
+              aria-checked="true"
+            >
+              Encode
+            </button>
+            <button
+              type="button"
+              id="decodeModeBtn"
+              class="mode-btn"
+              role="radio"
+              aria-checked="false"
+            >
+              Decode
+            </button>
+          </div>
+
+          <button
+            type="button"
+            id="swapBtn"
+            class="icon-btn"
+            title="Swap input and output"
+          >
+            ⇄ Swap
+          </button>
+        </div>
+
+        <div class="editor-grid">
+          <div class="editor">
+            <div class="editor-header">
+              <label for="inputText">Input</label>
+              <span id="inputCount" class="char-count">0 chars</span>
+            </div>
+            <textarea
+              id="inputText"
+              placeholder="Type or paste text here..."
+              spellcheck="false"
+            ></textarea>
+          </div>
+
+          <div class="editor">
+            <div class="editor-header">
+              <label for="outputText">Output</label>
+              <span id="outputCount" class="char-count">0 chars</span>
+            </div>
+            <textarea
+              id="outputText"
+              placeholder="Result will appear here..."
+              spellcheck="false"
+              readonly
+            ></textarea>
+            <p
+              id="errorMessage"
+              class="error-message"
+              role="status"
+              aria-live="polite"
+              hidden
+            ></p>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button type="button" id="copyBtn">Copy Output</button>
+          <button type="button" id="exportBtn">Export as .txt</button>
+          <button type="button" id="clearBtn">Clear</button>
+        </div>
+      </main>
+    </div>
+
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+    <script src="logic.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

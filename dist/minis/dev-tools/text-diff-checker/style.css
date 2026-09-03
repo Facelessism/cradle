@@ -1,0 +1,251 @@
+﻿:root {
+  --bg: #0f1115;
+  --panel: #171a21;
+  --border: #2a2f3a;
+  --text: #e6e6e6;
+  --muted: #8a8f98;
+  --accent: #5b8cff;
+  --add-bg: rgba(46, 160, 67, 0.18);
+  --add-border: #2ea043;
+  --del-bg: rgba(248, 81, 73, 0.18);
+  --del-border: #f85149;
+  --mod-bg: rgba(210, 153, 34, 0.18);
+  --mod-border: #d29922;
+  --radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.app-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+}
+
+.app-header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1.5rem 0 1rem;
+}
+
+.mode-toggle {
+  display: inline-flex;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.mode-btn {
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.mode-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.btn {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.55rem 1.1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn-secondary {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent);
+}
+
+.input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.input-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.input-panel label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+textarea {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.9rem;
+  min-height: 220px;
+  resize: vertical;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.stats-bar {
+  display: flex;
+  gap: 1.5rem;
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.stat-add { color: var(--add-border); }
+.stat-del { color: var(--del-border); }
+.stat-mod { color: var(--mod-border); }
+
+.diff-output {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.diff-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.diff-column-header {
+  background: var(--panel);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+}
+
+.diff-pane {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.85rem;
+  overflow-x: auto;
+}
+
+.diff-line {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.15rem 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-left: 3px solid transparent;
+  min-height: 1.4em;
+}
+
+.diff-line .line-num {
+  color: var(--muted);
+  user-select: none;
+  min-width: 2.5ch;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.diff-line.add {
+  background: var(--add-bg);
+  border-left-color: var(--add-border);
+}
+
+.diff-line.del {
+  background: var(--del-bg);
+  border-left-color: var(--del-border);
+}
+
+.diff-line.mod {
+  background: var(--mod-bg);
+  border-left-color: var(--mod-border);
+}
+
+.diff-line.empty {
+  background: repeating-linear-gradient(
+    45deg, rgba(255,255,255,0.02), rgba(255,255,255,0.02) 6px,
+    transparent 6px, transparent 12px
+  );
+}
+
+.word-add {
+  background: rgba(46, 160, 67, 0.4);
+  border-radius: 3px;
+}
+
+.word-del {
+  background: rgba(248, 81, 73, 0.4);
+  text-decoration: line-through;
+  border-radius: 3px;
+}
+
+.empty-state {
+  margin-top: 2.5rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+@media (max-width: 720px) {
+  .input-grid,
+  .diff-output {
+    grid-template-columns: 1fr;
+  }
+}

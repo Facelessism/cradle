@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/projects/editor/css-gradient-generator/index.html/" />
+
+    <title>CSS Gradient Generator</title>
+    <meta name="description" content="CSS Gradient Generator is an interactive browser tool for building linear, radial, and conic" />
+
+    <meta
+      name="description"
+      content="Build beautiful CSS gradients visually — linear, radial, and conic — with live preview and one-click copy."
+    />
+    <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+      <meta property="og:title" content="CSS Gradient Generator" />
+      <meta property="og:url" content="https://facelessism.github.io/cradle/projects/projects/editor/css-gradient-generator/index.html/" />
+    <meta property="og:description" content="CSS Gradient Generator is an interactive browser tool for building linear, radial, and conic" />
+</head>
+  <body>
+    <div class="glow-bg"></div>
+    <div class="app-container">
+      <header class="app-header">
+        <div class="logo">
+          <span class="icon">🌈</span>
+          <h1>CSS Gradient Generator</h1>
+        </div>
+        <p class="subtitle">
+          Visually craft linear, radial, and conic gradients — then copy the CSS.
+        </p>
+      </header>
+
+      <main class="main-content">
+        <div class="workspace-grid">
+          <!-- Left: Controls -->
+          <section class="control-column">
+            <!-- Type Selector -->
+            <div class="card">
+              <h2>📐 Gradient Type</h2>
+              <div class="type-buttons">
+                <button class="btn btn-type active" data-type="linear">Linear</button>
+                <button class="btn btn-type" data-type="radial">Radial</button>
+                <button class="btn btn-type" data-type="conic">Conic</button>
+              </div>
+            </div>
+
+            <!-- Angle / Shape -->
+            <div class="card" id="angleCard">
+              <h2>🧭 Direction</h2>
+              <div class="angle-row">
+                <input type="range" id="angleSlider" min="0" max="360" value="135" />
+                <div class="angle-input-group">
+                  <input type="number" id="angleInput" min="0" max="360" value="135" />
+                  <span class="unit">deg</span>
+                </div>
+              </div>
+              <div class="preset-angles">
+                <button class="btn btn-angle" data-angle="0">→</button>
+                <button class="btn btn-angle" data-angle="45">↘</button>
+                <button class="btn btn-angle active" data-angle="135">↙</button>
+                <button class="btn btn-angle" data-angle="180">↓</button>
+                <button class="btn btn-angle" data-angle="90">↓</button>
+                <button class="btn btn-angle" data-angle="270">↑</button>
+              </div>
+            </div>
+
+            <!-- Color Stops -->
+            <div class="card">
+              <h2>🎨 Color Stops</h2>
+              <div id="stopsContainer"></div>
+              <button class="btn btn-action" id="addStopBtn">+ Add Stop</button>
+            </div>
+
+            <!-- Presets -->
+            <div class="card">
+              <h2>⚡ Quick Presets</h2>
+              <div class="preset-grid" id="presetGrid"></div>
+            </div>
+          </section>
+
+          <!-- Right: Preview & Code -->
+          <section class="preview-column">
+            <div class="card preview-card">
+              <div class="preview-header">
+                <h2>👁️ Live Preview</h2>
+                <button class="btn btn-action" id="randomizeBtn">🎲 Randomize</button>
+              </div>
+              <div class="preview-box" id="previewBox"></div>
+            </div>
+
+            <div class="card code-card">
+              <div class="code-header">
+                <h2>📋 Generated CSS</h2>
+                <button class="btn btn-copy" id="copyBtn">📋 Copy</button>
+              </div>
+              <pre class="code-block" id="codeBlock"></pre>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="script.js"></script>
+    <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+  </body>
+</html>

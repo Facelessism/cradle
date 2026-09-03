@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/dev-tools/css-grid-generator/" />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/dev-tools/css-grid-generator/"/>
+
+    <title>CSS Grid Generator</title>
+    <meta name="description" content="CSS Grid Generator lets users design CSS Grid layouts visually in the browser. Users configure columns, rows, gap sizes, and item placements, then see a live pr..." />
+
+    <meta
+      name="description"
+      content="Visually design CSS Grid layouts, preview live, and export production-ready HTML & CSS code."
+    />
+    <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+    <link rel="stylesheet" href="style.css" />
+      <meta property="og:title" content="CSS Grid Generator" />
+    <meta property="og:description" content="CSS Grid Generator lets users design CSS Grid layouts visually in the browser. Users configure columns, rows, gap sizes, and item placements, then see a live pr..." />
+</head>
+  <body>
+    <div class="glow-bg"></div>
+
+    <div class="app-container">
+      <header class="app-header">
+        <div class="logo">
+          <span class="icon">⊞</span>
+          <h1>CSS Grid Generator</h1>
+        </div>
+        <p class="subtitle">
+          Design CSS Grid layouts visually, preview in real-time, and export
+          production-ready code
+        </p>
+      </header>
+
+      <main class="main-content">
+        <div class="workspace-grid">
+          <!-- Left Column: Controls -->
+          <section class="control-column">
+            <!-- Grid Configuration Card -->
+            <div class="card config-card">
+              <h2>📐 Grid Configuration</h2>
+              <div class="config-row">
+                <div class="config-group">
+                  <label for="columnsCount">Columns</label>
+                  <div class="stepper">
+                    <button class="stepper-btn" data-target="columnsCount" data-dir="-1">−</button>
+                    <input type="number" id="columnsCount" value="3" min="1" max="12" />
+                    <button class="stepper-btn" data-target="columnsCount" data-dir="1">+</button>
+                  </div>
+                </div>
+                <div class="config-group">
+                  <label for="rowsCount">Rows</label>
+                  <div class="stepper">
+                    <button class="stepper-btn" data-target="rowsCount" data-dir="-1">−</button>
+                    <input type="number" id="rowsCount" value="3" min="1" max="12" />
+                    <button class="stepper-btn" data-target="rowsCount" data-dir="1">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="config-group">
+                <label for="colSizeInput">Column Sizing</label>
+                <input
+                  type="text"
+                  id="colSizeInput"
+                  value="1fr 1fr 1fr"
+                  placeholder="e.g. 1fr 1fr 1fr, repeat(3, 1fr)"
+                />
+                <span class="hint">Space-separated values or repeat()</span>
+              </div>
+
+              <div class="config-group">
+                <label for="rowSizeInput">Row Sizing</label>
+                <input
+                  type="text"
+                  id="rowSizeInput"
+                  value="auto auto auto"
+                  placeholder="e.g. auto auto auto, 200px 1fr 1fr"
+                />
+                <span class="hint">Space-separated values or repeat()</span>
+              </div>
+
+              <div class="config-row">
+                <div class="config-group">
+                  <label for="colGap">Column Gap</label>
+                  <input type="text" id="colGap" value="12px" placeholder="e.g. 10px, 1rem" />
+                </div>
+                <div class="config-group">
+                  <label for="rowGap">Row Gap</label>
+                  <input type="text" id="rowGap" value="12px" placeholder="e.g. 10px, 1rem" />
+                </div>
+              </div>
+
+              <div class="config-group">
+                <label>
+                  <input type="checkbox" id="showLines" checked />
+                  Show Grid Lines
+                </label>
+              </div>
+
+              <div class="config-group">
+                <label>
+                  <input type="checkbox" id="showAreas" />
+                  Enable Named Areas
+                </label>
+              </div>
+            </div>
+
+            <!-- Presets Card -->
+            <div class="card presets-card">
+              <h2>⚡ Layout Presets</h2>
+              <div class="preset-buttons">
+                <button class="btn btn-preset" data-preset="holy-grail">
+                  Holy Grail
+                </button>
+                <button class="btn btn-preset" data-preset="sidebar">
+                  Sidebar
+                </button>
+                <button class="btn btn-preset" data-preset="cards">
+                  Card Grid
+                </button>
+                <button class="btn btn-preset" data-preset="dashboard">
+                  Dashboard
+                </button>
+                <button class="btn btn-preset" data-preset="gallery">
+                  Gallery
+                </button>
+                <button class="btn btn-preset" data-preset="blog">
+                  Blog Layout
+                </button>
+              </div>
+            </div>
+
+            <!-- Selected Item Card -->
+            <div class="card item-card" id="itemConfigCard" style="display:none;">
+              <h2>🎨 Item Configuration</h2>
+              <p class="item-info" id="itemInfo">No item selected</p>
+              <div class="config-row">
+                <div class="config-group">
+                  <label for="itemColStart">Column Start</label>
+                  <input type="number" id="itemColStart" min="1" max="12" value="1" />
+                </div>
+                <div class="config-group">
+                  <label for="itemColEnd">Column End</label>
+                  <input type="number" id="itemColEnd" min="1" max="13" value="2" />
+                </div>
+              </div>
+              <div class="config-row">
+                <div class="config-group">
+                  <label for="itemRowStart">Row Start</label>
+                  <input type="number" id="itemRowStart" min="1" max="12" value="1" />
+                </div>
+                <div class="config-group">
+                  <label for="itemRowEnd">Row End</label>
+                  <input type="number" id="itemRowEnd" min="1" max="13" value="2" />
+                </div>
+              </div>
+              <div class="config-group">
+                <label for="itemAreaName">Area Name</label>
+                <input type="text" id="itemAreaName" placeholder="e.g. header, sidebar" />
+              </div>
+              <div class="config-group">
+                <label for="itemColor">Background Color</label>
+                <input type="color" id="itemColor" value="#3b82f6" />
+              </div>
+            </div>
+
+            <!-- Actions Card -->
+            <div class="card actions-card">
+              <h2>🛠 Actions</h2>
+              <div class="action-buttons">
+                <button class="btn btn-action" id="addItemBtn">+ Add Item</button>
+                <button class="btn btn-action btn-danger" id="removeItemBtn">− Remove Item</button>
+                <button class="btn btn-action" id="resetGridBtn">↺ Reset</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Right Column: Preview & Code -->
+          <section class="preview-column">
+            <!-- Live Preview Card -->
+            <div class="card preview-card">
+              <div class="preview-header">
+                <h2>👁 Live Preview</h2>
+                <div class="preview-info" role="status" aria-live="polite">
+                  <span id="gridSizeLabel" class="badge">3 × 3</span>
+                  <span id="itemCountLabel" class="badge">0 items</span>
+                </div>
+              </div>
+              <div class="preview-container">
+                <div class="grid-preview" id="gridPreview">
+                  <!-- Grid items render here -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Export Code Card -->
+            <div class="card code-card">
+              <div class="code-header">
+                <h2>📋 Exported Code</h2>
+                <div class="code-tabs">
+                  <button class="tab-btn active" data-tab="css">CSS</button>
+                  <button class="tab-btn" data-tab="html">HTML</button>
+                  <button class="tab-btn" data-tab="both">Both</button>
+                </div>
+              </div>
+              <div class="code-container">
+                <pre class="code-output" id="codeOutput"><code id="codeContent"></code></pre>
+                <button class="copy-btn" id="copyCodeBtn" title="Copy to clipboard">📋</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="../../../src/components/ui/escapeHtml.js"></script>
+    <script src="gridEngine.js"></script>
+    <script src="script.js"></script>
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+  </body>
+</html>

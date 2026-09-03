@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CSV Data Cleaner</title>
+    <meta name="description" content="Clean, filter, remove duplicates, and reformat CSV data tables directly in your browser." />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/file-tools/csv-data-cleaner/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CSV Data Cleaner" />
+    <meta property="og:description" content="Clean, filter, remove duplicates, and reformat CSV data tables directly in your browser." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/file-tools/csv-data-cleaner/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">File Tools</p>
+        <h1>CSV Data Cleaner</h1>
+        <p>
+          Paste or upload CSV data, remove common issues, preview the cleaned
+          table, and export a tidy CSV file.
+        </p>
+      </header>
+
+      <section class="workspace">
+        <div class="input-panel">
+          <div class="panel-heading">
+            <h2>Source CSV</h2>
+            <label class="file-button">
+              Upload CSV
+              <input id="fileInput" type="file" accept=".csv,text/csv" />
+            </label>
+          </div>
+
+          <textarea id="csvInput" spellcheck="false" aria-label="Raw CSV input data"></textarea>
+
+          <div class="actions">
+            <button id="loadSampleBtn" type="button" class="secondary-button">Load Sample</button>
+            <button id="cleanBtn" type="button" class="primary-button">Clean CSV</button>
+            <button id="downloadBtn" type="button" class="secondary-button">Download Cleaned CSV</button>
+          </div>
+
+          <p id="message" class="message" role="status"></p>
+        </div>
+
+        <aside class="summary-panel">
+          <h2>Clean Summary</h2>
+          <div class="stats-grid">
+            <article>
+              <strong id="beforeRows">0</strong>
+              <span>Rows before</span>
+            </article>
+            <article>
+              <strong id="afterRows">0</strong>
+              <span>Rows after</span>
+            </article>
+            <article>
+              <strong id="duplicatesRemoved">0</strong>
+              <span>Duplicates removed</span>
+            </article>
+            <article>
+              <strong id="emptyRowsRemoved">0</strong>
+              <span>Empty rows removed</span>
+            </article>
+          </div>
+          <div class="missing-card">
+            <strong id="missingValues">0</strong>
+            <span>Missing values detected</span>
+          </div>
+        </aside>
+      </section>
+
+      <section class="table-section">
+        <div class="table-heading">
+          <h2>Cleaned Preview</h2>
+          <p id="previewMeta">Run the cleaner to preview rows.</p>
+        </div>
+        <div id="tableWrap" class="table-wrap">
+          <div class="empty-state">No cleaned data yet.</div>
+        </div>
+      </section>
+    </main>
+
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+    <script src="csvCleaner.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

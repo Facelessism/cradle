@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathfinding Visualizer | Cradle</title>
+    <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+    <link rel="stylesheet" href="style.css">
+    <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+</head>
+
+<body>
+    <main class="container">
+        <header class="header">
+            <h1>Pathfinding Algorithm Visualizer</h1>
+            <p class="subtitle">Visualize A*, Dijkstra, and BFS step-by-step on an interactive grid.</p>
+        </header>
+
+        <section class="controls">
+            <div class="control-group">
+                <label for="algorithm-select">Algorithm:</label>
+                <select id="algorithm-select">
+                    <option value="astar">A* Search</option>
+                    <option value="dijkstra">Dijkstra's Algorithm</option>
+                    <option value="bfs">Breadth-First Search (BFS)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="speed-select">Animation Speed:</label>
+                <select id="speed-select">
+                    <option value="50">Fast</option>
+                    <option value="150" selected>Normal</option>
+                    <option value="300">Slow</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <button id="btn-generate-maze" class="btn btn-secondary">Generate Random Maze</button>
+                <button id="btn-clear-grid" class="btn btn-secondary">Clear Grid</button>
+                <button id="btn-clear-path" class="btn btn-secondary">Clear Path</button>
+            </div>
+            <div class="control-group">
+                <button id="btn-visualize" class="btn btn-primary">Visualize!</button>
+            </div>
+        </section>
+
+        <section class="legend">
+            <div class="legend-item"><span class="box start"></span> Start Node</div>
+            <div class="legend-item"><span class="box end"></span> End Node</div>
+            <div class="legend-item"><span class="box wall"></span> Wall</div>
+            <div class="legend-item"><span class="box visited"></span> Visited</div>
+            <div class="legend-item"><span class="box path"></span> Shortest Path</div>
+        </section>
+
+        <div id="grid-container" class="grid-container"></div>
+
+        <div id="status-message" class="status-message" aria-live="polite"></div>
+    </main>
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>

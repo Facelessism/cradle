@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d0d1a"/>
+      <stop offset="100%" style="stop-color:#1a1a2e"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg)" rx="16"/>
+  <!-- Pixel grid sample -->
+  <g transform="translate(80, 40)">
+    <!-- 8x8 pixel art preview -->
+    <rect x="0" y="0" width="240" height="240" fill="#0a0a14" rx="8" stroke="#1e1e3a"/>
+    <!-- Cyberpunk face -->
+    <rect x="20" y="20" width="30" height="30" fill="#ff00ff"/>
+    <rect x="190" y="20" width="30" height="30" fill="#ff00ff"/>
+    <rect x="50" y="50" width="30" height="30" fill="#00ffff"/>
+    <rect x="160" y="50" width="30" height="30" fill="#00ffff"/>
+    <rect x="80" y="80" width="30" height="30" fill="#ff00ff" opacity="0.5"/>
+    <rect x="130" y="80" width="30" height="30" fill="#ff00ff" opacity="0.5"/>
+    <rect x="90" y="110" width="120" height="15" fill="#00ffff"/>
+    <rect x="50" y="140" width="140" height="10" fill="#ff0066"/>
+    <rect x="20" y="160" width="200" height="30" fill="#6366f1" opacity="0.3"/>
+    <rect x="20" y="200" width="200" height="30" fill="#00ffff" opacity="0.2"/>
+  </g>
+  <!-- Title -->
+  <text x="200" y="275" text-anchor="middle" fill="#00ffff" font-family="sans-serif" font-weight="800" font-size="14">CYBERPUNK PIXEL ART</text>
+  <!-- Glow effect -->
+  <rect x="80" y="40" width="240" height="240" fill="none" stroke="#ff00ff" stroke-width="1" rx="8" opacity="0.3"/>
+</svg>

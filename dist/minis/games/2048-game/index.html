@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2048</title>
+    <meta name="description" content="Classic 2048 grid puzzle game featuring customizable board sizes and high-score tracking." />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/games/2048-game/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="2048" />
+    <meta property="og:description" content="Classic 2048 grid puzzle game featuring customizable board sizes and high-score tracking." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/games/2048-game/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <section class="panel" aria-labelledby="game-title">
+        <header class="panel__header">
+          <div>
+            <p class="eyebrow">Join the numbers and reach 2048</p>
+            <h1 id="game-title">2048</h1>
+          </div>
+          <div class="scores" aria-label="Game score">
+            <div class="score-card">
+              <span class="score-card__label">Score</span>
+              <strong id="scoreValue">0</strong>
+            </div>
+            <div class="score-card">
+              <span class="score-card__label">Best</span>
+              <strong id="bestScoreValue">0</strong>
+            </div>
+          </div>
+        </header>
+
+      <section class="controls" aria-label="Game controls">
+        <div class="grid-size-selector">
+          <label for="gridSize">Grid Size: </label>
+          <select id="gridSize" class="size-select">
+            <option value="3">3x3</option>
+            <option value="4" selected>4x4</option>
+            <option value="5">5x5</option>
+          </select>
+        </div>
+        <div class="theme-selector">
+          <label for="themeSelect">Theme: </label>
+          <select id="themeSelect" class="size-select">
+            <option value="classic">Classic</option>
+            <option value="darkNeon">Dark Neon</option>
+            <option value="cyberpunk">Cyberpunk</option>
+          </select>
+        </div>
+        <button
+          id="undoBtn"
+          type="button"
+          data-cradle-btn
+          data-variant="secondary"
+          data-size="md"
+          disabled
+        >Undo ↩</button>
+        <button
+          id="restartBtn"
+          type="button"
+          data-cradle-btn
+          data-variant="primary"
+          data-size="md"
+        >Restart</button>
+      </section>
+
+        <section class="board" id="board" aria-label="2048 board"></section>
+
+        <section class="status" id="status" aria-live="polite">
+          Start moving to create a tile worth 2048.
+        </section>
+      </section>
+    </main>
+
+  <script src="../../../src/components/ui/Button/Button.js"></script>
+  <script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+  <script src="logic.js"></script>
+  <script src="../../../src/components/ui/storage.js"></script>
+  <script src="storage.js"></script>
+  <script src="gameUndoManager.js"></script>
+  <script src="gameThemeEngine.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

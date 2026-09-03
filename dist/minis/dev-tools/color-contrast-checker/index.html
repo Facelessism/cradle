@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Color Contrast Checker</title>
+    <meta name="description" content="WCAG compliance color contrast checker with palette contrast evaluation and suggestion engine." />
+    <link rel="canonical" href="https://facelessism.github.io/cradle/projects/dev-tools/color-contrast-checker/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Color Contrast Checker" />
+    <meta property="og:description" content="WCAG compliance color contrast checker with palette contrast evaluation and suggestion engine." />
+    <meta property="og:url" content="https://facelessism.github.io/cradle/projects/dev-tools/color-contrast-checker/" />
+        <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="tool-panel" aria-labelledby="pageTitle">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">Dev Tools</p>
+            <h1 id="pageTitle">Color Contrast Checker</h1>
+            <p class="lede">
+              Compare foreground and background colors against WCAG contrast
+              ratios for readable text and accessible interface elements.
+            </p>
+          </div>
+          <div class="ratio-meter" aria-live="polite">
+            <span id="ratioValue">21.00</span>
+            <small>contrast ratio</small>
+          </div>
+        </div>
+
+        <div class="workspace">
+          <section class="controls" aria-label="Color inputs">
+            <div class="field-group">
+              <label for="foregroundHex">Foreground</label>
+              <div class="color-row">
+                <input id="foregroundPicker" type="color" value="#ffffff" aria-label="Foreground color picker" />
+                <input id="foregroundHex" type="text" value="#ffffff" spellcheck="false" />
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="backgroundHex">Background</label>
+              <div class="color-row">
+                <input id="backgroundPicker" type="color" value="#020617" aria-label="Background color picker" />
+                <input id="backgroundHex" type="text" value="#020617" spellcheck="false" />
+              </div>
+            </div>
+
+            <div id="samplePreview" class="sample-preview">
+              <span>Sample text</span>
+              <strong>Buttons, labels, and body copy preview here.</strong>
+            </div>
+
+            <p id="validationMessage" class="validation-message" role="status"></p>
+
+            <button id="copyCssBtn" class="primary-button" type="button">
+              Copy CSS Variables
+            </button>
+          </section>
+
+          <section class="results" aria-label="WCAG results">
+            <div class="status-grid" id="statusGrid"></div>
+
+            <div class="suggestions">
+              <div class="section-heading">
+                <h2>Accessible Suggestions</h2>
+                <p>Foreground options that meet AA normal text when possible.</p>
+              </div>
+              <div id="suggestionList" class="suggestion-list"></div>
+            </div>
+          </section>
+        </div>
+
+        <section class="palettes" aria-labelledby="palettesTitle">
+          <div class="section-heading">
+            <h2 id="palettesTitle">Local Sample Palettes</h2>
+            <p>Apply a nearby palette and adjust it instantly.</p>
+          </div>
+          <div id="paletteList" class="palette-list"></div>
+        </section>
+      </section>
+    </main>
+
+    <script
+      src="../../../src/components/ui/BackToHome/BackToHome.js"
+      defer
+    ></script>
+    <script src="contrastEngine.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
