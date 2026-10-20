@@ -10,6 +10,8 @@ export class AudioProcessor {
     this.mediaStream = null;
     this.audioElement = null;
     this.destination = null; // For recording
+    this.objectUrl = null;
+    this.frequencyData = null;
   }
 
   async init() {
@@ -24,15 +26,28 @@ export class AudioProcessor {
     if (this.audioContext.state === "suspended")
       await this.audioContext.resume();
 
+    let stream;
     try {
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({
+      stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
       });
-      this.source = this.audioContext.createMediaStreamSource(this.mediaStream);
+    } catch (err) {
+      console.error("Microphone access denied:", err);
+      document.getElementById("error-banner").hidden = false;
+      return false;
+    }
+
+    // Release the previous source only after the new capture is approved.
+    this.stop();
+    this.mediaStream = stream;
+
+    try {
+      this.source = this.audioContext.createMediaStreamSource(stream);
       this.setupAnalyser();
       return true;
     } catch (err) {
-      console.error("Microphone access denied:", err);
+      console.error("Could not start microphone processing:", err);
+      this.stop();
       document.getElementById("error-banner").hidden = false;
       return false;
     }
@@ -45,19 +60,33 @@ export class AudioProcessor {
 
     this.stop(); // Clean up previous
     this.audioElement = new Audio();
-    this.audioElement.src = URL.createObjectURL(file);
+    this.objectUrl = URL.createObjectURL(file);
+    this.audioElement.src = this.objectUrl;
     this.audioElement.loop = true;
 
     this.source = this.audioContext.createMediaElementSource(this.audioElement);
     this.setupAnalyser();
-    this.audioElement.play();
+
+    try {
+      await this.audioElement.play();
+    } catch (err) {
+      console.error("Could not play audio file:", err);
+      this.stop();
+      return false;
+    }
     return true;
   }
 
   setupAnalyser() {
+    if (this.analyser) {
+      this.analyser.disconnect();
+      this.analyser = null;
+    }
+
     this.analyser = this.audioContext.createAnalyser();
     this.analyser.fftSize = 2048;
     this.analyser.smoothingTimeConstant = 0.8;
+    this.frequencyData = null;
 
     // Connect source to analyser, and analyser to both destination (recording) and speakers
     this.source.connect(this.analyser);
@@ -68,14 +97,22 @@ export class AudioProcessor {
   setFFTSize(size) {
     if (this.analyser) {
       this.analyser.fftSize = parseInt(size, 10);
+      this.frequencyData = null;
     }
   }
 
   getFrequencyData() {
     if (!this.analyser) return new Uint8Array(0);
-    const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-    this.analyser.getByteFrequencyData(dataArray);
-    return dataArray;
+
+    if (
+      !this.frequencyData ||
+      this.frequencyData.length !== this.analyser.frequencyBinCount
+    ) {
+      this.frequencyData = new Uint8Array(this.analyser.frequencyBinCount);
+    }
+
+    this.analyser.getByteFrequencyData(this.frequencyData);
+    return this.frequencyData;
   }
 
   getRecordingStream() {
@@ -87,13 +124,45 @@ export class AudioProcessor {
       this.mediaStream.getTracks().forEach(track => track.stop());
       this.mediaStream = null;
     }
+
     if (this.audioElement) {
       this.audioElement.pause();
+      this.audioElement.removeAttribute("src");
+      this.audioElement.load();
       this.audioElement = null;
     }
+
+    if (this.objectUrl) {
+      URL.revokeObjectURL(this.objectUrl);
+      this.objectUrl = null;
+    }
+
     if (this.source) {
       this.source.disconnect();
       this.source = null;
+    }
+
+    if (this.analyser) {
+      this.analyser.disconnect();
+      this.analyser = null;
+    }
+
+    this.frequencyData = null;
+  }
+
+  async destroy() {
+    this.stop();
+
+    if (this.audioContext) {
+      const context = this.audioContext;
+      this.audioContext = null;
+      this.destination = null;
+
+      try {
+        await context.close();
+      } catch (err) {
+        console.warn("Could not close audio context:", err);
+      }
     }
   }
 }

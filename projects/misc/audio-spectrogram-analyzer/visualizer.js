@@ -8,10 +8,16 @@ export class SpectrogramVisualizer {
     this.ctx = this.canvas.getContext("2d");
     this.isRunning = false;
     this.scrollOffset = 0;
+    this.animationId = null;
     this.colormap = this.generateMagmaColormap();
 
+    // Reuse one offscreen surface instead of allocating a canvas per frame.
+    this.bufferCanvas = document.createElement("canvas");
+    this.bufferCtx = this.bufferCanvas.getContext("2d");
+
+    this.handleResize = () => this.resizeCanvas();
     this.resizeCanvas();
-    window.addEventListener("resize", () => this.resizeCanvas());
+    window.addEventListener("resize", this.handleResize);
   }
 
   resizeCanvas() {
@@ -19,6 +25,11 @@ export class SpectrogramVisualizer {
     const rect = this.canvas.parentElement.getBoundingClientRect();
     this.canvas.width = rect.width;
     this.canvas.height = rect.height;
+
+    if (this.bufferCanvas) {
+      this.bufferCanvas.width = rect.width;
+      this.bufferCanvas.height = rect.height;
+    }
   }
 
   generateMagmaColormap() {
@@ -56,12 +67,26 @@ export class SpectrogramVisualizer {
   }
 
   start(audioProcessor) {
+    this.stop();
     this.isRunning = true;
     this.draw(audioProcessor);
   }
 
   stop() {
     this.isRunning = false;
+
+    if (this.animationId !== null) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
+  }
+
+  destroy() {
+    this.stop();
+    window.removeEventListener("resize", this.handleResize);
+    this.handleResize = null;
+    this.bufferCanvas = null;
+    this.bufferCtx = null;
   }
 
   draw(audioProcessor) {
@@ -69,7 +94,7 @@ export class SpectrogramVisualizer {
 
     const data = audioProcessor.getFrequencyData();
     if (data.length === 0) {
-      requestAnimationFrame(() => this.draw(audioProcessor));
+      this.animationId = requestAnimationFrame(() => this.draw(audioProcessor));
       return;
     }
 
@@ -77,18 +102,15 @@ export class SpectrogramVisualizer {
     const height = this.canvas.height;
     const sliceWidth = 2; // Scroll speed
 
-    // Create a temporary canvas to hold the current image
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = width;
-    tempCanvas.height = height;
-    const tempCtx = tempCanvas.getContext("2d");
-    tempCtx.drawImage(this.canvas, 0, 0);
+    // Snapshot the current image into the reusable buffer.
+    this.bufferCtx.clearRect(0, 0, width, height);
+    this.bufferCtx.drawImage(this.canvas, 0, 0);
 
     // Clear main canvas
     this.ctx.clearRect(0, 0, width, height);
 
     // Draw shifted previous frame
-    this.ctx.drawImage(tempCanvas, -sliceWidth, 0);
+    this.ctx.drawImage(this.bufferCanvas, -sliceWidth, 0);
 
     // Draw new frequency column on the right
     const binHeight = height / data.length;
@@ -106,6 +128,6 @@ export class SpectrogramVisualizer {
       this.ctx.fillRect(width - sliceWidth, y, sliceWidth, binHeight + 1); // +1 to prevent gaps
     }
 
-    requestAnimationFrame(() => this.draw(audioProcessor));
+    this.animationId = requestAnimationFrame(() => this.draw(audioProcessor));
   }
 }

@@ -87,9 +87,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Handle page unload to stop audio contexts cleanly
+  // Handle page unload to release streams, audio nodes, frames, and listeners
   window.addEventListener("beforeunload", () => {
-    audioProcessor.stop();
-    visualizer.stop();
+    audioProcessor.destroy();
+    visualizer.destroy();
   });
 });
