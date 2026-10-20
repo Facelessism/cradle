@@ -221,13 +221,22 @@ test("validateProjectsSync succeeds when registry is generated and synchronized"
   const dataDir = path.join(root, "data");
   const outputFile = path.join(dataDir, "projects.json");
 
-  fs.mkdirSync(path.join(projectsDir, "games", "alpha-game"), {
-    recursive: true,
-  });
-  fs.mkdirSync(path.join(projectsDir, "productivity", "beta-tool"), {
-    recursive: true,
-  });
+  const alphaDir = path.join(projectsDir, "games", "alpha-game");
+  const betaDir = path.join(projectsDir, "productivity", "beta-tool");
+  fs.mkdirSync(alphaDir, { recursive: true });
+  fs.mkdirSync(betaDir, { recursive: true });
   fs.mkdirSync(dataDir, { recursive: true });
+
+  // validateProjectsSync requires each registered project to have a real
+  // index.html entrypoint, so the fixture must model valid projects.
+  fs.writeFileSync(
+    path.join(alphaDir, "index.html"),
+    "<!doctype html><title>Alpha Game</title>"
+  );
+  fs.writeFileSync(
+    path.join(betaDir, "index.html"),
+    "<!doctype html><title>Beta Tool</title>"
+  );
 
   generateProjects({
     projectsDir,
