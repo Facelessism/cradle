@@ -1,11 +1,12 @@
 import { StorageManager } from "./storage.js";
 import { GraphParser } from "./parser.js";
+import { getCenteredTransform, placeNodes } from "./layout.js";
 
 /**
  * Graph Engine
  * Custom force-directed graph renderer using Canvas 2D with drag interactions.
  */
-class GraphEngine {
+export class GraphEngine {
   constructor(canvasId, storage) {
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext("2d");
@@ -15,11 +16,16 @@ class GraphEngine {
     this.edges = [];
 
     this.transform = { x: 0, y: 0, k: 1 }; // Pan and zoom
+    this.hasSizedCanvas = false;
     this.isDragging = false;
     this.draggedNode = null;
     this.lastMouse = { x: 0, y: 0 };
 
     this.resizeCanvas();
+    this.transform = getCenteredTransform(
+      this.canvas.width,
+      this.canvas.height
+    );
     window.addEventListener("resize", () => this.resizeCanvas());
     this.setupInteractions();
 
@@ -30,25 +36,31 @@ class GraphEngine {
 
   resizeCanvas() {
     const rect = this.canvas.parentElement.getBoundingClientRect();
+    const previousWidth = this.canvas.width;
+    const previousHeight = this.canvas.height;
+
     this.canvas.width = rect.width;
     this.canvas.height = rect.height;
     this.centerX = rect.width / 2;
     this.centerY = rect.height / 2;
+
+    // Keep the same world point at the viewport center after a resize.
+    if (this.hasSizedCanvas) {
+      this.transform.x += (rect.width - previousWidth) / 2;
+      this.transform.y += (rect.height - previousHeight) / 2;
+    }
+
+    this.hasSizedCanvas = true;
   }
 
   async loadData() {
     const notes = await this.storage.getAllNotes();
     const graph = GraphParser.parse(notes);
-    this.nodes = graph.nodes;
+    const previousNodes = this.nodes;
+
+    this.nodes = placeNodes(graph.nodes, previousNodes);
     this.edges = graph.edges;
 
-    // Initialize random positions if new
-    for (const node of this.nodes) {
-      if (node.x === 0 && node.y === 0) {
-        node.x = (Math.random() - 0.5) * 200;
-        node.y = (Math.random() - 0.5) * 200;
-      }
-    }
     this.updateNoteList(notes);
   }
 
