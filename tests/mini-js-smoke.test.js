@@ -143,6 +143,14 @@ function createBrowserSandbox() {
         children.push(child);
         return child;
       },
+      add: (child, before) => {
+        if (before && children.includes(before)) {
+          children.splice(children.indexOf(before), 0, child);
+        } else {
+          children.push(child);
+        }
+        return child;
+      },
       removeChild: child => {
         const idx = children.indexOf(child);
         if (idx !== -1) children.splice(idx, 1);
@@ -158,7 +166,12 @@ function createBrowserSandbox() {
           elem.parentElement.replaceChild(newChild, elem);
         }
       },
-      remove: () => {
+      remove: child => {
+        if (child) {
+          const idx = children.indexOf(child);
+          if (idx !== -1) children.splice(idx, 1);
+          return child;
+        }
         if (elem.parentElement) {
           elem.parentElement.removeChild(elem);
         }
@@ -243,6 +256,7 @@ function createBrowserSandbox() {
       click: () => {},
       focus: () => {},
       blur: () => {},
+      toDataURL: () => "data:image/png;base64,",
     };
 
     return elem;
@@ -445,6 +459,53 @@ function createBrowserSandbox() {
       addEventListener() {}
       set src(v) {}
     },
+    Worker: class {
+      constructor(url) {
+        this.url = url;
+        this.onmessage = null;
+        this.onerror = null;
+      }
+      postMessage() {}
+      terminate() {}
+      addEventListener() {}
+      removeEventListener() {}
+    },
+    RTCPeerConnection: class {
+      constructor() {
+        this.localDescription = null;
+        this.connectionState = "new";
+        this.onicecandidate = null;
+        this.ondatachannel = null;
+        this.onconnectionstatechange = null;
+      }
+      createDataChannel() {
+        return {
+          readyState: "connecting",
+          send: () => {},
+          close: () => {},
+          addEventListener: () => {},
+        };
+      }
+      createOffer() {
+        return Promise.resolve({ type: "offer", sdp: "" });
+      }
+      createAnswer() {
+        return Promise.resolve({ type: "answer", sdp: "" });
+      }
+      setLocalDescription() {
+        return Promise.resolve();
+      }
+      setRemoteDescription() {
+        return Promise.resolve();
+      }
+    },
+    Option: class {
+      constructor(text = "", value = "") {
+        this.text = text;
+        this.value = value;
+        this.selected = false;
+      }
+    },
     XMLSerializer: class {
       serializeToString() {
         return "<svg></svg>";
@@ -490,6 +551,12 @@ function createBrowserSandbox() {
     },
     // External CDN stub proxies
     Chart: dummyObj,
+    marked: {
+      parse: () => "",
+      setOptions: () => {},
+      use: () => {},
+      Renderer: class {},
+    },
     QRCodeStyling: dummyObj,
     jQuery: jqueryStub,
     $: jqueryStub,
@@ -538,6 +605,107 @@ function parseScriptElements(htmlContent) {
   return scripts;
 }
 
+/**
+ * Matches a static ES module import statement on a single line. Side-effect
+ * imports, default imports, namespace imports, and named imports all include
+ * a quoted module specifier, which is the only part the smoke loader needs.
+ */
+const MODULE_IMPORT_RE =
+  /^[ \t]*import\s+(?:[^'"]*?\s+from\s+)?["']([^"']+)["'][ \t]*;?[ \t]*$/gm;
+
+function isLocalModuleSpecifier(specifier) {
+  return (
+    specifier.startsWith("./") ||
+    specifier.startsWith("../") ||
+    specifier.startsWith("/")
+  );
+}
+
+function resolveModulePath(specifier, baseDir) {
+  if (!isLocalModuleSpecifier(specifier)) return null;
+  const absPath = path.resolve(baseDir, specifier);
+  if (fs.existsSync(absPath)) return absPath;
+  if (!path.extname(absPath) && fs.existsSync(`${absPath}.js`)) {
+    return `${absPath}.js`;
+  }
+  return absPath;
+}
+
+function transformModuleSource(code) {
+  let executableCode = code.replace(MODULE_IMPORT_RE, "");
+  if (
+    /\bexport\s+(default|const|let|var|function|class|\{)/.test(executableCode)
+  ) {
+    executableCode = executableCode
+      .replace(/\bexport\s+default\s+/g, "")
+      .replace(/\bexport\s+(?=(const|let|var|function|class|\{))/g, "");
+  }
+  return executableCode.replace(/^(const|let)\s+/gm, "var ");
+}
+
+/**
+ * Evaluates one script in the shared VM context. Local imports are resolved
+ * recursively before the importer runs, so exported classes and functions are
+ * available as top-level bindings in the same context. Bare and external
+ * specifiers are skipped because the smoke test does not load CDN modules.
+ */
+function executeScriptSource({
+  code,
+  identifier,
+  baseDir,
+  context,
+  loadedModules,
+  errors,
+}) {
+  const importRegex = new RegExp(MODULE_IMPORT_RE.source, "gm");
+  let dependencyFailed = false;
+  let match;
+
+  while ((match = importRegex.exec(code)) !== null) {
+    const specifier = match[1];
+    const modulePath = resolveModulePath(specifier, baseDir);
+    if (!modulePath) continue;
+
+    if (loadedModules.has(modulePath)) continue;
+
+    if (!fs.existsSync(modulePath)) {
+      errors.push(
+        `JS Error in ${identifier}:\n  Error: Imported module not found: "${specifier}"`
+      );
+      dependencyFailed = true;
+      continue;
+    }
+
+    loadedModules.add(modulePath);
+    const dependencyCode = fs.readFileSync(modulePath, "utf-8");
+    const dependencyOk = executeScriptSource({
+      code: dependencyCode,
+      identifier: path.relative(REPO_ROOT, modulePath),
+      baseDir: path.dirname(modulePath),
+      context,
+      loadedModules,
+      errors,
+    });
+
+    if (!dependencyOk) dependencyFailed = true;
+  }
+
+  if (dependencyFailed) return false;
+
+  const executableCode = transformModuleSource(code);
+
+  try {
+    const script = new vm.Script(executableCode, {
+      filename: identifier,
+    });
+    script.runInContext(context);
+    return true;
+  } catch (err) {
+    errors.push(`JS Error in ${identifier}:\n  ${err.name}: ${err.message}`);
+    return false;
+  }
+}
+
 test("Smoke test: every mini project loads without JS errors", () => {
   assert.ok(fs.existsSync(PROJECTS_JSON), "data/projects.json must exist");
   const projects = JSON.parse(fs.readFileSync(PROJECTS_JSON, "utf-8"));
@@ -568,10 +736,12 @@ test("Smoke test: every mini project loads without JS errors", () => {
     }
 
     const context = createBrowserSandbox();
+    const loadedModules = new Set();
 
     for (const scriptElem of scriptElements) {
       let code = "";
       let scriptIdentifier = "";
+      let baseDir = projectDir;
 
       if (scriptElem.type === "src") {
         const srcUrl = scriptElem.value.trim();
@@ -590,36 +760,27 @@ test("Smoke test: every mini project loads without JS errors", () => {
           continue;
         }
 
+        if (loadedModules.has(scriptAbsPath)) {
+          continue;
+        }
+        loadedModules.add(scriptAbsPath);
+
         code = fs.readFileSync(scriptAbsPath, "utf-8");
         scriptIdentifier = path.relative(REPO_ROOT, scriptAbsPath);
+        baseDir = path.dirname(scriptAbsPath);
       } else {
         code = scriptElem.value;
         scriptIdentifier = `${project.title} (inline script)`;
       }
 
-      let executableCode = code;
-      if (
-        /\bexport\s+(default|const|let|var|function|class)\b/.test(
-          executableCode
-        )
-      ) {
-        executableCode = executableCode
-          .replace(/\bexport\s+default\s+/g, "")
-          .replace(/\bexport\s+/g, "");
-      }
-
-      executableCode = executableCode.replace(/^(const|let)\s+/gm, "var ");
-
-      try {
-        const script = new vm.Script(executableCode, {
-          filename: scriptIdentifier,
-        });
-        script.runInContext(context);
-      } catch (err) {
-        errors.push(
-          `JS Error in ${scriptIdentifier}:\n  ${err.name}: ${err.message}`
-        );
-      }
+      executeScriptSource({
+        code,
+        identifier: scriptIdentifier,
+        baseDir,
+        context,
+        loadedModules,
+        errors,
+      });
     }
   }
 

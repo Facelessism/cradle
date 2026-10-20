@@ -17,20 +17,37 @@ const $editorContainer = document.getElementById("editorContainer");
 
 /* ── Marked.js Configuration ────────────────────────────────────── */
 
-marked.setOptions({
-  breaks: true,
-  gfm: true,
-  headerIds: true,
-  mangle: false,
-});
+let markedConfigured = false;
 
-/* Custom renderer for syntax-highlighted code blocks */
-const renderer = new marked.Renderer();
-renderer.code = function (code, language) {
-  const lang = language || "text";
-  return `<pre class="code-block" data-lang="${lang}"><code class="language-${lang}">${escapeHtml(code)}</code></pre>`;
-};
-marked.use({ renderer });
+/**
+ * Returns the global marked instance when the CDN script is available,
+ * configuring it once on first use. Returns null when the library failed
+ * to load so the rest of the editor can keep working.
+ */
+function getMarked() {
+  const marked = typeof window !== "undefined" ? window.marked : undefined;
+  if (!marked || typeof marked.parse !== "function") return null;
+
+  if (!markedConfigured) {
+    marked.setOptions({
+      breaks: true,
+      gfm: true,
+      headerIds: true,
+      mangle: false,
+    });
+
+    /* Custom renderer for syntax-highlighted code blocks */
+    const renderer = new marked.Renderer();
+    renderer.code = function (code, language) {
+      const lang = language || "text";
+      return `<pre class="code-block" data-lang="${lang}"><code class="language-${lang}">${escapeHtml(code)}</code></pre>`;
+    };
+    marked.use({ renderer });
+    markedConfigured = true;
+  }
+
+  return marked;
+}
 
 function escapeHtml(str) {
   return String(str)
@@ -88,6 +105,13 @@ let suppressInput = false;
 
 function renderPreview() {
   const md = $editor.value;
+  const marked = getMarked();
+
+  if (!marked) {
+    $preview.innerHTML = `<div class="preview-notice" role="status">Live preview is unavailable because the Markdown renderer could not be loaded. Your document is still editable and can be exported as Markdown.</div><pre class="preview-fallback">${escapeHtml(md)}</pre>`;
+    return;
+  }
+
   try {
     $preview.innerHTML = marked.parse(md);
   } catch (e) {
@@ -277,6 +301,10 @@ function exportMarkdown() {
 function exportHTML() {
   const content = $editor.value;
   if (!content.trim()) return;
+  const marked = getMarked();
+  const rendered = marked
+    ? marked.parse(content)
+    : `<pre>${escapeHtml(content)}</pre>`;
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -300,7 +328,7 @@ function exportHTML() {
   </style>
 </head>
 <body>
-${marked.parse(content)}
+${rendered}
 </body>
 </html>`;
   downloadFile("document.html", html, "text/html");
