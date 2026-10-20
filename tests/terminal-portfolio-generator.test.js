@@ -165,3 +165,73 @@ test("findMatchingCommands powers tab-completion via prefix match", () => {
   );
   assert.deepStrictEqual(matches, ["education", "experience"]);
 });
+
+/**
+ * Issue #929: portfolioEngine.js reads window.ExportHtml.sanitizeUrl at
+ * load time and exportHtml.js reads window.CradleEscape.escapeHtml. When
+ * either global is missing in the browser the script falls through to its
+ * Node-only require() branch and throws. Pin the document order so a future
+ * reshuffle of the script tags cannot silently break the page again.
+ */
+test("Issue #929: index.html loads shared helpers before their consumers", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+
+  const htmlPath = path.join(
+    __dirname,
+    "..",
+    "projects",
+    "productivity",
+    "terminal-portfolio-generator",
+    "index.html"
+  );
+  const html = fs.readFileSync(htmlPath, "utf-8");
+
+  const scriptSrcRegex = /<script\s+[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi;
+  const scriptSources = [];
+  let match;
+  while ((match = scriptSrcRegex.exec(html)) !== null) {
+    scriptSources.push(match[1]);
+  }
+
+  const indexOf = suffix =>
+    scriptSources.findIndex(src => src.endsWith(suffix));
+  const escapeIdx = indexOf("escapeHtml.js");
+  const exportIdx = indexOf("exportHtml.js");
+  const engineIdx = indexOf("portfolioEngine.js");
+  const scriptIdx = indexOf("script.js");
+
+  assert.notEqual(
+    escapeIdx,
+    -1,
+    "index.html must include the shared escapeHtml.js helper"
+  );
+  assert.notEqual(
+    exportIdx,
+    -1,
+    'index.html must include <script src="exportHtml.js"></script>'
+  );
+  assert.notEqual(
+    engineIdx,
+    -1,
+    'index.html must include <script src="portfolioEngine.js"></script>'
+  );
+  assert.notEqual(
+    scriptIdx,
+    -1,
+    'index.html must include <script src="script.js"></script>'
+  );
+
+  assert.ok(
+    escapeIdx < exportIdx,
+    "escapeHtml.js must be loaded before exportHtml.js"
+  );
+  assert.ok(
+    exportIdx < engineIdx,
+    "exportHtml.js must be loaded before portfolioEngine.js"
+  );
+  assert.ok(
+    engineIdx < scriptIdx,
+    "portfolioEngine.js must be loaded before script.js"
+  );
+});

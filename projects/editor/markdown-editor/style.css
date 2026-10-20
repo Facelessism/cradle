@@ -293,6 +293,28 @@ p {
   color: var(--cradle-text-secondary, #cbd5e1);
 }
 
+.preview-notice {
+  border: 1px solid var(--cradle-warning, #f59e0b);
+  border-radius: var(--cradle-radius-sm, 8px);
+  background: var(--cradle-warning-bg, rgba(245, 158, 11, 0.12));
+  color: var(--cradle-text, #f3f4f6);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+}
+
+.preview-fallback {
+  background: var(--cradle-bg-secondary, #1f2937);
+  border-radius: var(--cradle-radius-sm, 8px);
+  color: var(--cradle-text-secondary, #cbd5e1);
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+  padding: 16px;
+  white-space: pre-wrap;
+}
+
 .preview-content::-webkit-scrollbar {
   width: 8px;
 }
