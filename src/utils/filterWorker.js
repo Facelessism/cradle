@@ -48,6 +48,10 @@ export function createFilterWorker({
     };
 
     worker.onmessage = event => {
+      // A worker that failed or was terminated must not be able to overwrite
+      // the fallback results with a message that was already queued.
+      if (failed) return;
+
       if (!isFilterResult(event.data)) {
         fail(
           new Error("Worker returned an invalid search result"),

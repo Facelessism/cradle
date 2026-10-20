@@ -193,6 +193,50 @@ test("delivers valid worker results without invoking fallback or logging failure
   assert.equal(logs.length, 0);
 });
 
+test("ignores results that arrive after the worker fails", () => {
+  const failures = [];
+  const results = [];
+  const { logs, logger } = createMockLogger();
+
+  createFilterWorker({
+    workerFactory: () => new FakeWorker(),
+    onResult: result => results.push(result),
+    onFailure: error => failures.push(error),
+    logger,
+  });
+  const instance = FakeWorker.instances[0];
+
+  instance.onerror(new Error("worker crashed"));
+  instance.onmessage({ data: [{ id: "stale" }] });
+
+  assert.deepEqual(results, []);
+  assert.equal(failures.length, 1);
+  assert.equal(logs.length, 1);
+});
+
+test("ignores results and rejects new requests after explicit termination", () => {
+  const results = [];
+  const { logger } = createMockLogger();
+  const worker = createFilterWorker({
+    workerFactory: () => new FakeWorker(),
+    onResult: result => results.push(result),
+    onFailure: () => {},
+    logger,
+  });
+  const instance = FakeWorker.instances[0];
+
+  worker.terminate();
+  instance.onmessage({ data: [{ id: "stale" }] });
+
+  assert.deepEqual(results, []);
+  assert.equal(instance.terminated, true);
+  assert.equal(
+    worker.postMessage({ allProjects: [], selectedCategory: "all", query: "" }),
+    false
+  );
+  assert.equal(instance.messages.length, 0);
+});
+
 test("rejects filter results that carry prototype-pollution keys", () => {
   const failures = [];
   const results = [];
