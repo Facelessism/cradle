@@ -98,6 +98,7 @@ Minis target current evergreen Chrome, Firefox, and Safari with no polyfill or b
 - **Storage:** use `CradleStorage` (or the `cradle-storage` plugin), not `localStorage` directly, and validate what you read. IndexedDB is for binary data and large payloads. See [STORAGE_POLICY.md](../STORAGE_POLICY.md). The validator warns on direct `localStorage` use in a mini that never mentions `CradleStorage`.
 - **Secrets:** no keys, tokens, or `.env` files, ever. See [CREDENTIALS_AND_SECRETS.md](../CREDENTIALS_AND_SECRETS.md).
 - **Third-party code and models:** allowed CDNs, SRI, lazy loading, fallbacks, and licence attribution are in [THIRD_PARTY_POLICY.md](../THIRD_PARTY_POLICY.md). Every third-party dependency MUST be listed in the mini's `ARCHITECTURE.md` with its licence.
+- **Shared UI components:** use the shared UI layer in `src/components/ui/` (`CradleButton`, `CradleCard`, `CradleThemeToggle`, `CradleNavbar`, `CradleBackToHome`) and design tokens (`tokens.css`) for common UI patterns. Do not create ad-hoc copies of existing shared components inside a mini. See [SHARED_UI_POLICY.md](SHARED_UI_POLICY.md).
 - **Security issues** go through [SECURITY.md](../SECURITY.md).
 
 ## 7. How the contract is enforced

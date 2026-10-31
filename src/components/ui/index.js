@@ -1,6 +1,6 @@
 /**
- * Cradle UI — Barrel Export
- * ──────────────────────────
+ * Cradle UI — Barrel Export & Component Registry
+ * ───────────────────────────────────────────────
  * Load this single file to get access to all Cradle UI components
  * as globals (window.CradleButton, window.CradleCard, etc.).
  *
@@ -19,6 +19,7 @@
  *   CradleBackToHome.autoInject();
  *
  * Available globals after load:
+ *   - CradleUI           Library registry, version metadata, loader
  *   - CradleButton       Button with variants, sizes, icons, loading state
  *   - CradleCard         Card / CardHeader / CardContent / CardFooter
  *   - CradleThemeToggle  Light/dark theme toggle with localStorage + OS preference
@@ -26,6 +27,7 @@
  *   - CradleBackToHome   Fixed "Back to Home" pill button
  *   - CradleEscape       HTML escaping utility (CradleEscape.escapeHtml)
  *   - CradleSanitize     HTML and SVG sanitization (CradleSanitize.sanitizeHtml, CradleSanitize.sanitizeSvg, CradleSanitize.isSvgSafe)
+ *   - CradleSanitizeCss  CSS property and value sanitization (CradleSanitizeCss.sanitizeCssProperty)
  *   - CradleStorage      localStorage helper (CradleStorage.get/set/...)
  *
  * Individual component files:
@@ -39,7 +41,9 @@
  *   /src/components/ui/escapeHtml.js
  *   /src/components/ui/sanitizeHtml.js
  *   /src/components/ui/sanitizeSvg.js
+ *   /src/components/ui/sanitizeCss.js
  *   /src/components/ui/storage.js
+ *   /src/components/ui/diagram-toolkit.js
  *
  * Design tokens:
  *   /src/components/ui/tokens.css
@@ -48,8 +52,11 @@
 /* ─── Load order matters: tokens are injected by each component ─── */
 /* ─── Loading them individually is also supported                ─── */
 
-(function () {
+(function (global) {
   "use strict";
+
+  /** Current semantic version of the shared Cradle UI component library */
+  const VERSION = "1.0.0";
 
   /**
    * Dynamically load a script relative to this file's location.
@@ -64,33 +71,39 @@
      * Explicit and works regardless of hosting setup.
      * Add to any page: <meta name="cradle-ui-base" content="/src/components/ui/">
      */
-    const meta = document.querySelector('meta[name="cradle-ui-base"]');
-    if (meta) {
-      const content = meta.getAttribute("content");
-      return content.endsWith("/") ? content : content + "/";
-    }
+    if (typeof document !== "undefined") {
+      const meta = document.querySelector('meta[name="cradle-ui-base"]');
+      if (meta) {
+        const content = meta.getAttribute("content");
+        return content.endsWith("/") ? content : content + "/";
+      }
 
-    /*
-     * Strategy 2: scan all <script src> tags for our file name.
-     * Works whether the script was loaded with defer, async, or inline.
-     */
-    const scripts = document.querySelectorAll("script[src]");
-    for (const s of scripts) {
-      if (s.src && s.src.includes("components/ui/index.js")) {
-        return s.src.replace("index.js", "");
+      /*
+       * Strategy 2: scan all <script src> tags for our file name.
+       * Works whether the script was loaded with defer, async, or inline.
+       */
+      const scripts = document.querySelectorAll("script[src]");
+      for (const s of scripts) {
+        if (s.src && s.src.includes("components/ui/index.js")) {
+          return s.src.replace("index.js", "");
+        }
+      }
+
+      /*
+       * Strategy 3: document.currentScript — only defined during initial
+       * synchronous execution, so only works without defer/async.
+       */
+      if (document.currentScript && document.currentScript.src) {
+        return document.currentScript.src.replace("index.js", "");
+      }
+
+      /* Fallback: assume the repo root */
+      if (typeof window !== "undefined" && window.location) {
+        return window.location.origin + "/src/components/ui/";
       }
     }
 
-    /*
-     * Strategy 3: document.currentScript — only defined during initial
-     * synchronous execution, so only works without defer/async.
-     */
-    if (document.currentScript && document.currentScript.src) {
-      return document.currentScript.src.replace("index.js", "");
-    }
-
-    /* Fallback: assume the repo root */
-    return window.location.origin + "/src/components/ui/";
+    return "/src/components/ui/";
   }
 
   const BASE_URL = resolveBase();
@@ -108,6 +121,7 @@
     "escapeHtml.js",
     "sanitizeHtml.js",
     "sanitizeSvg.js",
+    "sanitizeCss.js",
     "storage.js",
   ];
 
@@ -118,6 +132,11 @@
    */
   function loadComponent(relativePath) {
     return new Promise((resolve, reject) => {
+      if (typeof document === "undefined") {
+        resolve();
+        return;
+      }
+
       /* Skip if already loaded */
       const fullUrl = BASE_URL + relativePath;
       if (document.querySelector(`script[src="${fullUrl}"]`)) {
@@ -138,11 +157,23 @@
   /**
    * Exposed API — available as window.CradleUI
    *
-   * CradleUI.loadAll()           — load all 5 components + utilities
+   * CradleUI.version             — SemVer version string (e.g. "1.0.0")
+   * CradleUI.components          — Array of supported core component names
+   * CradleUI.utilities           — Array of supported core utility names
+   * CradleUI.loadAll()           — load all components + utilities
    * CradleUI.load('Button')      — load a single component by name
    * CradleUI.load('escapeHtml')  — load a utility by name
    */
   const CradleUI = {
+    version: VERSION,
+    components: ["Button", "Card", "ThemeToggle", "Navbar", "BackToHome"],
+    utilities: [
+      "escapeHtml",
+      "sanitizeHtml",
+      "sanitizeSvg",
+      "sanitizeCss",
+      "storage",
+    ],
     _baseUrl: BASE_URL,
     _loaded: {},
 
@@ -163,7 +194,7 @@
 
     /**
      * Load a single component or utility by name.
-     * @param {'Button'|'Card'|'ThemeToggle'|'Navbar'|'BackToHome'|'escapeHtml'|'storage'} name
+     * @param {'Button'|'Card'|'ThemeToggle'|'Navbar'|'BackToHome'|'escapeHtml'|'sanitizeHtml'|'sanitizeSvg'|'sanitizeCss'|'storage'} name
      * @returns {Promise<void>}
      */
     load(name) {
@@ -184,8 +215,15 @@
     },
   };
 
-  window.CradleUI = CradleUI;
+  if (typeof global !== "undefined") {
+    global.CradleUI = CradleUI;
+  }
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = CradleUI;
+  }
 
-  /* Auto-load all components when the bundle file itself is loaded */
-  CradleUI.loadAll().catch(err => console.error(err));
-})();
+  /* Auto-load all components when the bundle file itself is loaded in a browser */
+  if (typeof window !== "undefined" && typeof document !== "undefined") {
+    CradleUI.loadAll().catch(err => console.error(err));
+  }
+})(typeof window !== "undefined" ? window : globalThis);

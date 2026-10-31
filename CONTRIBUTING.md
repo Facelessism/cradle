@@ -141,6 +141,7 @@ Before opening a Pull Request, review the following checklist:
 - [ ] `index.html` includes the shared `BackToHome.js` navigation component.
 - [ ] Any external third-party scripts or models strictly follow the [Third-Party Script Loading Policy](THIRD_PARTY_POLICY.md) (e.g., proper SRI hashes, trusted CDNs).
 - [ ] All persistent data storage uses the `CradleStorage` abstraction as defined in the [Storage Policy](STORAGE_POLICY.md).
+- [ ] Shared UI components from `src/components/ui/` and design tokens from `tokens.css` are used for standard UI patterns rather than duplicating components (see [Shared UI Policy](docs/SHARED_UI_POLICY.md)).
 - [ ] The project explicitly specifies its licensing and includes attribution for any third-party assets.
 - [ ] `ARCHITECTURE.md` has been added following the [standardized template](ARCHITECTURE_TEMPLATE.md).
 - [ ] The project works correctly locally.
@@ -159,6 +160,14 @@ Please follow the existing coding style throughout the repository. Code formatti
 - Avoid unrelated changes in the same Pull Request.
 - Remove unused code before submitting.
 - Update documentation whenever your changes affect functionality.
+
+### Shared UI Component Library
+
+Cradle provides a zero-dependency, framework-free component library in `src/components/ui/` with standardized components (`CradleButton`, `CradleCard`, `CradleThemeToggle`, `CradleNavbar`, `CradleBackToHome`) and foundational utilities (`CradleStorage`, `CradleSanitize`, `CradleEscape`).
+
+- **Reuse first**: Before writing custom buttons, cards, navbar shells, or theme switchers, use the shared components.
+- **Do not fork or duplicate**: Do not copy shared components into your mini's folder. If a shared component needs an enhancement or additional variant, propose an update upstream in `src/components/ui/`.
+- **Adhere to the policy**: See [docs/SHARED_UI_POLICY.md](docs/SHARED_UI_POLICY.md) and [src/components/ui/README.md](src/components/ui/README.md) for full API contracts, versioning guarantees, and promotion workflows.
 
 ### Code Formatting
 
