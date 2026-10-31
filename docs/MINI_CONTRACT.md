@@ -47,13 +47,14 @@ Rules:
 | Extra scripts (`*Engine.js`, `*Logic.js`, `algorithms.js`, workers)                 | Optional         | Keep pure logic apart from DOM code so it can be unit tested from `tests/` (see `TESTING.md`).                                             |
 | `assets/`, images, fonts                                                            | Optional         | Local assets used by the mini.                                                                                                             |
 | `.env`, `.env.*`                                                                    | **Forbidden**    | See `CREDENTIALS_AND_SECRETS.md`.                                                                                                          |
-| `package.json`, `.jsx`, `.ts`, `.tsx`, `.scss`, `.sass`, `.less`, `.vue`, `.svelte` | Should not exist | They imply a build step (section 3).                                                                                                       |
+| `package.json`, `node_modules`                                                     | **Forbidden**    | Per-mini package trees are prohibited; manage dependencies at root (see [BUILD_STRATEGY.md](BUILD_STRATEGY.md)).                         |
+| Unbuilt source (`.ts`, `.tsx`, `.jsx`, `.scss`, etc.)                               | Conditional      | Must not exist in Tier 1; in Tier 2/3 must be registered in `scripts/build-minis.js` with committed bundle (see [BUILD_STRATEGY.md](BUILD_STRATEGY.md)). |
 
 ## 3. Entrypoint rules
 
 `index.html` is the only entrypoint. The repository has no bundler, so the browser must be able to run the files exactly as committed.
 
-- **No build step.** No transpiling, bundling, or install step may be needed to run the mini.
+- **Build model & static runtime.** By default, minis operate on **Tier 1: Static (Zero-Build)**—no transpiling, bundling, or per-project install step is needed to run. Minis requiring compilation must follow the centralized build model (**Tier 2: Centrally Bundled**) registered with `scripts/build-minis.js` or **Tier 3: Individually Bundled** for pre-compiled Wasm/DSP. In all cases, the mini MUST be runnable directly from `index.html` without running a per-mini build or install command. See [BUILD_STRATEGY.md](BUILD_STRATEGY.md).
 - **Relative paths only.** Every local `src` and `href` in `index.html` MUST be relative and MUST resolve to an existing file. A path starting with a single `/` (for example `/style.css`) is an error because it breaks when the site is hosted under a sub-path.
 - **Shared files** live outside the mini and are referenced relatively, for example `../../../assets/favicon.svg` and `../../../src/components/ui/tokens.css`.
 - **Required head/body content** (from `CONTRIBUTING.md`, enforced by `npm run validate:mini-projects`): a meaningful descriptive `<title>`, the shared favicon `<link rel="icon" ...>` and the shared Back-to-Home navigation (`BackToHome.js`, the UI bundle `components/ui/index.js`, or `data-cradle-back-to-home`).
@@ -108,6 +109,7 @@ Minis target current evergreen Chrome, Firefox, and Safari with no polyfill or b
 | Required files, navigation, assets | `npm run validate:mini-projects`                                                | Existing CI gate (fails on any problem).               |
 | Architecture docs                  | `npm run validate:architecture`                                                 | Presence and required sections of `ARCHITECTURE.md`.   |
 | Registry sync                      | `npm run validate:projects-sync`                                                | `data/projects.json` matches the folders.              |
+| Build strategy compliance          | `npm run validate:build-strategy`                                               | Zero rogue tooling, valid build tiers (BUILD_STRATEGY).|
 | Dynamic code, workers, labels      | `validate:no-dynamic-eval`, `validate:worker-integrity`, `validate:a11y-labels` | Section 3 and accessibility.                           |
 
 The contract validator reuses the file, navigation, and favicon checks from `scripts/validate-mini-projects.js` and the folder scan from `scripts/project-discovery.js`, so the rules cannot drift apart. It is not part of CI yet; once the remaining violations are fixed it can be added next to the other gates.

@@ -234,7 +234,7 @@ renderProjects() re-renders the grid with the filtered list
 ## Design Decisions
 
 - **Generated metadata instead of a hand-written registry** - `data/projects.json` is produced by `scripts/generate-projects.js` so adding a project never requires editing a separate list; the folder structure is the single source of truth.
-- **No shared build step across projects** - each project under `projects/` is self-contained so it can be developed, tested, and even copied elsewhere independently of the rest of the repo.
+- **Centralized 3-tier build model** - minis are static (Tier 1) by default with zero build step required. Minis needing TypeScript/JSX are centrally bundled from root tooling (Tier 2), and Wasm pipelines (Tier 3) commit pre-built binaries. Local per-mini `package.json` and `node_modules` are strictly prohibited to prevent fragmented tooling and duplicate dependencies (see `docs/BUILD_STRATEGY.md`).
 - **IndexedDB cache with background refresh** - the landing page renders instantly from cache on repeat visits while still picking up newly generated projects shortly after.
 - **Web Worker for filtering** - keeps search/category filtering off the main thread as the project list grows, with a synchronous fallback when Workers are unavailable.
 - **Zero-dependency component library** - `src/components/ui` is plain JS/CSS with no build tooling, so any project, including ones written before the library existed, can opt in without adopting a framework.
@@ -296,6 +296,7 @@ None at runtime. The site uses only native browser APIs (DOM, `fetch`, IndexedDB
 - [`README.md`](README.md) - project overview and getting-started instructions
 - [`docs/ASSET_PIPELINE.md`](docs/ASSET_PIPELINE.md) - asset types, thumbnail fingerprinting (`thumbnailHash`), and cache policy
 - [`docs/MINI_CONTRACT.md`](docs/MINI_CONTRACT.md) - required files, entrypoint, lifecycle, and browser API rules for every mini
+- [`docs/BUILD_STRATEGY.md`](docs/BUILD_STRATEGY.md) - centralized build and bundling strategy, 3-tier build model, and anti-duplication policy
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) - contribution workflow, including the architecture-documentation requirement for new projects
 - [`ARCHITECTURE_TEMPLATE.md`](ARCHITECTURE_TEMPLATE.md) - standardized template used for every per-project `ARCHITECTURE.md`
 - [`src/components/ui/README.md`](src/components/ui/README.md) - usage docs for the shared Cradle UI component library
