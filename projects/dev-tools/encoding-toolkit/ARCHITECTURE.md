@@ -109,12 +109,13 @@ User can Copy, Export as .txt, Swap input/output, or Clear
 
 ### `logic.js`
 
-- `encodeBase64` / `decodeBase64` — UTF-8 safe Base64 via `TextEncoder`/`TextDecoder`, validates charset and padding before decoding
-- `encodeURLText` / `decodeURLText` — thin wrapper around `encodeURIComponent`/`decodeURIComponent` that catches malformed `%` sequences
-- `encodeHTML` / `decodeHTML` — escapes/unescapes `& < > " '`, plus numeric (`&#65;`, `&#x41;`) and named entity decoding
-- `encodeUnicode` / `decodeUnicode` — converts text to/from `\uXXXX` (and `\u{XXXXX}` for code points above `0xFFFF`) escape sequences
+- `encodeBase64` / `decodeBase64` — UTF-8 safe Base64 via `TextEncoder`/`TextDecoder`, preserves emoji and supplementary-plane characters, validates charset and padding before decoding
+- `encodeURLText` / `decodeURLText` — wrapper around `encodeURIComponent`/`decodeURIComponent` that catches malformed `%` sequences and unpaired surrogates
+- `encodeHTML` / `decodeHTML` — escapes/unescapes `& < > " '`, preserves emoji by default, resolves astral and surrogate-pair numeric entities (`&#xD83D;&#xDE00;`, `&#x1F600;`), with optional `encodeNonAscii` mode
+- `encodeUnicode` / `decodeUnicode` — converts text to/from `\uXXXX` (and `\u{XXXXX}` or surrogate pairs `\uD83D\uDE00`), resolving surrogate pairs to supplementary code points on decode
 - `encodeHex` / `decodeHex` — byte-level hex via `TextEncoder`/`TextDecoder`, validates even-length hex-only input
 - `encodeBinary` / `decodeBinary` — byte-level binary via `TextEncoder`/`TextDecoder`, validates 8-bit `0`/`1` groups
+- Unicode helpers: `isSurrogate`, `isHighSurrogate`, `isLowSurrogate`, `surrogatePairToCodePoint`, `codePointToSurrogatePair`
 
 ### `script.js`
 

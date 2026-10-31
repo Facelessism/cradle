@@ -83,3 +83,82 @@ test("empty input returns empty string for every decoder", () => {
   assert.equal(decodeBinary(""), "");
   assert.equal(decodeUnicode(""), "");
 });
+
+/* ------------------------------------------------------------------ */
+/* Unicode surrogate pairs, emoji, and supplementary plane characters */
+/* ------------------------------------------------------------------ */
+
+test("decodeUnicode correctly resolves surrogate pairs into supplementary code points", () => {
+  // U+1F600 Grinning Face -> \uD83D\uDE00
+  assert.equal(decodeUnicode("\\uD83D\\uDE00"), "😀");
+  // U+1F389 Party Popper -> \uD83C\uDF89
+  assert.equal(decodeUnicode("\\uD83C\\uDF89"), "🎉");
+  // U+20BB7 Supplementary Ideograph -> \uD842\uDFB7
+  assert.equal(decodeUnicode("\\uD842\\uDFB7"), "𠮷");
+  // U+1D11E Musical G Clef -> \uD834\uDD1E
+  assert.equal(decodeUnicode("\\uD834\\uDD1E"), "𝄞");
+});
+
+test("encodeUnicode supports surrogate pair formatting for supplementary plane characters", () => {
+  const input = "😀 𠮷 𝄞";
+  const encodedSurrogates = encodeUnicode(input, { surrogatePairs: true });
+  assert.ok(encodedSurrogates.includes("\\ud83d\\ude00"));
+  assert.ok(encodedSurrogates.includes("\\ud842\\udfb7"));
+  assert.ok(encodedSurrogates.includes("\\ud834\\udd1e"));
+
+  // Round-trip verification
+  assert.equal(decodeUnicode(encodedSurrogates), input);
+});
+
+test("Unicode escape decodes mixed text containing both surrogate pairs and BMP escapes", () => {
+  // "Hello 😀 World 𝄞" in Unicode escapes
+  const mixed = "\\u0048\\u0065\\u006C\\u006C\\u006F\\u0020\\uD83D\\uDE00\\u0020\\u0057\\u006F\\u0072\\u006C\\u0064\\u0020\\uD834\\uDD1E";
+  assert.equal(decodeUnicode(mixed), "Hello 😀 World 𝄞");
+});
+
+test("decodeUnicode rejects out-of-range code points above U+10FFFF", () => {
+  assert.throws(() => decodeUnicode("\\u{110000}"), /Invalid Unicode escape/);
+  assert.throws(() => decodeUnicode("\\u{FFFFFF}"), /Invalid Unicode escape/);
+});
+
+test("HTML decoding resolves numeric surrogate pair entities into supplementary characters", () => {
+  // Hexadecimal surrogate pair: &#xD83D;&#xDE00; -> 😀
+  assert.equal(decodeHTML("&#xD83D;&#xDE00;"), "😀");
+  // Decimal surrogate pair: &#55357;&#56832; -> 😀
+  assert.equal(decodeHTML("&#55357;&#56832;"), "😀");
+  // Direct astral numeric entities
+  assert.equal(decodeHTML("&#x1F600;"), "😀");
+  assert.equal(decodeHTML("&#128512;"), "😀");
+  assert.equal(decodeHTML("&#x20BB7;"), "𠮷");
+});
+
+test("HTML decode rejects malformed or out-of-bounds numeric entities", () => {
+  assert.throws(() => decodeHTML("&#x110000;"), /Malformed HTML entity/);
+  assert.throws(() => decodeHTML("&#1114112;"), /Malformed HTML entity/);
+});
+
+test("HTML encoding preserves emoji and supplementary-plane characters by default", () => {
+  const input = "<p>Welcome to Cradle! 😀 & 🎉 𠮷</p>";
+  const encoded = encodeHTML(input);
+  assert.equal(encoded, "&lt;p&gt;Welcome to Cradle! 😀 &amp; 🎉 𠮷&lt;/p&gt;");
+  assert.equal(decodeHTML(encoded), input);
+});
+
+test("HTML encoding can convert supplementary-plane characters to numeric entities when requested", () => {
+  const input = "Hi 😀";
+  const encoded = encodeHTML(input, { encodeNonAscii: true });
+  assert.equal(encoded, "Hi &#x1F600;");
+  assert.equal(decodeHTML(encoded), input);
+});
+
+test("Base64, Hex, and Binary round-trip complex ZWJ emoji, modifiers, and flags", () => {
+  // ZWJ sequence family emoji: 👨‍👩‍👧‍👦
+  // Skin tone modifier emoji: 👍🏽
+  // Flag emoji: 🏳️‍🌈
+  const complexEmojiText = "Family: 👨‍👩‍👧‍👦 | Modifier: 👍🏽 | Flag: 🏳️‍🌈 | Astral: 𠮷";
+
+  assert.equal(decodeBase64(encodeBase64(complexEmojiText)), complexEmojiText);
+  assert.equal(decodeHex(encodeHex(complexEmojiText)), complexEmojiText);
+  assert.equal(decodeBinary(encodeBinary(complexEmojiText)), complexEmojiText);
+  assert.equal(decodeURLText(encodeURLText(complexEmojiText)), complexEmojiText);
+});

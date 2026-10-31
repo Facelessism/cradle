@@ -43,7 +43,8 @@ function convert() {
   const converter = CONVERTERS[format];
   const raw = inputText.value;
 
-  inputCount.textContent = `${raw.length} chars`;
+  const inChars = Array.from(raw).length;
+  inputCount.textContent = `${inChars} char${inChars !== 1 ? "s" : ""}`;
 
   if (raw === "") {
     outputText.value = "";
@@ -57,7 +58,8 @@ function convert() {
     const result = fn(raw);
 
     outputText.value = result;
-    outputCount.textContent = `${result.length} chars`;
+    const outChars = Array.from(result).length;
+    outputCount.textContent = `${outChars} char${outChars !== 1 ? "s" : ""}`;
     hideError();
   } catch (err) {
     outputText.value = "";

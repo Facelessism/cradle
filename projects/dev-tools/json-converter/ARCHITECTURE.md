@@ -42,6 +42,7 @@ The system operates in a loop: Input change → Debounced Parse → Tree Reconst
 | File         | Responsibility                                                                                                     |
 | ------------ | ------------------------------------------------------------------------------------------------------------------ |
 | `index.html` | Page shell, input area, tree container, and stats bar                                                              |
+| `logic.js`   | Pure conversion logic: `parseJSON`, `toYaml`, `toCsv`, `toXml`, `formatJSON`, `minifyJSON`, `highlightJSON`         |
 | `script.js`  | JSON parsing, recursive tree rendering, state management (collapsed/selected), search logic, and utility functions |
 | `style.css`  | Layout, typography, syntax highlighting colors, and tree node animations                                           |
 
