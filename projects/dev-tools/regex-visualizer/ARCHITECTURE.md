@@ -59,13 +59,13 @@ projects/dev-tools/regex-visualizer/
 
 ## Component Breakdown
 
-| File                             | Responsibility                                                                               |
-| -------------------------------- | -------------------------------------------------------------------------------------------- |
-| `index.html`                     | Page shell: template buttons, pattern input, flag checkboxes, explanation and tester panels  |
-| `regexEngine.js`                 | Pure engine: `sanitizeFlags`, `compileRegex`, `parsePatternTokens`, `executeReplace`         |
-| `script.js`                      | DOM wiring: `runRegexProcessor`, `processMatches`, `generateExplainer`, overlay highlighting |
-| `style.css`                      | Dark theme, workspace grid, match and capture-group highlight colors                         |
-| `tests/regex-visualizer.test.js` | Unit test suite covering compilation, flags, token breakdown, and replacements               |
+| File                             | Responsibility                                                                                                 |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `index.html`                     | Page shell: template buttons, pattern input, flag checkboxes, explanation and tester panels                    |
+| `regexEngine.js`                 | Pure engine: `sanitizeFlags`, `compileRegex`, `detectCatastrophicPattern`, `executeMatch`, `executeReplace`    |
+| `script.js`                      | DOM wiring: `runRegexProcessor`, `processMatches`, `generateExplainer`, ReDoS pre-evaluation and time limit UI |
+| `style.css`                      | Dark theme, workspace grid, match and capture-group highlight colors                                           |
+| `tests/regex-visualizer.test.js` | Unit test suite covering compilation, flags, token breakdown, ReDoS detection, and execution limits            |
 
 ---
 
@@ -121,14 +121,16 @@ User edits pattern / flags / text → the pipeline runs again
 ### `regexEngine.js`
 
 - `sanitizeFlags(flags)` — keeps only the valid flags `g`, `i`, `m`, `s`, `u`, `y`
-- `compileRegex(pattern, flags)` — safely builds a RegExp and returns `{ regex, error }`
+- `compileRegex(pattern, flags, options)` — safely builds a RegExp, attaches safety metadata, and supports `checkSafety: true`
+- `detectCatastrophicPattern(pattern)` / `isCatastrophicPattern(pattern)` — static analysis detecting nested quantifiers, overlapping alternation repetitions, and adjacent unconstrained quantifiers (ReDoS protection)
+- `executeMatch(pattern, flags, inputStr, options)` — executes regex matches with pre-evaluation safety checks, configurable execution timeout (`timeoutMs: 250`), and match limit (`maxMatches: 2000`)
 - `parsePatternTokens(pattern)` — walks the pattern and returns tokens with explanations for anchors, escapes, quantifiers, groups, and literals
-- `executeReplace(pattern, flags, inputStr, replacement)` — substitution helper used by the tests
+- `executeReplace(pattern, flags, inputStr, replacement, options)` — substitution helper supporting optional safety checks
 
 ### `script.js`
 
-- `runRegexProcessor()` — main pipeline: compile, explain, match, and render
-- `processMatches(regex, text)` — collects matches, guards against zero-width infinite loops, and builds the overlay and table HTML
+- `runRegexProcessor()` — main pipeline: checks for catastrophic patterns before evaluation, displays ReDoS safety alerts, compiles safely, and renders explanations
+- `processMatches(regex, text)` — collects matches with a 250ms elapsed time limit and 2,000 match cap to prevent browser freezing, advancing `lastIndex` on zero-width matches
 - `generateExplainer(pattern)` — renders the token explanations, using `RegexEngine` when available
 - `updateFlagsInput()` / `updateFlagsCheckboxes()` — keep flag checkboxes and the flag text field in sync
 - `escapeHtml()` — delegates to the shared `CradleEscape` helper
@@ -145,6 +147,8 @@ User edits pattern / flags / text → the pipeline runs again
 ## Design Decisions
 
 - **Engine separated from UI** — `regexEngine.js` is pure (no DOM) and wrapped in a UMD/AMD module so the same functions load as a browser global or a `require()`-able module in tests.
+- **Pre-evaluation ReDoS protection** — static token and stack analysis intercepts catastrophic backtracking patterns (such as `(a+)+`, `(a|aa)+`, and `.*.*`) before constructing or executing the regular expression, avoiding browser thread hangs.
+- **Execution limits & timeouts** — both the pure engine (`executeMatch`) and DOM matching pipeline (`processMatches`) enforce a 250ms time limit and a 2,000 match cap to guard against runaway executions.
 - **Overlay highlighting** — a transparent textarea sits on top of a highlight layer so matches can be colored without losing native editing behavior; scroll positions stay in sync.
 - **Zero-width match guard** — `processMatches` advances `lastIndex` when a match does not consume input, preventing infinite loops with patterns like `(?=x)*`.
 - **No framework** — vanilla JS keeps the tool small and dependency-free.
