@@ -11,6 +11,7 @@ Please take a few minutes to read these guidelines before getting started.
 - [Ways to Contribute](#ways-to-contribute)
 - [Before You Start](#before-you-start)
 - [Adding a New Project](#adding-a-new-project)
+- [Shared UI Components & Library](#shared-ui-components--library)
 - [Coding Guidelines](#coding-guidelines)
 - [Documentation Guidelines](#documentation-guidelines)
 - [Architecture Documentation](#architecture-documentation)
@@ -146,6 +147,66 @@ Before opening a Pull Request, review the following checklist:
 - [ ] The project works correctly locally.
 - [ ] Existing projects and unrelated files were not unnecessarily modified.
 - [ ] The project follows the repository's contribution guidelines.
+
+---
+
+## Shared UI Components & Library
+
+Cradle provides a lightweight, zero-dependency shared UI component library under `src/components/ui/`. It offers standardized UI controls, styling tokens, and security/storage utilities that minis can adopt directly via static `<script>` and `<link>` tags.
+
+### Supported Components and Utilities
+
+| Component / Utility | Location | Type | Global Object | Description |
+| :------------------ | :------- | :--- | :------------ | :---------- |
+| **`BackToHome`** | `src/components/ui/BackToHome/BackToHome.js` | Component | `window.CradleBackToHome` | Standardized back-to-home navigation pill. Mandatory for all minis. |
+| **`Button`** | `src/components/ui/Button/Button.js` | Component | `window.CradleButton` | Accessible button with variants (`primary`, `secondary`, `outline`, `ghost`, `danger`), sizes (`sm`, `md`, `lg`), icons, and loading states. |
+| **`Card`** | `src/components/ui/Card/Card.js` | Component | `window.CradleCard` | Modular container with `Card`, `CardHeader`, `CardContent`, and `CardFooter`. |
+| **`Navbar`** | `src/components/ui/Navbar/Navbar.js` | Component | `window.CradleNavbar` | Responsive header with brand logo, nav links, and mobile drawer. |
+| **`ThemeToggle`** | `src/components/ui/ThemeToggle/ThemeToggle.js` | Component | `window.CradleThemeToggle` | Dark/light theme switch with OS sync and localStorage persistence. |
+| **`tokens.css`** | `src/components/ui/tokens.css` | Styling | CSS Custom Properties | Standardized colors, borders, shadows, spacing, and typography variables. |
+| **`escapeHtml`** | `src/components/ui/escapeHtml.js` | Utility | `CradleEscape.escapeHtml` | Safe HTML escaping for user strings interpolated into `innerHTML`. |
+| **`storage`** | `src/components/ui/storage.js` | Utility | `window.CradleStorage` | Robust `localStorage` wrapper with JSON serialization, prefixes, and memory fallback. |
+| **`sanitizeHtml`** | `src/components/ui/sanitizeHtml.js` | Utility | `CradleSanitize.sanitizeHtml` | DOM-based HTML sanitizer stripping unsafe tags and scripts. |
+| **`sanitizeSvg`** | `src/components/ui/sanitizeSvg.js` | Utility | `CradleSanitize.sanitizeSvg` | SVG sanitizer and validator neutralizing embedded script vectors. |
+| **`sanitizeCss`** | `src/components/ui/sanitizeCss.js` | Utility | `window.CradleSanitizeCss` | Dynamic CSS property, value, declaration, and URL sanitizer. |
+| **`loadModelScripts`**| `src/components/ui/loadModelScripts.js` | Utility | `window.loadModelScripts` | Third-party script loader with SRI verification, timeouts, and fallbacks. |
+
+### When Minis Should Use Shared UI vs Custom UI
+
+To keep Cradle projects visually harmonious while preserving flexibility for creative experiments, contributors should apply the following criteria:
+
+- **Mandatory (MUST):**
+  - **`BackToHome.js`**: Every mini MUST include the Back-to-Home button so users can navigate back to the Cradle directory.
+  - **`CradleStorage`**: Every mini persisting user data, preferences, or high scores MUST use `CradleStorage` instead of raw `localStorage` calls (see [Storage Policy](STORAGE_POLICY.md)).
+  - **`escapeHtml` / `sanitizeHtml`**: Any dynamic or user-generated text inserted into the DOM MUST be escaped or sanitized to prevent XSS.
+
+- **Recommended (SHOULD):**
+  - **`tokens.css`**: Minis SHOULD link `tokens.css` to adopt Cradle's unified color scheme and typography.
+  - **`Button` / `Card`**: Minis SHOULD use the shared `Button` and `Card` components for standard form actions, controls, modal dialogs, and settings panels rather than writing duplicate CSS.
+  - **`ThemeToggle`**: Minis that support theme switching SHOULD reuse `ThemeToggle.js` to stay in sync with the root application theme.
+
+- **When Project-Specific Custom UI is Appropriate (MAY):**
+  - **Interactive canvases & visual games**: Fast real-time canvas games (e.g. `cannon-shooting`, `dot-game`) and visualizer simulations (`fourier-series-visualizer`, `pathfinding-visualizer`).
+  - **Bespoke musical and audio instruments**: Physical instrument layouts like piano keys (`piano`), guitar frets (`guitar`), and drum pads (`percussion`).
+  - **Custom game boards & domain editors**: Chess boards, ludo grids, circuit builder nodes, or terminal emulators that require specialized mechanics not covered by standard buttons or cards.
+
+### How to Consume Shared UI in Minis
+
+Minis reside at `projects/<category>/<slug>/`. Always link shared UI components and design tokens using relative paths:
+
+```html
+<!-- Design tokens -->
+<link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+
+<!-- Required back-to-home navigation -->
+<script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+
+<!-- Granular components and utilities as needed -->
+<script src="../../../src/components/ui/Button/Button.js" defer></script>
+<script src="../../../src/components/ui/storage.js"></script>
+```
+
+For full API specifications, interactive examples, and token lists, see the [Cradle UI Documentation](src/components/ui/README.md).
 
 ---
 
