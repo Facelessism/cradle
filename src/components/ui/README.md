@@ -29,10 +29,50 @@ Or load only what you need:
 
 ## Utilities
 
-| Utility    | File            | Global          |
-| ---------- | --------------- | --------------- |
-| EscapeHtml | `escapeHtml.js` | `CradleEscape`  |
-| Storage    | `storage.js`    | `CradleStorage` |
+| Utility        | File                 | Global           |
+| -------------- | -------------------- | ---------------- |
+| EscapeHtml     | `escapeHtml.js`      | `CradleEscape`   |
+| Storage        | `storage.js`         | `CradleStorage`  |
+| DiagramToolkit | `diagram-toolkit.js` | `DiagramToolkit` |
+
+## DiagramToolkit
+
+Shared diagramming and visual planning utility that generates Mermaid.js syntax for timelines, flowcharts, system architectures, and mind maps. Features full lifecycle management (`mount`, `teardown`, `cleanup`) to prevent event-listener leaks during single-page navigation or view re-renders.
+
+### Syntax Generation
+
+```js
+import { DiagramToolkit } from "/src/components/ui/diagram-toolkit.js";
+
+// Generate timeline
+const timeline = DiagramToolkit.generateTimeline("Project Plan", [
+  { period: "Q1", events: ["Research", "Specs"] },
+  { period: "Q2", events: ["Build", "QA"] }
+]);
+
+// Generate flowchart
+const flowchart = DiagramToolkit.generateFlowchart("TD", [
+  { from: "Start", to: "Process", label: "Step 1" },
+  { from: "Process", to: "End" }
+]);
+```
+
+### Lifecycle & Event Listener Cleanup
+
+When making diagram viewers interactive (keyboard shortcuts, resize observers, pan/zoom gestures), `DiagramToolkit` manages all attached listeners and provides explicit cleanup to avoid memory leaks:
+
+```js
+// Instance-based lifecycle
+const toolkit = new DiagramToolkit({ autoTeardownOnNavigation: true });
+toolkit.mount(containerElement);
+
+// Clean up listeners when navigating away or unmounting
+toolkit.teardown(); // or toolkit.cleanup()
+
+// Static convenience lifecycle
+DiagramToolkit.mount(containerElement);
+DiagramToolkit.teardown();
+```
 
 ## Storage
 
