@@ -610,7 +610,18 @@
       return null;
     }
 
-    return activeKeyToNote[key.toLowerCase()] || null;
+    const lower = key.toLowerCase();
+    if (activeKeyToNote[lower]) {
+      return activeKeyToNote[lower];
+    }
+    if (/^key[a-z0-9]$/i.test(key)) {
+      const stripped = key.slice(3).toLowerCase();
+      if (activeKeyToNote[stripped]) {
+        return activeKeyToNote[stripped];
+      }
+    }
+
+    return null;
   }
 
   function getKeyFromNote(note) {
@@ -659,7 +670,7 @@
       duplicateNotes: [],
       missingNotes: [],
       invalidMappings: [],
-      sanitizedMapping: null,
+      sanitizedMapping: {},
     };
 
     if (
@@ -708,7 +719,7 @@
     for (const [rawKey, rawNote] of entries) {
       if (typeof rawKey !== "string" || rawKey.trim().length === 0) {
         result.isValid = false;
-        const msg = `Invalid key: "${rawKey}". Key must be a non-empty string.`;
+        const msg = `Empty or blank key identifier: "${rawKey}". Key must be a non-empty string.`;
         result.errors.push(msg);
         result.invalidMappings.push({ key: rawKey, note: rawNote, reason: msg });
         continue;
@@ -743,14 +754,20 @@
       }
       seenNotes.get(note).push(key);
 
-      if (!allowDuplicateNotes && seenNotes.get(note).length > 1) {
-        result.isValid = false;
-        const msg = `Duplicate note assignment: note "${note}" is assigned to multiple keys (${seenNotes.get(note).join(", ")}).`;
-        result.errors.push(msg);
-        if (!result.duplicateNotes.includes(note)) {
-          result.duplicateNotes.push(note);
+      if (seenNotes.get(note).length > 1) {
+        if (!allowDuplicateNotes) {
+          result.isValid = false;
+          const msg = `Duplicate note assignment: note "${note}" is assigned to multiple keys (${seenNotes.get(note).join(", ")}).`;
+          result.errors.push(msg);
+          if (!result.duplicateNotes.includes(note)) {
+            result.duplicateNotes.push(note);
+          }
+          result.invalidMappings.push({ key, note, reason: msg });
+        } else {
+          result.warnings.push(
+            `Note "${note}" is assigned to multiple keys (${seenNotes.get(note).join(", ")}).`
+          );
         }
-        result.invalidMappings.push({ key, note, reason: msg });
       }
 
       sanitized[key] = note;
@@ -773,9 +790,7 @@
       }
     }
 
-    if (result.isValid) {
-      result.sanitizedMapping = Object.freeze(sanitized);
-    }
+    result.sanitizedMapping = Object.freeze(sanitized);
 
     return result;
   }
@@ -846,7 +861,7 @@
       duplicateNotes: [],
       missingNotes: [],
       invalidMappings: [],
-      sanitizedMapping: null,
+      sanitizedMapping: {},
     };
 
     if (
@@ -997,12 +1012,20 @@
       }
     }
 
-    if (result.isValid) {
-      result.sanitizedMapping = Object.freeze({
-        midiToNote: Object.freeze(midiToNote),
-        noteToMidi: Object.freeze(noteToMidi),
-      });
-    }
+    const sanitizedObj = Object.assign({}, midiToNote);
+    Object.defineProperty(sanitizedObj, "midiToNote", {
+      value: Object.freeze({ ...midiToNote }),
+      enumerable: false,
+      configurable: true,
+      writable: true,
+    });
+    Object.defineProperty(sanitizedObj, "noteToMidi", {
+      value: Object.freeze({ ...noteToMidi }),
+      enumerable: false,
+      configurable: true,
+      writable: true,
+    });
+    result.sanitizedMapping = Object.freeze(sanitizedObj);
 
     return result;
   }
