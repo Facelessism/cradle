@@ -151,19 +151,31 @@ Cradle/
 git clone https://github.com/<yourusername>/cradle.git
 ```
 
-1. Open the local repository
+2. Open the local repository
 
 ```bash
 cd cradle
 ```
 
-1. Open the Landing page
+3. Install dependencies
+
+```bash
+npm install
+```
+
+4. Open the Landing page
 
 - Simply just open the `index.html` on your browser... OR
-- Use a local server using Python(recomended by me)
+- Use a local server using Python (recommended by me)
 
 ```bash
 python -m http.server 8000
+```
+
+- Or use the npm development server
+
+```bash
+npm run dev
 ```
 
 Then visit
@@ -193,6 +205,28 @@ For example:
 ```text
 http://localhost:8000/projects/aiml/image-classifier/
 ```
+
+### Run the tests
+
+Run the automated test suite:
+
+```bash
+npm test
+```
+
+Run the complete healthcheck suite (formatting check, project validations, security audit, and tests):
+
+```bash
+npm run healthcheck
+```
+
+Check code formatting:
+
+```bash
+npm run check-format
+```
+
+For more details on testing strategies, CI validation gates, and adding new tests, see [TESTING.md](TESTING.md).
 
 ## ⌨️ Keyboard Shortcuts
 
