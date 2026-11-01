@@ -129,7 +129,8 @@ Key responsibilities:
 - **`undoMove()` / `redoMove()`** — restore previous board states from the `history` and `redoStack` arrays.
 - **`boardToFEN()`** — exports the full game state (board, active color, castling rights, en passant target, half-move clock, full-move number) to FEN notation.
 - **`loadFEN(fenString)`** — imports a FEN string, restoring board position, active color, castling rights, en passant square, and move counters.
-- **`triggerAI()`** — creates a new Web Worker, sends the current board state, and awaits the response.
+- **`triggerAI()`** — creates/reuses the Web Worker, sends current board state, handles retry backoff on runtime errors, and falls back to local 2-player mode if workers fail.
+- **`fallbackToLocalMode(message)`** — cancels active worker search, resets mode to local 2-player, hides difficulty selector, and announces an accessible non-blocking status message.
 - **`generatePGN()`** — assembles the full game record in PGN format for clipboard export.
 
 ### `style.css`
@@ -145,7 +146,7 @@ Provides the full visual design: board colours, piece glyphs (Unicode chess symb
 - Check, checkmate, and stalemate detection
 - Undo/redo, board flipping, captured piece display, and move history
 - PGN export and FEN import/export
-- AI difficulty levels (Easy = depth 1, Medium = 3, Hard = 4) running off-thread in a Web Worker
+- AI difficulty levels (Easy = depth 1, Medium = 3, Hard = 4) running off-thread in a Web Worker, with graceful fallback to 2-player local mode and accessible screen-reader notices if workers are unavailable
 
 ---
 
@@ -156,7 +157,7 @@ Provides the full visual design: board colours, piece glyphs (Unicode chess symb
 | HTML5               | Page shell, board grid, side panel, controls               |
 | CSS3                | Board colours, piece glyphs, highlights, responsive layout |
 | Vanilla JavaScript  | Rules engine, AI search, and UI controller                 |
-| Web Workers         | Off-main-thread AI computation                             |
+| Web Workers         | Off-main-thread AI computation with fallback to local mode |
 | navigator.clipboard | Copy PGN feature                                           |
 
 ---

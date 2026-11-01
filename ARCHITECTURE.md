@@ -31,6 +31,7 @@ cradle/
 │
 ├── scripts/
 │   ├── generate-projects.js      # Scans projects/ and (re)writes data/projects.json
+│   ├── generate-readme-table.js  # Generates and validates the README.md projects table against data/projects.json
 │   ├── validate-projects-sync.js # Validates data/projects.json synchronization against projects/ and generator output
 │   ├── theme.js                  # Light/dark theme init + toggle, persisted to localStorage
 │   └── worker.js                 # Web Worker offloading search/category filtering from the main thread
@@ -119,6 +120,7 @@ graph TD
 | `style.css`                    | Landing page visual styling                                                                                                                 |
 | `data/projects.json`           | Generated flat list of `{ title, category, path }` for every project                                                                        |
 | `scripts/generate-projects.js` | Build-time script that walks `projects/` and regenerates `data/projects.json`                                                               |
+| `scripts/generate-readme-table.js` | Renders and synchronizes the available projects table in `README.md` from `data/projects.json`                                            |
 | `scripts/theme.js`             | Light/dark theme state, `localStorage` persistence, toggle button wiring                                                                    |
 | `scripts/worker.js`            | Web Worker that filters the project list by category and search query off the main thread                                                   |
 | `src/components/ui/*`          | Shared UI primitives (Button, Card, ThemeToggle, Navbar, BackToHome), the shared HTML escaping utility (`escapeHtml.js`), and design tokens |

@@ -250,13 +250,7 @@ function isValidMove(move) {
 function makeMove(move) {
   if (!isValidMove(move)) {
     console.error("Invalid move received:", move);
-    if (aiWorkerRetryTimer) {
-    clearTimeout(aiWorkerRetryTimer);
-    aiWorkerRetryTimer = null;
-  }
-  isComputerThinking = false;
-    setStatus("AI returned an invalid move.");
-    render();
+    fallbackToLocalMode("AI returned an invalid move, switched to 2-player mode.");
     return;
   }
 
@@ -264,13 +258,7 @@ function makeMove(move) {
 
   if (!movingPiece) {
     console.error("No piece found for move:", move);
-    if (aiWorkerRetryTimer) {
-    clearTimeout(aiWorkerRetryTimer);
-    aiWorkerRetryTimer = null;
-  }
-  isComputerThinking = false;
-    setStatus("AI returned an invalid move.");
-    render();
+    fallbackToLocalMode("AI returned an invalid move, switched to 2-player mode.");
     return;
   }
 
@@ -582,8 +570,186 @@ function logChessWorkerFailure({ errorType, message, context }) {
   return logEntry;
 }
 
+function isWorkerSupported() {
+  try {
+    return (
+      typeof window !== "undefined" &&
+      typeof window.Worker !== "undefined" &&
+      typeof Worker !== "undefined"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function fallbackToLocalMode(
+  message = "AI unavailable in this browser, switched to 2-player mode."
+) {
+  if (aiWorker) {
+    try {
+      aiWorker.terminate();
+    } catch {
+      // ignore
+    }
+    aiWorker = null;
+  }
+
+  if (aiWorkerRetryTimer) {
+    clearTimeout(aiWorkerRetryTimer);
+    aiWorkerRetryTimer = null;
+  }
+
+  isComputerThinking = false;
+  aiWorkerRetryCount = 0;
+
+  const gm = document.getElementById("gameMode");
+  if (gm) gm.value = "local";
+  document.getElementById("aiDifficulty")?.classList.add("hidden");
+
+  setStatus(message);
+  render();
+}
+
+function initAIWorker() {
+  if (aiWorker) return aiWorker;
+
+  if (!isWorkerSupported()) {
+    throw new Error("Web Workers are not supported in this browser.");
+  }
+
+  const worker = new Worker("ai-worker.js");
+
+  worker.onmessage = function (e) {
+    const data = e.data || {};
+
+    // Ignore anything that does not match the worker's documented message
+    // shape before acting on it.
+    const reportError = getReportError(data);
+    if (reportError) {
+      logChessWorkerFailure({
+        errorType: "InvalidReportError",
+        message: `Unexpected worker message: ${reportError}`,
+        context: "onmessage",
+      });
+
+      fallbackToLocalMode(
+        "AI unavailable in this browser, switched to 2-player mode."
+      );
+      return;
+    }
+
+    if (data.type === "progress") {
+      setStatus(
+        `Black is thinking... Depth ${data.depth}/${data.maxDepth} (${data.completed}/${data.total} moves)`
+      );
+      return;
+    }
+
+    if (data.type === "depthComplete") {
+      setStatus(
+        `Black is thinking... Depth ${data.depth}/${data.maxDepth} completed.`
+      );
+      return;
+    }
+
+    if (data.type === "complete" || data.type === "timeout") {
+      aiWorkerRetryCount = 0;
+      if (aiWorkerRetryTimer) {
+        clearTimeout(aiWorkerRetryTimer);
+        aiWorkerRetryTimer = null;
+      }
+      isComputerThinking = false;
+
+      if (data.move) {
+        if (data.type === "timeout") {
+          setStatus(
+            `AI search timed out after reaching depth ${data.depth}. Playing the best move found.`
+          );
+        }
+
+        makeMove(data.move);
+      } else {
+        updateGameState();
+        render();
+      }
+
+      return;
+    }
+
+    if (data.type === "error") {
+      logChessWorkerFailure({
+        errorType: "WorkerLogicError",
+        message: data.message,
+        context: "onmessage",
+      });
+
+      fallbackToLocalMode(
+        "AI unavailable in this browser, switched to 2-player mode."
+      );
+    }
+  };
+
+  worker.onerror = function (error) {
+    logChessWorkerFailure({
+      errorType: "WorkerRuntimeError",
+      message: error?.message || "AI worker error",
+      context: "onerror",
+    });
+
+    if (aiWorkerRetryTimer) {
+      clearTimeout(aiWorkerRetryTimer);
+      aiWorkerRetryTimer = null;
+    }
+    isComputerThinking = false;
+    if (aiWorkerRetryCount < MAX_AI_RETRIES) {
+      const delay = Math.min(
+        INITIAL_AI_BACKOFF_DELAY * Math.pow(2, aiWorkerRetryCount),
+        4000
+      );
+      aiWorkerRetryCount++;
+      setStatus(
+        `AI error. Retrying in ${delay}ms (attempt ${aiWorkerRetryCount}/${MAX_AI_RETRIES})...`
+      );
+      try {
+        worker.terminate();
+      } catch {
+        // ignore
+      }
+      aiWorker = null;
+      aiWorkerRetryTimer = setTimeout(() => {
+        aiWorkerRetryTimer = null;
+        checkTriggerAI();
+      }, delay);
+      render();
+      return;
+    }
+
+    fallbackToLocalMode(
+      "AI unavailable in this browser, switched to 2-player mode."
+    );
+  };
+
+  aiWorker = worker;
+  return aiWorker;
+}
+
 function triggerAI() {
   cancelAI();
+
+  try {
+    initAIWorker();
+  } catch (error) {
+    logChessWorkerFailure({
+      errorType: "WorkerInstantiationError",
+      message: error?.message || "Failed to initialize AI worker",
+      context: "triggerAI",
+    });
+    fallbackToLocalMode(
+      "AI unavailable in this browser, switched to 2-player mode."
+    );
+    return;
+  }
+
   isComputerThinking = true;
 
   setStatus(
@@ -591,162 +757,41 @@ function triggerAI() {
       " Computer is thinking..."
   );
 
-  if (!aiWorker) {
-    aiWorker = new Worker("ai-worker.js");
-
-    aiWorker.onmessage = function (e) {
-      const data = e.data || {};
-
-      // Ignore anything that does not match the worker's documented message
-      // shape before acting on it.
-      const reportError = getReportError(data);
-      if (reportError) {
-        logChessWorkerFailure({
-          errorType: "InvalidReportError",
-          message: `Unexpected worker message: ${reportError}`,
-          context: "onmessage",
-        });
-
-        if (aiWorkerRetryTimer) {
-    clearTimeout(aiWorkerRetryTimer);
-    aiWorkerRetryTimer = null;
-  }
-  isComputerThinking = false;
-        setStatus(
-          "AI error: unexpected worker message. Switching to local mode."
-        );
-
-        const gm = document.getElementById("gameMode");
-        if (gm) gm.value = "local";
-        document.getElementById("aiDifficulty")?.classList.add("hidden");
-
-        render();
-        return;
-      }
-
-      if (data.type === "progress") {
-        setStatus(
-          `Black is thinking... Depth ${data.depth}/${data.maxDepth} (${data.completed}/${data.total} moves)`
-        );
-        return;
-      }
-
-      if (data.type === "depthComplete") {
-        setStatus(
-          `Black is thinking... Depth ${data.depth}/${data.maxDepth} completed.`
-        );
-        return;
-      }
-
-      if (data.type === "complete" || data.type === "timeout") {
-        aiWorkerRetryCount = 0;
-        if (aiWorkerRetryTimer) {
-    clearTimeout(aiWorkerRetryTimer);
-    aiWorkerRetryTimer = null;
-  }
-  isComputerThinking = false;
-
-        if (data.move) {
-          if (data.type === "timeout") {
-            setStatus(
-              `AI search timed out after reaching depth ${data.depth}. Playing the best move found.`
-            );
-          }
-
-          makeMove(data.move);
-        } else {
-          updateGameState();
-          render();
-        }
-
-        return;
-      }
-
-      if (data.type === "error") {
-        logChessWorkerFailure({
-          errorType: "WorkerLogicError",
-          message: data.message,
-          context: "onmessage",
-        });
-
-        if (aiWorkerRetryTimer) {
-    clearTimeout(aiWorkerRetryTimer);
-    aiWorkerRetryTimer = null;
-  }
-  isComputerThinking = false;
-        setStatus(`AI error: ${data.message || "Unknown error."}`);
-
-        const gm = document.getElementById("gameMode");
-        if (gm) gm.value = "local";
-        document.getElementById("aiDifficulty")?.classList.add("hidden");
-        render();
-      }
-    };
-
-    aiWorker.onerror = function (error) {
-      logChessWorkerFailure({
-        errorType: "WorkerRuntimeError",
-        message: error?.message || "AI worker error",
-        context: "onerror",
-      });
-
-      if (aiWorkerRetryTimer) {
-    clearTimeout(aiWorkerRetryTimer);
-    aiWorkerRetryTimer = null;
-  }
-  isComputerThinking = false;
-      if (aiWorkerRetryCount < MAX_AI_RETRIES) {
-        const delay = Math.min(
-          INITIAL_AI_BACKOFF_DELAY * Math.pow(2, aiWorkerRetryCount),
-          4000
-        );
-        aiWorkerRetryCount++;
-        setStatus(
-          `AI error. Retrying in ${delay}ms (attempt ${aiWorkerRetryCount}/${MAX_AI_RETRIES})...`
-        );
-        aiWorker.terminate();
-        aiWorker = null;
-        aiWorkerRetryTimer = setTimeout(() => {
-          aiWorkerRetryTimer = null;
-          checkTriggerAI();
-        }, delay);
-        render();
-        return;
-      }
-
-      setStatus("AI error. Switching to manual mode.");
-
-      const gm = document.getElementById("gameMode");
-      if (gm) gm.value = "local";
-      document.getElementById("aiDifficulty")?.classList.add("hidden");
-
-      aiWorker.terminate();
-      aiWorker = null;
-
-      render();
-    };
-  }
-
   const aiDiff = document.getElementById("aiDifficulty");
   const depth = aiDiff ? parseInt(aiDiff.value, 10) : 3;
 
   aiSearchId++;
 
-  aiWorker.postMessage({
-    type: "search",
-    searchId: aiSearchId,
-    board: cloneBoard(board),
-    color: turn,
-    depth,
-    enPassantTarget: enPassantTarget ? { ...enPassantTarget } : null,
-    timeLimit: 5000,
-  });
+  try {
+    aiWorker.postMessage({
+      type: "search",
+      searchId: aiSearchId,
+      board: cloneBoard(board),
+      color: turn,
+      depth,
+      enPassantTarget: enPassantTarget ? { ...enPassantTarget } : null,
+      timeLimit: 5000,
+    });
+  } catch (error) {
+    logChessWorkerFailure({
+      errorType: "WorkerPostMessageError",
+      message: error?.message || "Failed to post message to AI worker",
+      context: "triggerAI",
+    });
+    fallbackToLocalMode(
+      "AI unavailable in this browser, switched to 2-player mode."
+    );
+  }
 }
 
 function cancelAI() {
   if (aiWorker) {
     aiSearchId++;
-    aiWorker.postMessage({ type: "cancel" });
+    try {
+      aiWorker.postMessage({ type: "cancel" });
+    } catch {
+      // ignore
+    }
   }
 
   if (aiWorkerRetryTimer) {
@@ -977,7 +1022,20 @@ document.getElementById("gameMode")?.addEventListener("change", e => {
   const aiDiff = document.getElementById("aiDifficulty");
 
   if (e.target.value === "computer") {
-    aiDiff?.classList.remove("hidden");
+    try {
+      initAIWorker();
+      aiDiff?.classList.remove("hidden");
+    } catch (error) {
+      logChessWorkerFailure({
+        errorType: "WorkerUnavailableError",
+        message: error?.message || "AI worker is unavailable",
+        context: "gameModeChange",
+      });
+      fallbackToLocalMode(
+        "AI unavailable in this browser, switched to 2-player mode."
+      );
+      return;
+    }
   } else {
     cancelAI();
     aiDiff?.classList.add("hidden");
@@ -1211,3 +1269,32 @@ if (copyFENBtn) {
 }
 
 newGame();
+
+if (document.getElementById("gameMode")?.value === "computer") {
+  try {
+    initAIWorker();
+  } catch (error) {
+    logChessWorkerFailure({
+      errorType: "WorkerUnavailableError",
+      message: error?.message || "AI worker is unavailable",
+      context: "init",
+    });
+    fallbackToLocalMode(
+      "AI unavailable in this browser, switched to 2-player mode."
+    );
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.ChessGame = {
+    isWorkerSupported,
+    initAIWorker,
+    fallbackToLocalMode,
+    triggerAI,
+    cancelAI,
+    getAIWorker: () => aiWorker,
+    isComputerThinking: () => isComputerThinking,
+    getStatus: () => (statusElement ? statusElement.textContent : ""),
+    getGameMode: () => document.getElementById("gameMode")?.value,
+  };
+}
