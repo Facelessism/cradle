@@ -29,10 +29,14 @@ Or load only what you need:
 
 ## Utilities
 
-| Utility    | File            | Global          |
-| ---------- | --------------- | --------------- |
-| EscapeHtml | `escapeHtml.js` | `CradleEscape`  |
-| Storage    | `storage.js`    | `CradleStorage` |
+| Utility | File | Global | Description |
+| :--- | :--- | :--- | :--- |
+| **EscapeHtml** | `escapeHtml.js` | `CradleEscape.escapeHtml` | Escapes `& < > " '` for safe dynamic HTML interpolation. |
+| **Storage** | `storage.js` | `window.CradleStorage` | Safe localStorage wrapper with JSON handling, namespaces, and in-memory fallback. |
+| **SanitizeHtml** | `sanitizeHtml.js` | `CradleSanitize.sanitizeHtml` | DOM-based HTML sanitizer stripping unsafe tags, attributes, and script vectors. |
+| **SanitizeSvg** | `sanitizeSvg.js` | `CradleSanitize.sanitizeSvg` | Validates and sanitizes SVG markup to prevent script execution in vector graphics. |
+| **SanitizeCss** | `sanitizeCss.js` | `window.CradleSanitizeCss` | Sanitizes CSS properties, declarations, values, and URLs for dynamically applied styles. |
+| **LoadModelScripts** | `loadModelScripts.js` | `window.loadModelScripts` | Loads external scripts and models with SRI integrity verification and timeout fallbacks. |
 
 ## Storage
 
@@ -410,46 +414,83 @@ No polyfills required for ES6+, CSS custom properties, or `backdrop-filter`.
 src/
 └── components/
     └── ui/
-        ├── tokens.css                ← Design tokens (CSS variables)
-        ├── escapeHtml.js             ← Shared HTML escaping utility
-        ├── storage.js                ← Shared localStorage utility
-        ├── index.js                  ← Barrel: loads all components
-        ├── README.md                 ← This file
+        ├── tokens.css                ← Shared design tokens (CSS custom properties)
+        ├── escapeHtml.js             ← Safe HTML escaping utility
+        ├── storage.js                ← Safe localStorage wrapper with namespace support
+        ├── sanitizeHtml.js           ← HTML markup sanitizer against XSS
+        ├── sanitizeSvg.js            ← SVG sanitizer & integrity validator
+        ├── sanitizeCss.js            ← Dynamic CSS property, value, and URL sanitizer
+        ├── loadModelScripts.js       ← Remote model/script loader with integrity & timeouts
+        ├── index.js                  ← Barrel bundle: loads all components and utilities
+        ├── demo.html                 ← Component showcase and manual verification harness
+        ├── README.md                 ← This documentation file
         ├── Button/
-        │   └── Button.js
+        │   └── Button.js             ← Button primitive with variants, sizes & loading states
         ├── Card/
-        │   └── Card.js
+        │   └── Card.js               ← Modular card container (Header, Content, Footer)
         ├── ThemeToggle/
-        │   └── ThemeToggle.js
+        │   ├── README.md
+        │   └── ThemeToggle.js        ← Dark/light theme toggle with OS sync
         ├── Navbar/
-        │   └── Navbar.js
-        └── BackToHome/
-            └── BackToHome.js
+        │   └── Navbar.js             ← Responsive header navbar with mobile drawer
+        ├── BackToHome/
+        │   └── BackToHome.js         ← Standardized back-to-home navigation pill
+        └── utils/
+            └── categoryFilter.js     ← Category mapping and search filtering utility
 ```
 
 ---
 
-## Shared UI Usage Policy
+## Shared UI Usage Policy & Contributor Decision Guide
 
-Mini-projects should use the shared components in `src/components/ui/` when an existing component provides the UI pattern they need. This keeps common interactions and styling consistent across projects.
+To ensure consistency, accessibility compliance, and visual cohesion across all Cradle mini-projects, contributors must follow this usage policy when creating new projects or updating existing ones.
 
-### When to use shared UI components
+### 1. Component & Utility Support Matrix
 
-- **Use an existing component** when it matches the required UI pattern, such as buttons, cards, navigation, theme toggles, or the back-to-home control.
-- **Use the shared design tokens** from `tokens.css` when styling shared UI so projects remain visually consistent.
-- **Load only the components you need** when a project does not require the full UI bundle.
-- **Prefer extending or improving a shared component** when the same UI requirement is likely to be useful across multiple projects.
+The table below defines every supported shared UI primitive and its adoption expectation for mini-projects:
 
-### When a project-specific component is appropriate
+| Component / Utility | Type | Adoption Tier | Supported Use Cases |
+| :--- | :--- | :--- | :--- |
+| **`BackToHome`** | Component | **MUST** | **Mandatory on all minis.** Ensures users can return to the Cradle directory. Include via `<script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>` or `data-cradle-back-to-home`. |
+| **`CradleStorage`** | Utility | **MUST** | **Mandatory for all local persistence.** Any mini that reads or writes saved data, high scores, or options must use `CradleStorage` instead of direct `localStorage` calls (per [STORAGE_POLICY.md](../../../STORAGE_POLICY.md)). |
+| **`escapeHtml`** / **`sanitizeHtml`** | Utility | **MUST** | **Mandatory for dynamic DOM insertions.** Whenever untrusted, user-supplied, or external content is inserted into `innerHTML`, you must escape or sanitize it. |
+| **`tokens.css`** | Design Tokens | **SHOULD** | **Recommended for styling.** Provides standardized colors, surfaces, borders, radii, fonts, and transitions that automatically adapt to light/dark themes. |
+| **`Button`** | Component | **SHOULD** | **Recommended for standard controls.** Use for primary actions, secondary triggers, modal buttons, and reset options (`primary`, `secondary`, `outline`, `ghost`, `danger`). |
+| **`Card`** | Component | **SHOULD** | **Recommended for grouped content.** Use for control panels, score boards, tool settings, and modal containers. |
+| **`ThemeToggle`** | Component | **SHOULD** | **Recommended when offering theme switches.** Syncs theme changes cleanly across Cradle with zero extra boilerplate. |
+| **`Navbar`** | Component | **SHOULD** | **Recommended for multi-view minis.** Use when a project contains several sub-tools, tabs, or views requiring header navigation. |
+| **`sanitizeSvg`** | Utility | **SHOULD** | **Recommended for vector uploads.** Use whenever parsing or previewing user-uploaded SVGs to ensure script tags and event handlers are neutralized. |
+| **`sanitizeCss`** | Utility | **SHOULD** | **Recommended for CSS generators & dev tools.** Use when evaluating or applying user-generated CSS properties, values, or URLs. |
+| **`loadModelScripts`** | Utility | **SHOULD** | **Recommended for remote AI/ML libraries.** Use when fetching allowed third-party model scripts with SRI checks and progressive fallback handling. |
 
-A mini-project may keep its own UI implementation when:
+### 2. When to Use Shared UI vs. Project-Specific UI
 
-- No existing shared component matches the required behaviour or design.
-- The UI is specific to the project's functionality and is unlikely to be reused.
-- Adopting a shared component would add unnecessary complexity.
+- **Use Shared UI Components When:**
+  - Standard interactive patterns (buttons, cards, headers, toggles, navigation) are needed.
+  - Consistent styling with Cradle design tokens and theme integration is desirable.
+  - Accessibility (WCAG 2.1 focus rings, ARIA roles, keyboard navigation) is required without writing custom boilerplate.
+  - Safe data storage, HTML escaping, or input sanitization is needed.
 
-When introducing a reusable UI pattern that could benefit multiple projects, consider adding it to `src/components/ui/` instead of duplicating the implementation.
+- **Project-Specific Custom UI is Appropriate When:**
+  - **Canvas & WebGL surfaces**: Creative coding, real-time particle simulations, games, and graphical visualizations (e.g. `cannon-shooting`, `pathfinding-visualizer`, `fourier-series-visualizer`).
+  - **Specialized domain instruments**: Tactile piano keys, guitar frets, drum pads, synthesizer knobs, audio meters, or custom sliders (e.g. `piano`, `guitar`, `percussion`).
+  - **Bespoke game controls & boards**: Interactive chess boards, ludo grids, monopoly tiles, and custom gamepad overlays where generic buttons/cards do not fit.
+  - **Specialized editors**: Syntax-highlighted code editors, terminal screens, or graphical circuit nodes.
 
-### Contributor guideline
+### 3. How Minis Should Include Shared UI
 
-Before adding a new shared-style component to a mini-project, check `src/components/ui/` first. Reuse an existing component when practical, and keep project-specific UI local when there is no suitable shared component.
+Since minis live in `projects/<category>/<slug>/`, always use relative paths pointing to `../../../src/components/ui/`:
+
+```html
+<!-- 1. Shared design tokens (optional but strongly recommended) -->
+<link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
+
+<!-- 2. Standardized Back to Home navigation (Required) -->
+<script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+
+<!-- 3. Granular components and utilities as needed -->
+<script src="../../../src/components/ui/Button/Button.js" defer></script>
+<script src="../../../src/components/ui/storage.js"></script>
+```
+
+Minis should load only the specific components and utilities they consume rather than loading the full bundle, ensuring optimal page load performance.
