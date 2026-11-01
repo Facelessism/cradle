@@ -478,13 +478,16 @@ src/
         ├── index.js                  ← Library registry & barrel loader
         ├── README.md                 ← This documentation
         ├── Button/
-        │   └── Button.js
+        │   └── Button.js             ← Button primitive with variants, sizes & loading states
         ├── Card/
-        │   └── Card.js
+        │   └── Card.js               ← Modular card container (Header, Content, Footer)
         ├── ThemeToggle/
-        │   └── ThemeToggle.js
+        │   ├── README.md
+        │   └── ThemeToggle.js        ← Dark/light theme toggle with OS sync
         ├── Navbar/
-        │   └── Navbar.js
-        └── BackToHome/
-            └── BackToHome.js
+        │   └── Navbar.js             ← Responsive header navbar with mobile drawer
+        ├── BackToHome/
+        │   └── BackToHome.js         ← Standardized back-to-home navigation pill
+        └── utils/
+            └── categoryFilter.js     ← Category mapping and search filtering utility
 ```
