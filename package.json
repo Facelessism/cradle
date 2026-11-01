@@ -8,7 +8,8 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
-    "generate": "node scripts/generate-projects.js",
+    "generate": "node scripts/generate-projects.js && node scripts/generate-readme-table.js",
+    "generate:readme": "node scripts/generate-readme-table.js",
     "validate:architecture": "node scripts/validate-architecture-docs.js",
     "validate:mini-projects": "node scripts/validate-mini-projects.js",
     "validate:mini-contract": "node scripts/validate-mini-contract.js",
@@ -16,10 +17,11 @@
     "validate:worker-integrity": "node scripts/validate-worker-integrity.js",
     "validate:no-dynamic-eval": "node scripts/validate-no-dynamic-eval.js",
     "validate:projects-sync": "node scripts/validate-projects-sync.js",
+    "validate:readme-table": "node scripts/generate-readme-table.js --check",
     "check:links": "node scripts/check-broken-links.js",
     "detect:duplicates": "node scripts/detect-duplicate-js.js",
     "audit:deps": "node scripts/audit-dependencies.js",
-    "healthcheck": "npm run check-format && npm run validate:projects-sync && npm run validate:mini-projects && npm run validate:demo-html && npm run validate:worker-integrity && npm run validate:no-dynamic-eval && npm run validate:architecture && npm run validate:a11y-labels && npm run check:links && npm run detect:duplicates -- --fail-on-dup && npm run audit:deps && npm test",
+    "healthcheck": "npm run check-format && npm run validate:projects-sync && npm run validate:readme-table && npm run validate:mini-projects && npm run validate:demo-html && npm run validate:worker-integrity && npm run validate:no-dynamic-eval && npm run validate:architecture && npm run validate:a11y-labels && npm run check:links && npm run detect:duplicates -- --fail-on-dup && npm run audit:deps && npm test",
     "validate:a11y-labels": "node scripts/validate-accessible-labels.js",
     "release:checksums": "node scripts/release-integrity.js --generate",
     "verify:release-integrity": "node scripts/release-integrity.js --verify",

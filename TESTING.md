@@ -42,6 +42,7 @@ Accessibility is a first-class citizen.
 The `projects/` tree is the source of truth for the site. Structural drift is prevented via validation scripts that run globally:
 
 - `validate-projects-sync.js`: Ensures `data/projects.json` perfectly matches the disk state, including each `thumbnailHash` (see [docs/ASSET_PIPELINE.md](docs/ASSET_PIPELINE.md)).
+- `generate-readme-table.js`: Ensures the projects table in `README.md` perfectly matches `data/projects.json` (`npm run validate:readme-table`).
 - `validate-mini-projects.js`: Ensures every project has an `index.html`, `style.css`, `script.js`, and `thumbnail.svg`.
 - `validate-architecture-docs.js`: Ensures every project maintains an `ARCHITECTURE.md`.
 - `validate-mini-contract.js`: Reports mini-project contract problems (see [docs/MINI_CONTRACT.md](docs/MINI_CONTRACT.md)); warning mode by default, `--strict` fails on errors.
@@ -62,6 +63,7 @@ For a PR to be merged into `main`, the pipeline **MUST** pass the following stag
 
 - **Architecture Integrity**: `npm run validate:architecture` (Ensures documentation exists).
 - **Project Synchronization**: `npm run validate:projects-sync` (Ensures the JSON registry matches the folders and is alphabetically sorted).
+- **README Table Synchronization**: `npm run validate:readme-table` (Ensures the rendered README.md projects table is synchronized with `data/projects.json`).
 - **Worker Integrity**: `npm run validate:worker-integrity` (Ensures Web Worker boundary security).
 
 ### Gate 3: Mini-Project Validation

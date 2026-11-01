@@ -55,6 +55,86 @@ Cradle/
 └── style.css                  # Core CSS design system
 ```
 
+## Available Projects
+
+<!-- projects-table-start -->
+
+| Name                          | Category     | Link                                                                                                       |
+| ----------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------- |
+| 2048 Game                     | games        | [projects/games/2048-game/](projects/games/2048-game/)                                                     |
+| Advanced QR Code Generator    | productivity | [projects/productivity/advanced-qr-code-generator/](projects/productivity/advanced-qr-code-generator/)     |
+| AI Circuit Builder            | aiml         | [projects/aiml/ai-circuit-builder/](projects/aiml/ai-circuit-builder/)                                     |
+| API Response Inspector        | dev-tools    | [projects/dev-tools/api-response-inspector/](projects/dev-tools/api-response-inspector/)                   |
+| ASCII Camera                  | misc         | [projects/misc/ascii-camera/](projects/misc/ascii-camera/)                                                 |
+| Attendance Tracker            | productivity | [projects/productivity/attendance-tracker/](projects/productivity/attendance-tracker/)                     |
+| Audio Spectrogram Analyzer    | misc         | [projects/misc/audio-spectrogram-analyzer/](projects/misc/audio-spectrogram-analyzer/)                     |
+| Audio Waveform Generator      | misc         | [projects/misc/audio-waveform-generator/](projects/misc/audio-waveform-generator/)                         |
+| Avatar Creator                | misc         | [projects/misc/avatar-creator/](projects/misc/avatar-creator/)                                             |
+| Brain Dump Collector          | productivity | [projects/productivity/brain-dump-collector/](projects/productivity/brain-dump-collector/)                 |
+| Browser Storage Inspector     | dev-tools    | [projects/dev-tools/browser-storage-inspector/](projects/dev-tools/browser-storage-inspector/)             |
+| Cannon Shooting               | games        | [projects/games/cannon-shooting/](projects/games/cannon-shooting/)                                         |
+| Chess                         | games        | [projects/games/chess/](projects/games/chess/)                                                             |
+| Collaborative Whiteboard      | misc         | [projects/misc/collaborative-whiteboard/](projects/misc/collaborative-whiteboard/)                         |
+| Color Contrast Checker        | dev-tools    | [projects/dev-tools/color-contrast-checker/](projects/dev-tools/color-contrast-checker/)                   |
+| Color Palette Generator       | editor       | [projects/editor/color-palette-generator/](projects/editor/color-palette-generator/)                       |
+| CPU Emulator                  | dev-tools    | [projects/dev-tools/cpu-emulator/](projects/dev-tools/cpu-emulator/)                                       |
+| CSS Clamp Calculator          | dev-tools    | [projects/dev-tools/css-clamp-calculator/](projects/dev-tools/css-clamp-calculator/)                       |
+| CSS Gradient Generator        | editor       | [projects/editor/css-gradient-generator/](projects/editor/css-gradient-generator/)                         |
+| CSS Grid Generator            | dev-tools    | [projects/dev-tools/css-grid-generator/](projects/dev-tools/css-grid-generator/)                           |
+| CSS Shape Designer            | editor       | [projects/editor/css-shape-designer/](projects/editor/css-shape-designer/)                                 |
+| CSV Data Cleaner              | file-tools   | [projects/file-tools/csv-data-cleaner/](projects/file-tools/csv-data-cleaner/)                             |
+| Cyberpunk Pixel Art Generator | misc         | [projects/misc/cyberpunk-pixel-art-generator/](projects/misc/cyberpunk-pixel-art-generator/)               |
+| Dot Game                      | games        | [projects/games/dot-game/](projects/games/dot-game/)                                                       |
+| Encoding Toolkit              | dev-tools    | [projects/dev-tools/encoding-toolkit/](projects/dev-tools/encoding-toolkit/)                               |
+| Feature Flag Playground       | dev-tools    | [projects/dev-tools/feature-flag-playground/](projects/dev-tools/feature-flag-playground/)                 |
+| File Difference Visualizer    | file-tools   | [projects/file-tools/file-difference-visualizer/](projects/file-tools/file-difference-visualizer/)         |
+| Flashcard Study               | productivity | [projects/productivity/flashcard-study/](projects/productivity/flashcard-study/)                           |
+| Fourier Series Visualizer     | math         | [projects/math/fourier-series-visualizer/](projects/math/fourier-series-visualizer/)                       |
+| Graph Theory Explorer         | math         | [projects/math/graph-theory-explorer/](projects/math/graph-theory-explorer/)                               |
+| Guitar                        | instruments  | [projects/instruments/guitar/](projects/instruments/guitar/)                                               |
+| Guzheng                       | instruments  | [projects/instruments/guzheng/](projects/instruments/guzheng/)                                             |
+| Image Classifier              | aiml         | [projects/aiml/image-classifier/](projects/aiml/image-classifier/)                                         |
+| Image Metadata Explorer       | file-tools   | [projects/file-tools/image-metadata-explorer/](projects/file-tools/image-metadata-explorer/)               |
+| Invoice Generator             | productivity | [projects/productivity/invoice-generator/](projects/productivity/invoice-generator/)                       |
+| JSON Converter                | dev-tools    | [projects/dev-tools/json-converter/](projects/dev-tools/json-converter/)                                   |
+| JSON Tree Viewer              | dev-tools    | [projects/dev-tools/json-tree-viewer/](projects/dev-tools/json-tree-viewer/)                               |
+| Knowledge Graph               | productivity | [projects/productivity/knowledge-graph/](projects/productivity/knowledge-graph/)                           |
+| Ludo Game                     | games        | [projects/games/ludo-game/](projects/games/ludo-game/)                                                     |
+| Markdown Editor               | editor       | [projects/editor/markdown-editor/](projects/editor/markdown-editor/)                                       |
+| Markdown Resume Generator     | editor       | [projects/editor/markdown-resume-generator/](projects/editor/markdown-resume-generator/)                   |
+| Matrix Playground             | math         | [projects/math/matrix-playground/](projects/math/matrix-playground/)                                       |
+| Meme Generator                | misc         | [projects/misc/meme-generator/](projects/misc/meme-generator/)                                             |
+| Memory Flip Game              | games        | [projects/games/memory-flip-game/](projects/games/memory-flip-game/)                                       |
+| Monopoly                      | games        | [projects/games/monopoly/](projects/games/monopoly/)                                                       |
+| Morse Code Studio             | misc         | [projects/misc/morse-code-studio/](projects/misc/morse-code-studio/)                                       |
+| Neural Network Playground     | aiml         | [projects/aiml/neural-network-playground/](projects/aiml/neural-network-playground/)                       |
+| Pathfinding Visualizer        | math         | [projects/math/pathfinding-visualizer/](projects/math/pathfinding-visualizer/)                             |
+| Percussion                    | instruments  | [projects/instruments/percussion/](projects/instruments/percussion/)                                       |
+| Periodic Table                | misc         | [projects/misc/periodic-table/](projects/misc/periodic-table/)                                             |
+| Piano                         | instruments  | [projects/instruments/piano/](projects/instruments/piano/)                                                 |
+| Pomodoro Infinity Timer       | productivity | [projects/productivity/pomodoro-infinity-timer/](projects/productivity/pomodoro-infinity-timer/)           |
+| Pomodoro Timer                | productivity | [projects/productivity/pomodoro-timer/](projects/productivity/pomodoro-timer/)                             |
+| Procedural Dungeon Generator  | games        | [projects/games/procedural-dungeon-generator/](projects/games/procedural-dungeon-generator/)               |
+| Reading Progress Tracker      | productivity | [projects/productivity/reading-progress-tracker/](projects/productivity/reading-progress-tracker/)         |
+| Regex Visualizer              | dev-tools    | [projects/dev-tools/regex-visualizer/](projects/dev-tools/regex-visualizer/)                               |
+| Snake Game                    | games        | [projects/games/snake-game/](projects/games/snake-game/)                                                   |
+| Sound Wave Visualizer         | misc         | [projects/misc/sound-wave-visualizer/](projects/misc/sound-wave-visualizer/)                               |
+| Stone Paper Scissors Game     | games        | [projects/games/stone-paper-scissors-game/](projects/games/stone-paper-scissors-game/)                     |
+| Sudoku Solver                 | games        | [projects/games/sudoku-solver/](projects/games/sudoku-solver/)                                             |
+| Terminal Portfolio Generator  | productivity | [projects/productivity/terminal-portfolio-generator/](projects/productivity/terminal-portfolio-generator/) |
+| Text Diff Checker             | dev-tools    | [projects/dev-tools/text-diff-checker/](projects/dev-tools/text-diff-checker/)                             |
+| Time Blocking Planner         | productivity | [projects/productivity/time-blocking-planner/](projects/productivity/time-blocking-planner/)               |
+| Typing Speed Racer            | games        | [projects/games/typing-speed-racer/](projects/games/typing-speed-racer/)                                   |
+| Typing Speed Test             | misc         | [projects/misc/typing-speed-test/](projects/misc/typing-speed-test/)                                       |
+| Unit Circle Explorer          | math         | [projects/math/unit-circle-explorer/](projects/math/unit-circle-explorer/)                                 |
+| Unit Converter                | productivity | [projects/productivity/unit-converter/](projects/productivity/unit-converter/)                             |
+| URL Parser                    | dev-tools    | [projects/dev-tools/url-parser/](projects/dev-tools/url-parser/)                                           |
+| Violin                        | instruments  | [projects/instruments/violin/](projects/instruments/violin/)                                               |
+| Weather                       | productivity | [projects/productivity/weather/](projects/productivity/weather/)                                           |
+| Wordle Clone                  | games        | [projects/games/wordle-clone/](projects/games/wordle-clone/)                                               |
+
+<!-- projects-table-end -->
+
 ## Getting started
 
 ### Prerequisites
