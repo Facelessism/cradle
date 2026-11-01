@@ -71,7 +71,7 @@ For a PR to be merged into `main`, the pipeline **MUST** pass the following stag
 
 ### Gate 4: Test Suite
 
-- **Unit Execution**: `npm test` runs the full `node:test` suite for project logic and UI utilities.
+- **Unit Execution**: `npm test` runs the full `node:test` suite for project logic, UI utilities, and documented browser API fallback paths (such as Web Worker search filtering parity and IndexedDB direct fetch fallback in private browsing).
 
 ### Gate 5: Dependency Security Audit
 
