@@ -324,6 +324,8 @@ test("array of numbers in YAML", () => {
   assert.match(yaml, /- 30/);
 });
 
+test("toXml sanitizes element names with invalid characters", () => {
+  const xml = toXml({ "my element": 123 });
   assert.match(xml, /<my_element>/);
 });
 
@@ -396,4 +398,89 @@ test("fuzz testing: toYaml, toCsv, and toXml handle deeply nested, circular, and
     assert.ok(typeof toCsv(obj) === "string");
     assert.ok(typeof toXml(obj, "item") === "string");
   }
+});
+
+/* ------------------------------------------------------------------ */
+/* Unicode surrogate pairs, emoji, and supplementary plane characters */
+/* ------------------------------------------------------------------ */
+
+test("parseJSON correctly preserves escaped surrogate pairs and raw emoji", () => {
+  // Escaped surrogate pairs
+  const jsonWithSurrogates = '{"emoji":"\\uD83D\\uDE00","party":"\\uD83C\\uDF89","astral":"\\uD842\\uDFB7"}';
+  const parsed = parseJSON(jsonWithSurrogates);
+
+  assert.equal(parsed.valid, true);
+  assert.equal(parsed.value.emoji, "😀");
+  assert.equal(parsed.value.party, "🎉");
+  assert.equal(parsed.value.astral, "𠮷");
+
+  // Raw emoji in JSON
+  const jsonWithRawEmoji = '{"family":"👨‍👩‍👧‍👦","modifier":"👍🏽","flag":"🏳️‍🌈"}';
+  const parsedRaw = parseJSON(jsonWithRawEmoji);
+  assert.equal(parsedRaw.valid, true);
+  assert.equal(parsedRaw.value.family, "👨‍👩‍👧‍👦");
+  assert.equal(parsedRaw.value.modifier, "👍🏽");
+  assert.equal(parsedRaw.value.flag, "🏳️‍🌈");
+});
+
+test("formatJSON and minifyJSON preserve surrogate pairs and emoji", () => {
+  const json = '{"icon":"\\uD83D\\uDE00","greeting":"Hello 🌍"}';
+
+  const formatted = formatJSON(json, 2);
+  assert.match(formatted, /"icon": "😀"/);
+  assert.match(formatted, /"greeting": "Hello 🌍"/);
+
+  const minified = minifyJSON(formatted);
+  assert.equal(minified, '{"icon":"😀","greeting":"Hello 🌍"}');
+});
+
+test("toYaml preserves surrogate pairs, emoji, and supplementary plane characters", () => {
+  const data = {
+    title: "Unicode Test 😀",
+    astral: "𠮷",
+    complex: ["🎉", "👨‍👩‍👧‍👦", "𝄞"],
+  };
+
+  const yaml = toYaml(data);
+  assert.match(yaml, /title:.*Unicode Test 😀/);
+  assert.match(yaml, /astral:.*𠮷/);
+  assert.match(yaml, /- 🎉/);
+  assert.match(yaml, /- 👨‍👩‍👧‍👦/);
+  assert.match(yaml, /- 𝄞/);
+});
+
+test("toCsv preserves emoji and supplementary characters in cell values", () => {
+  const rows = [
+    { id: 1, name: "Alice 😀", tag: "𠮷" },
+    { id: 2, name: "Bob 🎉", tag: "𝄞" },
+  ];
+
+  const csv = toCsv(rows);
+  assert.match(csv, /Alice 😀/);
+  assert.match(csv, /Bob 🎉/);
+  assert.match(csv, /𠮷/);
+  assert.match(csv, /𝄞/);
+});
+
+test("toXml preserves emoji and supplementary characters in element content", () => {
+  const data = {
+    message: "Hello 😀",
+    ideograph: "𠮷",
+    note: "Special symbol: 𝄞",
+  };
+
+  const xml = toXml(data, "root");
+  assert.match(xml, /<message>Hello 😀<\/message>/);
+  assert.match(xml, /<ideograph>𠮷<\/ideograph>/);
+  assert.match(xml, /<note>Special symbol: 𝄞<\/note>/);
+});
+
+test("highlightJSON safely processes strings and keys with surrogate pairs and emoji", () => {
+  const json = '{"emoji": "😀", "surrogate": "\\uD83D\\uDE00", "astral": "𠮷"}';
+  const html = highlightJSON(json);
+
+  assert.ok(typeof html === "string");
+  assert.ok(html.includes("😀"));
+  assert.ok(html.includes("𠮷"));
+  assert.ok(html.includes("hl-string"));
 });
