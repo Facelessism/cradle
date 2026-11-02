@@ -1,25 +1,34 @@
-const { validateProjectsSync, REPO_ROOT } = require("./generate-projects");
+const {
+  validateProjectsSync,
+  validateSitemapSync,
+  REPO_ROOT,
+} = require("./generate-projects");
 
 function main() {
   console.log(
-    "Checking that data/projects.json is synchronized with current project tree and generator output..."
+    "Checking that data/projects.json and sitemap.xml are synchronized with current project tree and generator output..."
   );
 
   const result = validateProjectsSync();
+  const sitemapResult = validateSitemapSync();
 
-  if (!result.inSync) {
+  const allIssues = [...result.issues, ...sitemapResult.issues];
+
+  if (!result.inSync || !sitemapResult.inSync) {
     console.error(
-      `\n❌ Project metadata synchronization check failed with ${result.issues.length} issue(s):\n`
+      `\n❌ Synchronization check failed with ${allIssues.length} issue(s):\n`
     );
-    result.issues.forEach(issue => {
+    allIssues.forEach(issue => {
       console.error(`  - ${issue}`);
     });
-    console.error(`\n💡 To synchronize metadata, run:\n  npm run generate\n`);
+    console.error(
+      `\n💡 To synchronize metadata and sitemap, run:\n  npm run generate\n`
+    );
     process.exit(1);
   }
 
   console.log(
-    `✅ data/projects.json is fully synchronized (${result.expected.length} projects).`
+    `✅ data/projects.json and sitemap.xml are fully synchronized (${result.expected.length} projects).`
   );
   process.exit(0);
 }
