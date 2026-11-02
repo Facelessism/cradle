@@ -7,6 +7,8 @@ const { discoverProjects, titleCase } = require("./project-discovery");
 const REPO_ROOT = path.resolve(__dirname, "..");
 const PROJECTS_DIR = path.join(REPO_ROOT, "projects");
 const OUTPUT_FILE = path.join(REPO_ROOT, "data", "projects.json");
+const SITEMAP_FILE = path.join(REPO_ROOT, "sitemap.xml");
+const SITE_BASE_URL = "https://cradle-zeta.vercel.app";
 
 /**
  * Standard list of supported project categories in Cradle.
@@ -57,7 +59,8 @@ const PROJECT_ENTRY_SCHEMA = Object.freeze({
     thumbnailHash: {
       type: "string",
       pattern: "^[0-9a-f]{8}$",
-      description: "First 8 hex characters of the SHA-256 hash of thumbnail.svg.",
+      description:
+        "First 8 hex characters of the SHA-256 hash of thumbnail.svg.",
     },
   },
   additionalProperties: false,
@@ -1041,10 +1044,134 @@ function validateProjectsSync({
   };
 }
 
+/**
+ * Builds standard XML sitemap for Cradle landing page and all mini projects.
+ *
+ * @param {Array<{path: string}>} projects - Array of project metadata entries.
+ * @param {string} [baseUrl=SITE_BASE_URL] - Base URL of the deployed site.
+ * @returns {string} XML sitemap string.
+ */
+function buildSitemapXml(projects, baseUrl = SITE_BASE_URL) {
+  const normalizedBase = baseUrl.replace(/\/+$/, "");
+  const lines = [
+    `<?xml version="1.0" encoding="UTF-8"?>`,
+    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`,
+    `  <url>`,
+    `    <loc>${normalizedBase}/</loc>`,
+    `  </url>`,
+  ];
+
+  for (const project of projects) {
+    if (!project || typeof project.path !== "string" || !project.path.trim()) {
+      continue;
+    }
+    const cleanPath = project.path.replace(/^\/+/, "");
+    lines.push(`  <url>`);
+    lines.push(`    <loc>${normalizedBase}/${cleanPath}</loc>`);
+    lines.push(`  </url>`);
+  }
+
+  lines.push(`</urlset>`);
+  return lines.join("\n") + "\n";
+}
+
+/**
+ * Generates and writes sitemap.xml to disk.
+ *
+ * @param {object} options
+ * @param {Array<{path: string}>} options.projects - Array of project entries.
+ * @param {string} [options.repoRoot] - Repository root path.
+ * @param {string} [options.sitemapFile] - Destination sitemap.xml path.
+ * @param {string} [options.baseUrl] - Base URL of the deployed site.
+ * @returns {string} XML content written to disk.
+ */
+function generateSitemap({
+  projects,
+  repoRoot = REPO_ROOT,
+  sitemapFile,
+  baseUrl = SITE_BASE_URL,
+} = {}) {
+  const targetFile = sitemapFile || path.join(repoRoot, "sitemap.xml");
+  const content = buildSitemapXml(projects, baseUrl);
+  fs.writeFileSync(targetFile, content, "utf8");
+  console.log(
+    `✅ Generated sitemap.xml with ${projects.length + 1} URLs → ${path.relative(repoRoot, targetFile)}`
+  );
+  return content;
+}
+
+/**
+ * Validates that sitemap.xml exists and is in sync with the project registry.
+ *
+ * @param {object} options
+ * @param {Array<{path: string}>} [options.projects] - Expected project objects.
+ * @param {string} [options.repoRoot] - Repository root.
+ * @param {string} [options.sitemapFile] - Sitemap file path to check.
+ * @param {string} [options.baseUrl] - Base URL for sitemap.
+ * @returns {{ inSync: boolean, issues: string[] }}
+ */
+function validateSitemapSync({
+  projects,
+  repoRoot = REPO_ROOT,
+  sitemapFile,
+  baseUrl = SITE_BASE_URL,
+} = {}) {
+  const targetFile = sitemapFile || path.join(repoRoot, "sitemap.xml");
+  const issues = [];
+
+  if (!fs.existsSync(targetFile)) {
+    return {
+      inSync: false,
+      issues: [
+        `Sitemap file "${path.relative(repoRoot, targetFile)}" does not exist. Run "npm run generate".`,
+      ],
+    };
+  }
+
+  let rawContent;
+  try {
+    rawContent = fs.readFileSync(targetFile, "utf8");
+  } catch (e) {
+    return {
+      inSync: false,
+      issues: [
+        `Failed to read sitemap file "${path.relative(repoRoot, targetFile)}": ${e.message}`,
+      ],
+    };
+  }
+
+  let projectList = projects;
+  if (!projectList) {
+    try {
+      projectList = JSON.parse(
+        fs.readFileSync(path.join(repoRoot, "data", "projects.json"), "utf8")
+      );
+    } catch {
+      projectList = [];
+    }
+  }
+
+  const expectedXml = buildSitemapXml(projectList, baseUrl);
+  const normalizedActual = rawContent.replace(/\r\n/g, "\n").trim();
+  const normalizedExpected = expectedXml.replace(/\r\n/g, "\n").trim();
+
+  if (normalizedActual !== normalizedExpected) {
+    issues.push(
+      `Sitemap file "${path.relative(repoRoot, targetFile)}" is out of sync with current project registry. Run "npm run generate".`
+    );
+  }
+
+  return {
+    inSync: issues.length === 0,
+    issues,
+  };
+}
 function generateProjects({
   projectsDir = PROJECTS_DIR,
   repoRoot = REPO_ROOT,
   outputFile = OUTPUT_FILE,
+  sitemapFile,
+  baseUrl = SITE_BASE_URL,
   throwOnError = false,
 } = {}) {
   const { projects, errors } = buildProjectsRegistry({
@@ -1084,6 +1211,14 @@ function generateProjects({
     `✅ Generated and validated ${projects.length} projects successfully → ${path.relative(repoRoot, outputFile)}`
   );
 
+  const targetSitemap = sitemapFile || path.join(repoRoot, "sitemap.xml");
+  generateSitemap({
+    projects,
+    repoRoot,
+    sitemapFile: targetSitemap,
+    baseUrl,
+  });
+
   return projects;
 }
 
@@ -1113,7 +1248,12 @@ module.exports = {
   buildProjectsRegistry,
   validateProjectsSync,
   generateProjects,
+  buildSitemapXml,
+  generateSitemap,
+  validateSitemapSync,
   PROJECTS_DIR,
   OUTPUT_FILE,
+  SITEMAP_FILE,
+  SITE_BASE_URL,
   REPO_ROOT,
 };
