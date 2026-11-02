@@ -229,6 +229,16 @@ test("validateProjectsSync succeeds when registry is generated and synchronized"
   });
   fs.mkdirSync(dataDir, { recursive: true });
 
+  fs.writeFileSync(
+    path.join(projectsDir, "games", "alpha-game", "index.html"),
+    "<!doctype html><title>Alpha Game</title>",
+    "utf-8"
+  );
+  fs.writeFileSync(
+    path.join(projectsDir, "productivity", "beta-tool", "index.html"),
+    "<!doctype html><title>Beta Tool</title>",
+    "utf-8"
+  );
   generateProjects({
     projectsDir,
     repoRoot: root,
