@@ -72,6 +72,118 @@
      being enabled between calls is still detected on the next check. */
   let availabilityCached = false;
 
+  /* Track keys explicitly written through CradleStorage during the session */
+  const writtenThroughCradle = new Set();
+
+  /* Dynamically registered namespaces from CradleStorage.namespace(...) */
+  const registeredNamespaces = new Map();
+
+  const KNOWN_PROJECTS = {
+    "2048-game": "2048 Game",
+    "advanced-qr-code-generator": "Advanced QR Code Generator",
+    "ai-circuit-builder": "AI Circuit Builder",
+    "api-response-inspector": "API Response Inspector",
+    "ascii-camera": "ASCII Camera",
+    "attendance-tracker": "Attendance Tracker",
+    "audio-spectrogram-analyzer": "Audio Spectrogram Analyzer",
+    "audio-waveform-generator": "Audio Waveform Generator",
+    "avatar-creator": "Avatar Creator",
+    "brain-dump-collector": "Brain Dump Collector",
+    "browser-storage-inspector": "Browser Storage Inspector",
+    "cannon-shooting": "Cannon Shooting",
+    chess: "Chess",
+    "collaborative-whiteboard": "Collaborative Whiteboard",
+    "color-contrast-checker": "Color Contrast Checker",
+    "color-palette-generator": "Color Palette Generator",
+    "cpu-emulator": "CPU Emulator",
+    "css-clamp-calculator": "CSS Clamp Calculator",
+    "css-gradient-generator": "CSS Gradient Generator",
+    "css-grid-generator": "CSS Grid Generator",
+    "css-shape-designer": "CSS Shape Designer",
+    "csv-data-cleaner": "CSV Data Cleaner",
+    "cyberpunk-pixel-art-generator": "Cyberpunk Pixel Art Generator",
+    "dot-game": "Dot Game",
+    "encoding-toolkit": "Encoding Toolkit",
+    "feature-flag-playground": "Feature Flag Playground",
+    "file-difference-visualizer": "File Difference Visualizer",
+    "flashcard-study": "Flashcard Study",
+    "fourier-series-visualizer": "Fourier Series Visualizer",
+    "graph-theory-explorer": "Graph Theory Explorer",
+    guitar: "Guitar",
+    guzheng: "Guzheng",
+    "image-classifier": "Image Classifier",
+    "image-metadata-explorer": "Image Metadata Explorer",
+    "invoice-generator": "Invoice Generator",
+    "json-converter": "JSON Converter",
+    "json-tree-viewer": "JSON Tree Viewer",
+    "knowledge-graph": "Knowledge Graph",
+    "ludo-game": "Ludo Game",
+    "markdown-editor": "Markdown Editor",
+    "markdown-resume-generator": "Markdown Resume Generator",
+    "matrix-playground": "Matrix Playground",
+    "meme-generator": "Meme Generator",
+    "memory-flip-game": "Memory Flip Game",
+    monopoly: "Monopoly",
+    "morse-code-studio": "Morse Code Studio",
+    "neural-network-playground": "Neural Network Playground",
+    "pathfinding-visualizer": "Pathfinding Visualizer",
+    percussion: "Percussion",
+    "periodic-table": "Periodic Table",
+    piano: "Piano",
+    "pomodoro-infinity-timer": "Pomodoro Infinity Timer",
+    "pomodoro-timer": "Pomodoro Timer",
+    "procedural-dungeon-generator": "Procedural Dungeon Generator",
+    "reading-progress-tracker": "Reading Progress Tracker",
+    "regex-visualizer": "Regex Visualizer",
+    "snake-game": "Snake Game",
+    "sound-wave-visualizer": "Sound Wave Visualizer",
+    "stone-paper-scissors-game": "Stone Paper Scissors Game",
+    "sudoku-solver": "Sudoku Solver",
+    "terminal-portfolio-generator": "Terminal Portfolio Generator",
+    "text-diff-checker": "Text Diff Checker",
+    "time-blocking-planner": "Time Blocking Planner",
+    "typing-speed-racer": "Typing Speed Racer",
+    "typing-speed-test": "Typing Speed Test",
+    "unit-circle-explorer": "Unit Circle Explorer",
+    "unit-converter": "Unit Converter",
+    "url-parser": "URL Parser",
+    violin: "Violin",
+    weather: "Weather",
+    "wordle-clone": "Wordle Clone",
+  };
+
+  const KNOWN_ALIASES = {
+    2048: "2048-game",
+    rps: "stone-paper-scissors-game",
+    tb_planner: "time-blocking-planner",
+    periodic: "periodic-table",
+    meme: "meme-generator",
+    memory_flip: "memory-flip-game",
+    cannon: "cannon-shooting",
+    matrix_playground: "matrix-playground",
+    snake: "snake-game",
+    reading_tracker: "reading-progress-tracker",
+    dot_game: "dot-game",
+    ludo: "ludo-game",
+    typing_racer: "typing-speed-racer",
+    "typing-racer": "typing-speed-racer",
+    markdown_resume: "markdown-resume-generator",
+    "markdown-resume": "markdown-resume-generator",
+    resume: "markdown-resume-generator",
+    wordle: "wordle-clone",
+    flashcard: "flashcard-study",
+    flashcards: "flashcard-study",
+    fc: "flashcard-study",
+    chess: "chess",
+  };
+
+  function titleCase(str) {
+    return String(str || "")
+      .replace(/[-_]+/g, " ")
+      .trim()
+      .replace(/\b\w/g, c => c.toUpperCase());
+  }
+
   /**
    * Whether a working localStorage is available right now.
    * Performs a harmless probe write/remove so private-mode or quota-limited
@@ -184,6 +296,7 @@
   function setRaw(key, value) {
     try {
       resolveStore().setItem(String(key), String(value));
+      writtenThroughCradle.add(String(key));
       return true;
     } catch (e) {
       return false;
@@ -209,6 +322,7 @@
   function remove(key) {
     try {
       resolveStore().removeItem(String(key));
+      writtenThroughCradle.delete(String(key));
       return true;
     } catch (e) {
       return false;
@@ -417,8 +531,20 @@
    *   remove: Function, keys: Function, clear: Function
    * }}
    */
-  function namespace(prefix) {
+  /**
+   * Register a custom mini namespace.
+   * @param {string} prefix
+   * @param {Object} [metadata]
+   */
+  function registerNamespace(prefix, metadata = {}) {
+    if (!prefix) return;
     const p = String(prefix);
+    registeredNamespaces.set(p, metadata || {});
+  }
+
+  function namespace(prefix, metadata = {}) {
+    const p = String(prefix);
+    registerNamespace(p, metadata);
     return {
       get: (key, fallback, validator) => get(p + key, fallback, validator),
       getRaw: (key, fallback, validator) =>
@@ -432,6 +558,242 @@
       keys: () => keys(p),
       clear: () => clear(p),
     };
+  }
+
+  /**
+   * Estimate byte footprint of a string key/value pair in UTF-16 bytes.
+   * @param {string} key
+   * @param {*} value
+   * @returns {number}
+   */
+  function calculateByteSize(key, value) {
+    const kLen = key ? String(key).length * 2 : 0;
+    const vLen = value != null ? String(value).length * 2 : 0;
+    return kLen + vLen;
+  }
+
+  /**
+   * Format bytes into human-readable unit (B, KB, MB).
+   * @param {number} bytes
+   * @returns {string}
+   */
+  function formatBytes(bytes) {
+    if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) {
+      return `${(bytes / 1024).toFixed(2)} KB`;
+    }
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  /**
+   * Determine whether a key belongs to a Cradle mini and return its metadata.
+   * Internal landing-page keys and unrelated keys return null.
+   * @param {string} key
+   * @returns {{ id: string, title: string }|null}
+   */
+  function identifyMini(key) {
+    if (!key || typeof key !== "string") return null;
+    const k = key.trim();
+
+    // Landing page & system internal keys are not minis
+    if (
+      k === "theme" ||
+      k === "cradle_theme" ||
+      k === "cradle:recent-projects" ||
+      k === "cradle:recent-projects-collapsed" ||
+      k === "__cradle_storage_probe__" ||
+      k.startsWith("__cradle_")
+    ) {
+      return null;
+    }
+
+    // Check dynamically registered namespaces
+    for (const [ns, meta] of registeredNamespaces.entries()) {
+      if (k.startsWith(ns)) {
+        if (meta && meta.id && meta.title) {
+          return { id: meta.id, title: meta.title };
+        }
+        const cleanNs = ns.replace(/^cradle[_:-]?/i, "").replace(/[_:-]+$/, "");
+        const slug = KNOWN_ALIASES[cleanNs] || cleanNs.replace(/_/g, "-");
+        const title =
+          (meta && meta.title) || KNOWN_PROJECTS[slug] || titleCase(cleanNs);
+        return { id: slug, title };
+      }
+    }
+
+    // Must have a cradle prefix or have been written through CradleStorage
+    const match = k.match(/^cradle[_:-](.+)$/i);
+    let remainder = match ? match[1] : null;
+
+    if (!remainder) {
+      // If written through CradleStorage and contains a namespace separator
+      if (writtenThroughCradle.has(k)) {
+        const parts = k.split(/[_:-]/);
+        if (parts.length > 1) {
+          const first = parts[0].toLowerCase();
+          const slug = KNOWN_ALIASES[first] || first.replace(/_/g, "-");
+          const title = KNOWN_PROJECTS[slug] || titleCase(first);
+          return { id: slug, title };
+        }
+      }
+      return null;
+    }
+
+    const candidate = remainder.toLowerCase();
+
+    // Match known aliases by length descending
+    const aliases = Object.keys(KNOWN_ALIASES).sort(
+      (a, b) => b.length - a.length
+    );
+    for (const alias of aliases) {
+      if (
+        candidate === alias ||
+        candidate.startsWith(alias + "_") ||
+        candidate.startsWith(alias + "-")
+      ) {
+        const slug = KNOWN_ALIASES[alias];
+        const title = KNOWN_PROJECTS[slug] || titleCase(slug);
+        return { id: slug, title };
+      }
+    }
+
+    // Match known project slugs by length descending
+    const slugs = Object.keys(KNOWN_PROJECTS).sort(
+      (a, b) => b.length - a.length
+    );
+    for (const slug of slugs) {
+      const slugUnderscore = slug.replace(/-/g, "_");
+      if (
+        candidate === slug ||
+        candidate === slugUnderscore ||
+        candidate.startsWith(slug + "_") ||
+        candidate.startsWith(slug + "-") ||
+        candidate.startsWith(slugUnderscore + "_") ||
+        candidate.startsWith(slugUnderscore + "-")
+      ) {
+        return { id: slug, title: KNOWN_PROJECTS[slug] };
+      }
+    }
+
+    // Fallback: derive mini from the first segment
+    const token = candidate.split(/[_:-]/)[0];
+    if (token) {
+      const slug = token.replace(/_/g, "-");
+      return { id: slug, title: titleCase(token) };
+    }
+
+    return null;
+  }
+
+  /**
+   * List stored keys grouped by mini with approximate sizes.
+   * Only includes keys written through CradleStorage for minis.
+   * @returns {Array<{
+   *   id: string,
+   *   title: string,
+   *   keys: Array<{ key: string, value: string|null, bytes: number, formattedSize: string }>,
+   *   totalBytes: number,
+   *   formattedTotalSize: string
+   * }>}
+   */
+  function getStoredMinisData() {
+    const store = resolveStore();
+    const allKeys = storageKeys();
+    const miniMap = new Map();
+
+    for (const key of allKeys) {
+      const mini = identifyMini(key);
+      if (!mini) continue;
+
+      let rawValue = null;
+      try {
+        rawValue = store.getItem(key);
+      } catch (e) {
+        rawValue = null;
+      }
+
+      const bytes = calculateByteSize(key, rawValue);
+      const keyInfo = {
+        key,
+        value: rawValue,
+        bytes,
+        formattedSize: formatBytes(bytes),
+      };
+
+      if (!miniMap.has(mini.id)) {
+        miniMap.set(mini.id, {
+          id: mini.id,
+          title: mini.title,
+          keys: [],
+          totalBytes: 0,
+          formattedTotalSize: "0 B",
+        });
+      }
+
+      const group = miniMap.get(mini.id);
+      group.keys.push(keyInfo);
+      group.totalBytes += bytes;
+      group.formattedTotalSize = formatBytes(group.totalBytes);
+    }
+
+    // Sort keys within each group alphabetically
+    for (const group of miniMap.values()) {
+      group.keys.sort((a, b) => a.key.localeCompare(b.key));
+    }
+
+    // Sort minis alphabetically by title
+    return Array.from(miniMap.values()).sort((a, b) =>
+      a.title.localeCompare(b.title)
+    );
+  }
+
+  /**
+   * Clear all stored data for a single mini without affecting others.
+   * Only touches keys written through CradleStorage for this mini.
+   * @param {string} miniId Mini id or title
+   * @returns {number} Number of keys removed
+   */
+  function clearMini(miniId) {
+    if (!miniId) return 0;
+    const targetId = String(miniId).toLowerCase().trim();
+    const allKeys = storageKeys();
+    let removedCount = 0;
+
+    for (const key of allKeys) {
+      const mini = identifyMini(key);
+      if (
+        mini &&
+        (mini.id.toLowerCase() === targetId ||
+          mini.title.toLowerCase() === targetId)
+      ) {
+        if (remove(key)) {
+          removedCount++;
+        }
+      }
+    }
+
+    return removedCount;
+  }
+
+  /**
+   * Clear stored data across all minis without touching unrelated localStorage keys.
+   * @returns {number} Total number of mini keys removed
+   */
+  function clearAllMinis() {
+    const allKeys = storageKeys();
+    let removedCount = 0;
+
+    for (const key of allKeys) {
+      const mini = identifyMini(key);
+      if (mini) {
+        if (remove(key)) {
+          removedCount++;
+        }
+      }
+    }
+
+    return removedCount;
   }
 
   exports.isAvailable = isAvailable;
@@ -448,4 +810,11 @@
   exports.keys = keys;
   exports.clear = clear;
   exports.namespace = namespace;
+  exports.registerNamespace = registerNamespace;
+  exports.calculateByteSize = calculateByteSize;
+  exports.formatBytes = formatBytes;
+  exports.identifyMini = identifyMini;
+  exports.getStoredMinisData = getStoredMinisData;
+  exports.clearMini = clearMini;
+  exports.clearAllMinis = clearAllMinis;
 })(typeof exports === "undefined" ? (window.CradleStorage = {}) : exports);

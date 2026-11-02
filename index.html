@@ -80,7 +80,10 @@
             : "dark");
         if (t === "light")
           document.documentElement.classList.add("light-theme");
-        var meta = document.querySelector('meta[name="theme-color"]');
+        var meta =
+          typeof document.querySelector === "function"
+            ? document.querySelector('meta[name="theme-color"]')
+            : null;
         if (meta) {
           meta.setAttribute("content", t === "light" ? "#f5f7fb" : "#05070d");
         }
@@ -340,6 +343,33 @@
       </svg>
     </button>
 
+    <!-- Your Data Modal -->
+    <div
+      id="your-data-modal"
+      class="your-data-modal"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="your-data-title"
+    >
+      <div class="your-data-modal-overlay" id="your-data-overlay"></div>
+      <div class="your-data-modal-content">
+        <div class="your-data-modal-header">
+          <h3 id="your-data-title">💾 Your data</h3>
+          <button
+            id="close-your-data"
+            class="your-data-close-btn"
+            aria-label="Close Your data modal"
+          >
+            ✕
+          </button>
+        </div>
+        <div id="your-data-body" class="your-data-modal-body">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+
     <footer>
       <p>
         Enjoying Cradle?
@@ -352,6 +382,18 @@
         >
           ★ Star the repository on GitHub
         </a>
+
+        <span class="footer-separator" aria-hidden="true">·</span>
+
+        <button
+          type="button"
+          id="your-data-btn"
+          class="footer-link footer-btn"
+          aria-haspopup="dialog"
+          aria-controls="your-data-modal"
+        >
+          Your data
+        </button>
       </p>
     </footer>
     <script src="src/components/ui/sanitizeHtml.js"></script>
