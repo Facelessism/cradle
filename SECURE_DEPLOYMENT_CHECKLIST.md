@@ -353,6 +353,51 @@ example.com {
 }
 ```
 
+### Vercel (`vercel.json`)
+
+For production and preview hosting on Vercel (`https://cradle-zeta.vercel.app`), security headers are configured at the routing layer in `vercel.json`:
+
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(self), microphone=(self), geolocation=(), payment=(), usb=(), display-capture=()"
+        },
+        {
+          "key": "Content-Security-Policy-Report-Only",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://huggingface.co https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: blob: https:; media-src 'self' data: blob:; connect-src 'self' https: data: blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';"
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Header Rationale & Purpose:
+
+- **`X-Content-Type-Options: nosniff`**: Prevents browser MIME-type sniffing of served static files, protecting against script execution attacks disguised as images or text files.
+- **`Referrer-Policy: strict-origin-when-cross-origin`**: Restricts referrer URL leakage on cross-origin requests while preserving origin tracking for legitimate analytics and navigation.
+- **`X-Frame-Options: SAMEORIGIN`**: Mitigates clickjacking and UI redressing by disallowing external origins from embedding Cradle inside iframes.
+- **`Permissions-Policy: camera=(self), microphone=(self), geolocation=(), payment=(), usb=(), display-capture=()`**: Restricts access to sensitive browser device APIs. Allows `camera` and `microphone` for same-origin pages so interactive minis (`projects/misc/ascii-camera`, `projects/misc/audio-spectrogram-analyzer`, `projects/misc/sound-wave-visualizer`) function without disruption, while strictly denying unused hardware features (`geolocation`, `payment`, `usb`, `display-capture`).
+- **`Content-Security-Policy-Report-Only`**: Enforces a least-privilege content boundary in Report-Only mode, monitoring script, stylesheet, worker, and frame sources without breaking active minis, workers, or dynamic canvas/script tools.
+
 ---
 
 ## References & External Standards
