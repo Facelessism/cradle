@@ -395,6 +395,10 @@ If your Pull Request includes UI changes, please attach screenshots.
 
 ## Reporting Bugs
 
+> [!IMPORTANT]
+> **Security Vulnerabilities**: If you discover a security vulnerability, **do not file a public issue**. Follow our [Vulnerability Disclosure & Incident Response Policy](SECURITY.md) and submit your report privately via [GitHub Security Advisories](https://github.com/Facelessism/cradle/security/advisories/new) or email `security@cradle.dev`.
+
+
 When reporting a bug, please include:
 
 - A clear description of the issue.
