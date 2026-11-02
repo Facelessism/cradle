@@ -56,11 +56,51 @@ Before working on an issue:
 
 ## Adding a New Project
 
-If you're contributing a new project, follow the repository's existing structure and keep the addition focused and self-contained.
+The recommended way to scaffold a new project is using the automated generator:
 
-### Where to place it
+```bash
+npm run new-mini <category> <name>
+```
 
-Create a new folder under the appropriate category in the `projects/` directory. Categories already include:
+Example:
+
+```bash
+npm run new-mini games space-invaders
+```
+
+### What `npm run new-mini` does
+
+Running `npm run new-mini` automatically:
+
+1. Validates that `<category>` is an approved category and `<name>` is a valid lowercase hyphenated slug (`^[a-z0-9]+(-[a-z0-9]+)*$`).
+2. Confirms that no project with the same name already exists in Cradle.
+3. Creates `projects/<category>/<name>/` containing:
+   - `index.html` — preconfigured with descriptive `<title>`, favicon, accessible Back to Home link, and the shared `ThemeToggle` component.
+   - `style.css` — boilerplate stylesheet integrating Cradle design tokens.
+   - `script.js` — clean starter script.
+   - `ARCHITECTURE.md` — copied from `ARCHITECTURE_TEMPLATE.md` with all required sections and the template notice block stripped.
+4. Generates `thumbnail.svg` and registers the project in `data/projects.json` and `README.md`.
+5. Guarantees that the new mini immediately complies with repository policies and passes `npm run healthcheck`.
+
+### Steps to contribute a new mini
+
+1. **Scaffold the project**:
+   ```bash
+   npm run new-mini <category> <name>
+   ```
+2. **Develop your mini**:
+   - Add your markup to `index.html`.
+   - Style your project in `style.css` using Cradle design tokens (`src/components/ui/tokens.css`).
+   - Implement your project logic in `script.js`.
+   - If your project persists state or high scores, use `window.CradleStorage` (see [Storage Policy](STORAGE_POLICY.md)).
+3. **Document the architecture**:
+   - Open `projects/<category>/<name>/ARCHITECTURE.md` and fill in the details for each section (Overview, Purpose & Goals, Key Features, etc.).
+4. **Verify healthcheck**:
+   - Run `npm run healthcheck` to verify all quality gates pass.
+
+### Where to place it (Manual Scaffolding)
+
+If creating folders manually, place your new project under the appropriate category in the `projects/` directory. Categories already include:
 
 - `projects/aiml/`
 - `projects/dev-tools/`
@@ -157,20 +197,20 @@ Cradle provides a lightweight, zero-dependency shared UI component library under
 
 ### Supported Components and Utilities
 
-| Component / Utility | Location | Type | Global Object | Description |
-| :------------------ | :------- | :--- | :------------ | :---------- |
-| **`BackToHome`** | `src/components/ui/BackToHome/BackToHome.js` | Component | `window.CradleBackToHome` | Standardized back-to-home navigation pill. Mandatory for all minis. |
-| **`Button`** | `src/components/ui/Button/Button.js` | Component | `window.CradleButton` | Accessible button with variants (`primary`, `secondary`, `outline`, `ghost`, `danger`), sizes (`sm`, `md`, `lg`), icons, and loading states. |
-| **`Card`** | `src/components/ui/Card/Card.js` | Component | `window.CradleCard` | Modular container with `Card`, `CardHeader`, `CardContent`, and `CardFooter`. |
-| **`Navbar`** | `src/components/ui/Navbar/Navbar.js` | Component | `window.CradleNavbar` | Responsive header with brand logo, nav links, and mobile drawer. |
-| **`ThemeToggle`** | `src/components/ui/ThemeToggle/ThemeToggle.js` | Component | `window.CradleThemeToggle` | Dark/light theme switch with OS sync and localStorage persistence. |
-| **`tokens.css`** | `src/components/ui/tokens.css` | Styling | CSS Custom Properties | Standardized colors, borders, shadows, spacing, and typography variables. |
-| **`escapeHtml`** | `src/components/ui/escapeHtml.js` | Utility | `CradleEscape.escapeHtml` | Safe HTML escaping for user strings interpolated into `innerHTML`. |
-| **`storage`** | `src/components/ui/storage.js` | Utility | `window.CradleStorage` | Robust `localStorage` wrapper with JSON serialization, prefixes, and memory fallback. |
-| **`sanitizeHtml`** | `src/components/ui/sanitizeHtml.js` | Utility | `CradleSanitize.sanitizeHtml` | DOM-based HTML sanitizer stripping unsafe tags and scripts. |
-| **`sanitizeSvg`** | `src/components/ui/sanitizeSvg.js` | Utility | `CradleSanitize.sanitizeSvg` | SVG sanitizer and validator neutralizing embedded script vectors. |
-| **`sanitizeCss`** | `src/components/ui/sanitizeCss.js` | Utility | `window.CradleSanitizeCss` | Dynamic CSS property, value, declaration, and URL sanitizer. |
-| **`loadModelScripts`**| `src/components/ui/loadModelScripts.js` | Utility | `window.loadModelScripts` | Third-party script loader with SRI verification, timeouts, and fallbacks. |
+| Component / Utility    | Location                                       | Type      | Global Object                 | Description                                                                                                                                  |
+| :--------------------- | :--------------------------------------------- | :-------- | :---------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`BackToHome`**       | `src/components/ui/BackToHome/BackToHome.js`   | Component | `window.CradleBackToHome`     | Standardized back-to-home navigation pill. Mandatory for all minis.                                                                          |
+| **`Button`**           | `src/components/ui/Button/Button.js`           | Component | `window.CradleButton`         | Accessible button with variants (`primary`, `secondary`, `outline`, `ghost`, `danger`), sizes (`sm`, `md`, `lg`), icons, and loading states. |
+| **`Card`**             | `src/components/ui/Card/Card.js`               | Component | `window.CradleCard`           | Modular container with `Card`, `CardHeader`, `CardContent`, and `CardFooter`.                                                                |
+| **`Navbar`**           | `src/components/ui/Navbar/Navbar.js`           | Component | `window.CradleNavbar`         | Responsive header with brand logo, nav links, and mobile drawer.                                                                             |
+| **`ThemeToggle`**      | `src/components/ui/ThemeToggle/ThemeToggle.js` | Component | `window.CradleThemeToggle`    | Dark/light theme switch with OS sync and localStorage persistence.                                                                           |
+| **`tokens.css`**       | `src/components/ui/tokens.css`                 | Styling   | CSS Custom Properties         | Standardized colors, borders, shadows, spacing, and typography variables.                                                                    |
+| **`escapeHtml`**       | `src/components/ui/escapeHtml.js`              | Utility   | `CradleEscape.escapeHtml`     | Safe HTML escaping for user strings interpolated into `innerHTML`.                                                                           |
+| **`storage`**          | `src/components/ui/storage.js`                 | Utility   | `window.CradleStorage`        | Robust `localStorage` wrapper with JSON serialization, prefixes, and memory fallback.                                                        |
+| **`sanitizeHtml`**     | `src/components/ui/sanitizeHtml.js`            | Utility   | `CradleSanitize.sanitizeHtml` | DOM-based HTML sanitizer stripping unsafe tags and scripts.                                                                                  |
+| **`sanitizeSvg`**      | `src/components/ui/sanitizeSvg.js`             | Utility   | `CradleSanitize.sanitizeSvg`  | SVG sanitizer and validator neutralizing embedded script vectors.                                                                            |
+| **`sanitizeCss`**      | `src/components/ui/sanitizeCss.js`             | Utility   | `window.CradleSanitizeCss`    | Dynamic CSS property, value, declaration, and URL sanitizer.                                                                                 |
+| **`loadModelScripts`** | `src/components/ui/loadModelScripts.js`        | Utility   | `window.loadModelScripts`     | Third-party script loader with SRI verification, timeouts, and fallbacks.                                                                    |
 
 ### When Minis Should Use Shared UI vs Custom UI
 
@@ -200,7 +240,10 @@ Minis reside at `projects/<category>/<slug>/`. Always link shared UI components 
 <link rel="stylesheet" href="../../../src/components/ui/tokens.css" />
 
 <!-- Required back-to-home navigation -->
-<script src="../../../src/components/ui/BackToHome/BackToHome.js" defer></script>
+<script
+  src="../../../src/components/ui/BackToHome/BackToHome.js"
+  defer
+></script>
 
 <!-- Granular components and utilities as needed -->
 <script src="../../../src/components/ui/Button/Button.js" defer></script>
@@ -398,7 +441,6 @@ If your Pull Request includes UI changes, please attach screenshots.
 
 > [!IMPORTANT]
 > **Security Vulnerabilities**: If you discover a security vulnerability, **do not file a public issue**. Follow our [Vulnerability Disclosure & Incident Response Policy](SECURITY.md) and submit your report privately via [GitHub Security Advisories](https://github.com/Facelessism/cradle/security/advisories/new) or email `security@cradle.dev`.
-
 
 When reporting a bug, please include:
 
