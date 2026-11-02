@@ -40,8 +40,7 @@ export function calculateBackoffDelay(
     config?.initialDelayMs ?? DEFAULT_WORKER_RETRY_CONFIG.initialDelayMs;
   const factor =
     config?.backoffFactor ?? DEFAULT_WORKER_RETRY_CONFIG.backoffFactor;
-  const maxDelay =
-    config?.maxDelayMs ?? DEFAULT_WORKER_RETRY_CONFIG.maxDelayMs;
+  const maxDelay = config?.maxDelayMs ?? DEFAULT_WORKER_RETRY_CONFIG.maxDelayMs;
 
   const delay = initial * Math.pow(factor, count);
   return Math.min(Math.round(delay), maxDelay);
@@ -142,6 +141,8 @@ export function createFilterWorker({
       };
 
       worker.onmessage = event => {
+        if (failed || terminated) return;
+
         if (!isFilterResult(event.data)) {
           fail(
             new Error("Worker returned an invalid search result"),
