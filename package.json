@@ -8,6 +8,7 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
+    "new-mini": "node scripts/new-mini.js",
     "generate": "node scripts/generate-projects.js && node scripts/generate-readme-table.js",
     "generate:readme": "node scripts/generate-readme-table.js",
     "validate:architecture": "node scripts/validate-architecture-docs.js",
