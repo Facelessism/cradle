@@ -141,6 +141,20 @@
     }
     if (persist) storeTheme(theme);
 
+    /* Update meta theme-color if present to match the active theme */
+    if (
+      typeof document !== "undefined" &&
+      typeof document.querySelector === "function"
+    ) {
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme && typeof metaTheme.setAttribute === "function") {
+        metaTheme.setAttribute(
+          "content",
+          theme === "light" ? "#f5f7fb" : "#05070d"
+        );
+      }
+    }
+
     /* Notify all registered toggle instances */
     html.dispatchEvent(
       new CustomEvent("cradle:themechange", {
