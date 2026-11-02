@@ -126,9 +126,15 @@ A collaborative and supportive approach helps create a positive experience for e
 
 ## Reporting Guidelines
 
-If you experience or witness behavior that violates this Code of Conduct, please report it to the project maintainers as soon as possible.
+If you experience or witness behavior that violates this Code of Conduct, please report it to the project maintainers promptly.
 
-When submitting a report, include:
+### How to Submit a Code of Conduct Report
+
+You can reach the maintainers confidentially via:
+- **Email:** **`conduct@cradle.dev`** (or maintainer direct: `facelessism@users.noreply.github.com`)
+- **Lead Maintainer:** Contact `@Facelessism` on GitHub
+
+When submitting a report, please include:
 
 - A clear description of the incident.
 - Links to the relevant issue, pull request, or discussion (if applicable).
@@ -136,12 +142,15 @@ When submitting a report, include:
 - The approximate date and time of the incident.
 - Any additional context that may assist the maintainers in reviewing the report.
 
-All reports will be handled respectfully and reviewed as objectively as possible. Maintainers will make reasonable efforts to protect the privacy of individuals involved while investigating reported incidents.
+All reports will be handled respectfully and reviewed as objectively and confidentially as possible. Maintainers will make reasonable efforts to protect the privacy of individuals involved while investigating reported incidents.
 
-Community members are encouraged to report concerns in good faith and avoid public arguments or harassment while an issue is under review.
+Community members are encouraged to report concerns in good faith and avoid public arguments or escalation while an issue is under review.
+
+> [!IMPORTANT]
+> **Reporting Technical Security Vulnerabilities**:  
+> If you have discovered a technical security flaw, software vulnerability, or security exposure (such as an XSS vector or worker bypass), **do not** use the Code of Conduct channel. Instead, follow the [Vulnerability Disclosure & Incident Response Policy](SECURITY.md) and submit your report privately via [GitHub Security Advisories](https://github.com/Facelessism/cradle/security/advisories/new) or email `security@cradle.dev`.
 
 ---
-
 ## Enforcement Process
 
 Maintainers are responsible for evaluating reported incidents and determining an appropriate response based on the severity and context of the behavior.

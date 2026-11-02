@@ -49,7 +49,7 @@ Cradle/
 │   └── MINI_CONTRACT.md       # Contract every mini-project must follow
 ├── README.md                  # Project overview documentation
 ├── SECURE_DEPLOYMENT_CHECKLIST.md # Baseline security checklist for production
-├── SECURITY.md                # Project security policy and worker integrity
+├── SECURITY.md                # Vulnerability disclosure, incident response, and security policy
 ├── STORAGE_POLICY.md          # Storage API and conflict-resolution strategy
 ├── THIRD_PARTY_POLICY.md      # Rules for loading external models and scripts
 ├── index.html                 # Main landing page entry point
@@ -293,6 +293,14 @@ ARCHITECTURE_TEMPLATE.md
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md#architecture-documentation) for full instructions on how to fill it in. For details on the repository's testing strategies and CI gates, refer to [TESTING.md](TESTING.md). For rules regarding external dependencies, refer to [THIRD_PARTY_POLICY.md](THIRD_PARTY_POLICY.md). For persistent data storage and conflict resolution policies, refer to [STORAGE_POLICY.md](STORAGE_POLICY.md). For production hardening and deployment security controls, see [SECURE_DEPLOYMENT_CHECKLIST.md](SECURE_DEPLOYMENT_CHECKLIST.md) and [SECURITY.md](SECURITY.md). For the files, entrypoint, lifecycle, and API rules every mini must follow, see [docs/MINI_CONTRACT.md](docs/MINI_CONTRACT.md).
+
+## 🔒 Security & Vulnerability Disclosure
+
+Cradle takes security seriously and follows a coordinated vulnerability disclosure model.
+
+- **Private Reporting:** If you discover a vulnerability, please **do not open a public issue**. Report it confidentially via [GitHub Private Vulnerability Reporting](https://github.com/Facelessism/cradle/security/advisories/new) or email **`security@cradle.dev`** (or maintainer contact: `facelessism@users.noreply.github.com`).
+- **Response SLAs:** Initial acknowledgment within **24 hours**; Critical vulnerabilities (CVSS 9.0+) triaged and mitigated within **48 hours**; High-severity issues within **7 days**.
+- **Full Policy:** For our complete incident response process, CVSS triage matrix, remediation SLAs, and researcher safe harbor terms, see [SECURITY.md](SECURITY.md).
 
 ## 🔧 Troubleshooting
 
