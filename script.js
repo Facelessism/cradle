@@ -18,6 +18,7 @@ import {
   sanitizeProject,
   sanitizeProjectList,
 } from "./src/utils/projectSanitizer.js";
+import { registerServiceWorker } from "./src/utils/serviceWorkerRegistration.js";
 
 const projectsGrid = document.getElementById("projects-grid");
 const searchInput = document.getElementById("search");
@@ -1027,4 +1028,15 @@ document.addEventListener("DOMContentLoaded", () => {
   restoreFiltersFromUrl();
   renderRecentProjects();
   loadProjects();
+  registerServiceWorker();
+
+  if (document.documentElement?.addEventListener) {
+    document.documentElement.addEventListener("cradle:themechange", e => {
+      const theme = e.detail?.theme;
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta && theme) {
+        meta.setAttribute("content", theme === "light" ? "#f5f7fb" : "#05070d");
+      }
+    });
+  }
 });
