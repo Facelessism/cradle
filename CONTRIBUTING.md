@@ -142,7 +142,7 @@ Before opening a Pull Request, review the following checklist:
 - [ ] `index.html` includes the shared `BackToHome.js` navigation component.
 - [ ] Any external third-party scripts or models strictly follow the [Third-Party Script Loading Policy](THIRD_PARTY_POLICY.md) (e.g., proper SRI hashes, trusted CDNs).
 - [ ] All persistent data storage uses the `CradleStorage` abstraction as defined in the [Storage Policy](STORAGE_POLICY.md).
-- [ ] Shared UI components from `src/components/ui/` and design tokens from `tokens.css` are used for standard UI patterns rather than duplicating components (see [Shared UI Policy](docs/SHARED_UI_POLICY.md)).
+- [ ] The mini complies with the [Build Strategy](docs/BUILD_STRATEGY.md): static by default (Tier 1), no local `package.json` or `node_modules`, and no rogue bundler config files.
 - [ ] The project explicitly specifies its licensing and includes attribution for any third-party assets.
 - [ ] `ARCHITECTURE.md` has been added following the [standardized template](ARCHITECTURE_TEMPLATE.md).
 - [ ] The project works correctly locally.
@@ -222,13 +222,14 @@ Please follow the existing coding style throughout the repository. Code formatti
 - Remove unused code before submitting.
 - Update documentation whenever your changes affect functionality.
 
-### Shared UI Component Library
+### Build and Bundling Strategy
 
-Cradle provides a zero-dependency, framework-free component library in `src/components/ui/` with standardized components (`CradleButton`, `CradleCard`, `CradleThemeToggle`, `CradleNavbar`, `CradleBackToHome`) and foundational utilities (`CradleStorage`, `CradleSanitize`, `CradleEscape`).
+Minis in Cradle follow the centralized build model defined in [docs/BUILD_STRATEGY.md](docs/BUILD_STRATEGY.md):
 
-- **Reuse first**: Before writing custom buttons, cards, navbar shells, or theme switchers, use the shared components.
-- **Do not fork or duplicate**: Do not copy shared components into your mini's folder. If a shared component needs an enhancement or additional variant, propose an update upstream in `src/components/ui/`.
-- **Adhere to the policy**: See [docs/SHARED_UI_POLICY.md](docs/SHARED_UI_POLICY.md) and [src/components/ui/README.md](src/components/ui/README.md) for full API contracts, versioning guarantees, and promotion workflows.
+- **Tier 1: Static (Zero-Build) [Default]**: Author standard HTML, CSS, and vanilla JS / ES modules (`<script type="module">`). No build tools required; runs immediately on save.
+- **Tier 2: Centrally Bundled**: For projects needing TypeScript or JSX compilation, source files live in `src/` and are built using the centralized root orchestrator (`npm run build:minis` / `scripts/build-minis.js`). The compiled bundle is committed to git.
+- **Tier 3: Individually Bundled**: For WebAssembly (Rust/C++) or specialized DSP kernels. Build artifacts must be committed to `assets/` or `dist/`, and no `node_modules` may ever be committed.
+- **No rogue tooling**: Do not create per-mini `package.json`, `vite.config.js`, `webpack.config.js`, or `node_modules` in project directories. All shared dependencies are managed at the repository root.
 
 ### Code Formatting
 
