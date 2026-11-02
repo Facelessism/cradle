@@ -408,6 +408,193 @@
   }
 
   /**
+   * Write a value with an expiration timestamp (Time-To-Live in milliseconds).
+   * Used for sensitive drafts, temporary caches, or bounded data retention.
+   * @param {string} key
+   * @param {*} value
+   * @param {number} ttlMs Time to live in milliseconds (must be positive finite number).
+   * @returns {boolean} True when write succeeded.
+   */
+  function setWithExpiry(key, value, ttlMs) {
+    if (!Number.isFinite(ttlMs) || ttlMs <= 0) {
+      return false;
+    }
+    const envelope = {
+      __cradle_expiry: true,
+      data: value ?? null,
+      expiresAt: Date.now() + ttlMs,
+    };
+    return set(key, envelope);
+  }
+
+  /**
+   * Read a value stored with an expiration timestamp. If the TTL has expired,
+   * automatically purges the item from storage and returns fallback.
+   * Also validates the unpacked value against validator if provided.
+   * @param {string} key
+   * @param {*} [fallback=null]
+   * @param {Function} [validator]
+   * @returns {*}
+   */
+  function getWithExpiry(key, fallback = null, validator = null) {
+    const envelope = get(key, null);
+    if (!envelope || typeof envelope !== "object" || !envelope.__cradle_expiry) {
+      return fallback;
+    }
+    if (typeof envelope.expiresAt !== "number" || Date.now() > envelope.expiresAt) {
+      remove(key);
+      return fallback;
+    }
+    if (!isValid(envelope.data, validator)) {
+      remove(key);
+      return fallback;
+    }
+    return envelope.data;
+  }
+
+  /**
+   * Checks if an item with an expiration envelope is expired.
+   * @param {string} key
+   * @returns {boolean} True if expired or malformed envelope, false if valid and unexpired.
+   */
+  function isExpired(key) {
+    const envelope = get(key, null);
+    if (!envelope || typeof envelope !== "object" || !envelope.__cradle_expiry) {
+      return false;
+    }
+    return typeof envelope.expiresAt !== "number" || Date.now() > envelope.expiresAt;
+  }
+
+  /**
+   * Scans keys matching prefix and purges all expired entries.
+   * @param {string} [prefix=""]
+   * @returns {number} Count of expired keys pruned.
+   */
+  function pruneExpired(prefix = "") {
+    let pruned = 0;
+    const matching = keys(prefix);
+    for (const key of matching) {
+      const envelope = get(key, null);
+      if (
+        envelope &&
+        typeof envelope &&
+        envelope.__cradle_expiry &&
+        typeof envelope.expiresAt === "number" &&
+        Date.now() > envelope.expiresAt
+      ) {
+        if (remove(key)) pruned++;
+      }
+    }
+    return pruned;
+  }
+
+  /* ── Session Storage Adapter for Sensitive / Ephemeral Data ── */
+  const sessionMemoryStore = (function () {
+    const data = {};
+    return {
+      get length() { return Object.keys(data).length; },
+      key(i) { const k = Object.keys(data); return i >= 0 && i < k.length ? k[i] : null; },
+      getItem(k) { return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null; },
+      setItem(k, v) { data[k] = String(v); },
+      removeItem(k) { delete data[k]; },
+      clear() { for (const k of Object.keys(data)) delete data[k]; },
+    };
+  })();
+
+  function isSessionAvailable() {
+    try {
+      if (typeof sessionStorage === "undefined") return false;
+      const probe = "__cradle_session_probe__";
+      sessionStorage.setItem(probe, "1");
+      sessionStorage.removeItem(probe);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function resolveSessionStore() {
+    return isSessionAvailable() ? sessionStorage : sessionMemoryStore;
+  }
+
+  const session = {
+    isAvailable: isSessionAvailable,
+    getRaw(key, fallback = null, validator = null) {
+      try {
+        const raw = resolveSessionStore().getItem(String(key));
+        if (raw === null) return fallback;
+        if (!isValid(raw, validator)) return fallback;
+        return raw;
+      } catch (e) {
+        return fallback;
+      }
+    },
+    get(key, fallback = null, validator = null) {
+      const raw = this.getRaw(key, null);
+      if (raw === null) return fallback;
+      try {
+        const parsed = JSON.parse(raw);
+        if (!isValid(parsed, validator)) return fallback;
+        return parsed;
+      } catch (e) {
+        return fallback;
+      }
+    },
+    setRaw(key, value) {
+      try {
+        resolveSessionStore().setItem(String(key), String(value));
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+    set(key, value) {
+      return this.setRaw(key, JSON.stringify(value ?? null));
+    },
+    remove(key) {
+      try {
+        resolveSessionStore().removeItem(String(key));
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+    keys(prefix = "") {
+      const p = String(prefix);
+      const out = [];
+      try {
+        const store = resolveSessionStore();
+        if (typeof store.length === "number") {
+          for (let i = 0; i < store.length; i++) {
+            const k = store.key(i);
+            if (k != null && String(k).startsWith(p)) out.push(String(k));
+          }
+        }
+      } catch (e) {}
+      return out.sort();
+    },
+    clear(prefix = "") {
+      let removed = 0;
+      for (const k of this.keys(prefix)) {
+        if (this.remove(k)) removed++;
+      }
+      return removed;
+    },
+    namespace(prefix) {
+      const p = String(prefix);
+      return {
+        get: (key, fallback, validator) => session.get(p + key, fallback, validator),
+        getRaw: (key, fallback, validator) => session.getRaw(p + key, fallback, validator),
+        set: (key, value) => session.set(p + key, value),
+        setRaw: (key, value) => session.setRaw(p + key, value),
+        remove: key => session.remove(p + key),
+        keys: () => session.keys(p),
+        clear: () => session.clear(p),
+      };
+    },
+  };
+
+  /**
    * Create a namespaced handle so callers never repeat a key prefix.
    * All keys are stored as `prefix + key`.
    * @param {string} prefix e.g. "cradle_rps_"
@@ -431,6 +618,10 @@
       remove: key => remove(p + key),
       keys: () => keys(p),
       clear: () => clear(p),
+      setWithExpiry: (key, value, ttlMs) => setWithExpiry(p + key, value, ttlMs),
+      getWithExpiry: (key, fallback, validator) => getWithExpiry(p + key, fallback, validator),
+      isExpired: key => isExpired(p + key),
+      pruneExpired: () => pruneExpired(p),
     };
   }
 
@@ -448,4 +639,9 @@
   exports.keys = keys;
   exports.clear = clear;
   exports.namespace = namespace;
+  exports.setWithExpiry = setWithExpiry;
+  exports.getWithExpiry = getWithExpiry;
+  exports.isExpired = isExpired;
+  exports.pruneExpired = pruneExpired;
+  exports.session = session;
 })(typeof exports === "undefined" ? (window.CradleStorage = {}) : exports);
