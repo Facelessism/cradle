@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cradle-zeta.vercel.app/sitemap.xml
