@@ -1,0 +1,34 @@
+name: Check Broken Links
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  check-broken-links:
+    name: Crawl built site and verify internal links
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline || npm install
+
+      - name: Build site
+        run: npm run build
+
+      - name: Crawl built site and verify internal links
+        run: npm run check:links

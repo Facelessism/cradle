@@ -80,7 +80,10 @@
             : "dark");
         if (t === "light")
           document.documentElement.classList.add("light-theme");
-        var meta = document.querySelector('meta[name="theme-color"]');
+        var meta =
+          typeof document.querySelector === "function"
+            ? document.querySelector('meta[name="theme-color"]')
+            : null;
         if (meta) {
           meta.setAttribute("content", t === "light" ? "#f5f7fb" : "#05070d");
         }

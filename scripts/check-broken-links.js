@@ -16,6 +16,7 @@ const EXTERNAL_PREFIXES = [
 
 function getFiles(dir) {
   let results = [];
+  if (!fs.existsSync(dir)) return results;
   const list = fs.readdirSync(dir, { withFileTypes: true });
 
   for (const entry of list) {
@@ -68,22 +69,24 @@ function parseHtmlLinks(content) {
 }
 
 function isExternal(link) {
+  if (typeof link !== "string") return false;
   const trimmed = link.trim().toLowerCase();
   return EXTERNAL_PREFIXES.some(prefix => trimmed.startsWith(prefix));
 }
 
 function sanitizePath(link) {
+  if (typeof link !== "string") return "";
   let cleaned = link.split("#")[0].split("?")[0];
   try {
     cleaned = decodeURIComponent(cleaned);
   } catch (e) {
     // Keep un-decoded if URI decode fails
   }
-  return cleaned;
+  return cleaned.trim();
 }
 
-function validateLinks() {
-  const files = getFiles(REPO_ROOT);
+function validateDocumentLinks(rootDir = REPO_ROOT) {
+  const files = getFiles(rootDir);
   const brokenLinks = [];
 
   for (const filePath of files) {
@@ -100,18 +103,32 @@ function validateLinks() {
 
       let resolvedPath;
       if (cleanLink.startsWith("/")) {
-        resolvedPath = path.join(REPO_ROOT, cleanLink);
+        resolvedPath = path.join(rootDir, cleanLink);
       } else {
         resolvedPath = path.join(path.dirname(filePath), cleanLink);
       }
 
-      if (!fs.existsSync(resolvedPath)) {
-        const relSource = path.relative(REPO_ROOT, filePath);
+      let exists = fs.existsSync(resolvedPath);
+      if (exists) {
+        try {
+          const stat = fs.statSync(resolvedPath);
+          if (stat.isDirectory()) {
+            exists = fs.existsSync(path.join(resolvedPath, "index.html"));
+          }
+        } catch {
+          exists = false;
+        }
+      }
+
+      if (!exists) {
+        const relSource = path.relative(rootDir, filePath);
         brokenLinks.push({
-          source: relSource,
+          source: relSource.replace(/\\/g, "/"),
           line: lineNumber,
           target,
-          resolvedPath: path.relative(REPO_ROOT, resolvedPath),
+          resolvedPath: path
+            .relative(rootDir, resolvedPath)
+            .replace(/\\/g, "/"),
         });
       }
     }
@@ -120,24 +137,91 @@ function validateLinks() {
   return brokenLinks;
 }
 
+function validateGalleryProjects(rootDir = REPO_ROOT) {
+  const projectsJsonPath = path.join(rootDir, "data", "projects.json");
+  const brokenLinks = [];
+  if (!fs.existsSync(projectsJsonPath)) return brokenLinks;
+
+  try {
+    const raw = fs.readFileSync(projectsJsonPath, "utf8");
+    const projects = JSON.parse(raw);
+    if (!Array.isArray(projects)) return brokenLinks;
+
+    projects.forEach((project, idx) => {
+      if (!project || typeof project !== "object") return;
+      const projectPath = project.path;
+      if (projectPath && !isExternal(projectPath)) {
+        const cleanPath = sanitizePath(projectPath);
+        const resolvedProjectDir = path.join(rootDir, cleanPath);
+        const indexFile = path.join(resolvedProjectDir, "index.html");
+
+        if (!fs.existsSync(resolvedProjectDir) || !fs.existsSync(indexFile)) {
+          brokenLinks.push({
+            source: "data/projects.json",
+            line: idx + 1,
+            target: projectPath,
+            resolvedPath: path.relative(rootDir, indexFile).replace(/\\/g, "/"),
+            detail: `Gallery card for "${project.title || "Unknown"}" points to missing mini entry point`,
+          });
+        }
+      }
+
+      if (project.path) {
+        const thumbPath = path.join(rootDir, project.path, "thumbnail.svg");
+        if (!fs.existsSync(thumbPath)) {
+          brokenLinks.push({
+            source: "data/projects.json",
+            line: idx + 1,
+            target: `${project.path}thumbnail.svg`,
+            resolvedPath: path.relative(rootDir, thumbPath).replace(/\\/g, "/"),
+            detail: `Gallery thumbnail for "${project.title || "Unknown"}" is missing`,
+          });
+        }
+      }
+    });
+  } catch (err) {
+    brokenLinks.push({
+      source: "data/projects.json",
+      line: 1,
+      target: "data/projects.json",
+      resolvedPath: "data/projects.json",
+      detail: `Malformed JSON in projects.json: ${err.message}`,
+    });
+  }
+
+  return brokenLinks;
+}
+
+function validateLinks(options = {}) {
+  const rootDir = options.rootDir || REPO_ROOT;
+  const docBroken = validateDocumentLinks(rootDir);
+  const galleryBroken = validateGalleryProjects(rootDir);
+  return [...docBroken, ...galleryBroken];
+}
+
 function main() {
   console.log(
-    "Scanning repository for broken internal links in documentation and project pages..."
+    "Scanning repository and home gallery for broken internal links..."
   );
   const broken = validateLinks();
 
   if (broken.length > 0) {
     console.error(`\n❌ Found ${broken.length} broken internal link(s):\n`);
-    broken.forEach(({ source, line, target, resolvedPath }) => {
+    broken.forEach(({ source, line, target, resolvedPath, detail }) => {
       console.error(
-        `  - ${source}:${line} -> "${target}" (Resolved: ${resolvedPath})`
+        `  - ${source}:${line} -> "${target}" (Resolved: ${resolvedPath})${detail ? ` [${detail}]` : ""}`
       );
+      if (process.env.GITHUB_ACTIONS) {
+        console.error(
+          `::error file=${source},line=${line}::Broken link "${target}" -> "${resolvedPath}"${detail ? ` (${detail})` : ""}`
+        );
+      }
     });
     console.error("\nPlease fix all broken internal links.");
     process.exit(1);
   } else {
     console.log(
-      "\n✅ All internal links in documentation and project pages are valid!"
+      "\n✅ All internal links across the home gallery, documentation, and project pages are valid!"
     );
     process.exit(0);
   }
@@ -153,5 +237,7 @@ module.exports = {
   parseHtmlLinks,
   isExternal,
   sanitizePath,
+  validateDocumentLinks,
+  validateGalleryProjects,
   validateLinks,
 };
