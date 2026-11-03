@@ -148,6 +148,11 @@
         font-weight: 700;
       }
 
+      html.light-theme .cradle-navbar__link--active {
+        color: var(--cradle-highlight, #1d4ed8);
+        background: var(--cradle-accent-light, rgba(37, 99, 235, 0.1));
+      }
+
       .cradle-navbar__link:focus-visible,
       .cradle-navbar__brand:focus-visible {
         outline: 2px solid var(--color-accent, var(--cradle-accent-hover, #2563eb));

@@ -31,12 +31,13 @@
   /* Accent — blue */
   --cradle-accent: #1e3a8a;
   --cradle-accent-hover: #2563eb;
+  --cradle-accent-outline: #60a5fa;
   --cradle-accent-light: rgba(37, 99, 235, 0.15);
   --color-accent: var(--cradle-accent-hover, #2563eb);
 
   /* Semantic colours */
-  --cradle-success: #16a34a;
-  --cradle-success-bg: rgba(22, 163, 74, 0.12);
+  --cradle-success: #15803d;
+  --cradle-success-bg: rgba(21, 128, 61, 0.12);
   --cradle-danger: #dc2626;
   --cradle-danger-bg: rgba(220, 38, 38, 0.12);
   --cradle-warning: #f59e0b;
@@ -96,18 +97,20 @@ html.light-theme {
 
   --cradle-text: #0f172a;
   --cradle-text-secondary: #334155;
-  --cradle-muted: #64748b;
+  --cradle-muted: #475569;
 
   --cradle-accent: #2563eb;
   --cradle-accent-hover: #1d4ed8;
+  --cradle-accent-outline: #1d4ed8;
   --cradle-accent-light: rgba(37, 99, 235, 0.1);
   --color-accent: var(--cradle-accent-hover, #1d4ed8);
 
-  --cradle-success: #16a34a;
+  --cradle-success: #15803d;
   --cradle-danger: #dc2626;
-  --cradle-warning: #f59e0b;
+  --cradle-warning: #92400e;
+  --cradle-warning-bg: rgba(146, 64, 14, 0.12);
 
-  --cradle-highlight: #2563eb;
+  --cradle-highlight: #1d4ed8;
 
   --cradle-shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.06);
   --cradle-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
