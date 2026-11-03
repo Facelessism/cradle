@@ -470,7 +470,7 @@ function updateStats() {
   const acc =
     totalAttempted > 0
       ? Math.round((state.correctWords / totalAttempted) * 100)
-      : 100;
+      : 0;
   if (correctCountEl) correctCountEl.textContent = state.correctWords;
   if (wrongCountEl) wrongCountEl.textContent = state.wrongWords;
   if (accuracyEl) accuracyEl.textContent = acc + "%";
@@ -578,7 +578,7 @@ function endGame() {
   const acc =
     totalAttempted > 0
       ? Math.round((state.correctWords / totalAttempted) * 100)
-      : 100;
+      : 0;
   const rank = getRank(wpm);
 
   // Update best (bounded between 0 and 500 wpm)
