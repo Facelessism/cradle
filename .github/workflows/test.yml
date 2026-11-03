@@ -22,5 +22,6 @@ jobs:
       # Warning mode: reports mini-contract problems but never fails the job.
       - run: npm run validate:mini-contract
       - run: npm run validate:worker-integrity
+      - run: npm run check:links
       - run: npm run audit:deps
       - run: npm test
