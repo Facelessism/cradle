@@ -37,18 +37,18 @@ Rules:
 
 ## 2. Files
 
-| File                                                                                | Status           | Notes                                                                                                                                      |
-| :---------------------------------------------------------------------------------- | :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
-| `index.html`                                                                        | **Required**     | The entrypoint. Non-empty, with a `<title>`.                                                                                               |
-| `style.css`                                                                         | **Required**     | Mini-specific styling.                                                                                                                     |
-| `script.js`                                                                         | **Required**     | Mini-specific behavior. Exception: the minis listed in `MODULAR_PROJECTS` in `scripts/validate-mini-projects.js` use several module files. |
-| `thumbnail.svg`                                                                     | **Required**     | Card image. `npm run generate` creates a placeholder if it is missing.                                                                     |
-| `ARCHITECTURE.md`                                                                   | **Required**     | Non-empty, based on `ARCHITECTURE_TEMPLATE.md` (section headings are checked by `npm run validate:architecture`).                          |
-| Extra scripts (`*Engine.js`, `*Logic.js`, `algorithms.js`, workers)                 | Optional         | Keep pure logic apart from DOM code so it can be unit tested from `tests/` (see `TESTING.md`).                                             |
-| `assets/`, images, fonts                                                            | Optional         | Local assets used by the mini.                                                                                                             |
-| `.env`, `.env.*`                                                                    | **Forbidden**    | See `CREDENTIALS_AND_SECRETS.md`.                                                                                                          |
-| `package.json`, `node_modules`                                                     | **Forbidden**    | Per-mini package trees are prohibited; manage dependencies at root (see [BUILD_STRATEGY.md](BUILD_STRATEGY.md)).                         |
-| Unbuilt source (`.ts`, `.tsx`, `.jsx`, `.scss`, etc.)                               | Conditional      | Must not exist in Tier 1; in Tier 2/3 must be registered in `scripts/build-minis.js` with committed bundle (see [BUILD_STRATEGY.md](BUILD_STRATEGY.md)). |
+| File                                                                | Status        | Notes                                                                                                                                                    |
+| :------------------------------------------------------------------ | :------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html`                                                        | **Required**  | The entrypoint. Non-empty, with a `<title>`.                                                                                                             |
+| `style.css`                                                         | **Required**  | Mini-specific styling.                                                                                                                                   |
+| `script.js`                                                         | **Required**  | Mini-specific behavior. Exception: the minis listed in `MODULAR_PROJECTS` in `scripts/validate-mini-projects.js` use several module files.               |
+| `thumbnail.svg`                                                     | **Required**  | Card image. `npm run generate` creates a placeholder if it is missing.                                                                                   |
+| `ARCHITECTURE.md`                                                   | **Required**  | Non-empty, based on `ARCHITECTURE_TEMPLATE.md` (section headings are checked by `npm run validate:architecture`).                                        |
+| Extra scripts (`*Engine.js`, `*Logic.js`, `algorithms.js`, workers) | Optional      | Keep pure logic apart from DOM code so it can be unit tested from `tests/` (see `TESTING.md`).                                                           |
+| `assets/`, images, fonts                                            | Optional      | Local assets used by the mini.                                                                                                                           |
+| `.env`, `.env.*`                                                    | **Forbidden** | See `CREDENTIALS_AND_SECRETS.md`.                                                                                                                        |
+| `package.json`, `node_modules`                                      | **Forbidden** | Per-mini package trees are prohibited; manage dependencies at root (see [BUILD_STRATEGY.md](BUILD_STRATEGY.md)).                                         |
+| Unbuilt source (`.ts`, `.tsx`, `.jsx`, `.scss`, etc.)               | Conditional   | Must not exist in Tier 1; in Tier 2/3 must be registered in `scripts/build-minis.js` with committed bundle (see [BUILD_STRATEGY.md](BUILD_STRATEGY.md)). |
 
 ## 3. Entrypoint rules
 
@@ -63,6 +63,7 @@ Rules:
 - **Remote scripts** MUST follow `THIRD_PARTY_POLICY.md`: an allowed CDN (`unpkg.com`, `jsdelivr.net`, `cdnjs.cloudflare.com`, `huggingface.co`) plus `integrity` and `crossorigin="anonymous"`. A missing `integrity` is an error; a script from another origin is a warning. Anything else must be vendored into the mini's `assets/`.
 - **No dynamic code execution** (`eval`, `new Function`, string timers, inline handlers). Enforced by `npm run validate:no-dynamic-eval`.
 - Web Workers must be same-origin files (`npm run validate:worker-integrity`).
+- **Content Security Policy (CSP).** The root landing page (`index.html`) enforces a baseline CSP allowing only same-origin resources and Google Fonts. Minis requiring external scripts or APIs must define their own `<meta http-equiv="Content-Security-Policy">` in their `index.html` allowing only the specific origins required by the mini (e.g. `script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;` per `THIRD_PARTY_POLICY.md`). See [THIRD_PARTY_POLICY.md](../THIRD_PARTY_POLICY.md).
 
 ## 4. Lifecycle expectations
 
@@ -105,13 +106,13 @@ Minis target current evergreen Chrome, Firefox, and Safari with no polyfill or b
 
 ## 7. How the contract is enforced
 
-| Check                              | Command                                                                         | Covers                                                 |
-| :--------------------------------- | :------------------------------------------------------------------------------ | :----------------------------------------------------- |
-| Contract report (this document)    | `npm run validate:mini-contract [-- --strict]`                                  | Sections 2-6, per mini, with `error`/`warning` levels. |
-| Required files, navigation, assets | `npm run validate:mini-projects`                                                | Existing CI gate (fails on any problem).               |
-| Architecture docs                  | `npm run validate:architecture`                                                 | Presence and required sections of `ARCHITECTURE.md`.   |
-| Registry sync                      | `npm run validate:projects-sync`                                                | `data/projects.json` matches the folders.              |
-| Build strategy compliance          | `npm run validate:build-strategy`                                               | Zero rogue tooling, valid build tiers (BUILD_STRATEGY).|
-| Dynamic code, workers, labels      | `validate:no-dynamic-eval`, `validate:worker-integrity`, `validate:a11y-labels` | Section 3 and accessibility.                           |
+| Check                              | Command                                                                         | Covers                                                  |
+| :--------------------------------- | :------------------------------------------------------------------------------ | :------------------------------------------------------ |
+| Contract report (this document)    | `npm run validate:mini-contract [-- --strict]`                                  | Sections 2-6, per mini, with `error`/`warning` levels.  |
+| Required files, navigation, assets | `npm run validate:mini-projects`                                                | Existing CI gate (fails on any problem).                |
+| Architecture docs                  | `npm run validate:architecture`                                                 | Presence and required sections of `ARCHITECTURE.md`.    |
+| Registry sync                      | `npm run validate:projects-sync`                                                | `data/projects.json` matches the folders.               |
+| Build strategy compliance          | `npm run validate:build-strategy`                                               | Zero rogue tooling, valid build tiers (BUILD_STRATEGY). |
+| Dynamic code, workers, labels      | `validate:no-dynamic-eval`, `validate:worker-integrity`, `validate:a11y-labels` | Section 3 and accessibility.                            |
 
 The contract validator reuses the file, navigation, and favicon checks from `scripts/validate-mini-projects.js` and the folder scan from `scripts/project-discovery.js`, so the rules cannot drift apart. It is not part of CI yet; once the remaining violations are fixed it can be added next to the other gates.

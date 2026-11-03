@@ -101,3 +101,37 @@ When dynamically injecting remote scripts (e.g. via `loadScriptAsync` or custom 
 - **Attribution**: The `ARCHITECTURE.md` of your project must include a "Dependencies" section explicitly stating the name, source, and open-source license of every third-party model, library, and asset you load.
 - **Commercial Restrictions**: Do not include models or scripts with licenses that strictly forbid commercial use or contain highly restrictive non-open-source clauses. Stick to MIT, Apache 2.0, BSD, or broadly permissive open weights.
 
+## 5. Content Security Policy (CSP) Extension for Minis
+
+The site's landing page (`index.html`) enforces a minimal Content Security Policy:
+
+```html
+<meta
+  http-equiv="Content-Security-Policy"
+  content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';"
+/>
+```
+
+Minis load as standalone documents (`projects/<category>/<slug>/index.html`) and do not automatically inherit the landing page's meta tag. When a mini requires external libraries (such as Tone.js or marked) or remote data/models (such as Hugging Face weights), it **SHOULD** include its own `<meta http-equiv="Content-Security-Policy">` in `<head>` tailored to its specific needs:
+
+1. **Permit only approved origins:** Include only the specific CDNs (`unpkg.com`, `cdn.jsdelivr.net`, `cdnjs.cloudflare.com`, `huggingface.co`) or API domains accessed by the mini.
+2. **Never use wildcards (`*`) or insecure `http:` schemes.**
+3. **Always preserve defense-in-depth directives:** Keep `object-src 'none'`, `base-uri 'self'`, and `default-src 'self'`.
+
+**Example: Mini loading Tone.js from cdnjs:**
+
+```html
+<meta
+  http-equiv="Content-Security-Policy"
+  content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self';"
+/>
+```
+
+**Example: Mini loading Hugging Face models:**
+
+```html
+<meta
+  http-equiv="Content-Security-Policy"
+  content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://huggingface.co; object-src 'none'; base-uri 'self';"
+/>
+```
