@@ -8,7 +8,7 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
-    "generate": "node scripts/generate-projects.js && node scripts/generate-readme-table.js",
+    "generate": "node scripts/generate-projects.js && node scripts/generate-readme-table.js && node scripts/generate-sitemap.js",
     "generate:readme": "node scripts/generate-readme-table.js",
     "validate:architecture": "node scripts/validate-architecture-docs.js",
     "validate:mini-projects": "node scripts/validate-mini-projects.js",
@@ -31,7 +31,9 @@
     "format": "prettier --write .",
     "check-format": "prettier --check .",
     "validate:build-strategy": "node scripts/build-minis.js --check",
-    "build:minis": "node scripts/build-minis.js --build"
+    "build:minis": "node scripts/build-minis.js --build",
+    "generate:sitemap": "node scripts/generate-sitemap.js",
+    "validate:sitemap": "node scripts/generate-sitemap.js --check"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.7",
