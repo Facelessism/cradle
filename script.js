@@ -19,12 +19,17 @@ import {
   sanitizeProjectList,
 } from "./src/utils/projectSanitizer.js";
 import { registerServiceWorker } from "./src/utils/serviceWorkerRegistration.js";
+import {
+  pickSurpriseProject,
+  getEligibleProjects,
+} from "./src/utils/surprisePicker.js";
 
 const projectsGrid = document.getElementById("projects-grid");
 const searchInput = document.getElementById("search");
 const categoriesContainer = document.getElementById("categories");
 const projectCount = document.getElementById("project-count");
 const clearFiltersBtn = document.getElementById("clear-filters");
+const surpriseBtn = document.getElementById("surprise-btn");
 const searchSuggestions = document.getElementById("search-suggestions");
 const recentProjectsSection = document.getElementById(
   "recent-projects-section"
@@ -836,6 +841,31 @@ searchInput.addEventListener("keydown", event => {
   }
 });
 
+function triggerSurpriseMe() {
+  const query = searchInput ? searchInput.value.trim() : "";
+  const candidates = getEligibleProjects(allProjects, selectedCategory, query);
+
+  const storage =
+    typeof window !== "undefined" && window.CradleStorage
+      ? window.CradleStorage
+      : null;
+
+  const picked = pickSurpriseProject(candidates, storage);
+  if (!picked || !picked.path) {
+    if (copyStatus) {
+      setCopyStatus("No projects available to pick from.");
+    }
+    return;
+  }
+
+  recordRecentlyOpenedProject(picked);
+  window.location.href = picked.path;
+}
+
+if (surpriseBtn) {
+  surpriseBtn.addEventListener("click", triggerSurpriseMe);
+}
+
 if (clearFiltersBtn) {
   clearFiltersBtn.addEventListener("click", clearFilters);
 }
@@ -959,7 +989,6 @@ document.addEventListener("keydown", e => {
     return;
   }
 
-  // Toggle Theme
   const activeTagName = document.activeElement?.tagName
     ? document.activeElement.tagName.toUpperCase()
     : "";
@@ -967,6 +996,23 @@ document.addEventListener("keydown", e => {
     activeTagName === "INPUT" ||
     activeTagName === "TEXTAREA" ||
     activeTagName === "SELECT";
+
+  // Surprise Me (Random Mini)
+  if (
+    e.key.toLowerCase() === "r" &&
+    !e.ctrlKey &&
+    !e.metaKey &&
+    !e.altKey &&
+    !isInputActive &&
+    !isInteractiveTagActive &&
+    document.activeElement !== searchInput
+  ) {
+    e.preventDefault();
+    triggerSurpriseMe();
+    return;
+  }
+
+  // Toggle Theme
 
   if (
     e.key.toLowerCase() === "t" &&
