@@ -189,6 +189,10 @@ html.light-theme .hero h1 {
   gap: 0.75rem;
 }
 
+.surprise-btn {
+  white-space: nowrap;
+}
+
 .search-wrapper {
   position: relative;
   display: flex;
@@ -553,6 +557,10 @@ html.light-theme .footer-link:hover {
   #clear-filters {
     align-self: center;
     margin: 1.6rem 0;
+  }
+
+  #surprise-btn {
+    align-self: center;
   }
 
   #shortcuts-btn {
