@@ -228,7 +228,7 @@ test("create supports an Element child in content and an array of footer element
   assert.equal(element.childNodes[1].childNodes[1], secondAction);
 });
 
-test("create supports hero images with title-based alt text and lazy loading", () => {
+test("create supports hero images with title-based alt text, lazy loading, and explicit dimensions", () => {
   const { card } = loadCard();
   const element = card.create({
     title: "Solar System",
@@ -240,7 +240,31 @@ test("create supports hero images with title-based alt text and lazy loading", (
   assert.equal(image.src, "/images/solar-system.jpg");
   assert.equal(image.alt, "Solar System");
   assert.equal(image.loading, "lazy");
+  assert.equal(image.getAttribute("loading"), "lazy");
+  assert.equal(image.getAttribute("width"), "1200");
+  assert.equal(image.getAttribute("height"), "675");
+  assert.equal(image.width, 1200);
+  assert.equal(image.height, 675);
   assert.ok(image.classList.contains("cradle-card__image"));
+});
+
+test("create allows customizing explicit dimensions and loading mode", () => {
+  const { card } = loadCard();
+  const element = card.create({
+    title: "Constellations",
+    image: "/images/constellations.svg",
+    imageWidth: 800,
+    imageHeight: 450,
+    imageLoading: "eager",
+  });
+
+  const image = element.childNodes[0];
+  assert.equal(image.getAttribute("width"), "800");
+  assert.equal(image.getAttribute("height"), "450");
+  assert.equal(image.getAttribute("loading"), "eager");
+  assert.equal(image.width, 800);
+  assert.equal(image.height, 450);
+  assert.equal(image.loading, "eager");
 });
 
 test("image load failure replaces the broken image with an accessible fallback", () => {

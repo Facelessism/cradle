@@ -64,9 +64,9 @@ Every component exposes a static factory function returning a native `HTMLElemen
 
 ```javascript
 const element = window.CradleButton.create({
-  variant: 'primary', // component-specific options
-  children: 'Confirm',
-  onClick: (e) => console.log(e)
+  variant: "primary", // component-specific options
+  children: "Confirm",
+  onClick: e => console.log(e),
 });
 document.body.appendChild(element);
 ```
@@ -95,6 +95,7 @@ window.CradleButton.upgradeAll();
 ### 4. Custom Events (`cradle:*`)
 
 Shared components communicate state changes through custom DOM events:
+
 - Dispatched with the prefix `cradle:<event-name>` (e.g., `cradle:themechange`).
 - Bubbles by default (`bubbles: true`) with payloads stored in `event.detail`.
 
@@ -102,14 +103,14 @@ Shared components communicate state changes through custom DOM events:
 
 ## Utilities
 
-| Utility | File | Global | Description |
-| :--- | :--- | :--- | :--- |
-| **Storage** | `storage.js` | `CradleStorage` | Safe, namespaced `localStorage` wrapper with JSON serialization and memory fallback. |
-| **EscapeHtml** | `escapeHtml.js` | `CradleEscape` | Escapes `& < > " '` for safe text insertion into `innerHTML`. |
-| **SanitizeHtml** | `sanitizeHtml.js` | `CradleSanitize` | Comprehensive allowlist sanitizer for rich HTML strings. |
-| **SanitizeSvg** | `sanitizeSvg.js` | `CradleSanitize` | SVG structure and attribute sanitizer preventing embedded script vectors. |
-| **SanitizeCss** | `sanitizeCss.js` | `CradleSanitizeCss` | Allowlist-based CSS property and value sanitizer. |
-| **DiagramToolkit** | `diagram-toolkit.js` | `DiagramToolkit` | Generates Mermaid.js syntax for timelines, flowcharts, and architecture diagrams. |
+| Utility            | File                 | Global              | Description                                                                          |
+| :----------------- | :------------------- | :------------------ | :----------------------------------------------------------------------------------- |
+| **Storage**        | `storage.js`         | `CradleStorage`     | Safe, namespaced `localStorage` wrapper with JSON serialization and memory fallback. |
+| **EscapeHtml**     | `escapeHtml.js`      | `CradleEscape`      | Escapes `& < > " '` for safe text insertion into `innerHTML`.                        |
+| **SanitizeHtml**   | `sanitizeHtml.js`    | `CradleSanitize`    | Comprehensive allowlist sanitizer for rich HTML strings.                             |
+| **SanitizeSvg**    | `sanitizeSvg.js`     | `CradleSanitize`    | SVG structure and attribute sanitizer preventing embedded script vectors.            |
+| **SanitizeCss**    | `sanitizeCss.js`     | `CradleSanitizeCss` | Allowlist-based CSS property and value sanitizer.                                    |
+| **DiagramToolkit** | `diagram-toolkit.js` | `DiagramToolkit`    | Generates Mermaid.js syntax for timelines, flowcharts, and architecture diagrams.    |
 
 ### Storage Example
 
@@ -153,13 +154,13 @@ Shared components communicate state changes through custom DOM events:
 
 ## Components
 
-| Component | File | Global | Description |
-| :--- | :--- | :--- | :--- |
-| **Button** | `Button/Button.js` | `CradleButton` | Accessible button and link with variants, sizes, icons, and loading state. |
-| **Card** | `Card/Card.js` | `CradleCard` | Composable card primitive with header, content, footer, badges, and hover effects. |
-| **ThemeToggle** | `ThemeToggle/ThemeToggle.js` | `CradleThemeToggle` | Light/dark mode toggle connected to `CradleStorage` and OS color preferences. |
-| **Navbar** | `Navbar/Navbar.js` | `CradleNavbar` | Sticky navigation bar with responsive mobile drawer and route highlighting. |
-| **BackToHome** | `BackToHome/BackToHome.js` | `CradleBackToHome` | Floating or inline navigation pill returning users to the Cradle home page. |
+| Component       | File                         | Global              | Description                                                                        |
+| :-------------- | :--------------------------- | :------------------ | :--------------------------------------------------------------------------------- |
+| **Button**      | `Button/Button.js`           | `CradleButton`      | Accessible button and link with variants, sizes, icons, and loading state.         |
+| **Card**        | `Card/Card.js`               | `CradleCard`        | Composable card primitive with header, content, footer, badges, and hover effects. |
+| **ThemeToggle** | `ThemeToggle/ThemeToggle.js` | `CradleThemeToggle` | Light/dark mode toggle connected to `CradleStorage` and OS color preferences.      |
+| **Navbar**      | `Navbar/Navbar.js`           | `CradleNavbar`      | Sticky navigation bar with responsive mobile drawer and route highlighting.        |
+| **BackToHome**  | `BackToHome/BackToHome.js`   | `CradleBackToHome`  | Floating or inline navigation pill returning users to the Cradle home page.        |
 
 ---
 
@@ -181,7 +182,7 @@ const btn = CradleButton.create({
   disabled: false,
   fullWidth: false,
   ariaLabel: "Save your current changes",
-  onClick: (e) => console.log("Clicked!"),
+  onClick: e => console.log("Clicked!"),
 });
 document.querySelector(".actions").appendChild(btn);
 ```
@@ -214,7 +215,12 @@ const card = CradleCard.create({
   subtitle: "Interactive deep learning simulator",
   badge: "AI/ML",
   icon: "🧠",
-  children: "<p>Train a feedforward neural network directly in the browser.</p>",
+  image: "projects/aiml/neural-network-playground/thumbnail.svg",
+  imageWidth: 1200, // default: 1200
+  imageHeight: 675, // default: 675 (preserves 16:9 aspect ratio, zero CLS)
+  imageLoading: "lazy", // default: 'lazy'
+  children:
+    "<p>Train a feedforward neural network directly in the browser.</p>",
   footer: openBtn,
   footerAlign: "right", // left | right | between
   clickable: true,
@@ -253,7 +259,7 @@ document.querySelector(".header-controls").appendChild(toggle);
 ### Event Listener
 
 ```javascript
-document.documentElement.addEventListener("cradle:themechange", (e) => {
+document.documentElement.addEventListener("cradle:themechange", e => {
   console.log("Active theme:", e.detail.theme); // 'light' | 'dark'
 });
 ```
@@ -328,7 +334,11 @@ document.body.appendChild(btn);
 ### HTML (Auto-Upgraded)
 
 ```html
-<a data-cradle-back-to-home data-label="Return to Hub" data-to="/index.html"></a>
+<a
+  data-cradle-back-to-home
+  data-label="Return to Hub"
+  data-to="/index.html"
+></a>
 ```
 
 ---
@@ -385,10 +395,12 @@ To keep the shared UI layer cohesive and maintainable, clear ownership boundarie
 ```
 
 ### When to Use Shared UI
+
 - **Always use shared UI** for buttons, cards, theme toggling, home navigation, data storage, and input sanitization.
 - **Use shared design tokens** (`tokens.css`) when styling mini interfaces to ensure aesthetic coherence with the Cradle shell.
 
 ### When to Keep UI Local to a Mini
+
 - When a widget is coupled to domain logic (e.g., piano keys generating specific Web Audio frequencies, or a syntax tree graph node).
 - When prototyping an experimental interaction that has not yet proven utility in other minis.
 
@@ -399,6 +411,7 @@ To keep the shared UI layer cohesive and maintainable, clear ownership boundarie
 Cradle UI adheres to **Semantic Versioning (SemVer)**: `MAJOR.MINOR.PATCH`.
 
 The library version is available at runtime via `CradleUI.version`:
+
 ```javascript
 console.log(window.CradleUI.version); // e.g. "1.0.0"
 ```
@@ -444,6 +457,7 @@ Instead of creating ad-hoc local duplicates, follow the standardized graduation 
 ### Prefer Extension Over Forking
 
 Before copying a component, extend it through the public API:
+
 - **Composition**: Combine existing primitives (e.g., placing `CradleButton` instances inside `CradleCard.Footer()`).
 - **Custom Classes**: Pass custom class names via the `className` option.
 - **CSS Variable Overrides**: Override design tokens locally on the container element:
@@ -461,6 +475,7 @@ Before copying a component, extend it through the public API:
 ### Accessibility Standards (WCAG 2.1 AA)
 
 Every component:
+
 - Uses semantic HTML (`<button>`, `<nav>`, `<a>`, `<article>`).
 - Includes proper ARIA states (`aria-label`, `aria-expanded`, `aria-busy`, `role="switch"`).
 - Provides high-visibility `:focus-visible` rings meeting WCAG 2.1 Success Criterion 2.4.7.

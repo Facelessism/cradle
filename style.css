@@ -480,6 +480,14 @@ html.light-theme .recent-project-card::before {
   color: var(--muted);
 }
 
+.cradle-card__image {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+}
+
 footer {
   margin-top: 4rem;
   padding: 2rem 1rem;
