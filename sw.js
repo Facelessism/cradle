@@ -172,6 +172,37 @@ function isCacheableResponse(response) {
   return false;
 }
 
+/**
+ * Computes equivalent URL variations (with/without trailing slash, with/without index.html)
+ * to ensure previously cached minis load cleanly regardless of how the user accesses them offline.
+ *
+ * @param {string} urlString
+ * @returns {string[]}
+ */
+function getUrlVariants(urlString) {
+  try {
+    const url = new URL(urlString);
+    const variants = [];
+    if (url.pathname.endsWith("/")) {
+      variants.push(new URL(url.pathname + "index.html", url.origin).href);
+      if (url.pathname.length > 1) {
+        variants.push(new URL(url.pathname.slice(0, -1), url.origin).href);
+      }
+    } else if (url.pathname.endsWith("/index.html")) {
+      variants.push(new URL(url.pathname.slice(0, -10), url.origin).href);
+      if (url.pathname.slice(0, -11).length > 0) {
+        variants.push(new URL(url.pathname.slice(0, -11), url.origin).href);
+      }
+    } else {
+      variants.push(new URL(url.pathname + "/", url.origin).href);
+      variants.push(new URL(url.pathname + "/index.html", url.origin).href);
+    }
+    return variants;
+  } catch {
+    return [];
+  }
+}
+
 /* ── Service Worker Lifecycle ──────────────────────────── */
 
 const swScope = typeof self !== "undefined" ? self : globalThis;
@@ -253,19 +284,10 @@ if (typeof swScope.addEventListener === "function") {
           }
 
           // Handle directory vs index.html URL variants
-          const url = new URL(request.url);
-          if (url.pathname.endsWith("/")) {
-            const indexVariant = new URL(
-              url.pathname + "index.html",
-              request.url
-            ).href;
-            const indexMatch = await caches.match(indexVariant);
-            if (indexMatch) return indexMatch;
-          } else if (url.pathname.endsWith("/index.html")) {
-            const dirVariant = new URL(url.pathname.slice(0, -10), request.url)
-              .href;
-            const dirMatch = await caches.match(dirVariant);
-            if (dirMatch) return dirMatch;
+          const variants = getUrlVariants(request.url);
+          for (const variant of variants) {
+            const match = await caches.match(variant);
+            if (match) return match;
           }
 
           // If navigation request fails completely, fallback to cached landing page shell
@@ -296,5 +318,6 @@ if (typeof module !== "undefined" && module.exports) {
     SHELL_ASSETS,
     isCacheableRequest,
     isCacheableResponse,
+    getUrlVariants,
   };
 }

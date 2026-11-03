@@ -479,3 +479,74 @@ test("Service Worker offline lifecycle simulation: previously opened minis load 
     "Current runtime cache must be preserved"
   );
 });
+
+test("getUrlVariants generates directory, slash, and index.html permutations", () => {
+  const { getUrlVariants } = require("../sw.js");
+
+  // Trailing slash -> index.html and without trailing slash
+  const variantsFromSlash = getUrlVariants(
+    "https://example.com/projects/games/snake-game/"
+  );
+  assert.ok(
+    variantsFromSlash.includes(
+      "https://example.com/projects/games/snake-game/index.html"
+    )
+  );
+  assert.ok(
+    variantsFromSlash.includes("https://example.com/projects/games/snake-game")
+  );
+
+  // With index.html -> directory with slash and without slash
+  const variantsFromIndex = getUrlVariants(
+    "https://example.com/projects/games/snake-game/index.html"
+  );
+  assert.ok(
+    variantsFromIndex.includes("https://example.com/projects/games/snake-game/")
+  );
+  assert.ok(
+    variantsFromIndex.includes("https://example.com/projects/games/snake-game")
+  );
+
+  // Bare path without slash -> with slash and with /index.html
+  const variantsFromBare = getUrlVariants(
+    "https://example.com/projects/games/snake-game"
+  );
+  assert.ok(
+    variantsFromBare.includes("https://example.com/projects/games/snake-game/")
+  );
+  assert.ok(
+    variantsFromBare.includes(
+      "https://example.com/projects/games/snake-game/index.html"
+    )
+  );
+});
+
+test("Service Worker offline fetch handles bare URL without slash when index.html was cached", async () => {
+  const { getUrlVariants } = require("../sw.js");
+  const cachedUrl = "https://example.com/projects/games/snake-game/index.html";
+  const cachedData = { status: 200, body: "Snake Game Content" };
+
+  const cacheStore = new Map([[cachedUrl, cachedData]]);
+  const mockCaches = {
+    async match(reqUrl) {
+      return cacheStore.get(reqUrl) || null;
+    },
+  };
+
+  // User accesses bare URL offline: https://example.com/projects/games/snake-game
+  const requestUrl = "https://example.com/projects/games/snake-game";
+  let matched = await mockCaches.match(requestUrl);
+  if (!matched) {
+    const variants = getUrlVariants(requestUrl);
+    for (const v of variants) {
+      matched = await mockCaches.match(v);
+      if (matched) break;
+    }
+  }
+
+  assert.ok(
+    matched,
+    "Bare URL must resolve cached /index.html variant offline"
+  );
+  assert.equal(matched.body, "Snake Game Content");
+});

@@ -113,19 +113,22 @@ graph TD
 
 ## Component Breakdown
 
-| File / Path                    | Responsibility                                                                                                                              |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `index.html`                   | Landing page markup: hero, search box, category buttons, project grid, footer                                                               |
-| `script.js`                    | Landing page controller: loads/caches project data, renders categories and cards, wires search and filter events                            |
-| `style.css`                    | Landing page visual styling                                                                                                                 |
-| `data/projects.json`           | Generated flat list of `{ title, category, path }` for every project                                                                        |
-| `scripts/generate-projects.js` | Build-time script that walks `projects/` and regenerates `data/projects.json`                                                               |
-| `scripts/generate-readme-table.js` | Renders and synchronizes the available projects table in `README.md` from `data/projects.json`                                            |
-| `scripts/theme.js`             | Light/dark theme state, `localStorage` persistence, toggle button wiring                                                                    |
-| `scripts/worker.js`            | Web Worker that filters the project list by category and search query off the main thread                                                   |
-| `src/components/ui/*`          | Shared UI primitives (Button, Card, ThemeToggle, Navbar, BackToHome), the shared HTML escaping utility (`escapeHtml.js`), and design tokens |
-| `projects/<category>/<name>/`  | One self-contained experiment with its own HTML/CSS/JS and ARCHITECTURE.md                                                                  |
-| `tests/*.test.js`              | Node's built-in test runner exercising pure logic exported by individual projects                                                           |
+| File / Path                              | Responsibility                                                                                                                              |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html`                             | Landing page markup: hero, search box, category buttons, project grid, footer                                                               |
+| `script.js`                              | Landing page controller: loads/caches project data, renders categories and cards, wires search and filter events                            |
+| `style.css`                              | Landing page visual styling                                                                                                                 |
+| `data/projects.json`                     | Generated flat list of `{ title, category, path }` for every project                                                                        |
+| `scripts/generate-projects.js`           | Build-time script that walks `projects/` and regenerates `data/projects.json`                                                               |
+| `scripts/generate-readme-table.js`       | Renders and synchronizes the available projects table in `README.md` from `data/projects.json`                                              |
+| `scripts/theme.js`                       | Light/dark theme state, `localStorage` persistence, toggle button wiring                                                                    |
+| `scripts/worker.js`                      | Web Worker that filters the project list by category and search query off the main thread                                                   |
+| `src/components/ui/*`                    | Shared UI primitives (Button, Card, ThemeToggle, Navbar, BackToHome), the shared HTML escaping utility (`escapeHtml.js`), and design tokens |
+| `projects/<category>/<name>/`            | One self-contained experiment with its own HTML/CSS/JS and ARCHITECTURE.md                                                                  |
+| `tests/*.test.js`                        | Node's built-in test runner exercising pure logic exported by individual projects                                                           |
+| `sw.js`                                  | Service Worker providing PWA offline capabilities, precaching the landing shell, runtime caching opened minis, and managing updates         |
+| `manifest.webmanifest`                   | Web App Manifest defining application metadata, standalone display mode, theme colors, and icons for PWA installability                     |
+| `src/utils/serviceWorkerRegistration.js` | Service worker registration controller managing update detection and displaying accessible user update prompts                              |
 
 ---
 
