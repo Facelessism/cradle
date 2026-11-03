@@ -19,6 +19,7 @@
 
   --accent: var(--cradle-accent, #1e3a8a);
   --accent-hover: var(--cradle-accent-hover, #2563eb);
+  --accent-outline: var(--cradle-accent-outline, #60a5fa);
   --color-accent: var(--accent-hover, #2563eb);
 
   --shadow: rgba(0, 0, 0, 0.4);
@@ -38,10 +39,11 @@ html.light-theme {
 
   --text: var(--cradle-text, #0f172a);
   --text-secondary: var(--cradle-text-secondary, #334155);
-  --muted: var(--cradle-muted, #64748b);
+  --muted: var(--cradle-muted, #475569);
 
   --accent: var(--cradle-accent, #2563eb);
   --accent-hover: var(--cradle-accent-hover, #1d4ed8);
+  --accent-outline: var(--cradle-accent-outline, #1d4ed8);
   --color-accent: var(--accent-hover, #1d4ed8);
 
   --shadow: rgba(0, 0, 0, 0.08);
@@ -490,12 +492,20 @@ footer {
 }
 
 .footer-link {
-  color: #93c5fd;
+  color: var(--cradle-highlight, #93c5fd);
   text-decoration: none;
 }
 
 .footer-link:hover {
   color: #dbeafe;
+}
+
+html.light-theme .footer-link {
+  color: var(--cradle-accent-hover, #1d4ed8);
+}
+
+html.light-theme .footer-link:hover {
+  color: var(--cradle-accent, #1e3a8a);
 }
 
 ::-webkit-scrollbar {
@@ -601,8 +611,8 @@ footer {
 
 .back-to-top:hover {
   background: var(--card-hover);
-  border-color: var(--accent-hover);
-  color: var(--accent-hover);
+  border-color: var(--accent-outline, var(--accent-hover));
+  color: var(--accent-outline, var(--accent-hover));
   transform: translateY(-3px) scale(1.05);
 }
 

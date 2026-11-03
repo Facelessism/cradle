@@ -96,6 +96,15 @@
         z-index: 1;
       }
 
+      html.light-theme .cradle-card__new-ribbon {
+        background: var(--cradle-warning-bg, rgba(146, 64, 14, 0.12));
+        color: var(--cradle-warning, #92400e);
+        border-color: var(--cradle-warning, #92400e);
+      }
+      html.light-theme .cradle-card__badge {
+        color: var(--cradle-highlight, #1d4ed8);
+      }
+
       /* ── Hero image ─────────────────────────────────── */
       .cradle-card__image {
         width: 100%;
@@ -237,7 +246,8 @@
     const fallback = document.createElement("div");
     fallback.className = "cradle-card__image cradle-card__image--fallback";
     fallback.setAttribute("role", "img");
-    const cleanTitle = typeof title === "string" ? _cleanText(title) || title : title;
+    const cleanTitle =
+      typeof title === "string" ? _cleanText(title) || title : title;
     fallback.setAttribute("aria-label", cleanTitle || "Thumbnail fallback");
     const firstChar = (cleanTitle || "?").trim().charAt(0) || "?";
     fallback.textContent = firstChar.toUpperCase();
@@ -367,13 +377,15 @@
 
       const h = document.createElement("h3");
       h.className = "cradle-card__title";
-      h.textContent = typeof title === "string" ? _cleanText(title) || title : title;
+      h.textContent =
+        typeof title === "string" ? _cleanText(title) || title : title;
       titleRow.appendChild(h);
 
       if (badge) {
         const b = document.createElement("span");
         b.className = "cradle-card__badge";
-        b.textContent = typeof badge === "string" ? _cleanText(badge) || badge : badge;
+        b.textContent =
+          typeof badge === "string" ? _cleanText(badge) || badge : badge;
         titleRow.appendChild(b);
       }
 
@@ -383,7 +395,10 @@
     if (subtitle) {
       const sub = document.createElement("p");
       sub.className = "cradle-card__subtitle";
-      sub.textContent = typeof subtitle === "string" ? _cleanText(subtitle) || subtitle : subtitle;
+      sub.textContent =
+        typeof subtitle === "string"
+          ? _cleanText(subtitle) || subtitle
+          : subtitle;
       textWrapper.appendChild(sub);
     }
 
