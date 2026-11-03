@@ -902,6 +902,197 @@ if (shortcutsOverlay) {
   shortcutsOverlay.addEventListener("click", closeShortcutsModal);
 }
 
+// Your Data Modal Toggle & Renderer
+const yourDataBtn = document.getElementById("your-data-btn");
+const yourDataModal = document.getElementById("your-data-modal");
+const closeYourDataBtn = document.getElementById("close-your-data");
+const yourDataOverlay = document.getElementById("your-data-overlay");
+const yourDataBody = document.getElementById("your-data-body");
+
+function renderYourDataModal() {
+  if (!yourDataBody) return;
+  yourDataBody.innerHTML = "";
+
+  const storageApi =
+    typeof window !== "undefined" && window.CradleStorage
+      ? window.CradleStorage
+      : null;
+
+  if (!storageApi || typeof storageApi.getStoredMinisData !== "function") {
+    const errorP = document.createElement("p");
+    errorP.className = "your-data-empty-desc";
+    errorP.textContent = "Storage API is unavailable.";
+    yourDataBody.appendChild(errorP);
+    return;
+  }
+
+  const minis = storageApi.getStoredMinisData();
+
+  if (!minis || minis.length === 0) {
+    const emptyContainer = document.createElement("div");
+    emptyContainer.className = "your-data-empty";
+
+    const titleEl = document.createElement("p");
+    titleEl.className = "your-data-empty-title";
+    titleEl.textContent = "No stored mini data found";
+
+    const descEl = document.createElement("p");
+    descEl.className = "your-data-empty-desc";
+    descEl.textContent =
+      "Scores, decks, notes, and settings saved by minis will appear here.";
+
+    emptyContainer.appendChild(titleEl);
+    emptyContainer.appendChild(descEl);
+    yourDataBody.appendChild(emptyContainer);
+    return;
+  }
+
+  const totalKeys = minis.reduce((acc, m) => acc + m.keys.length, 0);
+  const totalBytes = minis.reduce((acc, m) => acc + m.totalBytes, 0);
+  const formattedTotal = storageApi.formatBytes(totalBytes);
+
+  // Summary bar
+  const summaryBar = document.createElement("div");
+  summaryBar.className = "your-data-summary-bar";
+
+  const summaryText = document.createElement("div");
+  summaryText.className = "your-data-summary-text";
+
+  const strongKeys = document.createElement("strong");
+  strongKeys.textContent = `${totalKeys} ${totalKeys === 1 ? "key" : "keys"}`;
+
+  const strongMinis = document.createElement("strong");
+  strongMinis.textContent = `${minis.length} ${minis.length === 1 ? "mini" : "minis"}`;
+
+  summaryText.appendChild(strongKeys);
+  summaryText.appendChild(document.createTextNode(" across "));
+  summaryText.appendChild(strongMinis);
+  summaryText.appendChild(document.createTextNode(` (~${formattedTotal})`));
+
+  const clearAllBtn = document.createElement("button");
+  clearAllBtn.type = "button";
+  clearAllBtn.id = "your-data-clear-all";
+  clearAllBtn.className = "your-data-clear-all-btn";
+  clearAllBtn.textContent = "Clear all";
+  clearAllBtn.setAttribute("aria-label", "Clear all stored mini data");
+
+  clearAllBtn.addEventListener("click", () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to clear all stored data across all minis? This cannot be undone."
+    );
+    if (confirmed) {
+      storageApi.clearAllMinis();
+      renderYourDataModal();
+    }
+  });
+
+  summaryBar.appendChild(summaryText);
+  summaryBar.appendChild(clearAllBtn);
+  yourDataBody.appendChild(summaryBar);
+
+  // Minis list
+  const minisList = document.createElement("div");
+  minisList.className = "your-data-minis-list";
+
+  minis.forEach(mini => {
+    const card = document.createElement("div");
+    card.className = "your-data-mini-card";
+    card.setAttribute("data-mini-id", mini.id);
+
+    const header = document.createElement("div");
+    header.className = "your-data-mini-card-header";
+
+    const meta = document.createElement("div");
+    meta.className = "your-data-mini-meta";
+
+    const titleH4 = document.createElement("h4");
+    titleH4.className = "your-data-mini-name";
+    titleH4.textContent = mini.title;
+
+    const badgeSpan = document.createElement("span");
+    badgeSpan.className = "your-data-mini-badge";
+    badgeSpan.textContent = `${mini.keys.length} ${mini.keys.length === 1 ? "key" : "keys"} · ~${mini.formattedTotalSize}`;
+
+    meta.appendChild(titleH4);
+    meta.appendChild(badgeSpan);
+
+    const clearMiniBtn = document.createElement("button");
+    clearMiniBtn.type = "button";
+    clearMiniBtn.className = "your-data-clear-mini-btn";
+    clearMiniBtn.textContent = "Clear";
+    clearMiniBtn.setAttribute(
+      "aria-label",
+      `Clear stored data for ${mini.title}`
+    );
+
+    clearMiniBtn.addEventListener("click", () => {
+      const confirmed = window.confirm(
+        `Are you sure you want to clear stored data for ${mini.title}? This cannot be undone.`
+      );
+      if (confirmed) {
+        storageApi.clearMini(mini.id);
+        renderYourDataModal();
+      }
+    });
+
+    header.appendChild(meta);
+    header.appendChild(clearMiniBtn);
+    card.appendChild(header);
+
+    const keysUl = document.createElement("ul");
+    keysUl.className = "your-data-keys-list";
+
+    mini.keys.forEach(k => {
+      const rowLi = document.createElement("li");
+      rowLi.className = "your-data-key-row";
+
+      const keyName = document.createElement("code");
+      keyName.className = "your-data-key-name";
+      keyName.textContent = k.key;
+
+      const keySize = document.createElement("span");
+      keySize.className = "your-data-key-size";
+      keySize.textContent = `~${k.formattedSize}`;
+
+      rowLi.appendChild(keyName);
+      rowLi.appendChild(keySize);
+      keysUl.appendChild(rowLi);
+    });
+
+    card.appendChild(keysUl);
+    minisList.appendChild(card);
+  });
+
+  yourDataBody.appendChild(minisList);
+}
+
+function openYourDataModal() {
+  if (yourDataModal) {
+    yourDataModal.classList.add("visible");
+    yourDataModal.setAttribute("aria-hidden", "false");
+    renderYourDataModal();
+    closeYourDataBtn?.focus();
+  }
+}
+
+function closeYourDataModal() {
+  if (yourDataModal) {
+    yourDataModal.classList.remove("visible");
+    yourDataModal.setAttribute("aria-hidden", "true");
+    yourDataBtn?.focus();
+  }
+}
+
+if (yourDataBtn) {
+  yourDataBtn.addEventListener("click", openYourDataModal);
+}
+if (closeYourDataBtn) {
+  closeYourDataBtn.addEventListener("click", closeYourDataModal);
+}
+if (yourDataOverlay) {
+  yourDataOverlay.addEventListener("click", closeYourDataModal);
+}
+
 // Keyboard Shortcuts Listeners
 function isInteractiveElement(element) {
   if (!element) return false;
@@ -949,6 +1140,26 @@ document.addEventListener("keydown", e => {
 
   // Close Modal or Clear search
   if (e.key === "Escape") {
+    const activeYourDataModal =
+      typeof yourDataModal !== "undefined"
+        ? yourDataModal
+        : typeof document !== "undefined" && document.getElementById
+          ? document.getElementById("your-data-modal")
+          : null;
+    if (
+      activeYourDataModal &&
+      (activeYourDataModal.classList.contains("visible") ||
+        activeYourDataModal.getAttribute("aria-hidden") === "false")
+    ) {
+      e.preventDefault();
+      if (typeof closeYourDataModal === "function") {
+        closeYourDataModal();
+      } else {
+        activeYourDataModal.classList.remove("visible");
+        activeYourDataModal.setAttribute("aria-hidden", "true");
+      }
+      return;
+    }
     if (
       shortcutsModal &&
       (shortcutsModal.classList.contains("visible") ||
