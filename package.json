@@ -31,7 +31,8 @@
     "format": "prettier --write .",
     "check-format": "prettier --check .",
     "validate:build-strategy": "node scripts/build-minis.js --check",
-    "build:minis": "node scripts/build-minis.js --build"
+    "build:minis": "node scripts/build-minis.js --build",
+    "lhci": "npx @lhci/cli autorun"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.7",

@@ -4,3 +4,4 @@ package-lock.json
 data/projects.json
 projects/**/*.svg
 .git
+.lighthouseci

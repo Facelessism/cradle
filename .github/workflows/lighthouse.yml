@@ -1,0 +1,66 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "style.css"
+      - "script.js"
+      - "sw.js"
+      - "manifest.json"
+      - "manifest.webmanifest"
+      - "assets/**"
+      - "src/**"
+      - "client/**"
+      - "data/projects.json"
+      - "lighthouserc.js"
+      - ".github/workflows/lighthouse.yml"
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "style.css"
+      - "script.js"
+      - "sw.js"
+      - "manifest.json"
+      - "manifest.webmanifest"
+      - "assets/**"
+      - "src/**"
+      - "client/**"
+      - "data/projects.json"
+      - "lighthouserc.js"
+      - ".github/workflows/lighthouse.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    name: Lighthouse Audit (Landing Page)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline || npm install
+
+      - name: Run Lighthouse CI
+        run: npx @lhci/cli autorun
+
+      - name: Upload Lighthouse report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: .lighthouseci/
+          retention-days: 14

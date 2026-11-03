@@ -79,6 +79,22 @@ For a PR to be merged into `main`, the pipeline **MUST** pass the following stag
 
 - **Production Dependency Vulnerability Scan**: `npm run audit:deps` (`scripts/audit-dependencies.js`) enforces the repository's High-Severity Dependency Policy across production dependencies. High and Critical severity findings fail CI immediately, producing actionable Pull Request step summaries and annotations.
 
+### Gate 6: Lighthouse CI (Landing Page Performance & Quality)
+
+- **Audit Target**: Runs on pull requests that touch the static landing page or shared files (`.github/workflows/lighthouse.yml`).
+- **Enforced Thresholds**:
+  - **Performance**: `>= 0.85` (baseline ~0.96 with tolerance for CI runner scheduling variance)
+  - **Accessibility**: `>= 0.90` (baseline ~0.96)
+  - **Best Practices**: `>= 0.90` (baseline 1.00)
+  - **SEO**: `>= 0.90` (baseline 1.00)
+- **Artifacts**: HTML and JSON audit reports are saved to `.lighthouseci/` and uploaded as GitHub Actions artifacts on every run.
+- **Run locally**:
+  ```bash
+  npm run lhci
+  # or
+  npx @lhci/cli autorun
+  ```
+
 If any of these gates fail, the CI pipeline halts and marks the commit as failed.
 
 ---
