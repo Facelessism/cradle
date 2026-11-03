@@ -45,7 +45,7 @@
     "title": "Audio Spectrogram Analyzer",
     "category": "misc",
     "path": "projects/misc/audio-spectrogram-analyzer/",
-    "dateAdded": "2026-08-31T12:46:36Z",
+    "dateAdded": "2026-08-31T12:46:36+00:00",
     "thumbnailHash": "552f0120"
   },
   {
@@ -94,7 +94,7 @@
     "title": "Collaborative Whiteboard",
     "category": "misc",
     "path": "projects/misc/collaborative-whiteboard/",
-    "dateAdded": "2026-08-31T12:21:19Z",
+    "dateAdded": "2026-08-31T12:21:19+00:00",
     "thumbnailHash": "1bf26a9d"
   },
   {
@@ -262,7 +262,7 @@
     "title": "Knowledge Graph",
     "category": "productivity",
     "path": "projects/productivity/knowledge-graph/",
-    "dateAdded": "2026-08-31T12:43:04Z",
+    "dateAdded": "2026-08-31T12:43:04+00:00",
     "thumbnailHash": "a7ec20d8"
   },
   {
@@ -332,7 +332,7 @@
     "title": "Pathfinding Visualizer",
     "category": "math",
     "path": "projects/math/pathfinding-visualizer/",
-    "dateAdded": "2026-08-31T12:17:09Z",
+    "dateAdded": "2026-08-31T12:17:09+00:00",
     "thumbnailHash": "eda855c2"
   },
   {
@@ -374,7 +374,7 @@
     "title": "Procedural Dungeon Generator",
     "category": "games",
     "path": "projects/games/procedural-dungeon-generator/",
-    "dateAdded": "2026-08-31T12:29:25Z",
+    "dateAdded": "2026-08-31T12:29:25+00:00",
     "thumbnailHash": "71a6420b"
   },
   {
@@ -395,7 +395,7 @@
     "title": "Snake Game",
     "category": "games",
     "path": "projects/games/snake-game/",
-    "dateAdded": "2026-10-30T18:43:29.246Z",
+    "dateAdded": "2026-10-31T00:59:43+05:30",
     "thumbnailHash": "cf368c27"
   },
   {
