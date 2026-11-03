@@ -116,9 +116,20 @@ Shared components communicate state changes through custom DOM events:
 ```html
 <script src="/src/components/ui/storage.js"></script>
 <script>
-  // Safe write and read
+  // Safe write and read with validation
   CradleStorage.set("cradle_settings", { theme: "dark", sound: true });
   const settings = CradleStorage.get("cradle_settings", { theme: "dark" });
+
+  // Safe bounded numeric validation (prevents NaN / overflow)
+  const highScore = CradleStorage.getNumber("high_score", 0, { min: 0, max: 10000 });
+
+  // Time-To-Live (TTL) retention for sensitive or temporary drafts (e.g. 14 days)
+  const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
+  CradleStorage.setWithExpiry("invoice_draft", invoiceData, FOURTEEN_DAYS_MS);
+  const draft = CradleStorage.getWithExpiry("invoice_draft", null);
+
+  // Ephemeral session storage for sensitive data (cleared on tab close)
+  CradleStorage.session.set("temp_query", secretQuery);
 
   // Namespaced sub-store for mini isolation
   const gameStore = CradleStorage.namespace("cradle_chess_");

@@ -141,8 +141,8 @@ Before opening a Pull Request, review the following checklist:
 - [ ] Assets are stored in an appropriate location.
 - [ ] `index.html` includes the shared `BackToHome.js` navigation component.
 - [ ] Any external third-party scripts or models strictly follow the [Third-Party Script Loading Policy](THIRD_PARTY_POLICY.md) (e.g., proper SRI hashes, trusted CDNs).
-- [ ] All persistent data storage uses the `CradleStorage` abstraction as defined in the [Storage Policy](STORAGE_POLICY.md).
-- [ ] The mini complies with the [Build Strategy](docs/BUILD_STRATEGY.md): static by default (Tier 1), no local `package.json` or `node_modules`, and no rogue bundler config files.
+- [ ] All persistent data storage uses the `CradleStorage` abstraction, validates schemas, minimizes sensitive personal data, and adheres to the retention strategy (see [Storage Policy](STORAGE_POLICY.md)).
+- [ ] Shared UI components from `src/components/ui/` and design tokens from `tokens.css` are used for standard UI patterns rather than duplicating components (see [Shared UI Policy](docs/SHARED_UI_POLICY.md)).
 - [ ] The project explicitly specifies its licensing and includes attribution for any third-party assets.
 - [ ] `ARCHITECTURE.md` has been added following the [standardized template](ARCHITECTURE_TEMPLATE.md).
 - [ ] The project works correctly locally.
