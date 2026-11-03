@@ -22,6 +22,7 @@ knowledge-graph/
 |--  style.css           # Responsive layout, theme colors, and panel styling
 |--  storage.js          # IndexedDB wrapper with an in-memory fallback
 |--  parser.js           # Wikilink extraction and graph construction
+|--  layout.js           # Node position preservation and centered viewport helpers
 |--  graph-engine.js     # Force simulation, canvas renderer, and UI bootstrap
 |--  ARCHITECTURE.md     # This document
 `--  thumbnail.svg       # Preview thumbnail used by the project registry
@@ -39,7 +40,8 @@ graph TD
     Storage --> Memory[in-memory Map fallback]
     Storage --> Parser[parser.js]
     Parser --> Nodes[nodes and edges]
-    Nodes --> Engine
+    Nodes --> Layout[layout.js]
+    Layout --> Engine
     Engine --> Canvas[canvas element]
 ```
 
@@ -51,6 +53,7 @@ graph TD
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `StorageManager` | Opens the database, creates the object store, and exposes CRUD methods with a memory fallback.                              |
 | `GraphParser`    | Builds node objects from note titles and edges from `[[wikilink]]` matches, including links to notes that do not exist yet. |
+| `layout.js`      | Provides `placeNodes` to preserve node positions across reloads and `getCenteredTransform` for viewport centering.          |
 | `GraphEngine`    | Loads notes, assigns positions, runs the force simulation, renders the canvas, and handles pan, zoom, and drag.             |
 | `index.html`     | Provides the note list, title and content fields, save and delete controls, and the graph canvas.                           |
 | `style.css`      | Defines the split-pane layout, responsive stacking, and light/dark palette.                                                 |
@@ -59,33 +62,30 @@ graph TD
 
 1. `StorageManager` is constructed and starts `init()` immediately. It opens `CradleKnowledgeGraphDB` and marks IndexedDB as available, or falls back to the in-memory map.
 2. On `DOMContentLoaded`, `graph-engine.js` creates a `GraphEngine`, binds the editor controls, and calls `loadData()`.
-3. `loadData()` asks storage for every note and passes the array to `GraphParser.parse()`.
-4. The parser creates one node per note title, adds placeholder nodes for link targets that have no note, and records unique directed edges.
-5. Nodes with no position receive a random offset around the canvas center. The simulation begins on the next animation frame.
-6. Each frame applies repulsion between node pairs, spring attraction along edges, and a centering force, then integrates velocity with damping.
-7. The renderer clears the canvas, applies the pan and zoom transform, draws edges, and draws nodes with labels. The selected node is highlighted.
-8. Typing in the editor is debounced. A save writes the note and then reloads the graph so new links appear.
-9. Delete removes the note from storage and reloads the graph, leaving any placeholder nodes that are still referenced.
+3. `loadData()` reads notes from storage, passes them to `GraphParser.parse()`, and uses `placeNodes()` to retain positions and velocities of existing nodes while positioning only new nodes.
+4. The canvas initializes with `getCenteredTransform()` to center world point `(0, 0)` in the viewport.
+5. The animation loop calls `applyForces()` and `render()` on every frame.
+6. When the canvas is resized, `resizeCanvas()` shifts the viewport transform by half of the delta, preserving the centered world point and current zoom.
+7. Creating or saving a note persists it to storage and triggers `loadData()` to update the graph without resetting existing node positions.
+8. Deleting a note removes it from storage, clears the form, and updates the graph and sidebar.
 
 ## Key Features
 
-- **Wikilink parsing** - `[[Note Title]]` references become directed edges.
-- **Placeholder nodes** - Links to notes that do not exist yet still appear in the graph, which makes gaps visible.
-- **Local-first persistence** - IndexedDB is used when available; an in-memory map keeps the app usable when it is not.
-- **Custom force simulation** - Repulsion, spring attraction, centering, and damping are implemented without a physics library.
-- **Pan and zoom** - The canvas transform supports wheel zoom and background dragging.
-- **Node dragging** - Dragging a node pins it under the pointer and updates the simulation.
-- **Note list navigation** - Clicking a note loads it into the editor.
-- **Debounced auto-save** - Edits are written shortly after typing stops rather than on every keystroke.
-- **Theme support** - Colors are read from CSS custom properties so light and dark modes stay consistent.
+- **Wikilink extraction** - Discovers links in `[[Note Title]]` syntax and turns them into directed edges.
+- **Local persistence** - Saves notes to IndexedDB so they survive page refreshes.
+- **Memory fallback** - Transparently stores notes in memory when storage is disabled.
+- **Position preservation** - Existing nodes keep their coordinates and velocities when the graph reloads.
+- **Centered viewport** - Graph centers on initial load and stays centered across window resizes.
+- **Interactive canvas** - Supports dragging nodes, panning the viewport, and zooming with the wheel.
+- **Theme support** - Follows Cradle light and dark mode variables for surfaces, text, nodes, and edges.
 
 ## Technologies Used
 
-- IndexedDB for persistent local storage.
 - HTML5 Canvas 2D API for graph rendering.
-- `requestAnimationFrame` for the simulation loop.
-- Vanilla ES6+ JavaScript with classes and native modules.
-- CSS flexbox and custom properties for layout and theming.
+- IndexedDB API with an in-memory `Map` fallback.
+- Vanilla ES6+ JavaScript modules.
+- CSS Grid and Flexbox for the split-pane layout.
+- `requestAnimationFrame` for the physics tick.
 
 ## File Responsibilities
 
@@ -111,10 +111,16 @@ graph TD
 - Creates placeholder nodes for missing targets.
 - Resets positions to zero; the engine decides where new nodes start.
 
+### `layout.js`
+
+- **`placeNodes(nodes, previousNodes)`** - matches nodes by id, copies position and velocity from existing nodes without treating `(0, 0)` as a sentinel, and positions genuinely new nodes.
+- **`getCenteredTransform(width, height, k)`** - returns a viewport transform centered on the canvas.
+
 ### `graph-engine.js`
 
 - **`GraphEngine`** - owns the canvas, transform, node arrays, and interaction state.
-- **`loadData()`** - reads notes, parses the graph, and assigns initial positions.
+- **`loadData()`** - reads notes, parses the graph, and assigns/preserves positions via `placeNodes()`.
+- **`resizeCanvas()`** - resizes canvas backing store and adjusts transform to preserve the centered world point.
 - **`updateNoteList()`** - renders the sidebar and loads a note into the editor on click.
 - **`setupInteractions()`** - handles pan, zoom, node drag, and selection.
 - **`animate()`** - runs one physics step and one render pass per frame.
@@ -134,60 +140,49 @@ graph TD
 ## Design Decisions
 
 - **Custom physics instead of D3**: Repulsion, springs, and damping are simple enough to implement directly, and avoiding a large dependency keeps the project inspectable.
+- **Position preservation**: Reusing previous node positions and velocities prevents jarring layout jumps when saving or modifying notes.
 - **Placeholder nodes**: Creating nodes for missing targets turns broken links into visible prompts rather than silently dropping them.
 - **Storage abstraction**: The rest of the app calls the same async methods regardless of whether IndexedDB is available, which keeps private-browsing behavior graceful.
 - **Canvas instead of SVG**: A canvas avoids creating a DOM node per element and keeps rendering predictable as the graph grows.
 - **Debounced save**: Waiting after the last keystroke reduces write pressure while still persisting promptly.
-- **Zero positions as a sentinel**: The parser leaves `x` and `y` at zero, and the engine assigns a random start only when both are still zero.
 
 ## Dependencies
 
 | Dependency              | Version          | How loaded    | Purpose                             |
 | ----------------------- | ---------------- | ------------- | ----------------------------------- |
-| Browser runtime         | Modern evergreen | Native        | IndexedDB, canvas, modules          |
+| Browser runtime         | Modern evergreen | Native        | Canvas 2D, IndexedDB, ES6+ modules  |
 | Cradle project registry | n/a              | Local tooling | Discovers the project and thumbnail |
 
-There are no npm packages, CDN scripts, fonts, or external services. IndexedDB availability depends on the browser and privacy mode.
+The project has no npm packages, external scripts, or CDN dependencies.
 
 ## Future Improvements
 
-- Persist node positions so the layout is stable across reloads.
-- Add a proper initial layout, such as a circle or grid, instead of random offsets.
-- Add search and filtering for large graphs.
-- Support backlinks and an inspector panel for the selected node.
-- Add arrowheads and edge labels for directed relationships.
-- Export and import the note collection as JSON or Markdown.
-- Run the simulation only while nodes are moving to reduce idle CPU use.
-- Add tests for parser deduplication and placeholder creation.
+- Add directed arrowheads on link edges.
+- Add tag parsing (`#tag`) and color-code nodes by tag.
+- Support markdown rendering in note preview mode.
+- Export and import notes as a zip archive of Markdown files.
+- Add cluster-based layout initialization for dense graphs.
 
 ## Known Limitations
 
-- Node positions are not persisted. Reloading the page produces a new random layout.
-- Initial positions are random offsets around the origin, which can leave the graph off-center before the simulation settles.
-- The parser uses a regular expression and does not understand code fences or escaped brackets.
-- Renaming a note does not rewrite incoming links, so old targets become placeholder nodes.
-- The graph has no viewport culling; very large note collections will slow the render loop.
-- IndexedDB writes are not transactional across multiple notes.
-- The in-memory fallback loses all notes when the tab closes.
-- There is no conflict handling because the app is single-tab and local by design.
+- Graph physics slows down on large graphs (>500 nodes).
+- Wikilinks do not support custom alias text (e.g. `[[Target|Alias]]`).
+- Notes are stored with simple titles; renaming a note does not update existing links pointing to it.
 
 ## Development Notes
 
-- Serve the folder over HTTP. Native modules and IndexedDB behave inconsistently on `file://`.
-- Note IDs are titles. Keep that invariant when adding rename support, or migrate existing links deliberately.
-- The parser returns zero positions by design. Do not assign positions there unless the engine contract changes.
-- The simulation reads `canvas.width` and `canvas.height`; resize handling must update both before the next frame.
-- Use `storage.getAllNotes()` as the single source of truth after a mutation, then reparse. Partial in-memory graph updates are easy to get wrong.
+- Serve the folder through a local HTTP server (`npm run dev`) so ES modules load properly.
+- Open DevTools Application tab -> IndexedDB -> `CradleKnowledgeGraphDB` to inspect stored notes.
+- Reset zoom returns the viewport to centered at zoom level 1.
 - Run `npm run validate:architecture` from the repository root after editing this file.
 
 ## License & Attribution
 
 - **Project License:** MIT, inherited from the Cradle repository.
-- **Third-Party Assets:** None. The parser, physics loop, and thumbnail are original to the project.
+- **Third-Party Assets:** None.
 
 ## References
 
 - [MDN: IndexedDB API](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API)
-- [MDN: Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
-- [Force-directed graph drawing](https://en.wikipedia.org/wiki/Force-directed_graph_drawing)
+- [MDN: CanvasRenderingContext2D](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D)
 - [Cradle contribution guide](../../../CONTRIBUTING.md)

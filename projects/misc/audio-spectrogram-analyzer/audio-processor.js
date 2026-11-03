@@ -10,6 +10,8 @@ export class AudioProcessor {
     this.mediaStream = null;
     this.audioElement = null;
     this.destination = null; // For recording
+    this.objectUrl = null;
+    this.cachedFrequencyData = null;
   }
 
   async init() {
@@ -59,16 +61,25 @@ export class AudioProcessor {
     if (!this.audioContext) await this.init();
     await this.resumeContext();
 
+    let stream = null;
     try {
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({
+      stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
       });
+      this.stop();
+      this.mediaStream = stream;
       this.source = this.audioContext.createMediaStreamSource(this.mediaStream);
       this.setupAnalyser();
       return true;
     } catch (err) {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
       console.error("Microphone access denied:", err);
-      document.getElementById("error-banner").hidden = false;
+      const banner = document.getElementById("error-banner");
+      if (banner) {
+        banner.hidden = false;
+      }
       return false;
     }
   }
@@ -196,8 +207,9 @@ export class AudioProcessor {
     await this.resumeContext();
 
     this.stop(); // Clean up previous
+    this.objectUrl = URL.createObjectURL(file);
     this.audioElement = new Audio();
-    this.audioElement.src = URL.createObjectURL(file);
+    this.audioElement.src = this.objectUrl;
     this.audioElement.loop = true;
 
     this.source = this.audioContext.createMediaElementSource(this.audioElement);
@@ -210,6 +222,7 @@ export class AudioProcessor {
     this.analyser = this.audioContext.createAnalyser();
     this.analyser.fftSize = 2048;
     this.analyser.smoothingTimeConstant = 0.8;
+    this.cachedFrequencyData = null;
 
     // Connect source to analyser, and analyser to both destination (recording) and speakers
     this.source.connect(this.analyser);
@@ -220,14 +233,21 @@ export class AudioProcessor {
   setFFTSize(size) {
     if (this.analyser) {
       this.analyser.fftSize = parseInt(size, 10);
+      this.cachedFrequencyData = null;
     }
   }
 
   getFrequencyData() {
     if (!this.analyser) return new Uint8Array(0);
-    const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-    this.analyser.getByteFrequencyData(dataArray);
-    return dataArray;
+    const binCount = this.analyser.frequencyBinCount;
+    if (
+      !this.cachedFrequencyData ||
+      this.cachedFrequencyData.length !== binCount
+    ) {
+      this.cachedFrequencyData = new Uint8Array(binCount);
+    }
+    this.analyser.getByteFrequencyData(this.cachedFrequencyData);
+    return this.cachedFrequencyData;
   }
 
   getRecordingStream() {
@@ -241,11 +261,46 @@ export class AudioProcessor {
     }
     if (this.audioElement) {
       this.audioElement.pause();
+      this.audioElement.src = "";
       this.audioElement = null;
     }
+    if (this.objectUrl) {
+      URL.revokeObjectURL(this.objectUrl);
+      this.objectUrl = null;
+    }
     if (this.source) {
-      this.source.disconnect();
+      try {
+        this.source.disconnect();
+      } catch (e) {
+        // Ignore if already disconnected
+      }
       this.source = null;
     }
+    if (this.analyser) {
+      try {
+        this.analyser.disconnect();
+      } catch (e) {
+        // Ignore if already disconnected
+      }
+      this.analyser = null;
+    }
+    this.cachedFrequencyData = null;
+  }
+
+  async destroy() {
+    this.stop();
+    if (this.audioContext) {
+      const ctx = this.audioContext;
+      this.audioContext = null;
+      try {
+        if (ctx.state !== "closed" && typeof ctx.close === "function") {
+          await ctx.close();
+        }
+      } catch (err) {
+        console.warn("Error closing AudioContext:", err);
+      }
+    }
+    this.destination = null;
+    this.cachedFrequencyData = null;
   }
 }

@@ -222,13 +222,14 @@ Please follow the existing coding style throughout the repository. Code formatti
 - Remove unused code before submitting.
 - Update documentation whenever your changes affect functionality.
 
-### Shared UI Component Library
+### Build and Bundling Strategy
 
-Cradle provides a zero-dependency, framework-free component library in `src/components/ui/` with standardized components (`CradleButton`, `CradleCard`, `CradleThemeToggle`, `CradleNavbar`, `CradleBackToHome`) and foundational utilities (`CradleStorage`, `CradleSanitize`, `CradleEscape`).
+Minis in Cradle follow the centralized build model defined in [docs/BUILD_STRATEGY.md](docs/BUILD_STRATEGY.md):
 
-- **Reuse first**: Before writing custom buttons, cards, navbar shells, or theme switchers, use the shared components.
-- **Do not fork or duplicate**: Do not copy shared components into your mini's folder. If a shared component needs an enhancement or additional variant, propose an update upstream in `src/components/ui/`.
-- **Adhere to the policy**: See [docs/SHARED_UI_POLICY.md](docs/SHARED_UI_POLICY.md) and [src/components/ui/README.md](src/components/ui/README.md) for full API contracts, versioning guarantees, and promotion workflows.
+- **Tier 1: Static (Zero-Build) [Default]**: Author standard HTML, CSS, and vanilla JS / ES modules (`<script type="module">`). No build tools required; runs immediately on save.
+- **Tier 2: Centrally Bundled**: For projects needing TypeScript or JSX compilation, source files live in `src/` and are built using the centralized root orchestrator (`npm run build:minis` / `scripts/build-minis.js`). The compiled bundle is committed to git.
+- **Tier 3: Individually Bundled**: For WebAssembly (Rust/C++) or specialized DSP kernels. Build artifacts must be committed to `assets/` or `dist/`, and no `node_modules` may ever be committed.
+- **No rogue tooling**: Do not create per-mini `package.json`, `vite.config.js`, `webpack.config.js`, or `node_modules` in project directories. All shared dependencies are managed at the repository root.
 
 ### Code Formatting
 
@@ -394,6 +395,10 @@ If your Pull Request includes UI changes, please attach screenshots.
 ---
 
 ## Reporting Bugs
+
+> [!IMPORTANT]
+> **Security Vulnerabilities**: If you discover a security vulnerability, **do not file a public issue**. Follow our [Vulnerability Disclosure & Incident Response Policy](SECURITY.md) and submit your report privately via [GitHub Security Advisories](https://github.com/Facelessism/cradle/security/advisories/new) or email `security@cradle.dev`.
+
 
 When reporting a bug, please include:
 

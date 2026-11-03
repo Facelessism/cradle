@@ -1,67 +1,115 @@
 import { StorageManager } from "./storage.js";
 import { GraphParser } from "./parser.js";
+import { placeNodes, getCenteredTransform } from "./layout.js";
 
 /**
  * Graph Engine
  * Custom force-directed graph renderer using Canvas 2D with drag interactions.
  */
-class GraphEngine {
+export class GraphEngine {
   constructor(canvasId, storage) {
-    this.canvas = document.getElementById(canvasId);
-    this.ctx = this.canvas.getContext("2d");
+    this.canvas =
+      typeof canvasId === "string"
+        ? typeof document !== "undefined"
+          ? document.getElementById(canvasId)
+          : null
+        : canvasId;
+    this.ctx =
+      this.canvas && typeof this.canvas.getContext === "function"
+        ? this.canvas.getContext("2d")
+        : null;
     this.storage = storage;
 
     this.nodes = [];
     this.edges = [];
 
+    this.hasInitializedSize = false;
     this.transform = { x: 0, y: 0, k: 1 }; // Pan and zoom
     this.isDragging = false;
+    this.isPanning = false;
     this.draggedNode = null;
     this.lastMouse = { x: 0, y: 0 };
 
     this.resizeCanvas();
-    window.addEventListener("resize", () => this.resizeCanvas());
+    this.transform = getCenteredTransform(
+      this.canvas ? this.canvas.width : 0,
+      this.canvas ? this.canvas.height : 0,
+      1
+    );
+
+    if (
+      typeof window !== "undefined" &&
+      typeof window.addEventListener === "function"
+    ) {
+      this.boundResize = () => this.resizeCanvas();
+      window.addEventListener("resize", this.boundResize);
+    }
     this.setupInteractions();
 
     // Animation loop
     this.animate = this.animate.bind(this);
-    requestAnimationFrame(this.animate);
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(this.animate);
+    }
   }
 
   resizeCanvas() {
-    const rect = this.canvas.parentElement.getBoundingClientRect();
-    this.canvas.width = rect.width;
-    this.canvas.height = rect.height;
-    this.centerX = rect.width / 2;
-    this.centerY = rect.height / 2;
+    if (!this.canvas) return;
+    let newWidth = this.canvas.width || 800;
+    let newHeight = this.canvas.height || 600;
+
+    if (
+      this.canvas.parentElement &&
+      typeof this.canvas.parentElement.getBoundingClientRect === "function"
+    ) {
+      const rect = this.canvas.parentElement.getBoundingClientRect();
+      if (
+        rect &&
+        typeof rect.width === "number" &&
+        typeof rect.height === "number"
+      ) {
+        newWidth = rect.width;
+        newHeight = rect.height;
+      }
+    }
+
+    if (this.hasInitializedSize) {
+      const deltaW = newWidth - this.canvas.width;
+      const deltaH = newHeight - this.canvas.height;
+      this.transform.x += deltaW / 2;
+      this.transform.y += deltaH / 2;
+    }
+
+    this.canvas.width = newWidth;
+    this.canvas.height = newHeight;
+    this.centerX = newWidth / 2;
+    this.centerY = newHeight / 2;
+    this.hasInitializedSize = true;
   }
 
   async loadData() {
+    const previousNodes = this.nodes;
     const notes = await this.storage.getAllNotes();
     const graph = GraphParser.parse(notes);
-    this.nodes = graph.nodes;
+    this.nodes = placeNodes(graph.nodes, previousNodes);
     this.edges = graph.edges;
-
-    // Initialize random positions if new
-    for (const node of this.nodes) {
-      if (node.x === 0 && node.y === 0) {
-        node.x = (Math.random() - 0.5) * 200;
-        node.y = (Math.random() - 0.5) * 200;
-      }
-    }
     this.updateNoteList(notes);
   }
 
   updateNoteList(notes) {
+    if (typeof document === "undefined") return;
     const listEl = document.getElementById("note-list");
+    if (!listEl) return;
     listEl.innerHTML = "";
     notes.forEach(note => {
       const div = document.createElement("div");
       div.className = "note-item";
       div.textContent = note.title;
       div.addEventListener("click", () => {
-        document.getElementById("note-title").value = note.title;
-        document.getElementById("note-content").value = note.content;
+        const titleEl = document.getElementById("note-title");
+        const contentEl = document.getElementById("note-content");
+        if (titleEl) titleEl.value = note.title;
+        if (contentEl) contentEl.value = note.content;
         document
           .querySelectorAll(".note-item")
           .forEach(i => i.classList.remove("active"));
@@ -72,6 +120,9 @@ class GraphEngine {
   }
 
   setupInteractions() {
+    if (!this.canvas || typeof this.canvas.addEventListener !== "function")
+      return;
+
     this.canvas.addEventListener("mousedown", e => {
       const pos = this.screenToWorld(e.offsetX, e.offsetY);
       this.draggedNode = this.nodes.find(
@@ -118,9 +169,18 @@ class GraphEngine {
       { passive: false }
     );
 
-    document.getElementById("btn-reset-zoom").addEventListener("click", () => {
-      this.transform = { x: this.centerX, y: this.centerY, k: 1 };
-    });
+    if (typeof document !== "undefined") {
+      const resetBtn = document.getElementById("btn-reset-zoom");
+      if (resetBtn) {
+        resetBtn.addEventListener("click", () => {
+          this.transform = getCenteredTransform(
+            this.canvas.width,
+            this.canvas.height,
+            1
+          );
+        });
+      }
+    }
   }
 
   screenToWorld(sx, sy) {
@@ -201,15 +261,25 @@ class GraphEngine {
   }
 
   render() {
+    if (!this.ctx || !this.canvas) return;
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.save();
     this.ctx.translate(this.transform.x, this.transform.y);
     this.ctx.scale(this.transform.k, this.transform.k);
 
-    const styles = getComputedStyle(document.documentElement);
-    const edgeColor = styles.getPropertyValue("--edge-color").trim();
-    const nodeColor = styles.getPropertyValue("--node-color").trim();
-    const textColor = styles.getPropertyValue("--node-text").trim();
+    const styles =
+      typeof document !== "undefined"
+        ? getComputedStyle(document.documentElement)
+        : null;
+    const edgeColor = styles
+      ? styles.getPropertyValue("--edge-color").trim()
+      : "#999";
+    const nodeColor = styles
+      ? styles.getPropertyValue("--node-color").trim()
+      : "#6366f1";
+    const textColor = styles
+      ? styles.getPropertyValue("--node-text").trim()
+      : "#fff";
 
     // Draw edges
     this.ctx.strokeStyle = edgeColor;
@@ -245,47 +315,64 @@ class GraphEngine {
   animate() {
     this.applyForces();
     this.render();
-    requestAnimationFrame(this.animate);
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(this.animate);
+    }
   }
 }
 
-// Initialize App
-document.addEventListener("DOMContentLoaded", async () => {
-  const storage = new StorageManager();
-  await storage.init();
-  const engine = new GraphEngine("graph-canvas", storage);
-  await engine.loadData();
+// Initialize App in browser
+if (typeof document !== "undefined" && typeof window !== "undefined") {
+  document.addEventListener("DOMContentLoaded", async () => {
+    const canvasEl = document.getElementById("graph-canvas");
+    if (!canvasEl) return;
 
-  const titleInput = document.getElementById("note-title");
-  const contentInput = document.getElementById("note-content");
-  const btnSave = document.getElementById("btn-save");
-  const btnDelete = document.getElementById("btn-delete");
-
-  btnSave.addEventListener("click", async () => {
-    const title = titleInput.value.trim() || "Untitled";
-    const content = contentInput.value;
-    await storage.saveNote({ id: title, title, content });
+    const storage = new StorageManager();
+    await storage.init();
+    const engine = new GraphEngine("graph-canvas", storage);
     await engine.loadData();
-  });
 
-  btnDelete.addEventListener("click", async () => {
-    const title = titleInput.value.trim();
-    if (title && confirm(`Delete "${title}"?`)) {
-      await storage.deleteNote(title);
-      titleInput.value = "";
-      contentInput.value = "";
-      await engine.loadData();
+    const titleInput = document.getElementById("note-title");
+    const contentInput = document.getElementById("note-content");
+    const btnSave = document.getElementById("btn-save");
+    const btnDelete = document.getElementById("btn-delete");
+
+    if (btnSave && titleInput && contentInput) {
+      btnSave.addEventListener("click", async () => {
+        const title = titleInput.value.trim() || "Untitled";
+        const content = contentInput.value;
+        await storage.saveNote({ id: title, title, content });
+        await engine.loadData();
+      });
+    }
+
+    if (btnDelete && titleInput && contentInput) {
+      btnDelete.addEventListener("click", async () => {
+        const title = titleInput.value.trim();
+        if (title && confirm(`Delete "${title}"?`)) {
+          await storage.deleteNote(title);
+          titleInput.value = "";
+          contentInput.value = "";
+          await engine.loadData();
+        }
+      });
+    }
+
+    // Auto-save on input debounce
+    if (contentInput && titleInput) {
+      let timeout;
+      contentInput.addEventListener("input", () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(async () => {
+          const title = titleInput.value.trim() || "Untitled";
+          await storage.saveNote({
+            id: title,
+            title,
+            content: contentInput.value,
+          });
+          await engine.loadData();
+        }, 1000);
+      });
     }
   });
-
-  // Auto-save on input debounce
-  let timeout;
-  contentInput.addEventListener("input", () => {
-    clearTimeout(timeout);
-    timeout = setTimeout(async () => {
-      const title = titleInput.value.trim() || "Untitled";
-      await storage.saveNote({ id: title, title, content: contentInput.value });
-      await engine.loadData();
-    }, 1000);
-  });
-});
+}
