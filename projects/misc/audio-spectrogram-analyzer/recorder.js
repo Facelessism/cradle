@@ -89,7 +89,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Handle page unload to stop audio contexts cleanly
   window.addEventListener("beforeunload", () => {
-    audioProcessor.stop();
-    visualizer.stop();
+    audioProcessor.destroy();
+    visualizer.destroy();
+  });
+  window.addEventListener("unload", () => {
+    audioProcessor.destroy();
+    visualizer.destroy();
   });
 });

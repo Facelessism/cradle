@@ -5,20 +5,96 @@ plain static files with no build step, no user accounts, and no secrets, which
 keeps the attack surface small. This document records the project's security
 practices so contributors can keep it that way.
 
-## Reporting a Vulnerability
+## Vulnerability Disclosure & Incident Response Policy
 
-This repository does not host production data or infrastructure, so there is no
-dedicated security contact. If you find a real security problem (for example a
-way to run unexpected code in a visitor's browser):
+Cradle is committed to the safety and privacy of our visitors, contributors, and downstream users. If you discover a security vulnerability in this repository or its mini-projects, we appreciate your help in disclosing it to us responsibly.
 
-1. **Do not** create a public issue describing an exploitable bug in detail.
-2. Open an issue titled `Security report: <short summary>` and briefly describe
-   the impact and how to reproduce it.
-3. Maintainers can audit site files directly in the repo, so a full
-   reproduction outside the repository is not necessary.
+### 1. Disclosure Contacts & Reporting Channels
 
-Security-impacting fixes are applied through normal pull requests; PRs that
-reduce risk are always welcome.
+To protect our users, **never create public GitHub issues, discussions, pull requests, or public social media posts** to describe or demonstrate an unpatched vulnerability.
+
+Please report vulnerabilities exclusively through one of the following confidential channels:
+
+- **GitHub Security Advisories (Preferred):**  
+  Submit a private report via [GitHub Private Vulnerability Reporting](https://github.com/Facelessism/cradle/security/advisories/new). This provides an encrypted, confidential workspace directly between you and the repository maintainers.
+- **Designated Security Email:**  
+  Email your advisory to **`security@cradle.dev`** (or maintainer contact: `facelessism@users.noreply.github.com`).
+- **Lead Maintainer Contact:**  
+  Reach out to `@Facelessism` on GitHub.
+
+#### What to Include in Your Report
+
+To enable our maintainers to triage and remediate the issue promptly, please include:
+
+1. **Summary:** A concise explanation of the vulnerability and its potential security impact.
+2. **Affected Components:** Specific file paths, mini-project slugs (`projects/<category>/<slug>/`), or UI components involved.
+3. **Reproduction Steps:** Step-by-step instructions or a minimal Proof-of-Concept (PoC).
+4. **Severity Assessment:** Your estimation of severity (e.g. CVSS score or qualitative rating: Low, Medium, High, Critical).
+5. **Proposed Mitigation:** Any suggested code fixes, patch suggestions, or defensive controls, if available.
+6. **Disclosure Status:** Whether the vulnerability has been shared with third parties or is suspected to be exploited in the wild.
+
+---
+
+### 2. Triage & Incident Response Process
+
+Every vulnerability report follows a 4-phase incident response lifecycle:
+
+```text
+┌────────────────────┐     ┌────────────────────┐     ┌────────────────────┐     ┌────────────────────┐
+│  1. Acknowledgment │ ──> │    2. Triage &     │ ──> │  3. Remediation    │ ──> │ 4. Coordinated     │
+│   (Within 24h)     │     │   Classification   │     │   & Verification   │     │    Disclosure      │
+└────────────────────┘     └────────────────────┘     └────────────────────┘     └────────────────────┘
+```
+
+#### Phase 1: Receipt & Initial Acknowledgment (≤ 24 Hours)
+
+- A maintainer will confirm receipt of your report within **24 hours**.
+- A private GitHub Security Advisory (GHSA) is established for confidential collaboration and tracking.
+
+#### Phase 2: Triage & CVSS Severity Classification (≤ 48–72 Hours)
+
+- Maintainers replicate the vulnerability and evaluate its blast radius across the repository.
+- Vulnerabilities are scored against the **Common Vulnerability Scoring System (CVSS v3.1)**:
+  - **Critical (CVSS 9.0–10.0):** Remote Code Execution (RCE), arbitrary script injection affecting top-level domains, mass XSS, or supply chain compromises.
+  - **High (CVSS 7.0–8.9):** Stored XSS in shared components, cross-origin data exfiltration, worker integrity bypasses, or prototype pollution.
+  - **Medium (CVSS 4.0–6.9):** DOM-based reflected XSS, client-side sensitive data exposure (PII), or catastrophic regex evaluation (ReDoS).
+  - **Low (CVSS 0.1–3.9):** Minor information disclosure, clickjacking without sensitive actions, or missing defense-in-depth headers.
+- An initial assessment and remediation timeline is communicated back to the reporter.
+
+#### Phase 3: Remediation & Verification (SLA Driven)
+
+- Development of fixes takes place inside a **private security advisory fork** to prevent pre-patch leakage.
+- Strict Remediation Service Level Agreements (SLAs):
+  - **Critical Vulnerabilities:** Mitigated or patched within **48 hours**.
+  - **High-Severity Vulnerabilities:** Remediated and verified within **7 days**.
+  - **Medium / Low Vulnerabilities:** Remediated within **30 days** or in the next scheduled release cycle.
+- Fixes are tested against regression suites, static security analyzers, and local browser environments.
+
+#### Phase 4: Coordinated Disclosure & Release
+
+- Once a fix is verified, a mutually agreed-upon public disclosure date is scheduled (standard **90-day embargo** window from initial report, or sooner upon mutual agreement once the patch is published).
+- The fix is merged to `main` and deployed.
+- A public GitHub Security Advisory (GHSA) is published, and a CVE identifier is requested where applicable.
+- The security researcher is credited in the advisory and release notes (unless anonymity is requested).
+
+---
+
+### 3. Safe Harbor & Research Guidelines
+
+We believe in supporting and working with security researchers. If you conduct vulnerability research in good faith and adhere to these guidelines, we will:
+
+- Consider your research authorized and not pursue or support legal action against you.
+- Work transparently with you to understand and resolve the vulnerability quickly.
+- Publicly credit your responsible disclosure in release notes and security advisories.
+
+#### Expectations for Researchers:
+
+- Make a reasonable effort to avoid privacy violations, data loss, and disruption of service.
+- Do not execute Denial-of-Service (DoS) attacks against live hosted deployments.
+- Do not access, modify, or retain sensitive personal data of other users.
+- Give maintainers a reasonable amount of time to remediate before disclosing details publicly.
+
+---
 
 ## Worker Integrity Policy
 
@@ -88,7 +164,6 @@ When code loads or injects external scripts at runtime (such as browser AI model
 3. **Controlled Lifecycle:** Scripts are tracked in an in-flight cache to prevent duplicate fetches. Injections enforce bounded timeouts (`DEFAULT_SCRIPT_TIMEOUT_MS = 15000`); on error or timeout, the injected `<script>` node is immediately purged from the DOM.
 4. **Sandboxed Isolation Strategy:** Untrusted third-party code must execute within an isolated sandboxed iframe (`sandbox="allow-scripts"` without `allow-same-origin`) or Web Worker. This cuts off access to `window.parent`, `localStorage`, `document.cookie`, and top-level DOM nodes. In addition, `snapshotGlobalKeys` and `detectGlobalPollution` are provided to audit global namespace contamination.
 
-
 ## User-Gesture-Driven Audio Activation Policy
 
 **Web Audio contexts and media playback must only be instantiated or resumed after an explicit user interaction (click, keypress, tap).**
@@ -133,7 +208,6 @@ Because Cradle displays interactive previews and cards for dozens of independent
    - SVG data URIs passed to card components are decoded and validated with `isSvgSafe()` before rendering; unsafe payloads fall back gracefully to a non-executable initial-letter avatar.
 4. **Contract Verification:**
    - Every project's `thumbnail.svg` is evaluated during CI by `scripts/validate-mini-contract.js` using `validateSvgThumbnail()`. Any file containing scripts, event handlers, or external references triggers an immediate `unsafe-svg-thumbnail` build failure.
-
 
 ## Production Dependency Vulnerability Policy
 
@@ -198,9 +272,8 @@ Before releasing Cradle or deploying to any public or staging host (GitHub Pages
 
 - **HTTPS & TLS configuration:** Strict redirect, TLS 1.2/1.3 enforcement, and zero mixed content.
 - **HSTS:** Header setup, staged rollout, and preload list submission (`hstspreload.org`).
-- **CSP (Content Security Policy):** Least-privilege directives matching Cradle's script, font, and model sources.
+- **CSP (Content Security Policy):** The root landing page enforces a minimal baseline CSP meta tag (`default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; ...`). Minis requiring external scripts extend this policy per [THIRD_PARTY_POLICY.md](THIRD_PARTY_POLICY.md) and [MINI_CONTRACT.md](docs/MINI_CONTRACT.md).
 - **Subresource Integrity (SRI):** Mandatory cryptographic hashes on third-party CDN assets.
 - **Security Headers:** `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and `Permissions-Policy`.
 - **Dependency & Worker Integrity:** CI audit gates, lockfile enforcement, and same-origin worker hash verification.
 - **Pre-Flight Sign-Off:** Verification matrix and test commands before going live.
-

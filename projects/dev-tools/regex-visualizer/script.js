@@ -82,6 +82,36 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // Pre-evaluation check for catastrophic backtracking (ReDoS) patterns
+    const safetyCheck =
+      typeof RegexEngine !== "undefined" &&
+      typeof RegexEngine.detectCatastrophicPattern === "function"
+        ? RegexEngine.detectCatastrophicPattern(pattern)
+        : null;
+
+    if (safetyCheck && safetyCheck.isUnsafe) {
+      regexError.classList.remove("hidden");
+      regexError.innerHTML = `
+    <strong>⚠️ Unsafe Regex Warning (Catastrophic Backtracking):</strong> ${escapeHtml(safetyCheck.reason)}
+    <br><span class="regex-error-position">Execution blocked to prevent freezing the browser thread (ReDoS protection).</span>
+  `;
+
+      highlightsOverlay.innerHTML = escapeHtml(testString);
+      matchCountBadge.textContent = "Blocked (Unsafe)";
+
+      matchesTableBody.innerHTML = `
+    <tr>
+      <td colspan="4" class="table-placeholder">
+        Evaluation halted: ${escapeHtml(safetyCheck.reason)}
+      </td>
+    </tr>
+  `;
+
+      // Still render token breakdown if possible so user can inspect pattern
+      generateExplainer(pattern);
+      return;
+    }
+
     try {
       const regex = new RegExp(pattern, flags);
 
@@ -253,11 +283,24 @@ document.addEventListener("DOMContentLoaded", () => {
     const isGlobal = regex.global;
     const matches = [];
     let match;
+    const startTime = Date.now();
+    const TIMEOUT_MS = 250;
+    const MAX_MATCHES = 2000;
+    let timedOut = false;
+    let limitReached = false;
 
     if (isGlobal) {
       // Prevent infinite loop if regex matches empty string
       let lastIndex = -1;
       while ((match = regex.exec(text)) !== null) {
+        if (Date.now() - startTime > TIMEOUT_MS) {
+          timedOut = true;
+          break;
+        }
+        if (matches.length >= MAX_MATCHES) {
+          limitReached = true;
+          break;
+        }
         if (regex.lastIndex === lastIndex) {
           regex.lastIndex++;
         }
@@ -265,13 +308,33 @@ document.addEventListener("DOMContentLoaded", () => {
         matches.push(match);
       }
     } else {
+      const execStart = Date.now();
       match = regex.exec(text);
-      if (match) {
+      if (Date.now() - execStart > TIMEOUT_MS) {
+        timedOut = true;
+      } else if (match) {
         matches.push(match);
       }
     }
 
-    matchCountBadge.textContent = `${matches.length} Match${matches.length !== 1 ? "es" : ""}`;
+    if (timedOut) {
+      regexError.classList.remove("hidden");
+      regexError.innerHTML = `
+    <strong>⚠️ Execution Timeout:</strong> Regex evaluation exceeded ${TIMEOUT_MS}ms and was halted to keep the interface responsive.
+  `;
+    } else if (limitReached) {
+      regexError.classList.remove("hidden");
+      regexError.innerHTML = `
+    <strong>⚠️ Match Limit Reached:</strong> Processing capped at ${MAX_MATCHES} matches to prevent performance degradation.
+  `;
+    }
+
+    const badgeSuffix = timedOut
+      ? " (Timed Out)"
+      : limitReached
+        ? ` (${MAX_MATCHES} cap)`
+        : "";
+    matchCountBadge.textContent = `${matches.length} Match${matches.length !== 1 ? "es" : ""}${badgeSuffix}`;
 
     if (matches.length === 0) {
       highlightsOverlay.innerHTML = escapeHtml(text);

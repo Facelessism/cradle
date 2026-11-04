@@ -18,6 +18,7 @@ import {
   sanitizeProject,
   sanitizeProjectList,
 } from "./src/utils/projectSanitizer.js";
+import { registerServiceWorker } from "./src/utils/serviceWorkerRegistration.js";
 
 const projectsGrid = document.getElementById("projects-grid");
 const searchInput = document.getElementById("search");
@@ -497,6 +498,9 @@ function createProjectCard(rawProject, options = {}) {
     badge: project.category,
     isNew: isNewProject(project.dateAdded),
     image: getThumbnailUrl(project),
+    imageWidth: 1200,
+    imageHeight: 675,
+    imageLoading: "lazy",
     footer: [openButton, copyButton],
     footerAlign: "left",
     className: recent ? "recent-project-card" : "",
@@ -1027,4 +1031,15 @@ document.addEventListener("DOMContentLoaded", () => {
   restoreFiltersFromUrl();
   renderRecentProjects();
   loadProjects();
+  registerServiceWorker();
+
+  if (document.documentElement?.addEventListener) {
+    document.documentElement.addEventListener("cradle:themechange", e => {
+      const theme = e.detail?.theme;
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta && theme) {
+        meta.setAttribute("content", theme === "light" ? "#f5f7fb" : "#05070d");
+      }
+    });
+  }
 });

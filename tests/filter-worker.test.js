@@ -215,3 +215,61 @@ test("rejects filter results that carry prototype-pollution keys", () => {
   assert.equal(failures[0].message, "Worker returned an invalid search result");
   assert.equal(logs[0].entry.errorType, "InvalidResultError");
 });
+
+test("ignores valid worker results delivered after the worker has failed", () => {
+  const failures = [];
+  const results = [];
+  const { logger } = createMockLogger();
+  createFilterWorker({
+    workerFactory: () => new FakeWorker(),
+    onResult: result => results.push(result),
+    onFailure: error => failures.push(error),
+    logger,
+  });
+  const instance = FakeWorker.instances[0];
+
+  instance.onerror(new Error("worker crashed"));
+  assert.equal(failures.length, 1);
+  assert.equal(instance.terminated, true);
+
+  // Deliver a valid result after failure
+  instance.onmessage({ data: [{ id: "chess" }] });
+
+  // onResult must remain untouched
+  assert.deepEqual(results, []);
+});
+
+test("ignores worker results after terminate() and prevents postMessage to underlying worker", () => {
+  const failures = [];
+  const results = [];
+  const { logger } = createMockLogger();
+  const worker = createFilterWorker({
+    workerFactory: () => new FakeWorker(),
+    onResult: result => results.push(result),
+    onFailure: error => failures.push(error),
+    logger,
+  });
+  const instance = FakeWorker.instances[0];
+
+  worker.terminate();
+  assert.equal(instance.terminated, true);
+
+  // Deliver a valid result after termination
+  instance.onmessage({ data: [{ id: "chess" }] });
+
+  // onResult must remain untouched
+  assert.deepEqual(results, []);
+  assert.deepEqual(failures, []);
+
+  // Assert postMessage() returns false after termination and does not reach underlying worker
+  const initialMessageCount = instance.messages.length;
+  const sent = worker.postMessage({
+    allProjects: [],
+    selectedCategory: "all",
+    query: "chess",
+  });
+
+  assert.equal(sent, false);
+  assert.equal(instance.messages.length, initialMessageCount);
+  assert.deepEqual(failures, []);
+});

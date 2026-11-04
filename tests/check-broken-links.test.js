@@ -1,12 +1,15 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const {
   parseMarkdownLinks,
   parseHtmlLinks,
   isExternal,
   sanitizePath,
   validateLinks,
+  validateGalleryProjects,
 } = require("../scripts/check-broken-links.js");
 
 test("isExternal correctly identifies external or special protocol links", () => {
@@ -70,4 +73,49 @@ test("parseHtmlLinks extracts href and src attributes from HTML content", () => 
 test("validateLinks scans workspace without finding broken internal links", () => {
   const broken = validateLinks();
   assert.equal(broken.length, 0);
+});
+
+test("validateGalleryProjects detects missing mini project directory and index.html", () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cradle-test-"));
+  const dataDir = path.join(tmpDir, "data");
+  fs.mkdirSync(dataDir, { recursive: true });
+
+  const projects = [
+    {
+      title: "Missing Game",
+      category: "games",
+      path: "projects/games/missing-game/",
+    },
+  ];
+  fs.writeFileSync(
+    path.join(dataDir, "projects.json"),
+    JSON.stringify(projects, null, 2)
+  );
+
+  const broken = validateGalleryProjects(tmpDir);
+  assert.equal(broken.length, 2); // missing folder/index.html AND missing thumbnail
+  assert.equal(broken[0].source, "data/projects.json");
+  assert.equal(broken[0].target, "projects/games/missing-game/");
+  assert.match(broken[0].detail, /missing mini entry point/i);
+
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+test("validateLinks detects broken directory links lacking index.html and reports source file", () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cradle-test-doc-"));
+  const htmlFile = path.join(tmpDir, "index.html");
+  const emptySubdir = path.join(tmpDir, "empty-dir");
+  fs.mkdirSync(emptySubdir, { recursive: true });
+
+  fs.writeFileSync(
+    htmlFile,
+    `<!DOCTYPE html><html><body><a href="empty-dir/">Link</a></body></html>`
+  );
+
+  const broken = validateLinks({ rootDir: tmpDir });
+  assert.equal(broken.length, 1);
+  assert.equal(broken[0].source, "index.html");
+  assert.equal(broken[0].target, "empty-dir/");
+
+  fs.rmSync(tmpDir, { recursive: true, force: true });
 });

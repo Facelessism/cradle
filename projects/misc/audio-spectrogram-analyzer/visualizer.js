@@ -5,20 +5,33 @@
 export class SpectrogramVisualizer {
   constructor(canvasId) {
     this.canvas = document.getElementById(canvasId);
-    this.ctx = this.canvas.getContext("2d");
+    this.ctx = this.canvas ? this.canvas.getContext("2d") : null;
     this.isRunning = false;
+    this.animationId = null;
     this.scrollOffset = 0;
     this.colormap = this.generateMagmaColormap();
 
+    // Reusable offscreen buffer canvas and context
+    this.bufferCanvas = document.createElement("canvas");
+    this.bufferCtx = this.bufferCanvas.getContext("2d");
+
+    this.boundResize = this.resizeCanvas.bind(this);
     this.resizeCanvas();
-    window.addEventListener("resize", () => this.resizeCanvas());
+    window.addEventListener("resize", this.boundResize);
   }
 
   resizeCanvas() {
     // Internal resolution matches display size for sharpness
-    const rect = this.canvas.parentElement.getBoundingClientRect();
-    this.canvas.width = rect.width;
-    this.canvas.height = rect.height;
+    if (!this.canvas) return;
+    if (this.canvas.parentElement) {
+      const rect = this.canvas.parentElement.getBoundingClientRect();
+      this.canvas.width = rect.width;
+      this.canvas.height = rect.height;
+    }
+    if (this.bufferCanvas) {
+      this.bufferCanvas.width = this.canvas.width;
+      this.bufferCanvas.height = this.canvas.height;
+    }
   }
 
   generateMagmaColormap() {
@@ -56,12 +69,24 @@ export class SpectrogramVisualizer {
   }
 
   start(audioProcessor) {
+    this.stop();
     this.isRunning = true;
     this.draw(audioProcessor);
   }
 
   stop() {
     this.isRunning = false;
+    if (this.animationId !== null) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
+  }
+
+  destroy() {
+    this.stop();
+    if (this.boundResize) {
+      window.removeEventListener("resize", this.boundResize);
+    }
   }
 
   draw(audioProcessor) {
@@ -69,7 +94,7 @@ export class SpectrogramVisualizer {
 
     const data = audioProcessor.getFrequencyData();
     if (data.length === 0) {
-      requestAnimationFrame(() => this.draw(audioProcessor));
+      this.animationId = requestAnimationFrame(() => this.draw(audioProcessor));
       return;
     }
 
@@ -77,18 +102,14 @@ export class SpectrogramVisualizer {
     const height = this.canvas.height;
     const sliceWidth = 2; // Scroll speed
 
-    // Create a temporary canvas to hold the current image
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = width;
-    tempCanvas.height = height;
-    const tempCtx = tempCanvas.getContext("2d");
-    tempCtx.drawImage(this.canvas, 0, 0);
+    // Reuse offscreen buffer canvas to hold current image
+    this.bufferCtx.drawImage(this.canvas, 0, 0);
 
     // Clear main canvas
     this.ctx.clearRect(0, 0, width, height);
 
     // Draw shifted previous frame
-    this.ctx.drawImage(tempCanvas, -sliceWidth, 0);
+    this.ctx.drawImage(this.bufferCanvas, -sliceWidth, 0);
 
     // Draw new frequency column on the right
     const binHeight = height / data.length;
@@ -106,6 +127,6 @@ export class SpectrogramVisualizer {
       this.ctx.fillRect(width - sliceWidth, y, sliceWidth, binHeight + 1); // +1 to prevent gaps
     }
 
-    requestAnimationFrame(() => this.draw(audioProcessor));
+    this.animationId = requestAnimationFrame(() => this.draw(audioProcessor));
   }
 }

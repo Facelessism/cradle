@@ -96,9 +96,19 @@
         z-index: 1;
       }
 
+      html.light-theme .cradle-card__new-ribbon {
+        background: var(--cradle-warning-bg, rgba(146, 64, 14, 0.12));
+        color: var(--cradle-warning, #92400e);
+        border-color: var(--cradle-warning, #92400e);
+      }
+      html.light-theme .cradle-card__badge {
+        color: var(--cradle-highlight, #1d4ed8);
+      }
+
       /* ── Hero image ─────────────────────────────────── */
       .cradle-card__image {
         width: 100%;
+        height: auto;
         aspect-ratio: 16 / 9;
         object-fit: cover;
         display: block;
@@ -237,7 +247,8 @@
     const fallback = document.createElement("div");
     fallback.className = "cradle-card__image cradle-card__image--fallback";
     fallback.setAttribute("role", "img");
-    const cleanTitle = typeof title === "string" ? _cleanText(title) || title : title;
+    const cleanTitle =
+      typeof title === "string" ? _cleanText(title) || title : title;
     fallback.setAttribute("aria-label", cleanTitle || "Thumbnail fallback");
     const firstChar = (cleanTitle || "?").trim().charAt(0) || "?";
     fallback.textContent = firstChar.toUpperCase();
@@ -367,13 +378,15 @@
 
       const h = document.createElement("h3");
       h.className = "cradle-card__title";
-      h.textContent = typeof title === "string" ? _cleanText(title) || title : title;
+      h.textContent =
+        typeof title === "string" ? _cleanText(title) || title : title;
       titleRow.appendChild(h);
 
       if (badge) {
         const b = document.createElement("span");
         b.className = "cradle-card__badge";
-        b.textContent = typeof badge === "string" ? _cleanText(badge) || badge : badge;
+        b.textContent =
+          typeof badge === "string" ? _cleanText(badge) || badge : badge;
         titleRow.appendChild(b);
       }
 
@@ -383,7 +396,10 @@
     if (subtitle) {
       const sub = document.createElement("p");
       sub.className = "cradle-card__subtitle";
-      sub.textContent = typeof subtitle === "string" ? _cleanText(subtitle) || subtitle : subtitle;
+      sub.textContent =
+        typeof subtitle === "string"
+          ? _cleanText(subtitle) || subtitle
+          : subtitle;
       textWrapper.appendChild(sub);
     }
 
@@ -482,9 +498,24 @@
           img.className = "cradle-card__image";
           img.src = image.trim();
           img.alt = title || "";
-          img.loading = "lazy";
+
+          const imgLoading = options.imageLoading || options.loading || "lazy";
+          img.loading = imgLoading;
+          img.setAttribute("loading", imgLoading);
+
           img.decoding = "async";
+          img.setAttribute("decoding", "async");
+
           img.referrerPolicy = "no-referrer";
+          img.setAttribute("referrerpolicy", "no-referrer");
+
+          const imgWidth = options.imageWidth || options.width || 1200;
+          const imgHeight = options.imageHeight || options.height || 675;
+          img.width = Number(imgWidth) || 1200;
+          img.height = Number(imgHeight) || 675;
+          img.setAttribute("width", String(img.width));
+          img.setAttribute("height", String(img.height));
+
           let failed = false;
           img.addEventListener("error", () => {
             if (!failed) {
@@ -555,6 +586,70 @@
           wrapper.className = "cradle-card__content";
           while (el.firstChild) wrapper.appendChild(el.firstChild);
           el.appendChild(wrapper);
+        }
+
+        /* Inject image if data-image is provided */
+        if (
+          el.dataset.image &&
+          !(
+            typeof el.querySelector === "function" &&
+            el.querySelector(".cradle-card__image")
+          )
+        ) {
+          const imgUrl = el.dataset.image;
+          if (isValidImageUrl(imgUrl)) {
+            const img = document.createElement("img");
+            img.className = "cradle-card__image";
+            img.src = imgUrl.trim();
+            img.alt = el.dataset.title || "";
+            const imgLoading = el.dataset.loading || "lazy";
+            img.loading = imgLoading;
+            img.setAttribute("loading", imgLoading);
+            img.decoding = "async";
+            img.setAttribute("decoding", "async");
+            img.referrerPolicy = "no-referrer";
+            img.setAttribute("referrerpolicy", "no-referrer");
+
+            const imgWidth = el.dataset.imageWidth || el.dataset.width || 1200;
+            const imgHeight =
+              el.dataset.imageHeight || el.dataset.height || 675;
+            img.width = Number(imgWidth) || 1200;
+            img.height = Number(imgHeight) || 675;
+            img.setAttribute("width", String(img.width));
+            img.setAttribute("height", String(img.height));
+
+            let failed = false;
+            img.addEventListener("error", () => {
+              if (!failed) {
+                failed = true;
+                img.replaceWith(createFallbackImage(el.dataset.title));
+              }
+            });
+            el.insertBefore(img, el.firstChild);
+          } else {
+            el.insertBefore(
+              createFallbackImage(el.dataset.title),
+              el.firstChild
+            );
+          }
+        }
+
+        /* Ensure existing card images have lazy loading and explicit width/height */
+        if (typeof el.querySelectorAll === "function") {
+          el.querySelectorAll("img.cradle-card__image, img").forEach(img => {
+            if (!img.getAttribute("loading")) {
+              img.loading = "lazy";
+              img.setAttribute("loading", "lazy");
+            }
+            if (!img.getAttribute("width")) {
+              img.width = 1200;
+              img.setAttribute("width", "1200");
+            }
+            if (!img.getAttribute("height")) {
+              img.height = 675;
+              img.setAttribute("height", "675");
+            }
+          });
         }
 
         /* Inject header from data attributes */

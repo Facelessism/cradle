@@ -72,4 +72,4 @@ Thumbnails written by the generator are already small (a few KB). If you replace
 
 ## 7. Not covered here
 
-This document does not define a bundler or build strategy for the site, or a plugin model for the build. It only covers how the existing static assets are named, fingerprinted and cached.
+This document covers static asset naming, fingerprinting, and caching. For the repository's centralized compilation, bundling, and build tier architecture for mini projects, see [BUILD_STRATEGY.md](BUILD_STRATEGY.md).

@@ -50,13 +50,13 @@ The analyser is connected to both the speaker destination and a `MediaStreamDest
 
 ## Component Breakdown
 
-| Component               | Responsibility                                                                                                                            |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `AudioProcessor`        | Creates the `AudioContext`, obtains a microphone stream or an `<audio>` element source, and wires the analyser and recording destination. |
-| `SpectrogramVisualizer` | Owns the canvas size, the colormap, and the `requestAnimationFrame` loop that shifts and repaints the heatmap.                            |
-| `recorder.js`           | Binds controls, starts and stops `MediaRecorder`, creates the download blob, and stops audio resources on unload.                         |
-| `index.html`            | Provides microphone, file, record, stop, and FFT size controls plus the canvas and error banner.                                          |
-| `style.css`             | Defines the responsive layout, theme palette, and the legend that explains the colormap.                                                  |
+| Component               | Responsibility                                                                                                                                                       |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AudioProcessor`        | Creates the `AudioContext`, obtains a microphone stream or an `<audio>` element source, wires the analyser and recording destination, and manages lifecycle cleanup. |
+| `SpectrogramVisualizer` | Owns the canvas size, reusable offscreen buffer canvas, colormap, and the cancellable `requestAnimationFrame` loop that shifts and repaints the heatmap.             |
+| `recorder.js`           | Binds controls, starts and stops `MediaRecorder`, creates the download blob, and tears down audio and visualizer resources on unload.                                |
+| `index.html`            | Provides microphone, file, record, stop, and FFT size controls plus the canvas and error banner.                                                                     |
+| `style.css`             | Defines the responsive layout, theme palette, and the legend that explains the colormap.                                                                             |
 
 ## Data Flow / Execution Flow
 
@@ -65,10 +65,10 @@ The analyser is connected to both the speaker destination and a `MediaStreamDest
 3. The resulting `MediaStream` becomes a `MediaStreamAudioSourceNode`, which is connected to a new `AnalyserNode`.
 4. A file request calls `loadAudioFile()`, which stops the previous source, creates an `<audio>` element with an object URL, and wraps it with `createMediaElementSource`.
 5. `setupAnalyser()` sets the FFT size and smoothing, then connects the source to the analyser, the speakers, and the recording destination.
-6. The visualizer loop calls `getFrequencyData()` on every frame. The analyser fills a `Uint8Array` with values from 0 to 255.
-7. The visualizer copies the current canvas to a temporary canvas, shifts it left by 2 pixels, and draws the new frequency column on the right edge.
+6. The visualizer loop calls `getFrequencyData()` on every frame. The analyser fills a cached `Uint8Array` with values from 0 to 255.
+7. The visualizer copies the current canvas to a reusable offscreen buffer canvas, shifts it left by 2 pixels, and draws the new frequency column on the right edge.
 8. Recording creates a `MediaRecorder` around the destination stream. On stop, the chunks are combined into a Blob and downloaded.
-9. On unload or an explicit stop, the processor stops microphone tracks, pauses the audio element, and disconnects the source; the visualizer clears its running flag.
+9. On unload or an explicit destroy, the processor stops microphone tracks, revokes object URLs, pauses and clears the audio element, disconnects nodes, and closes the audio context; the visualizer cancels its animation frame and removes its resize listener.
 
 ## Key Features
 
@@ -79,7 +79,7 @@ The analyser is connected to both the speaker destination and a `MediaStreamDest
 - **Adjustable FFT size** - The analyser can switch between the supported FFT sizes at runtime.
 - **Local recording** - Records the analyzed signal to WebM and downloads it on stop.
 - **Theme support** - The page and legend follow the Cradle light and dark tokens.
-- **Cleanup on unload** - Stops tracks and animation when the page is closed.
+- **Cleanup on unload and stop** - Stops tracks, revokes object URLs, cancels animation frames, and closes audio contexts when stopped or when the page is closed.
 
 ## Technologies Used
 
@@ -101,26 +101,28 @@ The analyser is connected to both the speaker destination and a `MediaStreamDest
 ### `audio-processor.js`
 
 - **`init()`** - creates the `AudioContext` and the recording destination.
-- **`startMicrophone()`** - acquires a stream, builds the source node, and configures the analyser.
-- **`loadAudioFile()`** - stops the previous source, creates an audio element, and connects it to the graph.
+- **`startMicrophone()`** - acquires a stream, stops any existing source, builds the source node, and configures the analyser.
+- **`loadAudioFile()`** - stops the previous source, creates an audio element with an object URL, and connects it to the graph.
 - **`setupAnalyser()`** - sets `fftSize` and smoothing and connects the analyser to speakers and recording.
-- **`setFFTSize()`** - applies a new FFT size to the existing analyser.
-- **`getFrequencyData()`** - returns the current byte frequency array, or an empty array when no analyser exists.
+- **`setFFTSize()`** - applies a new FFT size to the existing analyser and invalidates cached frequency data.
+- **`getFrequencyData()`** - returns the cached byte frequency array, or an empty array when no analyser exists.
 - **`getRecordingStream()`** - exposes the destination stream for `MediaRecorder`.
-- **`stop()`** - stops microphone tracks, pauses the audio element, and disconnects the source.
+- **`stop()`** - stops microphone tracks, pauses and clears the audio element, revokes the object URL, and disconnects source and analyser nodes.
+- **`destroy()`** - calls `stop()` and closes the audio context.
 
 ### `visualizer.js`
 
-- **`resizeCanvas()`** - sizes the backing store from the parent element's bounding box.
+- **`resizeCanvas()`** - sizes the backing store and offscreen buffer from the parent element's bounding box.
 - **`buildColormap()`** - interpolates the Magma color stops into a 256-entry lookup table.
-- **`start()` / `stop()`** - toggles the animation loop.
-- **`draw()`** - shifts the previous frame, maps each frequency bin to a color, and schedules the next frame.
+- **`start()` / `stop()`** - starts or cancels the `requestAnimationFrame` loop.
+- **`draw()`** - shifts the previous frame via reusable offscreen buffer, maps each frequency bin to a color, and schedules the next frame.
+- **`destroy()`** - stops the animation loop and removes the window resize listener.
 
 ### `recorder.js`
 
 - Creates the processor and visualizer and wires every control.
 - Starts and stops `MediaRecorder`, chooses a supported MIME type, and downloads the result.
-- Stops the visualizer and processor on `beforeunload`.
+- Calls `destroy()` on the visualizer and processor on `beforeunload` and `unload`.
 
 ### `style.css`
 
@@ -163,11 +165,9 @@ The project has no npm packages, CDN scripts, fonts, or external assets. A secur
 ## Known Limitations
 
 - The spectrogram has no labeled axes; the legend explains color but not exact frequency or time values.
-- The canvas is copied to a temporary canvas on every animation frame, which allocates a new canvas each time and adds overhead.
 - Microphone permission prompts and device selection are delegated entirely to the browser.
 - Recording format support varies by browser; Safari may produce a different container than WebM.
 - The application does not persist user settings such as FFT size or theme.
-- Starting a new source relies on `stop()` being called before the previous stream is replaced.
 - There is no file size or duration limit for loaded audio.
 
 ## Development Notes

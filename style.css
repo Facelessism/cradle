@@ -19,6 +19,7 @@
 
   --accent: var(--cradle-accent, #1e3a8a);
   --accent-hover: var(--cradle-accent-hover, #2563eb);
+  --accent-outline: var(--cradle-accent-outline, #60a5fa);
   --color-accent: var(--accent-hover, #2563eb);
 
   --shadow: rgba(0, 0, 0, 0.4);
@@ -38,10 +39,11 @@ html.light-theme {
 
   --text: var(--cradle-text, #0f172a);
   --text-secondary: var(--cradle-text-secondary, #334155);
-  --muted: var(--cradle-muted, #64748b);
+  --muted: var(--cradle-muted, #475569);
 
   --accent: var(--cradle-accent, #2563eb);
   --accent-hover: var(--cradle-accent-hover, #1d4ed8);
+  --accent-outline: var(--cradle-accent-outline, #1d4ed8);
   --color-accent: var(--accent-hover, #1d4ed8);
 
   --shadow: rgba(0, 0, 0, 0.08);
@@ -478,6 +480,14 @@ html.light-theme .recent-project-card::before {
   color: var(--muted);
 }
 
+.cradle-card__image {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+}
+
 footer {
   margin-top: 4rem;
   padding: 2rem 1rem;
@@ -490,12 +500,20 @@ footer {
 }
 
 .footer-link {
-  color: #93c5fd;
+  color: var(--cradle-highlight, #93c5fd);
   text-decoration: none;
 }
 
 .footer-link:hover {
   color: #dbeafe;
+}
+
+html.light-theme .footer-link {
+  color: var(--cradle-accent-hover, #1d4ed8);
+}
+
+html.light-theme .footer-link:hover {
+  color: var(--cradle-accent, #1e3a8a);
 }
 
 ::-webkit-scrollbar {
@@ -601,8 +619,8 @@ footer {
 
 .back-to-top:hover {
   background: var(--card-hover);
-  border-color: var(--accent-hover);
-  color: var(--accent-hover);
+  border-color: var(--accent-outline, var(--accent-hover));
+  color: var(--accent-outline, var(--accent-hover));
   transform: translateY(-3px) scale(1.05);
 }
 
@@ -776,4 +794,87 @@ a:focus:not(:focus-visible),
 select:focus:not(:focus-visible),
 [tabindex="0"]:focus:not(:focus-visible) {
   outline: none;
+}
+
+/* ── Service Worker Update Prompt Toast ──────────────────────────────── */
+.cradle-update-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: var(--cradle-z-toast, 1030);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 18px;
+  background: var(--card, #111827);
+  color: var(--text, #f3f4f6);
+  border: 1px solid var(--border, #374151);
+  border-radius: var(--radius, 14px);
+  box-shadow: 0 10px 30px var(--shadow, rgba(0, 0, 0, 0.4));
+  animation: cradle-toast-slide-up 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  max-width: calc(100vw - 48px);
+}
+
+@keyframes cradle-toast-slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.cradle-update-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.cradle-update-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.cradle-update-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cradle-update-btn {
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cradle-update-btn--primary {
+  padding: 6px 14px;
+  background: var(--accent-hover, #2563eb);
+  color: #ffffff;
+  border: 1px solid transparent;
+}
+
+.cradle-update-btn--primary:hover {
+  background: var(--accent, #1e3a8a);
+  transform: translateY(-1px);
+}
+
+.cradle-update-btn--dismiss {
+  padding: 6px 10px;
+  background: transparent;
+  color: var(--muted, #9ca3af);
+  border: 1px solid transparent;
+}
+
+.cradle-update-btn--dismiss:hover {
+  color: var(--text, #f3f4f6);
+  background: rgba(128, 128, 128, 0.15);
 }

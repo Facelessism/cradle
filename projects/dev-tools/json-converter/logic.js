@@ -9,6 +9,8 @@
 /* JSON Parsing & Validation                                          */
 /* ------------------------------------------------------------------ */
 
+const MAX_CONVERTER_DEPTH = 64;
+
 /**
  * Parse JSON text and return a result object.
  *
@@ -61,7 +63,7 @@ function parseJSON(text) {
         const lines = beforeError.split("\n");
 
         line = lines.length;
-        column = lines[lines.length - 1].length + 1;
+        column = Array.from(lines[lines.length - 1]).length + 1;
       }
     }
 
@@ -123,21 +125,6 @@ function quoteYaml(str) {
   // Fall back to JSON-style double quotes.
   return JSON.stringify(str);
 }
-
-/**
- * Serialize a JavaScript value to YAML.
- */
-function toYaml(obj, indent, seen) {
-  if (indent === undefined) {
-    indent = 0;
-  }
-  if (seen === undefined) {
-    seen = new Set();
-  }
-
-  if (indent > 64) {
-    return "~";
-  }
 
 /**
  * Serialize a JavaScript value to YAML.
@@ -424,19 +411,14 @@ function sanitizeXmlName(name) {
  * @param {number} maxDepth
  * @param {Set} seen
  */
-function toXml(obj, rootName, indent, seen) {
-  if (rootName === undefined) {
-    rootName = "root";
-  }
-
-  if (indent === undefined) {
-    indent = 0;
-  }
-
-  if (seen === undefined) {
-    seen = new Set();
-  }
-
+function toXml(
+  obj,
+  rootName = "root",
+  indent = 0,
+  depth = 0,
+  maxDepth = MAX_CONVERTER_DEPTH,
+  seen = new Set()
+) {
   if (indent > 64) {
     return `${"  ".repeat(indent)}<${rootName}/>`;
   }
@@ -454,7 +436,7 @@ function toXml(obj, rootName, indent, seen) {
 
   if (typeof obj === "object") {
     if (seen.has(obj)) {
-      return `${pad}<${name}/>`;
+      return `${pad}<${name}>[Circular reference]</${name}>`;
     }
     seen.add(obj);
   }
@@ -467,13 +449,6 @@ function toXml(obj, rootName, indent, seen) {
     return `${pad}<${name}>` + escapeXml(String(obj)) + `</${name}>`;
   }
 
-  if (typeof obj === "object") {
-    if (seen.has(obj)) {
-      return `${pad}<${name}>[Circular reference]</${name}>`;
-    }
-    seen.add(obj);
-  }
-
   if (Array.isArray(obj)) {
     if (obj.length === 0) {
       return `${pad}<${name}/>`;
@@ -482,7 +457,7 @@ function toXml(obj, rootName, indent, seen) {
     const itemName = name.replace(/s$/, "") || "item";
 
     const items = obj
-      .map(item => toXml(item, itemName, indent + 1, seen))
+      .map(item => toXml(item, itemName, indent + 1, depth + 1, maxDepth, seen))
       .join("\n");
 
     return `${pad}<${name}>\n` + `${items}\n` + `${pad}</${name}>`;
@@ -499,7 +474,7 @@ function toXml(obj, rootName, indent, seen) {
       .map(key => {
         const childName = isValidXmlName(key) ? key : sanitizeXmlName(key);
 
-        return toXml(obj[key], childName, indent + 1, seen);
+        return toXml(obj[key], childName, indent + 1, depth + 1, maxDepth, seen);
       })
       .join("\n");
 
@@ -629,8 +604,10 @@ function highlightJSON(text) {
       continue;
     }
 
-    // Punctuation
-    const character = text[index];
+    // Punctuation & characters
+    const codePoint = text.codePointAt(index);
+    const charLen = codePoint > 0xffff ? 2 : 1;
+    const character = text.slice(index, index + charLen);
 
     if ("{}[],:".includes(character)) {
       html += `<span class="hl-punct">${escapeHtml(character)}</span>`;
@@ -638,7 +615,7 @@ function highlightJSON(text) {
       html += escapeHtml(character);
     }
 
-    index++;
+    index += charLen;
   }
 
   return html;

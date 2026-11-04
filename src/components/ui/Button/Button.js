@@ -158,11 +158,15 @@
       /* Outline */
       .cradle-btn--outline {
         background: transparent;
-        color: var(--cradle-accent-hover, #2563eb);
-        border-color: var(--cradle-accent-hover, #2563eb);
+        color: var(--cradle-accent-outline, #60a5fa);
+        border-color: var(--cradle-accent-outline, #60a5fa);
       }
       .cradle-btn--outline:not(:disabled):not(.cradle-btn--loading):hover {
         background: var(--cradle-accent-light, rgba(37,99,235,0.1));
+      }
+      html.light-theme .cradle-btn--outline {
+        color: var(--cradle-accent-outline, #1d4ed8);
+        border-color: var(--cradle-accent-outline, #1d4ed8);
       }
 
       /* Ghost */
@@ -316,7 +320,9 @@
       if (ariaLabel) {
         el.setAttribute(
           "aria-label",
-          String(ariaLabel).replace(/<[^>]*>/g, "").trim()
+          String(ariaLabel)
+            .replace(/<[^>]*>/g, "")
+            .trim()
         );
       }
       if (loading) el.setAttribute("aria-busy", "true");
