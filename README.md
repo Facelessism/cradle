@@ -24,10 +24,18 @@ Cradle is a repository for my small ideas, experiments and lightweight prototype
 ```bash
 Cradle/
 │
-├── data/
-│   └── projects.json
-│
-├── projects/
+├── .github/                   # GitHub workflows, issue templates, and CI configs
+├── .vscode/                   # Recommended workspace settings for VS Code
+├── assets/                    # Project brand assets, preview images, and favicons
+├── client/                    # Frontend client modules and shared React resources
+│   └── src/                   # React components, styles, and client utilities
+├── data/                      # Generated project registry and worker integrity hashes
+│   ├── projects.json          # Catalog of all registered mini projects
+│   └── worker-integrity.json  # Checksums for Web Worker scripts
+├── docs/                      # Architectural guides, contracts, and pipelines
+│   ├── ASSET_PIPELINE.md      # Asset naming, fingerprinting and caching
+│   └── MINI_CONTRACT.md       # Contract every mini-project must follow
+├── projects/                  # Mini project source directories grouped by category
 │   ├── aiml/                  # AI & Machine Learning prototypes
 │   ├── dev-tools/             # Developer utilities & code formatters
 │   ├── editor/                # Creative design & document generation tools
@@ -36,26 +44,34 @@ Cradle/
 │   ├── math/                  # Mathematical visualizations & algorithms
 │   ├── misc/                  # Audio, camera & hardware utilities
 │   └── productivity/          # Personal trackers & planning tools
-│
+├── schemas/                   # JSON schemas for project registry validation
 ├── scripts/                   # Generators & project validation scripts
 ├── src/                       # Shared UI components & design tokens
 ├── tests/                     # Automated test suites & validation checks
 │
 ├── ARCHITECTURE.md            # Overall repository architecture overview
 ├── ARCHITECTURE_TEMPLATE.md   # Standardized template for mini projects
+├── CODE_OF_CONDUCT.md         # Community guidelines and code of conduct
 ├── CONTRIBUTING.md            # Guidelines for repository contributors
-├── docs/
-│   ├── ASSET_PIPELINE.md      # Asset naming, fingerprinting and caching
-│   └── MINI_CONTRACT.md       # Contract every mini-project must follow
+├── CREDENTIALS_AND_SECRETS.md # Token safety, secrets prevention, and CI security policy
+├── LICENSE                    # Open-source license terms (MIT)
+├── package.json               # Project manifest, dependencies, and npm scripts
+├── package-lock.json          # Deterministic dependency lockfile
 ├── README.md                  # Project overview documentation
+├── RELEASE_INTEGRITY.md       # Release asset checksum and verification guide
 ├── SECURE_DEPLOYMENT_CHECKLIST.md # Baseline security checklist for production
 ├── SECURITY.md                # Vulnerability disclosure, incident response, and security policy
 ├── STORAGE_POLICY.md          # Storage API and conflict-resolution strategy
+├── TESTING.md                 # Testing strategy, CI quality gates, and architecture
 ├── THIRD_PARTY_POLICY.md      # Rules for loading external models and scripts
+├── TROUBLESHOOT.md            # Solutions for common setup, build, and Git issues
 ├── index.html                 # Main landing page entry point
 ├── script.js                  # Global landing page logic & search engine
 └── style.css                  # Core CSS design system
 ```
+
+> [!NOTE]
+> Local development tooling and VCS configuration files (`.git/`, `node_modules/`, `.gitignore`, `.node-version`, `.nvmrc`, `.prettierrc`, and `.prettierignore`) are deliberately omitted from this tree for clarity.
 
 ## Available Projects
 
@@ -258,16 +274,16 @@ Cradle is built using standard static web technologies (HTML5, CSS Custom Proper
 
 The table below documents the browser APIs utilized across Cradle, where they are used, whether they are required or optional, and their verified fallback behavior:
 
-| Browser API                                                           | Application Usage                                                                                                           | Required / Optional                    | Fallback / Progressive Degradation Behavior                                                                                                                                                                                                                                                        |
-| :-------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- | :------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Web Workers** (`Worker`)                                            | Search filtering (`src/utils/filterWorker.js`), Chess AI search (`projects/games/chess/ai-worker.js`)                       | Optional                               | Search filtering automatically falls back to synchronous main-thread filtering in `script.js` when workers fail or are unsupported. Chess AI falls back to 2-player local mode with an accessible in-app status notice.                                                                                                                    |
-| **IndexedDB API** (`window.indexedDB`)                                | Landing page project registry caching (`CradleDB` in `script.js`)                                                           | Optional                               | If IndexedDB is disabled, unsupported, or blocked (e.g. private browsing), `script.js` catches the error and directly fetches `data/projects.json` via HTTP `fetch()` on every visit.                                                                                                              |
-| **localStorage API** (`window.localStorage`)                          | Theme persistence (`scripts/theme.js`), `CradleStorage` (`src/components/ui/storage.js`), project high scores               | Optional                               | `CradleStorage` wraps all `localStorage` calls in `try/catch`. If storage access throws (e.g. third-party cookie restrictions or quota limits), it falls back to an in-memory storage map or safe default value. Theme falls back to OS preference (`prefers-color-scheme`) or default dark theme. |
+| Browser API                                                           | Application Usage                                                                                                           | Required / Optional                    | Fallback / Progressive Degradation Behavior                                                                                                                                                                                                                                                                                                                       |
+| :-------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- | :------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Web Workers** (`Worker`)                                            | Search filtering (`src/utils/filterWorker.js`), Chess AI search (`projects/games/chess/ai-worker.js`)                       | Optional                               | Search filtering automatically falls back to synchronous main-thread filtering in `script.js` when workers fail or are unsupported. Chess AI falls back to 2-player local mode with an accessible in-app status notice.                                                                                                                                           |
+| **IndexedDB API** (`window.indexedDB`)                                | Landing page project registry caching (`CradleDB` in `script.js`)                                                           | Optional                               | If IndexedDB is disabled, unsupported, or blocked (e.g. private browsing), `script.js` catches the error and directly fetches `data/projects.json` via HTTP `fetch()` on every visit.                                                                                                                                                                             |
+| **localStorage API** (`window.localStorage`)                          | Theme persistence (`scripts/theme.js`), `CradleStorage` (`src/components/ui/storage.js`), project high scores               | Optional                               | `CradleStorage` wraps all `localStorage` calls in `try/catch`. If storage access throws (e.g. third-party cookie restrictions or quota limits), it falls back to an in-memory storage map or safe default value. Theme falls back to OS preference (`prefers-color-scheme`) or default dark theme.                                                                |
 | **Web Audio API** (`AudioContext`)                                    | Musical instruments (`piano`, `guitar`, `violin`, `guzheng`, `percussion`), audio visualizers, morse code studio            | Optional / Feature-specific            | Uses vendor-prefix fallback (`AudioContext` \|\| `webkitAudioContext`). Handles browser autoplay policies and resume rejection failures gracefully by detecting blocked states and surfacing interactive on-screen recovery paths to enable audio upon direct user gesture. If unsupported, audio synthesis is disabled while visual controls remain interactive. |
-| **Canvas 2D API** (`<canvas>`)                                        | Math visualizers, arcade games (`2048`, `cannon-shooting`), generators (`meme-generator`, `avatar-creator`), camera utility | Required for visualizer/game rendering | HTML5 standard. If 2D context creation (`getContext('2d')`) fails, rendering calls are safely bypassed or display an on-screen notice.                                                                                                                                                             |
-| **Clipboard API** (`navigator.clipboard`)                             | Chess PGN/FEN copy buttons, text/resume exporters                                                                           | Optional                               | Uses `navigator.clipboard.writeText()` when available in secure contexts (HTTPS/localhost). If blocked or unsupported, notifies the user with a fallback status message or alternative text display.                                                                                               |
-| **MediaDevices / Camera API** (`navigator.mediaDevices.getUserMedia`) | Real-time video input in ASCII Camera (`projects/misc/ascii-camera`)                                                        | Required for live camera mode          | Checks `navigator.mediaDevices && navigator.mediaDevices.getUserMedia`. If camera access is denied, unsupported, or served over insecure HTTP, displays an on-screen error banner explaining requirements.                                                                                         |
-| **matchMedia API** (`window.matchMedia`)                              | Light/dark theme detection (`prefers-color-scheme: light`)                                                                  | Optional                               | Defaults to dark theme if `matchMedia` is unsupported.                                                                                                                                                                                                                                             |
+| **Canvas 2D API** (`<canvas>`)                                        | Math visualizers, arcade games (`2048`, `cannon-shooting`), generators (`meme-generator`, `avatar-creator`), camera utility | Required for visualizer/game rendering | HTML5 standard. If 2D context creation (`getContext('2d')`) fails, rendering calls are safely bypassed or display an on-screen notice.                                                                                                                                                                                                                            |
+| **Clipboard API** (`navigator.clipboard`)                             | Chess PGN/FEN copy buttons, text/resume exporters                                                                           | Optional                               | Uses `navigator.clipboard.writeText()` when available in secure contexts (HTTPS/localhost). If blocked or unsupported, notifies the user with a fallback status message or alternative text display.                                                                                                                                                              |
+| **MediaDevices / Camera API** (`navigator.mediaDevices.getUserMedia`) | Real-time video input in ASCII Camera (`projects/misc/ascii-camera`)                                                        | Required for live camera mode          | Checks `navigator.mediaDevices && navigator.mediaDevices.getUserMedia`. If camera access is denied, unsupported, or served over insecure HTTP, displays an on-screen error banner explaining requirements.                                                                                                                                                        |
+| **matchMedia API** (`window.matchMedia`)                              | Light/dark theme detection (`prefers-color-scheme: light`)                                                                  | Optional                               | Defaults to dark theme if `matchMedia` is unsupported.                                                                                                                                                                                                                                                                                                            |
 
 ### Progressive Enhancement Principles
 
