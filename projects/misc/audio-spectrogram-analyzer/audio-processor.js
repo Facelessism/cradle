@@ -254,6 +254,40 @@ export class AudioProcessor {
     return this.destination ? this.destination.stream : null;
   }
 
+  getSampleRate() {
+    return this.audioContext ? this.audioContext.sampleRate : 44100;
+  }
+
+  getMinDecibels() {
+    return this.analyser ? this.analyser.minDecibels : -100;
+  }
+
+  getMaxDecibels() {
+    return this.analyser ? this.analyser.maxDecibels : -30;
+  }
+
+  getDecibelRange() {
+    return {
+      minDecibels: this.getMinDecibels(),
+      maxDecibels: this.getMaxDecibels(),
+    };
+  }
+
+  getPeakDecibels() {
+    if (!this.cachedFrequencyData || this.cachedFrequencyData.length === 0) {
+      return this.getMinDecibels();
+    }
+    let maxByte = 0;
+    for (let i = 0; i < this.cachedFrequencyData.length; i++) {
+      if (this.cachedFrequencyData[i] > maxByte) {
+        maxByte = this.cachedFrequencyData[i];
+      }
+    }
+    const minDb = this.getMinDecibels();
+    const maxDb = this.getMaxDecibels();
+    return minDb + (maxByte / 255) * (maxDb - minDb);
+  }
+
   stop() {
     if (this.mediaStream) {
       this.mediaStream.getTracks().forEach(track => track.stop());

@@ -6,7 +6,7 @@
     <title>Audio Spectrogram Analyzer | Cradle</title>
     <meta
       name="description"
-      content="Capture microphone or file audio and watch a real-time scrolling spectrogram, with FFT controls and local WebM recording."
+      content="Capture microphone or file audio and watch a real-time scrolling spectrogram, with FFT controls, calibrated frequency and time axes, decibel scale, and local WebM recording."
     />
     <link
       rel="canonical"
@@ -16,7 +16,7 @@
     <meta property="og:title" content="Audio Spectrogram Analyzer | Cradle" />
     <meta
       property="og:description"
-      content="Capture microphone or file audio and watch a real-time scrolling spectrogram, with FFT controls and local WebM recording."
+      content="Capture microphone or file audio and watch a real-time scrolling spectrogram, with FFT controls, calibrated frequency and time axes, decibel scale, and local WebM recording."
     />
     <meta
       property="og:url"
@@ -71,6 +71,13 @@
             <option value="4096">4096 (High Res)</option>
           </select>
         </div>
+        <div class="control-group">
+          <label for="scale-select">Scale:</label>
+          <select id="scale-select" aria-label="Frequency Scale">
+            <option value="linear" selected>Linear (Hz)</option>
+            <option value="logarithmic">Logarithmic (Log)</option>
+          </select>
+        </div>
       </section>
 
       <div class="canvas-container">
@@ -82,11 +89,18 @@
       </div>
 
       <section class="legend">
-        <div class="legend-item"><span class="box low"></span> Low Freq</div>
-        <div class="legend-item"><span class="box mid"></span> Mid Freq</div>
-        <div class="legend-item"><span class="box high"></span> High Freq</div>
+        <div class="legend-item">
+          <span class="box low"></span> Silence (-100 dBFS)
+        </div>
+        <div class="legend-item">
+          <span class="box mid"></span> Moderate (-50 dBFS)
+        </div>
+        <div class="legend-item">
+          <span class="box high"></span> Peak (0 dBFS)
+        </div>
       </section>
     </main>
+    <script type="module" src="scale.js"></script>
     <script type="module" src="audio-processor.js"></script>
     <script type="module" src="visualizer.js"></script>
     <script type="module" src="recorder.js"></script>

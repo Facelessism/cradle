@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnRecord = document.getElementById("btn-record");
   const btnStopRecord = document.getElementById("btn-stop-record");
   const fftSelect = document.getElementById("fft-size");
+  const scaleSelect = document.getElementById("scale-select");
 
   let mediaRecorder = null;
   let recordedChunks = [];
@@ -43,6 +44,12 @@ document.addEventListener("DOMContentLoaded", () => {
   fftSelect.addEventListener("change", e => {
     audioProcessor.setFFTSize(e.target.value);
   });
+
+  if (scaleSelect) {
+    scaleSelect.addEventListener("change", e => {
+      visualizer.setScale(e.target.value);
+    });
+  }
 
   btnRecord.addEventListener("click", () => {
     const stream = audioProcessor.getRecordingStream();
