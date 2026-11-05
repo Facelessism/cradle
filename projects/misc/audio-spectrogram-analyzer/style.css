@@ -7,9 +7,9 @@
   --accent-hover: #2563eb;
   --border-color: #e5e7eb;
   --danger-color: #ef4444;
-  --color-low: #3b82f6;
-  --color-mid: #f59e0b;
-  --color-high: #ef4444;
+  --color-low: #1e0f3c;
+  --color-mid: #b43232;
+  --color-high: #fef08a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -125,10 +125,11 @@ select {
   position: relative;
   width: 100%;
   height: 400px;
-  background: #000;
+  background: #0a0d14;
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
 }
 
 canvas {
@@ -153,6 +154,7 @@ canvas {
   display: flex;
   gap: 2rem;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .legend-item {
@@ -167,6 +169,7 @@ canvas {
   width: 20px;
   height: 20px;
   border-radius: 4px;
+  border: 1px solid var(--border-color);
 }
 
 .box.low {
