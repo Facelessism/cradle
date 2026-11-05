@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const flagI = document.getElementById("flagI");
   const flagM = document.getElementById("flagM");
   const flagU = document.getElementById("flagU");
+  const flagD = document.getElementById("flagD");
 
   const testStringInput = document.getElementById("testStringInput");
   const highlightsOverlay = document.getElementById("highlightsOverlay");
@@ -13,6 +14,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const regexError = document.getElementById("regexError");
   const matchCountBadge = document.getElementById("matchCountBadge");
   const matchesTableBody = document.getElementById("matchesTableBody");
+  const groupsTableBody = document.getElementById("groupsTableBody");
+
+  const viewMatchesBtn = document.getElementById("viewMatchesBtn");
+  const viewGroupsBtn = document.getElementById("viewGroupsBtn");
+  const matchesViewContainer = document.getElementById("matchesViewContainer");
+  const groupsViewContainer = document.getElementById("groupsViewContainer");
 
   const templateButtons = document.querySelectorAll(".btn-template");
 
@@ -25,27 +32,51 @@ document.addEventListener("DOMContentLoaded", () => {
   // Handle flags checkboxes change
   function updateFlagsInput() {
     let flags = "";
-    if (flagG.checked) flags += "g";
-    if (flagI.checked) flags += "i";
-    if (flagM.checked) flags += "m";
-    if (flagU.checked) flags += "u";
+    if (flagG && flagG.checked) flags += "g";
+    if (flagI && flagI.checked) flags += "i";
+    if (flagM && flagM.checked) flags += "m";
+    if (flagU && flagU.checked) flags += "u";
+    if (flagD && flagD.checked) flags += "d";
     flagsInput.value = flags;
     runRegexProcessor();
   }
 
   function updateFlagsCheckboxes() {
     const flags = flagsInput.value;
-    flagG.checked = flags.includes("g");
-    flagI.checked = flags.includes("i");
-    flagM.checked = flags.includes("m");
-    flagU.checked = flags.includes("u");
+    if (flagG) flagG.checked = flags.includes("g");
+    if (flagI) flagI.checked = flags.includes("i");
+    if (flagM) flagM.checked = flags.includes("m");
+    if (flagU) flagU.checked = flags.includes("u");
+    if (flagD) flagD.checked = flags.includes("d");
     runRegexProcessor();
   }
 
-  [flagG, flagI, flagM, flagU].forEach(cb => {
-    cb.addEventListener("change", updateFlagsInput);
+  [flagG, flagI, flagM, flagU, flagD].forEach(cb => {
+    if (cb) cb.addEventListener("change", updateFlagsInput);
   });
   flagsInput.addEventListener("input", updateFlagsCheckboxes);
+
+  // Inspector View Toggle Switcher
+  if (
+    viewMatchesBtn &&
+    viewGroupsBtn &&
+    matchesViewContainer &&
+    groupsViewContainer
+  ) {
+    viewMatchesBtn.addEventListener("click", () => {
+      viewMatchesBtn.classList.add("active");
+      viewGroupsBtn.classList.remove("active");
+      matchesViewContainer.classList.remove("hidden");
+      groupsViewContainer.classList.add("hidden");
+    });
+
+    viewGroupsBtn.addEventListener("click", () => {
+      viewGroupsBtn.classList.add("active");
+      viewMatchesBtn.classList.remove("active");
+      groupsViewContainer.classList.remove("hidden");
+      matchesViewContainer.classList.add("hidden");
+    });
+  }
 
   // Load Templates
   templateButtons.forEach(btn => {
@@ -77,6 +108,10 @@ document.addEventListener("DOMContentLoaded", () => {
       matchCountBadge.textContent = "0 Matches";
       matchesTableBody.innerHTML =
         '<tr><td colspan="4" class="table-placeholder">No pattern specified.</td></tr>';
+      if (groupsTableBody) {
+        groupsTableBody.innerHTML =
+          '<tr><td colspan="5" class="table-placeholder">No pattern specified.</td></tr>';
+      }
       regexExplanation.innerHTML =
         '<p class="placeholder-text">Enter a valid regex to see character breakdown.</p>';
       return;
@@ -106,6 +141,15 @@ document.addEventListener("DOMContentLoaded", () => {
       </td>
     </tr>
   `;
+      if (groupsTableBody) {
+        groupsTableBody.innerHTML = `
+      <tr>
+        <td colspan="5" class="table-placeholder">
+          Evaluation halted: ${escapeHtml(safetyCheck.reason)}
+        </td>
+      </tr>
+    `;
+      }
 
       // Still render token breakdown if possible so user can inspect pattern
       generateExplainer(pattern);
@@ -119,7 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
       generateExplainer(pattern);
 
       // 2. Perform Matching & Highlighting
-      processMatches(regex, testString);
+      processMatches(regex, testString, pattern);
     } catch (e) {
       const errorDetails = getRegexErrorDetails(e, pattern);
 
@@ -146,21 +190,23 @@ document.addEventListener("DOMContentLoaded", () => {
       </td>
     </tr>
   `;
+      if (groupsTableBody) {
+        groupsTableBody.innerHTML = `
+      <tr>
+        <td colspan="5" class="table-placeholder">
+          ${escapeHtml(errorDetails.message)}
+        </td>
+      </tr>
+    `;
+      }
     }
   }
+
   function getRegexErrorDetails(error, pattern) {
     const message = error?.message || "Invalid regular expression.";
-
-    // JavaScript engines may report errors such as:
-    // "Invalid regular expression: /.../: Unterminated group"
-    // "Invalid regular expression: /.../: Invalid character class"
-    // "... at position 5"
     const positionMatch = message.match(/(?:position|at position)\s*(\d+)/i);
-
     let position = positionMatch ? Number(positionMatch[1]) : null;
 
-    // Some engines don't provide a position. Try to identify
-    // an obvious problematic section from the pattern itself.
     if (position === null) {
       if (hasUnclosedCharacterClass(pattern)) {
         position = pattern.lastIndexOf("[");
@@ -172,11 +218,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     let snippet = "";
-
     if (position !== null && position >= 0 && position < pattern.length) {
       const start = Math.max(0, position - 5);
       const end = Math.min(pattern.length, position + 6);
-
       snippet =
         pattern.substring(start, position) +
         "👉" +
@@ -192,31 +236,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function hasUnclosedCharacterClass(pattern) {
     let escaped = false;
-
     for (let i = 0; i < pattern.length; i++) {
       const char = pattern[i];
-
       if (escaped) {
         escaped = false;
         continue;
       }
-
       if (char === "\\") {
         escaped = true;
         continue;
       }
-
       if (char === "[") {
         const closingIndex = pattern.indexOf("]", i + 1);
-
-        if (closingIndex === -1) {
-          return true;
-        }
-
+        if (closingIndex === -1) return true;
         i = closingIndex;
       }
     }
-
     return false;
   }
 
@@ -231,31 +266,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     for (let i = 0; i < pattern.length; i++) {
       const char = pattern[i];
-
       if (escaped) {
         escaped = false;
         continue;
       }
-
       if (char === "\\") {
         escaped = true;
         continue;
       }
-
       if (char === "[") {
         inCharacterClass = true;
         continue;
       }
-
       if (char === "]" && inCharacterClass) {
         inCharacterClass = false;
         continue;
       }
-
       if (inCharacterClass) {
         continue;
       }
-
       if (char === "(") {
         stack.push(i);
       } else if (char === ")") {
@@ -270,16 +299,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function hasTrailingEscape(pattern) {
     let backslashCount = 0;
-
     for (let i = pattern.length - 1; i >= 0 && pattern[i] === "\\"; i--) {
       backslashCount++;
     }
-
     return backslashCount % 2 === 1;
   }
 
   // Highlight matches and groups and construct detail tables
-  function processMatches(regex, text) {
+  function processMatches(regex, text, pattern) {
     const isGlobal = regex.global;
     const matches = [];
     let match;
@@ -290,7 +317,6 @@ document.addEventListener("DOMContentLoaded", () => {
     let limitReached = false;
 
     if (isGlobal) {
-      // Prevent infinite loop if regex matches empty string
       let lastIndex = -1;
       while ((match = regex.exec(text)) !== null) {
         if (Date.now() - startTime > TIMEOUT_MS) {
@@ -340,26 +366,72 @@ document.addEventListener("DOMContentLoaded", () => {
       highlightsOverlay.innerHTML = escapeHtml(text);
       matchesTableBody.innerHTML =
         '<tr><td colspan="4" class="table-placeholder">No matches detected.</td></tr>';
+      if (groupsTableBody) {
+        groupsTableBody.innerHTML =
+          '<tr><td colspan="5" class="table-placeholder">No capture groups detected.</td></tr>';
+      }
       return;
     }
 
-    // 1. Build table details
+    // Parse pattern capture group definitions (indexes & names)
+    const patternGroups =
+      typeof RegexEngine !== "undefined" &&
+      typeof RegexEngine.getPatternCaptureGroups === "function"
+        ? RegexEngine.getPatternCaptureGroups(pattern)
+        : [];
+
+    // Parse all groups across all matches
+    const parsedMatches = matches.map((m, idx) => {
+      const groups =
+        typeof RegexEngine !== "undefined" &&
+        typeof RegexEngine.parseMatchGroups === "function"
+          ? RegexEngine.parseMatchGroups(m, patternGroups, idx + 1)
+          : [];
+      return {
+        match: m,
+        matchIndex: idx + 1,
+        groups,
+      };
+    });
+
+    // 1. Build Matches Overview Table HTML
     let tableHtml = "";
-    matches.forEach((m, idx) => {
+    parsedMatches.forEach(({ match: m, matchIndex, groups }) => {
       const matchIndexStart = m.index;
       const matchIndexEnd = m.index + m[0].length;
 
       let groupsHtml = "";
-      for (let g = 1; g < m.length; g++) {
-        if (m[g] !== undefined) {
-          const classNum = g % 3 || 3;
-          groupsHtml += `<span class="group-tag tag-g${classNum}">Group ${g}: "${escapeHtml(m[g])}"</span> `;
-        }
+      if (groups.length > 0) {
+        groups.forEach(g => {
+          if (g.isMatched) {
+            const label = g.name ? `$<${escapeHtml(g.name)}>` : `$${g.index}`;
+            groupsHtml += `
+              <span class="group-pill pill-${g.colorClass}"
+                    data-match-num="${matchIndex}"
+                    data-group-num="${g.index}"
+                    data-start="${g.start}"
+                    data-end="${g.end}"
+                    title="Click to inspect Group ${g.index} (${g.name ? `<${escapeHtml(g.name)}>` : `$${g.index}`}) in editor">
+                <strong>${label}</strong>: "${escapeHtml(g.value)}"
+              </span>
+            `;
+          } else {
+            const label = g.name ? `$<${escapeHtml(g.name)}>` : `$${g.index}`;
+            groupsHtml += `
+              <span class="group-pill pill-unmatched"
+                    data-match-num="${matchIndex}"
+                    data-group-num="${g.index}"
+                    title="Group ${g.index} did not participate in match">
+                <strong>${label}</strong>: <em>unmatched</em>
+              </span>
+            `;
+          }
+        });
       }
 
       tableHtml += `
-        <tr>
-          <td><strong>#${idx + 1}</strong></td>
+        <tr class="match-row" data-match-num="${matchIndex}">
+          <td><strong>#${matchIndex}</strong></td>
           <td>${matchIndexStart} - ${matchIndexEnd}</td>
           <td><code style="background: rgba(255,255,255,0.05); padding: 2px 4px; border-radius: 4px;">${escapeHtml(m[0])}</code></td>
           <td>${groupsHtml || '<span style="color:var(--text-muted)">None</span>'}</td>
@@ -368,70 +440,173 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     matchesTableBody.innerHTML = tableHtml;
 
-    // 2. Build Highlights Overlay HTML
+    // 2. Build Dedicated Group Inspector Table HTML
+    if (groupsTableBody) {
+      let allGroups = [];
+      parsedMatches.forEach(({ groups }) => {
+        allGroups = allGroups.concat(groups);
+      });
+
+      if (allGroups.length === 0) {
+        groupsTableBody.innerHTML =
+          '<tr><td colspan="5" class="table-placeholder">No capturing groups found in pattern.</td></tr>';
+      } else {
+        let groupsTableHtml = "";
+        allGroups.forEach(g => {
+          const pillLabel = `$${g.index}`;
+          const idLabel = g.name
+            ? `<span class="group-name-tag">&lt;${escapeHtml(g.name)}&gt;</span>`
+            : `<span style="color:var(--text-muted)">&mdash; (numbered)</span>`;
+
+          const rangeText =
+            g.isMatched && g.start !== null
+              ? `${g.start} &ndash; ${g.end} <span style="color:var(--text-muted);font-size:0.75rem;">(${g.length} chars)</span>`
+              : `<span style="color:var(--text-muted)">&mdash;</span>`;
+
+          const valueHtml = g.isMatched
+            ? `<code style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;">${escapeHtml(g.value)}</code>`
+            : `<em style="color:var(--text-muted)">unmatched</em>`;
+
+          groupsTableHtml += `
+            <tr class="group-inspector-row"
+                data-match-num="${g.matchNumber}"
+                data-group-num="${g.index}"
+                ${g.isMatched && g.start !== null ? `data-start="${g.start}" data-end="${g.end}"` : ""}>
+              <td>
+                <span class="group-pill ${g.isMatched ? `pill-${g.colorClass}` : "pill-unmatched"}"
+                      data-match-num="${g.matchNumber}"
+                      data-group-num="${g.index}"
+                      ${g.isMatched && g.start !== null ? `data-start="${g.start}" data-end="${g.end}"` : ""}>
+                  ${pillLabel}
+                </span>
+              </td>
+              <td>${idLabel}</td>
+              <td><strong>#${g.matchNumber}</strong></td>
+              <td>${rangeText}</td>
+              <td>${valueHtml}</td>
+            </tr>
+          `;
+        });
+        groupsTableBody.innerHTML = groupsTableHtml;
+      }
+    }
+
+    // 3. Build Highlights Overlay HTML with Color-Coded Group Pills
     let overlayHtml = "";
     let lastCopiedIndex = 0;
 
-    matches.forEach(m => {
+    parsedMatches.forEach(({ match: m, matchIndex, groups }) => {
       const matchStart = m.index;
       const matchEnd = m.index + m[0].length;
 
-      // Copy plain text before match
+      // Plain text before match
       overlayHtml += escapeHtml(text.substring(lastCopiedIndex, matchStart));
 
-      // Build matched content with capture groups highlighted inside
-      let matchedContent = m[0];
+      // Build group tree and render nested pill overlay spans
       let innerHtml = "";
-
-      // Determine capture group sub-ranges relative to the match
-      const subGroups = [];
-      for (let g = 1; g < m.length; g++) {
-        if (m[g] !== undefined && m[g] !== "") {
-          // Find start index of this capture group string within the matched string
-          const gStart = m[0].indexOf(m[g]);
-          if (gStart !== -1) {
-            subGroups.push({
-              groupIndex: g,
-              start: gStart,
-              end: gStart + m[g].length,
-              text: m[g],
-            });
-          }
-        }
+      if (
+        groups.length > 0 &&
+        typeof RegexEngine !== "undefined" &&
+        typeof RegexEngine.buildGroupTree === "function" &&
+        typeof RegexEngine.renderGroupTreeNode === "function"
+      ) {
+        const tree = RegexEngine.buildGroupTree(m[0].length, groups);
+        innerHtml = RegexEngine.renderGroupTreeNode(tree, m[0], escapeHtml);
+      } else {
+        innerHtml = escapeHtml(m[0]);
       }
 
-      // Sort subgroups by start position
-      subGroups.sort((a, b) => a.start - b.start);
-
-      // Align subgroups inside the match
-      let subLastIndex = 0;
-      subGroups.forEach(sub => {
-        if (sub.start >= subLastIndex) {
-          // Plain match content before group
-          innerHtml += escapeHtml(
-            matchedContent.substring(subLastIndex, sub.start)
-          );
-
-          // Wrapped group content
-          const classNum = sub.groupIndex % 3 || 3;
-          innerHtml += `<span class="hl-group-${classNum}">${escapeHtml(sub.text)}</span>`;
-
-          subLastIndex = sub.end;
-        }
-      });
-      innerHtml += escapeHtml(matchedContent.substring(subLastIndex));
-
       // Wrap full match in match highlight span
-      overlayHtml += `<span class="hl-match">${innerHtml}</span>`;
-
+      overlayHtml += `<span class="hl-match" data-match-num="${matchIndex}">${innerHtml}</span>`;
       lastCopiedIndex = matchEnd;
     });
 
     // Copy remaining plain text
     overlayHtml += escapeHtml(text.substring(lastCopiedIndex));
 
-    // Append extra space or newline to match editor sizing constraints
+    // Append extra newline to match editor sizing constraints
     highlightsOverlay.innerHTML = overlayHtml + "\n";
+
+    // 4. Attach Interactive Event Handlers
+    attachInspectorInteractions();
+  }
+
+  // Interactive cross-highlighting between Inspector and Editor
+  function attachInspectorInteractions() {
+    function highlightInEditor(start, end) {
+      if (
+        typeof start === "number" &&
+        typeof end === "number" &&
+        !isNaN(start) &&
+        !isNaN(end) &&
+        start >= 0 &&
+        end >= start
+      ) {
+        testStringInput.focus();
+        testStringInput.setSelectionRange(start, end);
+      }
+    }
+
+    // Pills in table
+    const pills = document.querySelectorAll(".group-pill[data-start]");
+    pills.forEach(pill => {
+      const matchNum = pill.getAttribute("data-match-num");
+      const groupNum = pill.getAttribute("data-group-num");
+      const start = parseInt(pill.getAttribute("data-start"), 10);
+      const end = parseInt(pill.getAttribute("data-end"), 10);
+
+      pill.addEventListener("mouseenter", () => {
+        pill.classList.add("active-pill");
+        const targetOverlays = highlightsOverlay.querySelectorAll(
+          `.hl-group-pill[data-match-num="${matchNum}"][data-group-num="${groupNum}"]`
+        );
+        targetOverlays.forEach(el => el.classList.add("active-pill"));
+      });
+
+      pill.addEventListener("mouseleave", () => {
+        pill.classList.remove("active-pill");
+        const targetOverlays = highlightsOverlay.querySelectorAll(
+          `.hl-group-pill[data-match-num="${matchNum}"][data-group-num="${groupNum}"]`
+        );
+        targetOverlays.forEach(el => el.classList.remove("active-pill"));
+      });
+
+      pill.addEventListener("click", e => {
+        e.stopPropagation();
+        highlightInEditor(start, end);
+      });
+    });
+
+    // Group inspector table rows
+    const groupRows = document.querySelectorAll(
+      ".group-inspector-row[data-start]"
+    );
+    groupRows.forEach(row => {
+      const matchNum = row.getAttribute("data-match-num");
+      const groupNum = row.getAttribute("data-group-num");
+      const start = parseInt(row.getAttribute("data-start"), 10);
+      const end = parseInt(row.getAttribute("data-end"), 10);
+
+      row.addEventListener("mouseenter", () => {
+        row.classList.add("active-row");
+        const targetOverlays = highlightsOverlay.querySelectorAll(
+          `.hl-group-pill[data-match-num="${matchNum}"][data-group-num="${groupNum}"]`
+        );
+        targetOverlays.forEach(el => el.classList.add("active-pill"));
+      });
+
+      row.addEventListener("mouseleave", () => {
+        row.classList.remove("active-row");
+        const targetOverlays = highlightsOverlay.querySelectorAll(
+          `.hl-group-pill[data-match-num="${matchNum}"][data-group-num="${groupNum}"]`
+        );
+        targetOverlays.forEach(el => el.classList.remove("active-pill"));
+      });
+
+      row.addEventListener("click", () => {
+        highlightInEditor(start, end);
+      });
+    });
   }
 
   // Generate explanation breakdown for the pattern
@@ -458,6 +633,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .join("");
       return;
     }
+
     const items = [];
     let i = 0;
 
@@ -562,7 +738,6 @@ document.addEventListener("DOMContentLoaded", () => {
           desc: `Quantifier: Matches exactly the specified occurrences (${range}) of the preceding token.`,
         });
       } else if (char.trim() !== "") {
-        // Normal literal characters
         items.push({
           token: char,
           desc: `Matches the literal character "${char}".`,
@@ -602,6 +777,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function escapeHtml(str) {
-    return CradleEscape.escapeHtml(str);
+    if (
+      typeof CradleEscape !== "undefined" &&
+      typeof CradleEscape.escapeHtml === "function"
+    ) {
+      return CradleEscape.escapeHtml(str);
+    }
+    return String(str ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 });

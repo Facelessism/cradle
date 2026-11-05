@@ -2,16 +2,18 @@
 
 ## Overview
 
-The RegEx Visualizer & Tester is an interactive developer tool designed to test, debug, and explain regular expressions in real-time. It parses the regular expression, explains its components, runs it against user-provided test strings, and renders highlighted matches and capture groups dynamically.
+The RegEx Visualizer & Tester is an interactive developer tool designed to test, debug, and explain regular expressions in real-time. It parses regular expressions, explains their components, runs them against user-provided test strings, and renders highlighted matches alongside an interactive capture group inspector table that maps numbered and named groups (`(?<name>...)`) to color-coded pill overlays directly inside the test string editor.
 
 ---
 
 ## Purpose & Goals
 
-- Help developers understand regex patterns by explaining each token in plain language
-- Provide real-time match highlighting with capture-group visualization
-- Make testing quick with common templates and an instant tester
-- Keep the parsing engine separate from the DOM so it can be unit-tested
+- Help developers understand regex patterns by explaining each token in plain language.
+- Provide real-time match highlighting with color-coded capture group pill overlays.
+- Support both numbered (`$1`, `$2`...) and named (`(?<name>...)`) capture groups with character ranges and lengths.
+- Deliver an interactive capture group inspector table allowing developers to click any pill or row to instantly jump to and select that matched group inside the editor.
+- Make testing fast with common templates, including named capture groups, and flag toggles.
+- Keep the parsing engine separate from the DOM so it can be thoroughly unit-tested.
 
 ---
 
@@ -20,10 +22,10 @@ The RegEx Visualizer & Tester is an interactive developer tool designed to test,
 ```text
 projects/dev-tools/regex-visualizer/
 ├── ARCHITECTURE.md    # System documentation
-├── index.html         # Page shell: pattern input, flags, tester, explanation panels
-├── regexEngine.js     # Pure engine: token parser, flag validator, replace helper
-├── script.js          # DOM bindings, highlight overlay, match tables
-└── style.css          # Dark theme, workspace grid, highlight colors
+├── index.html         # Page shell: pattern input, flags, tester, inspector, explanation panels
+├── regexEngine.js     # Pure engine: token parser, capture group tree builder, ReDoS detector
+├── script.js          # DOM bindings, highlight overlay, interactive inspector table
+└── style.css          # Dark theme, workspace grid, 6-tier group pill palette, highlight colors
 ```
 
 ---
@@ -42,30 +44,30 @@ projects/dev-tools/regex-visualizer/
  └──────┬─────────────────┬──────┘
         │                 │
         ▼                 ▼
- ┌──────────────┐  ┌──────────────┐
- │ Pattern      │  │ Matcher &    │
- │ Explainer    │  │ Highlighter  │
- └──────┬───────┘  └──────┬───────┘
+ ┌──────────────┐  ┌───────────────────────────────────┐
+ │ Pattern      │  │ Matcher & Group Tree Builder      │
+ │ Explainer    │  │ (parseMatchGroups, buildGroupTree)│
+ └──────┬───────┘  └──────┬────────────────────────────┘
         │                 │
         ▼                 ▼
- ┌──────────────┐  ┌──────────────┐
- │ Human        │  │ Dynamic HTML │
- │ Readable     │  │ Highlighted  │
- │ Breakdown    │  │ Overlay      │
- └──────────────┘  └──────────────┘
+ ┌──────────────┐  ┌───────────────────────────────────┐
+ │ Human        │  │ Dynamic Color-Coded Pill Overlays │
+ │ Readable     │  │ & Interactive Group Inspector     │
+ │ Breakdown    │  │ (Matches Table & Group Inspector) │
+ └──────────────┘  └───────────────────────────────────┘
 ```
 
 ---
 
 ## Component Breakdown
 
-| File                             | Responsibility                                                                                                 |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `index.html`                     | Page shell: template buttons, pattern input, flag checkboxes, explanation and tester panels                    |
-| `regexEngine.js`                 | Pure engine: `sanitizeFlags`, `compileRegex`, `detectCatastrophicPattern`, `executeMatch`, `executeReplace`    |
-| `script.js`                      | DOM wiring: `runRegexProcessor`, `processMatches`, `generateExplainer`, ReDoS pre-evaluation and time limit UI |
-| `style.css`                      | Dark theme, workspace grid, match and capture-group highlight colors                                           |
-| `tests/regex-visualizer.test.js` | Unit test suite covering compilation, flags, token breakdown, ReDoS detection, and execution limits            |
+| File                             | Responsibility                                                                                                                                              |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html`                     | Page shell: template buttons, pattern input, flag checkboxes (including `d`), explanation and tester panels, and dual-view match/group inspector table.     |
+| `regexEngine.js`                 | Pure engine: `sanitizeFlags`, `compileRegex`, `detectCatastrophicPattern`, `getPatternCaptureGroups`, `parseMatchGroups`, `buildGroupTree`, `executeMatch`. |
+| `script.js`                      | DOM wiring: `runRegexProcessor`, `processMatches`, interactive pill click-to-select, cross-hover highlighting between inspector and editor overlay.         |
+| `style.css`                      | Dark theme, workspace grid, 6-tier group pill palette (`--group-highlight-1..6`), pill borders, glowing active states, and inspector view switcher.         |
+| `tests/regex-visualizer.test.js` | Unit test suite covering compilation, flags, token breakdown, ReDoS detection, group definitions, tree rendering, and execution limits.                     |
 
 ---
 
@@ -76,7 +78,9 @@ User opens index.html
         ↓
 Browser loads regexEngine.js → escapeHtml.js → script.js
         ↓
-runRegexProcessor() reads the pattern, flags, and test string
+runRegexProcessor() reads the pattern, flags (g, i, m, u, d), and test string
+        ↓
+Pre-evaluation check intercepts catastrophic backtracking patterns (ReDoS)
         ↓
 new RegExp(pattern, flags) compiles; errors surface in the banner
         ↓
@@ -84,35 +88,42 @@ generateExplainer() tokenizes the pattern via RegexEngine.parsePatternTokens
         ↓
 processMatches() runs regex.exec() over the test string
         ↓
-Match highlights render in the overlay; rows fill the matches table
+getPatternCaptureGroups() scans pattern to identify numbered and named groups (?<name>...)
         ↓
-User edits pattern / flags / text → the pipeline runs again
+parseMatchGroups() extracts exact indices, values, names, and color tiers (g1..g6)
+        ↓
+buildGroupTree() & renderGroupTreeNode() assemble nested pill overlay spans in highlightsOverlay
+        ↓
+Matches Overview & Dedicated Group Inspector tables render interactive color-coded pills
+        ↓
+Hovering or clicking group pills cross-highlights and selects the text range in the editor
 ```
 
 ---
 
 ## Key Features
 
-- Live pattern testing with an instant match-count badge
-- Highlight overlay over the test textarea showing matches and capture groups
-- Semantic token-by-token explanation of the pattern
-- Flag controls (g, i, m, u) as both checkboxes and a manual flag field
-- Five common templates: email, URL, phone number, date, and IPv4 address
-- Matches table with index range, matched value, and capture-group detail
-- Invalid-pattern error banner showing the underlying JS error message
+- **Interactive Capture Group Inspector Table** — Inspect matches with numbered (`$1`, `$2`) and named (`(?<name>...)`) groups, showing match indices, exact character ranges, and captured values.
+- **Color-Coded Pill Overlays Inside Editor** — Highlight overlays render each capture group as an interactive pill with distinct color tiers (emerald, amber, purple, rose, cyan, lime).
+- **Hierarchical Group Tree Rendering** — Safely handles nested and adjacent capture groups without dropping inner groups or generating malformed overlapping HTML tags.
+- **Cross-Interactive Highlighting** — Hovering over any pill or row in the inspector illuminates the corresponding pill in the test editor; clicking any group instantly focuses and selects that exact range in the editor.
+- **Flag `d` (hasIndices) Integration** — Leverages modern engine indices for sub-string precision while maintaining graceful fallback indexing.
+- **Pre-evaluation ReDoS Guard** — Static analysis flags catastrophic backtracking risks before regex execution.
+- **Execution Limits & Timeouts** — Processing enforces a 250ms time limit and a 2,000 match cap to prevent browser freezing.
+- **Templates with Named Groups** — Pre-loaded templates include common patterns and named capture group syntax (`(?<year>...)-(?<month>...)-(?<day>...)`).
 
 ---
 
 ## Technologies Used
 
-| Technology                              | Purpose                                     |
-| --------------------------------------- | ------------------------------------------- |
-| HTML5                                   | Page structure and semantic markup          |
-| CSS3 (Flexbox, Grid, Custom Properties) | Workspace layout and highlight overlay      |
-| Vanilla JavaScript (ES6+)               | Engine and DOM logic                        |
-| RegExp API                              | Pattern compilation and matching            |
-| UMD/AMD wrapper in `regexEngine.js`     | Browser global + Node.js module for testing |
-| Outfit & Fira Code (Google Fonts)       | UI typography and monospace code display    |
+| Technology                              | Purpose                                                |
+| --------------------------------------- | ------------------------------------------------------ |
+| HTML5                                   | Page structure and semantic markup                     |
+| CSS3 (Flexbox, Grid, Custom Properties) | Workspace layout, pill badges, and highlight overlay   |
+| Vanilla JavaScript (ES6+)               | Engine, tree nesting algorithm, and DOM logic          |
+| RegExp API (with `d` flag support)      | Pattern compilation, match execution, and group ranges |
+| UMD/AMD wrapper in `regexEngine.js`     | Browser global + Node.js module for testing            |
+| Outfit & Fira Code (Google Fonts)       | UI typography and monospace code display               |
 
 ---
 
@@ -120,89 +131,70 @@ User edits pattern / flags / text → the pipeline runs again
 
 ### `regexEngine.js`
 
-- `sanitizeFlags(flags)` — keeps only the valid flags `g`, `i`, `m`, `s`, `u`, `y`
-- `compileRegex(pattern, flags, options)` — safely builds a RegExp, attaches safety metadata, and supports `checkSafety: true`
-- `detectCatastrophicPattern(pattern)` / `isCatastrophicPattern(pattern)` — static analysis detecting nested quantifiers, overlapping alternation repetitions, and adjacent unconstrained quantifiers (ReDoS protection)
-- `executeMatch(pattern, flags, inputStr, options)` — executes regex matches with pre-evaluation safety checks, configurable execution timeout (`timeoutMs: 250`), and match limit (`maxMatches: 2000`)
-- `parsePatternTokens(pattern)` — walks the pattern and returns tokens with explanations for anchors, escapes, quantifiers, groups, and literals
-- `executeReplace(pattern, flags, inputStr, replacement, options)` — substitution helper supporting optional safety checks
+- `VALID_FLAGS` — includes `g`, `i`, `m`, `s`, `u`, `y`, and `d` (indices).
+- `sanitizeFlags(flags)` — deduplicates and validates flag characters.
+- `getPatternCaptureGroups(pattern)` — scans pattern to identify capturing group indices and names (`(?<name>...)`), skipping non-capturing groups `(?:...)`, lookarounds, escaped parentheses, and character sets.
+- `extractGroupIndices(match, fullMatchStr)` — extracts exact start and end ranges using `match.indices` (flag `d`) with fallback sequential locator.
+- `parseMatchGroups(match, patternCaptureGroups, matchNumber)` — pairs match data with group definitions and assigns color classes (`g1`..`g6`).
+- `buildGroupTree(matchLength, groups)` — builds a hierarchical non-overlapping tree of group intervals for rendering.
+- `renderGroupTreeNode(node, text, escapeFn)` — recursively renders the tree to HTML spans with `data-group-num` and `data-group-name`.
+- `compileRegex(pattern, flags, options)` — safely builds a RegExp with ReDoS metadata.
+- `detectCatastrophicPattern(pattern)` / `isCatastrophicPattern(pattern)` — static ReDoS detector.
+- `executeMatch(pattern, flags, inputStr, options)` — execution wrapper with timeout and match cap.
+- `parsePatternTokens(pattern)` — tokenizes regex pattern into semantic explanations.
+- `executeReplace(pattern, flags, inputStr, replacement, options)` — string substitution helper.
 
 ### `script.js`
 
-- `runRegexProcessor()` — main pipeline: checks for catastrophic patterns before evaluation, displays ReDoS safety alerts, compiles safely, and renders explanations
-- `processMatches(regex, text)` — collects matches with a 250ms elapsed time limit and 2,000 match cap to prevent browser freezing, advancing `lastIndex` on zero-width matches
-- `generateExplainer(pattern)` — renders the token explanations, using `RegexEngine` when available
-- `updateFlagsInput()` / `updateFlagsCheckboxes()` — keep flag checkboxes and the flag text field in sync
-- `escapeHtml()` — delegates to the shared `CradleEscape` helper
+- `runRegexProcessor()` — central evaluation pipeline connecting inputs to engine and UI.
+- `processMatches(regex, text, pattern)` — runs matches, builds matches table, populates group inspector, and constructs pill overlay HTML.
+- `attachInspectorInteractions()` — connects mouseenter/mouseleave and click events on table pills to editor selection and overlay illumination.
+- View switcher — toggles between `Matches Table` and `Group Inspector` views.
+- `updateFlagsInput()` / `updateFlagsCheckboxes()` — synchronizes flag checkboxes (including `d`) with input.
+- `generateExplainer(pattern)` — renders the token breakdown.
 
 ### `style.css`
 
-- `.highlights-overlay` — transparent overlay aligned with the textarea
-- `.hl-match` and `.hl-group-1..3` — match and capture-group highlight colors
-- `.explanation-item` — token/description rows in the semantic breakdown
-- `.matches-table` — match detail table styling
+- Defines the 6-tier group color palette (`--group-highlight-1..6`, `--group-border-1..6`, `--group-text-1..6`).
+- `.hl-group-pill` and `.hl-group-g1..g6` — rounded pill overlay styling in the editor.
+- `.group-pill` and `.pill-g1..g6`, `.pill-unmatched` — interactive pill tags in tables.
+- `.active-pill` and `.active-row` — glowing accent states on hover and selection.
+- View toggle buttons and responsive layout.
 
 ---
 
 ## Design Decisions
 
-- **Engine separated from UI** — `regexEngine.js` is pure (no DOM) and wrapped in a UMD/AMD module so the same functions load as a browser global or a `require()`-able module in tests.
-- **Pre-evaluation ReDoS protection** — static token and stack analysis intercepts catastrophic backtracking patterns (such as `(a+)+`, `(a|aa)+`, and `.*.*`) before constructing or executing the regular expression, avoiding browser thread hangs.
-- **Execution limits & timeouts** — both the pure engine (`executeMatch`) and DOM matching pipeline (`processMatches`) enforce a 250ms time limit and a 2,000 match cap to guard against runaway executions.
-- **Overlay highlighting** — a transparent textarea sits on top of a highlight layer so matches can be colored without losing native editing behavior; scroll positions stay in sync.
-- **Zero-width match guard** — `processMatches` advances `lastIndex` when a match does not consume input, preventing infinite loops with patterns like `(?=x)*`.
-- **No framework** — vanilla JS keeps the tool small and dependency-free.
+- **Interval Tree for Capture Groups** — Instead of sequential substring matching that fails on nested or duplicate-value groups, `buildGroupTree` models capture groups as an interval tree, rendering nested pill spans with 100% syntactically valid HTML.
+- **Engine Separated from UI** — `regexEngine.js` contains no DOM references and works seamlessly in Node.js unit tests.
+- **Named and Numbered Parity** — Named groups retain their numerical index `$N` while displaying `<name>` tags, allowing developers to cross-reference positional and named references.
+- **Click-to-Select Navigation** — Clicking any group pill or row in the inspector table invokes `setSelectionRange`, focusing the user directly on the matched text in the editor.
 
 ---
 
 ## Dependencies
 
-None at runtime beyond the native RegExp and DOM APIs. The only external resources are the "Outfit" and "Fira Code" fonts loaded from Google Fonts.
+None at runtime beyond native RegExp and DOM APIs.
 
 ---
 
 ## Future Improvements
 
-- Add per-token color coding directly inside the pattern input
-- Extend `parsePatternTokens` to cover character classes and look-around constructs
-- Add a replacement/substitution preview panel
-- Support shareable pattern URLs via the URL hash
-
----
-
-## Known Limitations
-
-- `parsePatternTokens` covers anchors, escapes, quantifiers, groups, and literals, but not full character-class or look-around parsing
-- Capture-group highlighting approximates sub-ranges with `indexOf`, which can misalign when the same text appears more than once inside a match
-- The generated explanations are English-only
+- Add per-token color coding directly inside the pattern input.
+- Extend `parsePatternTokens` to cover Unicode property escapes (`\p{...}`).
+- Add a replacement/substitution preview panel.
+- Support shareable pattern URLs via the URL hash.
 
 ---
 
 ## Development Notes
 
-- `regexEngine.js` is UMD/AMD so it can be unit-tested with Node.js built-in test runner:
-  ```
-  node --test tests/regex-visualizer.test.js
-  ```
-- `index.html` loads the shared `escapeHtml.js` helper for safe HTML interpolation
-- No build step is required — edit the files and refresh the browser
+- The project has no build step. Open `index.html` directly or serve through a local dev server.
+- Run `npm run validate:architecture` from the repository root after editing this file.
 
 ---
 
 ## License & Attribution
 
-- **Project License:** MIT
-- **Third-Party Assets:**
-  - "Outfit" and "Fira Code" fonts by [Google Fonts](https://fonts.google.com) (OFL License)
-
----
-
-## References
-
-- [MDN Web Docs — Regular Expressions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions)
-- [MDN Web Docs — RegExp](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp)
-- [regex101](https://regex101.com/) — pattern tester inspiration
-
-```
-
-```
+- **Project License:** MIT, inherited from the Cradle repository.
+- **Third-Party Assets:** None.
