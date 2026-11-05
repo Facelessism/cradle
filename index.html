@@ -177,8 +177,9 @@
               role="combobox"
               aria-label="Search projects"
               aria-autocomplete="list"
-              aria-controls="search-suggestions"
+              aria-controls="projects-grid"
               aria-expanded="false"
+              aria-haspopup="listbox"
             />
             <button
               type="button"
@@ -253,6 +254,14 @@
                 ><kbd>/</kbd> or <kbd>Ctrl</kbd>+<kbd>K</kbd></span
               >
               <span class="shortcut-desc">Focus Search Bar</span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-keys"><kbd>↑</kbd> / <kbd>↓</kbd></span>
+              <span class="shortcut-desc">Navigate Matching Projects</span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-keys"><kbd>Enter</kbd></span>
+              <span class="shortcut-desc">Open Highlighted Project</span>
             </div>
             <div class="shortcut-item">
               <span class="shortcut-keys"><kbd>Esc</kbd></span>
@@ -342,6 +351,8 @@
         <div
           id="projects-grid"
           class="projects-grid"
+          role="listbox"
+          aria-label="Matching projects"
           aria-live="polite"
           aria-atomic="true"
         ></div>

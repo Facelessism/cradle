@@ -62,6 +62,64 @@ let allProjects = [];
 let selectedCategory = "all";
 let activeSuggestionIndex = -1;
 let currentSuggestions = [];
+let activeCardIndex = -1;
+
+function clearActiveCard() {
+  activeCardIndex = -1;
+  if (projectsGrid) {
+    const cards = projectsGrid.querySelectorAll(".cradle-card");
+    cards.forEach(card => {
+      card.classList.remove("keyboard-active");
+      card.setAttribute("aria-selected", "false");
+    });
+  }
+  if (searchInput) {
+    searchInput.removeAttribute("aria-activedescendant");
+  }
+}
+
+function updateActiveCard(index) {
+  if (!projectsGrid) return;
+  const cards = Array.from(projectsGrid.querySelectorAll(".cradle-card"));
+  if (!cards.length) {
+    clearActiveCard();
+    return;
+  }
+
+  if (index < 0) {
+    activeCardIndex = cards.length - 1;
+  } else if (index >= cards.length) {
+    activeCardIndex = 0;
+  } else {
+    activeCardIndex = index;
+  }
+
+  cards.forEach((card, idx) => {
+    const isActive = idx === activeCardIndex;
+    card.classList.toggle("keyboard-active", isActive);
+    card.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
+
+  const activeCard = cards[activeCardIndex];
+  if (activeCard && searchInput) {
+    searchInput.setAttribute("aria-activedescendant", activeCard.id);
+    if (typeof activeCard.scrollIntoView === "function") {
+      activeCard.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }
+}
+
+function openHighlightedProject(card) {
+  if (!card) return;
+  const openLink = card.querySelector(
+    "a[href], button[data-variant='outline'], .cradle-btn"
+  );
+  if (openLink && typeof openLink.click === "function") {
+    openLink.click();
+  } else if (openLink && openLink.href) {
+    window.location.href = openLink.href;
+  }
+}
 
 const SEARCH_QUERY_PARAM = "q";
 const CATEGORY_QUERY_PARAM = "category";
@@ -540,18 +598,34 @@ function renderProjects(projects) {
 
   if (!projects.length) {
     projectsGrid.innerHTML = "<p>No projects found.</p>";
+    if (searchInput) {
+      searchInput.setAttribute("aria-expanded", "false");
+      searchInput.removeAttribute("aria-activedescendant");
+    }
+    clearActiveCard();
     return;
   }
 
   projectsGrid.innerHTML = "";
+  clearActiveCard();
 
-  projects.forEach(project => {
-    projectsGrid.appendChild(
-      createProjectCard(project, {
-        onOpen: recordRecentlyOpenedProject,
-      })
-    );
+  projects.forEach((project, index) => {
+    const card = createProjectCard(project, {
+      onOpen: recordRecentlyOpenedProject,
+    });
+    if (card && card.setAttribute) {
+      card.id = `project-card-${index}`;
+      card.setAttribute("role", "option");
+      card.setAttribute("aria-selected", "false");
+      card.setAttribute("tabindex", "-1");
+    }
+    projectsGrid.appendChild(card);
   });
+
+  if (searchInput) {
+    searchInput.setAttribute("aria-expanded", "true");
+    searchInput.setAttribute("aria-controls", "projects-grid");
+  }
 }
 
 function getSearchSuggestions(query) {
@@ -792,6 +866,7 @@ function clearFilters() {
   searchInput.value = "";
   selectedCategory = "all";
 
+  clearActiveCard();
   applyFilters();
   renderCategories();
   hideSearchSuggestions();
@@ -800,6 +875,7 @@ function clearFilters() {
 }
 
 searchInput.addEventListener("input", () => {
+  clearActiveCard();
   debouncedApplyFilters();
   renderSearchSuggestions();
 });
@@ -807,35 +883,66 @@ searchInput.addEventListener("input", () => {
 searchInput.addEventListener("focus", renderSearchSuggestions);
 
 searchInput.addEventListener("blur", () => {
-  window.setTimeout(hideSearchSuggestions, 120);
+  window.setTimeout(() => {
+    hideSearchSuggestions();
+    clearActiveCard();
+  }, 150);
 });
 
 searchInput.addEventListener("keydown", event => {
-  if (searchSuggestions?.hidden || !currentSuggestions.length) return;
+  const cards = Array.from(
+    projectsGrid ? projectsGrid.querySelectorAll(".cradle-card") : []
+  );
 
   if (event.key === "ArrowDown") {
-    event.preventDefault();
-    activeSuggestionIndex =
-      (activeSuggestionIndex + 1) % currentSuggestions.length;
-    updateSuggestionActiveState();
+    if (cards.length > 0) {
+      event.preventDefault();
+      hideSearchSuggestions();
+      const nextIndex =
+        activeCardIndex + 1 >= cards.length ? 0 : activeCardIndex + 1;
+      updateActiveCard(nextIndex);
+      return;
+    }
   }
 
   if (event.key === "ArrowUp") {
-    event.preventDefault();
-    activeSuggestionIndex =
-      (activeSuggestionIndex - 1 + currentSuggestions.length) %
-      currentSuggestions.length;
-    updateSuggestionActiveState();
+    if (cards.length > 0) {
+      event.preventDefault();
+      hideSearchSuggestions();
+      const prevIndex =
+        activeCardIndex <= 0 ? cards.length - 1 : activeCardIndex - 1;
+      updateActiveCard(prevIndex);
+      return;
+    }
   }
 
-  if (event.key === "Enter" && activeSuggestionIndex >= 0) {
-    event.preventDefault();
-    selectSearchSuggestion(activeSuggestionIndex);
+  if (event.key === "Enter") {
+    if (activeCardIndex >= 0 && cards[activeCardIndex]) {
+      event.preventDefault();
+      openHighlightedProject(cards[activeCardIndex]);
+      return;
+    }
+
+    if (!searchSuggestions?.hidden && activeSuggestionIndex >= 0) {
+      event.preventDefault();
+      selectSearchSuggestion(activeSuggestionIndex);
+      return;
+    }
   }
 
   if (event.key === "Escape") {
-    event.stopPropagation();
-    hideSearchSuggestions();
+    if (activeCardIndex >= 0) {
+      event.preventDefault();
+      event.stopPropagation();
+      clearActiveCard();
+      return;
+    }
+
+    if (!searchSuggestions?.hidden) {
+      event.stopPropagation();
+      hideSearchSuggestions();
+      return;
+    }
   }
 });
 
