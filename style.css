@@ -480,6 +480,19 @@ html.light-theme .recent-project-card::before {
   color: var(--muted);
 }
 
+/* WAI-ARIA Combobox active descendant keyboard highlight */
+.cradle-card.keyboard-active {
+  outline: 3px solid var(--cradle-accent, #3b82f6) !important;
+  outline-offset: 3px !important;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(59, 130, 246, 0.3) !important;
+  border-color: var(--cradle-accent, #3b82f6) !important;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    outline-color 0.2s ease;
+}
+
 .cradle-card__image {
   width: 100%;
   height: auto;
