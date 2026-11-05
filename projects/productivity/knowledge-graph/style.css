@@ -10,6 +10,7 @@
   --node-color: #3b82f6;
   --node-text: #ffffff;
   --edge-color: #9ca3af;
+  --pin-color: #f59e0b;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,6 +25,7 @@
     --border-color: #4b5563;
     --node-color: #60a5fa;
     --edge-color: #6b7280;
+    --pin-color: #fbbf24;
   }
 }
 
@@ -142,6 +144,12 @@ body {
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
+}
+
+.graph-hint {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-secondary);
 }
 
 #note-content {

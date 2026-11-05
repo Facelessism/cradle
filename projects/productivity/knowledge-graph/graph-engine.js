@@ -1,10 +1,15 @@
 import { StorageManager } from "./storage.js";
 import { GraphParser } from "./parser.js";
-import { placeNodes, getCenteredTransform } from "./layout.js";
+import {
+  placeNodes,
+  getCenteredTransform,
+  computeArrowhead,
+} from "./layout.js";
 
 /**
  * Graph Engine
- * Custom force-directed graph renderer using Canvas 2D with drag interactions.
+ * Custom force-directed graph renderer using Canvas 2D with drag interactions,
+ * directed edge arrowheads, and node pinning.
  */
 export class GraphEngine {
   constructor(canvasId, storage) {
@@ -119,15 +124,49 @@ export class GraphEngine {
     });
   }
 
+  getNodeAt(worldX, worldY) {
+    const radius = 20 / this.transform.k;
+    return (
+      this.nodes.find(n => Math.hypot(n.x - worldX, n.y - worldY) <= radius) ||
+      null
+    );
+  }
+
+  isNodePinned(node) {
+    return Boolean(
+      node &&
+      (node.pinned ||
+        (node.fx !== undefined &&
+          node.fx !== null &&
+          node.fy !== undefined &&
+          node.fy !== null))
+    );
+  }
+
+  toggleNodePin(node) {
+    if (!node) return false;
+    const isPinned = this.isNodePinned(node);
+    if (isPinned) {
+      node.pinned = false;
+      node.fx = null;
+      node.fy = null;
+    } else {
+      node.pinned = true;
+      node.fx = node.x;
+      node.fy = node.y;
+      node.vx = 0;
+      node.vy = 0;
+    }
+    return node.pinned;
+  }
+
   setupInteractions() {
     if (!this.canvas || typeof this.canvas.addEventListener !== "function")
       return;
 
     this.canvas.addEventListener("mousedown", e => {
       const pos = this.screenToWorld(e.offsetX, e.offsetY);
-      this.draggedNode = this.nodes.find(
-        n => Math.hypot(n.x - pos.x, n.y - pos.y) < 20 / this.transform.k
-      );
+      this.draggedNode = this.getNodeAt(pos.x, pos.y);
       if (this.draggedNode) {
         this.isDragging = true;
       } else {
@@ -143,6 +182,10 @@ export class GraphEngine {
         this.draggedNode.y = pos.y;
         this.draggedNode.vx = 0;
         this.draggedNode.vy = 0;
+        if (this.isNodePinned(this.draggedNode)) {
+          this.draggedNode.fx = pos.x;
+          this.draggedNode.fy = pos.y;
+        }
       } else if (this.isPanning) {
         const dx = e.offsetX - this.lastMouse.x;
         const dy = e.offsetY - this.lastMouse.y;
@@ -156,6 +199,23 @@ export class GraphEngine {
       this.isDragging = false;
       this.isPanning = false;
       this.draggedNode = null;
+    });
+
+    this.canvas.addEventListener("dblclick", e => {
+      const pos = this.screenToWorld(e.offsetX, e.offsetY);
+      const clicked = this.getNodeAt(pos.x, pos.y);
+      if (clicked) {
+        this.toggleNodePin(clicked);
+      }
+    });
+
+    this.canvas.addEventListener("contextmenu", e => {
+      const pos = this.screenToWorld(e.offsetX, e.offsetY);
+      const clicked = this.getNodeAt(pos.x, pos.y);
+      if (clicked) {
+        e.preventDefault();
+        this.toggleNodePin(clicked);
+      }
     });
 
     this.canvas.addEventListener(
@@ -210,11 +270,11 @@ export class GraphEngine {
         const fx = (dx / dist) * force;
         const fy = (dy / dist) * force;
 
-        if (a !== this.draggedNode) {
+        if (a !== this.draggedNode && !this.isNodePinned(a)) {
           a.vx += fx;
           a.vy += fy;
         }
-        if (b !== this.draggedNode) {
+        if (b !== this.draggedNode && !this.isNodePinned(b)) {
           b.vx -= fx;
           b.vy -= fy;
         }
@@ -235,11 +295,11 @@ export class GraphEngine {
       const fx = (dx / dist) * force;
       const fy = (dy / dist) * force;
 
-      if (source !== this.draggedNode) {
+      if (source !== this.draggedNode && !this.isNodePinned(source)) {
         source.vx += fx;
         source.vy += fy;
       }
-      if (target !== this.draggedNode) {
+      if (target !== this.draggedNode && !this.isNodePinned(target)) {
         target.vx -= fx;
         target.vy -= fy;
       }
@@ -248,6 +308,14 @@ export class GraphEngine {
     // Center gravity & update positions
     for (const node of this.nodes) {
       if (node === this.draggedNode) continue;
+
+      if (this.isNodePinned(node)) {
+        if (node.fx !== undefined && node.fx !== null) node.x = node.fx;
+        if (node.fy !== undefined && node.fy !== null) node.y = node.fy;
+        node.vx = 0;
+        node.vy = 0;
+        continue;
+      }
 
       node.vx += (0 - node.x) * centerStrength;
       node.vy += (0 - node.y) * centerStrength;
@@ -272,34 +340,81 @@ export class GraphEngine {
         ? getComputedStyle(document.documentElement)
         : null;
     const edgeColor = styles
-      ? styles.getPropertyValue("--edge-color").trim()
+      ? styles.getPropertyValue("--edge-color").trim() || "#999"
       : "#999";
     const nodeColor = styles
-      ? styles.getPropertyValue("--node-color").trim()
+      ? styles.getPropertyValue("--node-color").trim() || "#6366f1"
       : "#6366f1";
     const textColor = styles
-      ? styles.getPropertyValue("--node-text").trim()
+      ? styles.getPropertyValue("--node-text").trim() || "#fff"
       : "#fff";
+    const pinColor = styles
+      ? styles.getPropertyValue("--pin-color").trim() || "#f59e0b"
+      : "#f59e0b";
 
-    // Draw edges
+    const nodeRadius = 20 / this.transform.k;
+    const arrowLength = 9 / this.transform.k;
+    const arrowAngle = Math.PI / 6;
+
+    // Draw directed edges with arrowheads
     this.ctx.strokeStyle = edgeColor;
+    this.ctx.fillStyle = edgeColor;
     this.ctx.lineWidth = 2 / this.transform.k;
-    this.ctx.beginPath();
+
     for (const edge of this.edges) {
       const source = this.nodes.find(n => n.id === edge.source);
       const target = this.nodes.find(n => n.id === edge.target);
-      if (source && target) {
-        this.ctx.moveTo(source.x, source.y);
+      if (!source || !target) continue;
+
+      const arrow = computeArrowhead(
+        source,
+        target,
+        nodeRadius,
+        arrowLength,
+        arrowAngle
+      );
+
+      this.ctx.beginPath();
+      this.ctx.moveTo(source.x, source.y);
+      if (arrow) {
+        this.ctx.lineTo(arrow.tip.x, arrow.tip.y);
+      } else {
         this.ctx.lineTo(target.x, target.y);
       }
+      this.ctx.stroke();
+
+      if (arrow) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(arrow.tip.x, arrow.tip.y);
+        this.ctx.lineTo(arrow.left.x, arrow.left.y);
+        this.ctx.lineTo(arrow.right.x, arrow.right.y);
+        this.ctx.closePath();
+        this.ctx.fill();
+      }
     }
-    this.ctx.stroke();
 
     // Draw nodes
     for (const node of this.nodes) {
+      const isPinned = this.isNodePinned(node);
+
+      // Pinned halo accent ring
+      if (isPinned) {
+        this.ctx.strokeStyle = pinColor;
+        this.ctx.lineWidth = 3 / this.transform.k;
+        this.ctx.beginPath();
+        this.ctx.arc(
+          node.x,
+          node.y,
+          (20 + 4) / this.transform.k,
+          0,
+          Math.PI * 2
+        );
+        this.ctx.stroke();
+      }
+
       this.ctx.fillStyle = nodeColor;
       this.ctx.beginPath();
-      this.ctx.arc(node.x, node.y, 20 / this.transform.k, 0, Math.PI * 2);
+      this.ctx.arc(node.x, node.y, nodeRadius, 0, Math.PI * 2);
       this.ctx.fill();
 
       this.ctx.fillStyle = textColor;
