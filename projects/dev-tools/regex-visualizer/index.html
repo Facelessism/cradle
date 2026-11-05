@@ -6,12 +6,7 @@
     <title>RegEx Visualizer & Tester</title>
     <meta
       name="description"
-      content="The RegEx Visualizer & Tester is an interactive developer tool designed to test, debug, and explain regular expressions in real-time. It parses the regular expr..."
-    />
-
-    <meta
-      name="description"
-      content="Visual regex generator, syntax breakdown engine, and real-time pattern tester."
+      content="Visual regex generator, syntax breakdown engine, interactive capture group inspector, and real-time pattern tester."
     />
     <link
       rel="canonical"
@@ -21,7 +16,7 @@
     <meta property="og:title" content="RegEx Visualizer &amp; Tester" />
     <meta
       property="og:description"
-      content="Visual regex generator, syntax breakdown engine, and real-time pattern tester."
+      content="Visual regex generator, syntax breakdown engine, interactive capture group inspector, and real-time pattern tester."
     />
     <meta
       property="og:url"
@@ -48,7 +43,8 @@
         </div>
         <p class="subtitle">
           Design, test, and understand regular expressions with real-time match
-          highlighting and semantic explanations
+          highlighting, interactive capture group inspector, and semantic
+          explanations
         </p>
       </header>
 
@@ -63,15 +59,23 @@
                 <button
                   class="btn btn-template"
                   data-regex="^([a-zA-Z0-9._%-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,6})$"
-                  data-flags="g"
+                  data-flags="gd"
                   data-text="hello@cradle.dev, test.user_123@domain-name.co.in, invalid@email@com"
                 >
                   Email
                 </button>
                 <button
                   class="btn btn-template"
+                  data-regex="(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})"
+                  data-flags="gd"
+                  data-text="Release date: 2026-07-24, feature freeze: 2026-11-05."
+                >
+                  Named Date (?&lt;name&gt;)
+                </button>
+                <button
+                  class="btn btn-template"
                   data-regex="https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&amp;//=]*)"
-                  data-flags="g"
+                  data-flags="gd"
                   data-text="Visit https://cradle.dev/projects or http://www.google.com?q=regex to see it work."
                 >
                   URL
@@ -79,7 +83,7 @@
                 <button
                   class="btn btn-template"
                   data-regex="^\+?(\d{1,3})?[-. ]?\(?(\d{3})\)?[-. ]?(\d{3})[-. ]?(\d{4})$"
-                  data-flags="g"
+                  data-flags="gd"
                   data-text="+1 (555) 019-2834, 555-321-4321, +91-9876543210"
                 >
                   Phone Number
@@ -87,7 +91,7 @@
                 <button
                   class="btn btn-template"
                   data-regex="\b\d{4}-\d{2}-\d{2}\b"
-                  data-flags="g"
+                  data-flags="gd"
                   data-text="The system launched on 2026-07-24 and updates are due by 2026-12-31."
                 >
                   Date (YYYY-MM-DD)
@@ -95,7 +99,7 @@
                 <button
                   class="btn btn-template"
                   data-regex="\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
-                  data-flags="g"
+                  data-flags="gd"
                   data-text="Local router is at 192.168.1.1, external DNS is at 8.8.8.8, and broadcast is 255.255.255.255."
                 >
                   IPv4 Address
@@ -120,8 +124,8 @@
                     type="text"
                     id="flagsInput"
                     placeholder="flags"
-                    value="g"
-                    maxlength="5"
+                    value="gd"
+                    maxlength="6"
                   />
                 </div>
               </div>
@@ -139,6 +143,13 @@
                 </label>
                 <label class="flag-label" title="Unicode search">
                   <input type="checkbox" id="flagU" /> <span>u (unicode)</span>
+                </label>
+                <label
+                  class="flag-label"
+                  title="Generate match indices (accurate capture offsets)"
+                >
+                  <input type="checkbox" id="flagD" checked />
+                  <span>d (indices)</span>
                 </label>
               </div>
               <div class="error-banner hidden" id="regexError">
@@ -168,7 +179,7 @@
               </div>
 
               <div class="interactive-textarea-container">
-                <!-- Overlay that displays highlighted text matches -->
+                <!-- Overlay that displays highlighted text matches and color-coded group pills -->
                 <div
                   class="highlights-overlay code-font"
                   id="highlightsOverlay"
@@ -183,21 +194,66 @@
 
             <!-- Matches & Capture Groups Card -->
             <div class="card matches-card">
-              <h2>📊 Captured Details</h2>
-              <div class="matches-list-container">
+              <div class="inspector-header">
+                <h2>📊 Capture Group Inspector &amp; Match Details</h2>
+                <div class="inspector-view-toggles">
+                  <button
+                    class="btn btn-small active"
+                    id="viewMatchesBtn"
+                    type="button"
+                    title="View matches table with group pills"
+                  >
+                    Matches Table
+                  </button>
+                  <button
+                    class="btn btn-small"
+                    id="viewGroupsBtn"
+                    type="button"
+                    title="View dedicated capture group inspector table"
+                  >
+                    Group Inspector
+                  </button>
+                </div>
+              </div>
+
+              <div class="matches-list-container" id="matchesViewContainer">
                 <table class="matches-table" id="matchesTable">
                   <thead>
                     <tr>
                       <th>Match</th>
                       <th>Range</th>
                       <th>Value</th>
-                      <th>Capture Groups</th>
+                      <th>Capture Groups (Click to Inspect)</th>
                     </tr>
                   </thead>
                   <tbody id="matchesTableBody">
                     <tr>
                       <td colspan="4" class="table-placeholder">
                         No matches detected.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div
+                class="matches-list-container hidden"
+                id="groupsViewContainer"
+              >
+                <table class="matches-table" id="groupsTable">
+                  <thead>
+                    <tr>
+                      <th>Group</th>
+                      <th>Identifier</th>
+                      <th>Match #</th>
+                      <th>Range</th>
+                      <th>Captured Value</th>
+                    </tr>
+                  </thead>
+                  <tbody id="groupsTableBody">
+                    <tr>
+                      <td colspan="5" class="table-placeholder">
+                        No capture groups detected.
                       </td>
                     </tr>
                   </tbody>

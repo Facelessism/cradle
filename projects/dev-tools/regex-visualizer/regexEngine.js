@@ -1,8 +1,8 @@
 /* =========================================================
    REGEX VISUALIZER — ENGINE MODULE
    Token parser, semantic explanation builder, substitution
-   engine, flag validator, catastrophic pattern detection, and
-   time-limited execution runner.
+   engine, flag validator, catastrophic pattern detection,
+   capture group inspector, and time-limited execution runner.
    ========================================================= */
 
 (function (root, factory) {
@@ -16,7 +16,7 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
-  const VALID_FLAGS = ["g", "i", "m", "s", "u", "y"];
+  const VALID_FLAGS = ["g", "i", "m", "s", "u", "y", "d"];
 
   /** Validate and sanitize regex flags string */
   function sanitizeFlags(flags = "") {
@@ -182,7 +182,8 @@
                       br1 === br2 ||
                       (br1.length > 0 && br2.startsWith(br1)) ||
                       (br2.length > 0 && br1.startsWith(br2)) ||
-                      (br1.includes("?") || br2.includes("?"))
+                      br1.includes("?") ||
+                      br2.includes("?")
                     ) {
                       return {
                         isSafe: false,
@@ -258,8 +259,7 @@
       }
 
       // Additional regex checks for fast nested-quantifier detection:
-      const nestedQuantifierRegex =
-        /\((?:[^()\\]|\\.)*[+*?{][^()]*\)[+*{]/;
+      const nestedQuantifierRegex = /\((?:[^()\\]|\\.)*[+*?{][^()]*\)[+*{]/;
       if (nestedQuantifierRegex.test(pattern)) {
         return {
           isSafe: false,
@@ -389,6 +389,27 @@
         });
         i++;
       } else if (char === "(") {
+        if (pattern.startsWith("(?:", i)) {
+          tokens.push({
+            token: "(?:",
+            type: "group",
+            explanation: "Starts a non-capturing group",
+          });
+          i += 3;
+          continue;
+        }
+        const namedMatch = pattern
+          .slice(i)
+          .match(/^\(\?<([a-zA-Z_$][a-zA-Z0-9_$]*)>/);
+        if (namedMatch) {
+          tokens.push({
+            token: namedMatch[0],
+            type: "group",
+            explanation: `Starts a named capture group '<${namedMatch[1]}>'`,
+          });
+          i += namedMatch[0].length;
+          continue;
+        }
         tokens.push({
           token: "(",
           type: "group",
@@ -413,6 +434,294 @@
     }
 
     return tokens;
+  }
+
+  /**
+   * Scans a regex pattern to discover all capturing group definitions,
+   * their group index (1-based), and their name (if defined via (?<name>...)).
+   *
+   * @param {string} pattern - Raw regex pattern string.
+   * @returns {Array<{ index: number, name: string | null }>} Array of group definitions.
+   */
+  function getPatternCaptureGroups(pattern) {
+    if (typeof pattern !== "string" || !pattern) return [];
+
+    const groups = [];
+    let groupIndex = 1;
+    let inCharClass = false;
+    let escaped = false;
+
+    for (let i = 0; i < pattern.length; i++) {
+      const char = pattern[i];
+
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+
+      if (char === "\\") {
+        escaped = true;
+        continue;
+      }
+
+      if (inCharClass) {
+        if (char === "]") inCharClass = false;
+        continue;
+      }
+
+      if (char === "[") {
+        inCharClass = true;
+        continue;
+      }
+
+      if (char === "(") {
+        // Non-capturing or assertion: (?:, (?=, (?!, (?<=, (?<!
+        if (
+          pattern.startsWith("(?:", i) ||
+          pattern.startsWith("(?=", i) ||
+          pattern.startsWith("(?!", i) ||
+          pattern.startsWith("(?<=", i) ||
+          pattern.startsWith("(?<!", i)
+        ) {
+          continue;
+        }
+
+        // Named capture: (?<name>
+        const namedMatch = pattern
+          .slice(i)
+          .match(/^\(\?<([a-zA-Z_$][a-zA-Z0-9_$]*)>/);
+        if (namedMatch) {
+          groups.push({
+            index: groupIndex,
+            name: namedMatch[1],
+          });
+          groupIndex++;
+          i += namedMatch[0].length - 1;
+          continue;
+        }
+
+        // If it starts with (? but not named or non-capturing (other regex extension)
+        if (pattern.startsWith("(?", i)) {
+          continue;
+        }
+
+        // Standard numbered capturing group
+        groups.push({
+          index: groupIndex,
+          name: null,
+        });
+        groupIndex++;
+      }
+    }
+
+    return groups;
+  }
+
+  /**
+   * Extracts [start, end] ranges for the full match and each group.
+   * Uses native match.indices if available (flag 'd'), with a fallback locator.
+   */
+  function extractGroupIndices(match, fullMatchStr) {
+    if (!match) return [];
+    const matchIndex = typeof match.index === "number" ? match.index : 0;
+    const matchLength =
+      typeof fullMatchStr === "string"
+        ? fullMatchStr.length
+        : match[0]
+          ? match[0].length
+          : 0;
+
+    if (match.indices && Array.isArray(match.indices)) {
+      return match.indices.map(ind => {
+        if (!ind) return null;
+        return {
+          start: ind[0],
+          end: ind[1],
+          relativeStart: ind[0] - matchIndex,
+          relativeEnd: ind[1] - matchIndex,
+        };
+      });
+    }
+
+    const result = [
+      {
+        start: matchIndex,
+        end: matchIndex + matchLength,
+        relativeStart: 0,
+        relativeEnd: matchLength,
+      },
+    ];
+
+    let searchCursor = 0;
+    for (let g = 1; g < match.length; g++) {
+      const val = match[g];
+      if (val === undefined) {
+        result.push(null);
+        continue;
+      }
+      let idx = fullMatchStr.indexOf(val, searchCursor);
+      if (idx === -1) {
+        idx = fullMatchStr.indexOf(val);
+      }
+      if (idx !== -1) {
+        result.push({
+          start: matchIndex + idx,
+          end: matchIndex + idx + val.length,
+          relativeStart: idx,
+          relativeEnd: idx + val.length,
+        });
+        if (val.length > 0) {
+          searchCursor = idx;
+        }
+      } else {
+        result.push(null);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Maps an exec match to a structured list of capture groups with names,
+   * ranges, values, and color classes.
+   */
+  function parseMatchGroups(match, patternCaptureGroups = [], matchNumber = 1) {
+    if (!match) return [];
+    const fullMatchStr = match[0] || "";
+    const indices = extractGroupIndices(match, fullMatchStr);
+    const groups = [];
+
+    const defsMap = new Map();
+    for (const def of patternCaptureGroups) {
+      defsMap.set(def.index, def.name);
+    }
+
+    for (let g = 1; g < match.length; g++) {
+      const val = match[g];
+      const isMatched = val !== undefined;
+      const ind = indices[g] || null;
+      const name = defsMap.get(g) || null;
+      const colorNum = ((g - 1) % 6) + 1;
+
+      groups.push({
+        matchNumber,
+        index: g,
+        name,
+        value: isMatched ? val : null,
+        isMatched,
+        start: ind ? ind.start : null,
+        end: ind ? ind.end : null,
+        relativeStart: ind ? ind.relativeStart : null,
+        relativeEnd: ind ? ind.relativeEnd : null,
+        length: isMatched && typeof val === "string" ? val.length : 0,
+        colorClass: `g${colorNum}`,
+      });
+    }
+
+    return groups;
+  }
+
+  /**
+   * Builds a nested group tree for rendering pill overlays without overlapping tags.
+   */
+  function buildGroupTree(matchLength, groups = []) {
+    const root = {
+      start: 0,
+      end: matchLength,
+      isRoot: true,
+      children: [],
+    };
+
+    const validGroups = groups.filter(
+      g =>
+        g.isMatched &&
+        typeof g.relativeStart === "number" &&
+        typeof g.relativeEnd === "number" &&
+        g.relativeStart >= 0 &&
+        g.relativeEnd <= matchLength &&
+        g.relativeStart <= g.relativeEnd
+    );
+
+    // Sort outer enclosing groups before inner groups
+    validGroups.sort((a, b) => {
+      if (a.relativeStart !== b.relativeStart) {
+        return a.relativeStart - b.relativeStart;
+      }
+      return (
+        b.relativeEnd - b.relativeStart - (a.relativeEnd - a.relativeStart)
+      );
+    });
+
+    function insertNode(parent, node) {
+      for (const child of parent.children) {
+        if (node.start >= child.start && node.end <= child.end) {
+          insertNode(child, node);
+          return;
+        }
+      }
+      const newChildren = [];
+      const childrenToAdopt = [];
+      for (const child of parent.children) {
+        if (child.start >= node.start && child.end <= node.end) {
+          childrenToAdopt.push(child);
+        } else {
+          newChildren.push(child);
+        }
+      }
+      node.children = childrenToAdopt;
+      newChildren.push(node);
+      newChildren.sort((a, b) => a.start - b.start);
+      parent.children = newChildren;
+    }
+
+    for (const group of validGroups) {
+      const node = {
+        start: group.relativeStart,
+        end: group.relativeEnd,
+        group,
+        children: [],
+      };
+      insertNode(root, node);
+    }
+
+    return root;
+  }
+
+  /**
+   * Recursively renders a group tree to an HTML string with color-coded pill spans.
+   */
+  function renderGroupTreeNode(
+    node,
+    text,
+    escapeFn = str => String(str ?? "")
+  ) {
+    let result = "";
+    let lastIndex = node.start;
+
+    for (const child of node.children) {
+      if (child.start > lastIndex) {
+        result += escapeFn(text.substring(lastIndex, child.start));
+      }
+      const innerHtml = renderGroupTreeNode(child, text, escapeFn);
+      const g = child.group;
+      const groupNameAttr = g.name
+        ? ` data-group-name="${escapeFn(g.name)}"`
+        : "";
+      const groupNumAttr = ` data-group-num="${g.index}"`;
+      const matchNumAttr = ` data-match-num="${g.matchNumber || 1}"`;
+      const titleText = g.name
+        ? `Group ${g.index} (<${g.name}>): "${g.value}" [${g.start}:${g.end}]`
+        : `Group ${g.index}: "${g.value}" [${g.start}:${g.end}]`;
+
+      result += `<span class="hl-group-pill hl-group-${g.colorClass}"${matchNumAttr}${groupNumAttr}${groupNameAttr} title="${escapeFn(titleText)}">${innerHtml}</span>`;
+      lastIndex = child.end;
+    }
+
+    if (lastIndex < node.end) {
+      result += escapeFn(text.substring(lastIndex, node.end));
+    }
+
+    return result;
   }
 
   /** Execute match substitution / replacement with safety and error handling */
@@ -558,6 +867,11 @@
     sanitizeFlags,
     compileRegex,
     parsePatternTokens,
+    getPatternCaptureGroups,
+    extractGroupIndices,
+    parseMatchGroups,
+    buildGroupTree,
+    renderGroupTreeNode,
     executeReplace,
     executeMatch,
     detectCatastrophicPattern,
