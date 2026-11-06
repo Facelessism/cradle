@@ -42,6 +42,7 @@ class MockElement {
     this.id = "";
     this.href = "";
     this.title = "";
+    this.isContentEditable = false;
   }
 
   get className() {
@@ -71,6 +72,17 @@ class MockElement {
     return child;
   }
 
+  insertBefore(newNode, referenceNode) {
+    newNode.parentNode = this;
+    const index = this.children.indexOf(referenceNode);
+    if (index === -1) {
+      this.children.push(newNode);
+    } else {
+      this.children.splice(index, 0, newNode);
+    }
+    return newNode;
+  }
+
   replaceWith(node) {
     if (!this.parentNode) return;
     const index = this.parentNode.children.indexOf(this);
@@ -92,10 +104,24 @@ class MockElement {
         this.walk().find(node => node.classList.contains(className)) || null
       );
     }
+    const lower = selector.toLowerCase();
+    if (["a", "nav", "ol", "li", "span", "kbd"].includes(lower)) {
+      return (
+        this.walk().find(node => node.tagName.toLowerCase() === lower) || null
+      );
+    }
     return null;
   }
 
   querySelectorAll(selector) {
+    if (selector.startsWith(".")) {
+      const className = selector.slice(1);
+      return this.walk().filter(node => node.classList.contains(className));
+    }
+    const lower = selector.toLowerCase();
+    if (["a", "nav", "ol", "li", "span", "kbd"].includes(lower)) {
+      return this.walk().filter(node => node.tagName.toLowerCase() === lower);
+    }
     if (selector === ".cradle-back-home") {
       return this.walk().filter(node =>
         node.classList.contains("cradle-back-home")
@@ -104,6 +130,11 @@ class MockElement {
     if (selector === "[data-cradle-back-to-home]") {
       return this.walk().filter(node =>
         Object.prototype.hasOwnProperty.call(node.dataset, "cradleBackToHome")
+      );
+    }
+    if (selector === "[data-cradle-breadcrumb]") {
+      return this.walk().filter(node =>
+        Object.prototype.hasOwnProperty.call(node.dataset, "cradleBreadcrumb")
       );
     }
     return [];
@@ -133,6 +164,9 @@ class MockElement {
 class MockDocument extends MockElement {
   constructor({
     pathname = "/cradle/projects/demo/index.html",
+    search = "",
+    title = "",
+    referrer = "",
     scriptSrc,
   } = {}) {
     super("document", null);
@@ -142,7 +176,9 @@ class MockDocument extends MockElement {
     this.body = new MockElement("body", this);
     this.readyState = "loading";
     this.currentScript = scriptSrc ? { src: scriptSrc } : null;
-    this.location = { pathname };
+    this.location = { pathname, search };
+    this.title = title;
+    this.referrer = referrer;
     this.appendChild(this.head);
     this.appendChild(this.documentElement);
     this.appendChild(this.body);
@@ -162,15 +198,35 @@ class MockDocument extends MockElement {
         Object.prototype.hasOwnProperty.call(node.dataset, "cradleBackToHome")
       );
     }
+    if (selector === "[data-cradle-breadcrumb]") {
+      return this.walk().filter(node =>
+        Object.prototype.hasOwnProperty.call(node.dataset, "cradleBreadcrumb")
+      );
+    }
     return super.querySelectorAll(selector);
   }
 }
 
 function loadBackToHome(options = {}) {
   const document = new MockDocument(options);
+  const listeners = new Map();
   const window = {
     document,
     location: document.location,
+    addEventListener(type, handler) {
+      if (!listeners.has(type)) listeners.set(type, []);
+      listeners.get(type).push(handler);
+    },
+    removeEventListener(type, handler) {
+      if (!listeners.has(type)) return;
+      listeners.set(type, listeners.get(type).filter(h => h !== handler));
+    },
+    dispatchEvent(event) {
+      for (const handler of listeners.get(event.type) || []) {
+        handler(event);
+      }
+      return true;
+    },
   };
 
   const context = vm.createContext({
@@ -178,11 +234,13 @@ function loadBackToHome(options = {}) {
     document,
     setTimeout,
     clearTimeout,
+    URL,
+    URLSearchParams,
   });
 
   vm.runInContext(source, context, { filename: "BackToHome.js" });
 
-  return { api: window.CradleBackToHome, document };
+  return { api: window.CradleBackToHome, document, window };
 }
 
 test("create() computes a base-path-safe home URL from the component script", () => {
@@ -328,4 +386,287 @@ test("rendered links are keyboard-navigable with button role", () => {
   assert.equal(link.href, "/");
   assert.equal(link.getAttribute("aria-label"), "Back to Home");
   assert.equal(link.getAttribute("role"), "button");
+});
+
+test("create() assigns aria-keyshortcuts='Alt+H' to the button", () => {
+  const { api } = loadBackToHome();
+  const link = api.create();
+
+  assert.equal(link.getAttribute("aria-keyshortcuts"), "Alt+H");
+});
+
+test("create() renders shortcut badge when showShortcutBadge is true", () => {
+  const { api } = loadBackToHome();
+  const link = api.create({ showShortcutBadge: true });
+
+  assert.equal(link.children.length, 3);
+  const badge = link.children[2];
+  assert.equal(badge.tagName, "KBD");
+  assert.equal(badge.className, "cradle-back-home__kbd");
+  assert.equal(badge.textContent, "Alt+H");
+  assert.equal(badge.getAttribute("aria-hidden"), "true");
+});
+
+test("create() preserves category in URL when retainCategory is true", () => {
+  const { api } = loadBackToHome({
+    pathname: "/projects/dev-tools/regex-visualizer/index.html",
+  });
+  const link = api.create({ retainCategory: true });
+
+  assert.equal(link.href, "../../../index.html?category=dev-tools");
+});
+
+test("parsePathContext() extracts category and project slug from standard project paths", () => {
+  const { api } = loadBackToHome();
+
+  const ctx1 = api.parsePathContext(
+    "/cradle/projects/dev-tools/regex-visualizer/index.html"
+  );
+  assert.equal(ctx1.category, "dev-tools");
+  assert.equal(ctx1.projectSlug, "regex-visualizer");
+
+  const ctx2 = api.parsePathContext("/projects/aiml/ai-circuit-builder/");
+  assert.equal(ctx2.category, "aiml");
+  assert.equal(ctx2.projectSlug, "ai-circuit-builder");
+
+  const ctx3 = api.parsePathContext("/projects/games/chess/index.html");
+  assert.equal(ctx3.category, "games");
+  assert.equal(ctx3.projectSlug, "chess");
+});
+
+test("parsePathContext() handles root and non-project paths gracefully", () => {
+  const { api } = loadBackToHome();
+
+  const rootCtx = api.parsePathContext("/index.html");
+  assert.equal(rootCtx.category, "");
+  assert.equal(rootCtx.projectSlug, "");
+
+  const emptyCtx = api.parsePathContext("");
+  assert.equal(emptyCtx.category, "");
+  assert.equal(emptyCtx.projectSlug, "");
+});
+
+test("formatCategoryLabel() transforms category slugs into user-friendly titles", () => {
+  const { api } = loadBackToHome();
+
+  assert.equal(api.formatCategoryLabel("aiml"), "AI / ML");
+  assert.equal(api.formatCategoryLabel("dev-tools"), "Dev Tools");
+  assert.equal(api.formatCategoryLabel("file-tools"), "File Tools");
+  assert.equal(api.formatCategoryLabel("math"), "Math");
+  assert.equal(api.formatCategoryLabel("games"), "Games");
+  assert.equal(api.formatCategoryLabel("audio-analysis"), "Audio Analysis");
+  assert.equal(api.formatCategoryLabel(""), "");
+});
+
+test("getActiveCategory() resolves category from options, query parameters, referrer, or pathname", () => {
+  const { api } = loadBackToHome({
+    pathname: "/projects/games/2048-game/index.html",
+    search: "?category=math",
+    referrer: "https://example.com/cradle/index.html?category=dev-tools",
+  });
+
+  // Explicit option takes precedence
+  assert.equal(api.getActiveCategory({ category: "aiml" }), "aiml");
+
+  // Query parameter takes precedence over referrer and path
+  assert.equal(api.getActiveCategory(), "math");
+
+  // Path resolution when search is empty
+  const { api: apiPathOnly } = loadBackToHome({
+    pathname: "/projects/games/2048-game/index.html",
+  });
+  assert.equal(apiPathOnly.getActiveCategory(), "games");
+});
+
+test("getProjectTitle() resolves title from options, document.title, or pathname", () => {
+  const { api } = loadBackToHome({
+    pathname: "/projects/dev-tools/regex-visualizer/index.html",
+    title: "Regex Visualizer | Cradle",
+  });
+
+  // Explicit option
+  assert.equal(
+    api.getProjectTitle({ projectTitle: "Custom Title" }),
+    "Custom Title"
+  );
+
+  // Cleaned document.title
+  assert.equal(api.getProjectTitle(), "Regex Visualizer");
+
+  // Fallback to path slug when title is empty
+  const { api: apiFallback } = loadBackToHome({
+    pathname: "/projects/dev-tools/regex-visualizer/index.html",
+    title: "",
+  });
+  assert.equal(apiFallback.getProjectTitle(), "Regex Visualizer");
+});
+
+test("createBreadcrumb() builds a complete WAI-ARIA breadcrumb hierarchy", () => {
+  const { api } = loadBackToHome({
+    pathname: "/projects/dev-tools/regex-visualizer/index.html",
+    title: "Regex Visualizer — Cradle",
+  });
+
+  const breadcrumb = api.createBreadcrumb();
+
+  assert.equal(breadcrumb.tagName, "NAV");
+  assert.equal(breadcrumb.getAttribute("aria-label"), "Breadcrumb");
+  assert.ok(breadcrumb.classList.contains("cradle-breadcrumb"));
+
+  const list = breadcrumb.querySelector(".cradle-breadcrumb__list");
+  assert.ok(list);
+  assert.equal(list.tagName, "OL");
+
+  const items = list.children;
+  // Item 1: Home link (index 0)
+  assert.equal(items[0].className, "cradle-breadcrumb__item");
+  const homeLink = items[0].children[0];
+  assert.equal(homeLink.tagName, "A");
+  assert.equal(homeLink.textContent, "Home");
+  assert.equal(homeLink.getAttribute("aria-keyshortcuts"), "Alt+H");
+  assert.equal(homeLink.href, "../../../index.html");
+
+  // Separator 1 (index 1)
+  assert.equal(items[1].className, "cradle-breadcrumb__separator");
+  assert.equal(items[1].getAttribute("aria-hidden"), "true");
+
+  // Item 2: Category link (index 2)
+  assert.equal(items[2].className, "cradle-breadcrumb__item");
+  const catLink = items[2].children[0];
+  assert.equal(catLink.tagName, "A");
+  assert.equal(catLink.textContent, "Dev Tools");
+  assert.equal(catLink.href, "../../../index.html?category=dev-tools");
+
+  // Separator 2 (index 3)
+  assert.equal(items[3].className, "cradle-breadcrumb__separator");
+  assert.equal(items[3].getAttribute("aria-hidden"), "true");
+
+  // Item 3: Current project (index 4)
+  assert.ok(items[4].classList.contains("cradle-breadcrumb__item--current"));
+  assert.equal(items[4].getAttribute("aria-current"), "page");
+  const currentSpan = items[4].children[0];
+  assert.equal(currentSpan.className, "cradle-breadcrumb__current");
+  assert.equal(currentSpan.textContent, "Regex Visualizer");
+});
+
+test("create() returns breadcrumb component when variant is 'breadcrumb'", () => {
+  const { api } = loadBackToHome({
+    pathname: "/projects/games/chess/index.html",
+    title: "Chess — Cradle",
+  });
+
+  const el = api.create({ variant: "breadcrumb" });
+
+  assert.equal(el.tagName, "NAV");
+  assert.equal(el.getAttribute("aria-label"), "Breadcrumb");
+  assert.ok(el.classList.contains("cradle-breadcrumb"));
+});
+
+test("upgradeAll() upgrades [data-cradle-breadcrumb] elements", () => {
+  const { api, document } = loadBackToHome({
+    pathname: "/projects/math/graphing-calculator/index.html",
+    title: "Graphing Calculator",
+  });
+
+  const placeholder = document.createElement("nav");
+  placeholder.dataset.cradleBreadcrumb = "";
+  placeholder.dataset.category = "math";
+  placeholder.dataset.projectTitle = "Graphing Calculator";
+  document.body.appendChild(placeholder);
+
+  api.upgradeAll();
+
+  const upgraded = document.body.children[0];
+  assert.equal(upgraded.tagName, "NAV");
+  assert.equal(upgraded.getAttribute("aria-label"), "Breadcrumb");
+  assert.ok(upgraded.classList.contains("cradle-breadcrumb"));
+  assert.ok(upgraded.querySelector(".cradle-breadcrumb__list"));
+});
+
+test("global Alt+H shortcut triggers navigation callback", () => {
+  let navigatedTo = null;
+  const { api, window } = loadBackToHome({
+    pathname: "/projects/dev-tools/regex-visualizer/index.html",
+  });
+
+  api.registerGlobalShortcut("/target-home.html", {
+    onNavigate: target => {
+      navigatedTo = target;
+    },
+  });
+
+  // Dispatch Alt+H event on window
+  const event = {
+    type: "keydown",
+    altKey: true,
+    ctrlKey: false,
+    metaKey: false,
+    shiftKey: false,
+    key: "h",
+    code: "KeyH",
+    target: window.document.body,
+    preventDefault() {},
+  };
+  window.dispatchEvent(event);
+
+  assert.equal(navigatedTo, "/target-home.html");
+});
+
+test("global Alt+H shortcut is ignored when target is an editable input", () => {
+  let navigatedTo = null;
+  const { api, window, document } = loadBackToHome({
+    pathname: "/projects/dev-tools/regex-visualizer/index.html",
+  });
+
+  api.registerGlobalShortcut("/target-home.html", {
+    onNavigate: target => {
+      navigatedTo = target;
+    },
+  });
+
+  const input = document.createElement("input");
+  const event = {
+    type: "keydown",
+    altKey: true,
+    ctrlKey: false,
+    metaKey: false,
+    shiftKey: false,
+    key: "h",
+    code: "KeyH",
+    target: input,
+    preventDefault() {},
+  };
+  window.dispatchEvent(event);
+
+  assert.equal(navigatedTo, null);
+});
+
+test("unregisterGlobalShortcut() cleanly removes keyboard listener", () => {
+  let count = 0;
+  const { api, window } = loadBackToHome({
+    pathname: "/projects/dev-tools/regex-visualizer/index.html",
+  });
+
+  api.registerGlobalShortcut("/target-home.html", {
+    onNavigate: () => {
+      count++;
+    },
+  });
+
+  api.unregisterGlobalShortcut();
+
+  const event = {
+    type: "keydown",
+    altKey: true,
+    ctrlKey: false,
+    metaKey: false,
+    shiftKey: false,
+    key: "h",
+    code: "KeyH",
+    target: window.document.body,
+    preventDefault() {},
+  };
+  window.dispatchEvent(event);
+
+  assert.equal(count, 0);
 });
