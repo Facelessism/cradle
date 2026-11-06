@@ -312,7 +312,7 @@ nav.insertAdjacentElement("afterend", nav._drawer);
 
 ## BackToHome
 
-Provides standardized navigation back to the root hub from any mini.
+Provides standardized navigation back to the root hub from any mini, featuring a global `Alt+H` keyboard shortcut, active category filter retention (`?category=...`), and accessible breadcrumb navigation.
 
 ### Auto-Inject (Drop-in script)
 
@@ -323,22 +323,44 @@ Provides standardized navigation back to the root hub from any mini.
 ### Programmatic
 
 ```javascript
+// Floating pill or inline minimal button
 const btn = CradleBackToHome.create({
   to: "/index.html",
   label: "Back to Home",
-  variant: "pill", // 'pill' (fixed top-left) | 'minimal' (inline)
+  variant: "pill", // 'pill' (fixed bottom-right) | 'minimal' (inline) | 'breadcrumb'
+  retainCategory: true, // Appends ?category=<current> to retain filter state
+  showShortcutBadge: true, // Displays Alt+H badge
+  enableShortcut: true, // Enables global Alt+H shortcut
 });
 document.body.appendChild(btn);
+
+// Accessible breadcrumb navigation (Home > Category > Project Title)
+const breadcrumb = CradleBackToHome.createBreadcrumb({
+  category: "dev-tools",
+  projectTitle: "Regex Visualizer",
+  retainCategory: true,
+});
+document.body.insertBefore(breadcrumb, document.body.firstChild);
 ```
 
 ### HTML (Auto-Upgraded)
 
 ```html
+<!-- Back to home link -->
 <a
   data-cradle-back-to-home
   data-label="Return to Hub"
-  data-to="/index.html"
+  data-retain-category="true"
+  data-show-shortcut-badge="true"
 ></a>
+
+<!-- Declarative breadcrumb -->
+<nav
+  data-cradle-breadcrumb
+  data-category="dev-tools"
+  data-project-title="Regex Visualizer"
+  data-retain-category="true"
+></nav>
 ```
 
 ---

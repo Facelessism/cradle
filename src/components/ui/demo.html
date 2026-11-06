@@ -232,6 +232,15 @@
             >↑ inline minimal variant</span
           >
         </div>
+        <div class="demo-row" style="margin-top: 12px">
+          <div id="bth-badge-mount"></div>
+          <span style="color: var(--cradle-muted); font-size: 0.85rem"
+            >↑ with Alt+H shortcut badge</span
+          >
+        </div>
+        <div class="demo-row" style="margin-top: 12px">
+          <div id="bth-breadcrumb-mount"></div>
+        </div>
         <div
           style="
             margin-top: 8px;
@@ -240,7 +249,7 @@
           "
         >
           The fixed pill variant is injected at bottom-right automatically on
-          project pages.
+          project pages with global Alt+H shortcut and category retention.
         </div>
       </div>
 
@@ -522,6 +531,27 @@
         })
       );
 
+      /* ── BackToHome — shortcut badge variant ── */
+      document.getElementById("bth-badge-mount").appendChild(
+        CradleBackToHome.create({
+          to: "../../index.html",
+          label: "Back to Home",
+          variant: "minimal",
+          showShortcutBadge: true,
+        })
+      );
+
+      /* ── BackToHome — breadcrumb variant ── */
+      document.getElementById("bth-breadcrumb-mount").appendChild(
+        CradleBackToHome.createBreadcrumb({
+          to: "../../index.html",
+          category: "dev-tools",
+          projectTitle: "Shared UI Demo",
+          retainCategory: true,
+          showShortcutBadge: true,
+        })
+      );
+
       /* ── EscapeHtml — utility ── */
       const escapeDemo = document.getElementById("escape-demo");
       const samples = [
@@ -561,7 +591,8 @@
         "CradleNavbar — Escape key closes drawer",
         "CradleNavbar — click-outside closes drawer",
         "CradleNavbar — ThemeToggle integrated in actions slot",
-        "CradleBackToHome — pill (fixed) + minimal (inline) variants",
+        "CradleBackToHome — pill (fixed) + minimal (inline) + breadcrumb variants",
+        "CradleBackToHome — global Alt+H keyboard shortcut and category filter retention",
         "CradleBackToHome — dynamic home URL computed from window.location depth",
         "CradleBackToHome — replaces back-to-home.js in all 10 project pages",
         "CradleEscape — escapeHtml escapes & < > \" ' before innerHTML insertion",
