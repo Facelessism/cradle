@@ -113,22 +113,23 @@ graph TD
 
 ## Component Breakdown
 
-| File / Path                              | Responsibility                                                                                                                              |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `index.html`                             | Landing page markup: hero, search box, category buttons, project grid, footer                                                               |
-| `script.js`                              | Landing page controller: loads/caches project data, renders categories and cards, wires search and filter events                            |
-| `style.css`                              | Landing page visual styling                                                                                                                 |
-| `data/projects.json`                     | Generated flat list of `{ title, category, path }` for every project                                                                        |
-| `scripts/generate-projects.js`           | Build-time script that walks `projects/` and regenerates `data/projects.json`                                                               |
-| `scripts/generate-readme-table.js`       | Renders and synchronizes the available projects table in `README.md` from `data/projects.json`                                              |
-| `scripts/theme.js`                       | Light/dark theme state, `localStorage` persistence, toggle button wiring                                                                    |
-| `scripts/worker.js`                      | Web Worker that filters the project list by category and search query off the main thread                                                   |
-| `src/components/ui/*`                    | Shared UI primitives (Button, Card, ThemeToggle, Navbar, BackToHome & Breadcrumb), the shared HTML escaping utility (`escapeHtml.js`), and design tokens |
-| `projects/<category>/<name>/`            | One self-contained experiment with its own HTML/CSS/JS and ARCHITECTURE.md                                                                  |
-| `tests/*.test.js`                        | Node's built-in test runner exercising pure logic exported by individual projects                                                           |
-| `sw.js`                                  | Service Worker providing PWA offline capabilities, precaching the landing shell, runtime caching opened minis, and managing updates         |
-| `manifest.webmanifest`                   | Web App Manifest defining application metadata, standalone display mode, theme colors, and icons for PWA installability                     |
-| `src/utils/serviceWorkerRegistration.js` | Service worker registration controller managing update detection and displaying accessible user update prompts                              |
+| File / Path                              | Responsibility                                                                                                                                                                                                                |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html`                             | Landing page markup: hero, search box, category buttons, project grid, footer                                                                                                                                                 |
+| `script.js`                              | Landing page controller: loads/caches project data, renders categories and cards, wires search and filter events                                                                                                              |
+| `style.css`                              | Landing page visual styling                                                                                                                                                                                                   |
+| `data/projects.json`                     | Generated flat list of `{ title, category, path }` for every project                                                                                                                                                          |
+| `scripts/generate-projects.js`           | Build-time script that walks `projects/` and regenerates `data/projects.json`                                                                                                                                                 |
+| `scripts/generate-readme-table.js`       | Renders and synchronizes the available projects table in `README.md` from `data/projects.json`                                                                                                                                |
+| `scripts/theme.js`                       | Light/dark theme state, `localStorage` persistence, toggle button wiring                                                                                                                                                      |
+| `scripts/worker.js`                      | Web Worker that filters the project list by category and search query off the main thread                                                                                                                                     |
+| `src/components/ui/*`                    | Shared UI primitives (Button, Card, ThemeToggle, Navbar, BackToHome), the shared HTML escaping utility (`escapeHtml.js`), and design tokens                                                                                   |
+| `projects/<category>/<name>/`            | One self-contained experiment with its own HTML/CSS/JS and ARCHITECTURE.md                                                                                                                                                    |
+| `tests/*.test.js`                        | Node's built-in test runner exercising pure logic exported by individual projects                                                                                                                                             |
+| `sw.js`                                  | Service Worker providing PWA offline capabilities, precaching the landing shell, runtime caching opened minis, and managing updates                                                                                           |
+| `manifest.webmanifest`                   | Web App Manifest defining application metadata, standalone display mode, theme colors, and icons for PWA installability                                                                                                       |
+| `src/utils/serviceWorkerRegistration.js` | Service worker registration controller managing update detection and displaying accessible user update prompts                                                                                                                |
+| `src/utils/cradleDb.js`                  | IndexedDB project cache layer with cross-tab reactive state synchronization via `BroadcastChannel` (`CradleSyncChannel`, `subscribeToSync`, `broadcastSync`, `invalidateCache`, `setCachedProjects`, `updateProjectMetadata`) |
 
 ---
 
@@ -175,7 +176,8 @@ renderProjects() re-renders the grid with the filtered list
 - Client-side search and category filtering, offloaded to a Web Worker when available
 - Responsive keyboard shortcuts (`/` search focus, `Esc` clear/close, `T` theme toggle, `?` helper modal)
 - IndexedDB caching of the project list for instant repeat loads, with background refresh
-- 3-way theme toggle (Light, Dark, System Default) with `localStorage` persistence, OS `matchMedia('(prefers-color-scheme: dark)')` scheduling auto-detection, automatic high-contrast (`prefers-contrast: more`) and Windows High Contrast (`forced-colors: active`) adaptation, and an inline pre-paint script to avoid flash of wrong theme
+- Real-time cross-tab state synchronization via `BroadcastChannel` in CradleDB: updates, invalidations, and metadata mutations in one tab instantly propagate to other tabs without polling or full page reloads
+- Light/dark theme with `localStorage` persistence and an inline pre-paint script to avoid a flash of the wrong theme
 - Progressive enhancement and API fallbacks for Web Workers, IndexedDB, localStorage, Web Audio API, and Clipboard API (see [README.md](README.md#browser-compatibility--progressive-fallbacks))
 - Strict isolation between projects: each lives entirely inside its own folder and can run independently
 
@@ -183,16 +185,17 @@ renderProjects() re-renders the grid with the filtered list
 
 ## Technologies Used
 
-| Technology                                | Purpose                                                      |
-| ----------------------------------------- | ------------------------------------------------------------ |
-| HTML5                                     | Structure for the landing page and every individual project  |
-| CSS3 (Custom Properties / design tokens)  | Landing page styling and the shared Cradle UI token system   |
-| Vanilla JavaScript (ES6 modules)          | Landing page logic, theme handling, per-project logic        |
-| IndexedDB API                             | Client-side caching of the project registry                  |
-| Web Workers                               | Off-main-thread search/category filtering                    |
-| Node.js                                   | Runs `scripts/generate-projects.js` at build/dev time        |
-| Node's built-in test runner (`node:test`) | Root-level tests for individual projects' pure logic modules |
-| Google Fonts (CDN)                        | Landing page typography (Space Grotesk)                      |
+| Technology                                | Purpose                                                         |
+| ----------------------------------------- | --------------------------------------------------------------- |
+| HTML5                                     | Structure for the landing page and every individual project     |
+| CSS3 (Custom Properties / design tokens)  | Landing page styling and the shared Cradle UI token system      |
+| Vanilla JavaScript (ES6 modules)          | Landing page logic, theme handling, per-project logic           |
+| IndexedDB API                             | Client-side caching of the project registry                     |
+| BroadcastChannel API                      | Cross-tab reactive state synchronization and cache invalidation |
+| Web Workers                               | Off-main-thread search/category filtering                       |
+| Node.js                                   | Runs `scripts/generate-projects.js` at build/dev time           |
+| Node's built-in test runner (`node:test`) | Root-level tests for individual projects' pure logic modules    |
+| Google Fonts (CDN)                        | Landing page typography (Space Grotesk)                         |
 
 ---
 
@@ -225,6 +228,12 @@ renderProjects() re-renders the grid with the filtered list
 
 - Single `onmessage` handler that filters a project list by category and search query and posts the filtered result back
 
+### `src/utils/cradleDb.js`
+
+- `openDB()` / `getCachedProjects()` / `loadProjects()` - manages the IndexedDB storage layer for project registry caching
+- `setCachedProjects()` / `invalidateCache()` / `clearStore()` / `updateProjectMetadata()` - mutates cache state and dispatches broadcast notices
+- `CradleSyncChannel` / `subscribeToSync()` / `broadcastSync()` - manages multi-tab real-time synchronization over the native `BroadcastChannel` API with self-echo suppression and fallback handling
+
 ### `src/components/ui/index.js`
 
 - `resolveBase()` - locates the component library's own base URL regardless of how deep the current page is nested under `projects/`
@@ -242,6 +251,7 @@ renderProjects() re-renders the grid with the filtered list
 - **Generated metadata instead of a hand-written registry** - `data/projects.json` is produced by `scripts/generate-projects.js` so adding a project never requires editing a separate list; the folder structure is the single source of truth.
 - **Centralized 3-tier build model** - minis are static (Tier 1) by default with zero build step required. Minis needing TypeScript/JSX are centrally bundled from root tooling (Tier 2), and Wasm pipelines (Tier 3) commit pre-built binaries. Local per-mini `package.json` and `node_modules` are strictly prohibited to prevent fragmented tooling and duplicate dependencies (see `docs/BUILD_STRATEGY.md`).
 - **IndexedDB cache with background refresh** - the landing page renders instantly from cache on repeat visits while still picking up newly generated projects shortly after.
+- **Cross-tab cache synchronization via native BroadcastChannel** - when projects or metadata are updated or invalidated in one tab or mini-project, CradleDB dispatches lightweight broadcast notifications over the native `BroadcastChannel` API. Other open tabs reactively synchronize their in-memory state and UI without manual reloads or polling, with built-in self-echo suppression and graceful degradation in unsupported environments.
 - **Web Worker for filtering** - keeps search/category filtering off the main thread as the project list grows, with a synchronous fallback when Workers are unavailable.
 - **Zero-dependency component library** - `src/components/ui` is plain JS/CSS with no build tooling, so any project, including ones written before the library existed, can opt in without adopting a framework.
 - **Global `Alt+H` shortcut & accessible breadcrumb navigation** - `CradleBackToHome` provides standardized navigation back to the root hub from any mini-project with an optional `Alt+H` keyboard shortcut (safely guarded against editable input fields and exposed via `aria-keyshortcuts="Alt+H"`). It also renders an accessible WAI-ARIA 1.2 breadcrumb hierarchy (`Home > [Category] > [Project Title]`) that retains active category filters (`?category=...`) across multi-level navigation.

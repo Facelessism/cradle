@@ -8,6 +8,7 @@ import {
   openDB,
   getCachedProjects,
   fetchAndCacheProjects as fetchAndCacheProjectsDB,
+  subscribeToSync,
 } from "./src/utils/cradleDb.js";
 import {
   createFilterWorker,
@@ -1350,6 +1351,39 @@ document.addEventListener("DOMContentLoaded", () => {
   renderRecentProjects();
   loadProjects();
   registerServiceWorker();
+
+  // Cross-tab synchronization via BroadcastChannel
+  subscribeToSync(async syncEvent => {
+    try {
+      if (!syncEvent || !syncEvent.type) return;
+      let db = null;
+      try {
+        db = await openDB();
+      } catch (e) {
+        console.warn("IndexedDB error during cross-tab sync:", e);
+      }
+
+      if (syncEvent.type === "update" && Array.isArray(syncEvent.data)) {
+        allProjects = sanitizeProjectList(syncEvent.data);
+      } else {
+        const cached = await getCachedProjects(db);
+        if (cached && cached.length > 0) {
+          allProjects = sanitizeProjectList(cached);
+        } else {
+          allProjects = await fetchAndCacheProjects(db);
+        }
+      }
+
+      validateSelectedCategory();
+      renderCategories();
+      applyFilters();
+      if (loadStatus) {
+        loadStatus.textContent = `${allProjects.length} projects loaded.`;
+      }
+    } catch (err) {
+      console.warn("Failed to synchronize state from cross-tab event:", err);
+    }
+  });
 
   if (document.documentElement?.addEventListener) {
     document.documentElement.addEventListener("cradle:themechange", e => {
