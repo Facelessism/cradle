@@ -10,7 +10,11 @@ import {
   formatFrequency,
 } from "../projects/misc/audio-spectrogram-analyzer/scale.js";
 import { AudioProcessor } from "../projects/misc/audio-spectrogram-analyzer/audio-processor.js";
-import { SpectrogramVisualizer } from "../projects/misc/audio-spectrogram-analyzer/visualizer.js";
+import {
+  SpectrogramVisualizer,
+  isOffscreenCanvasSupported,
+} from "../projects/misc/audio-spectrogram-analyzer/visualizer.js";
+import { SpectrogramWorkerRenderer } from "../projects/misc/audio-spectrogram-analyzer/visualizer-worker.js";
 
 test("formatFrequency formats Hertz and kiloHertz correctly", () => {
   assert.equal(formatFrequency(0), "0 Hz");
@@ -68,10 +72,15 @@ test("frequencyToY and yToFrequency operate accurately in Logarithmic mode", () 
   // 1 kHz in linear is 400 * (1 - 1000/20000) = 380 (compressed in bottom 5%)
   assert.equal(y1kLinear, 380);
   // 1 kHz in log is 400 * (1 - log10(50)/log10(1000)) = 400 * (1 - 1.69897 / 3) ~ 173.47
-  assert.ok(y1kLog < 200, `Log Y for 1 kHz should be above mid-canvas: got ${y1kLog}`);
+  assert.ok(
+    y1kLog < 200,
+    `Log Y for 1 kHz should be above mid-canvas: got ${y1kLog}`
+  );
 
   // Invertibility test across decades
-  const testFrequencies = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
+  const testFrequencies = [
+    20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000,
+  ];
   for (const f of testFrequencies) {
     const y = frequencyToY(f, nyquist, height, true, minFreq);
     const recoveredF = yToFrequency(y, nyquist, height, true, minFreq);
@@ -161,18 +170,18 @@ test("SpectrogramVisualizer manages scale toggle and layout dimensions", () => {
     width: 800,
     height: 400,
     getContext: () => ({
-      fillRect: () => { },
-      drawImage: () => { },
-      beginPath: () => { },
-      moveTo: () => { },
-      lineTo: () => { },
-      stroke: () => { },
-      strokeRect: () => { },
-      fillText: () => { },
-      createLinearGradient: () => ({ addColorStop: () => { } }),
-      setLineDash: () => { },
-      save: () => { },
-      restore: () => { },
+      fillRect: () => {},
+      drawImage: () => {},
+      beginPath: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      stroke: () => {},
+      strokeRect: () => {},
+      fillText: () => {},
+      createLinearGradient: () => ({ addColorStop: () => {} }),
+      setLineDash: () => {},
+      save: () => {},
+      restore: () => {},
     }),
   };
 
@@ -194,4 +203,191 @@ test("SpectrogramVisualizer manages scale toggle and layout dimensions", () => {
   // Switch back to linear scale
   visualizer.setScale("linear");
   assert.equal(visualizer.isLogarithmic, false);
+});
+
+test("isOffscreenCanvasSupported returns boolean safely", () => {
+  const supported = isOffscreenCanvasSupported();
+  assert.equal(typeof supported, "boolean");
+});
+
+test("SpectrogramVisualizer uses OffscreenCanvas worker when supported", () => {
+  const postedMessages = [];
+  let terminated = false;
+
+  class MockWorker {
+    constructor(url, options) {
+      this.url = url;
+      this.options = options;
+    }
+    postMessage(data, transfer) {
+      postedMessages.push({ data, transfer });
+    }
+    terminate() {
+      terminated = true;
+    }
+  }
+
+  const originalWorker = globalThis.Worker;
+  globalThis.Worker = MockWorker;
+
+  try {
+    const mockOffscreen = {
+      width: 800,
+      height: 400,
+      getContext: () => ({
+        fillRect: () => {},
+        drawImage: () => {},
+      }),
+    };
+
+    let transferred = false;
+    const mockCanvas = {
+      width: 800,
+      height: 400,
+      transferControlToOffscreen: () => {
+        transferred = true;
+        return mockOffscreen;
+      },
+    };
+
+    const visualizer = new SpectrogramVisualizer(mockCanvas);
+
+    assert.equal(transferred, true);
+    assert.equal(visualizer.isWorkerMode, true);
+    assert.ok(visualizer.worker instanceof MockWorker);
+    assert.equal(postedMessages.length, 1);
+    assert.equal(postedMessages[0].data.type, "init");
+    assert.equal(postedMessages[0].data.width, 800);
+    assert.equal(postedMessages[0].data.height, 400);
+
+    // Test resize
+    visualizer.resizeCanvas();
+    assert.equal(postedMessages.length, 2);
+    assert.equal(postedMessages[1].data.type, "resize");
+
+    // Test scale switch
+    visualizer.setScale("logarithmic");
+    assert.equal(postedMessages.length, 3);
+    assert.equal(postedMessages[2].data.type, "setScale");
+    assert.equal(postedMessages[2].data.scale, "logarithmic");
+
+    // Test draw frame transfer
+    const mockProcessor = {
+      getFrequencyData: () => new Uint8Array([10, 50, 100, 200]),
+      getSampleRate: () => 48000,
+      getMinDecibels: () => -100,
+      getMaxDecibels: () => -20,
+      getPeakDecibels: () => -45,
+    };
+    visualizer.isRunning = true;
+    visualizer.draw(mockProcessor);
+
+    const frameMsg = postedMessages.find(m => m.data.type === "frame");
+    assert.ok(frameMsg);
+    assert.equal(frameMsg.data.sampleRate, 48000);
+    assert.equal(frameMsg.data.peakDb, -45);
+    assert.ok(frameMsg.data.data instanceof ArrayBuffer);
+    assert.equal(frameMsg.transfer.length, 1);
+
+    // Test destroy
+    visualizer.destroy();
+    assert.equal(terminated, true);
+    assert.equal(visualizer.worker, null);
+    assert.equal(visualizer.isWorkerMode, false);
+  } finally {
+    globalThis.Worker = originalWorker;
+  }
+});
+
+test("SpectrogramVisualizer falls back gracefully if transferControlToOffscreen throws", () => {
+  const originalWorker = globalThis.Worker;
+  globalThis.Worker = class {
+    postMessage() {}
+    terminate() {}
+  };
+
+  try {
+    let contextRequested = false;
+    const throwingCanvas = {
+      width: 800,
+      height: 400,
+      transferControlToOffscreen: () => {
+        throw new Error(
+          "InvalidStateError: Canvas already has a 2D rendering context"
+        );
+      },
+      getContext: () => {
+        contextRequested = true;
+        return { fillRect: () => {} };
+      },
+    };
+
+    const visualizer = new SpectrogramVisualizer(throwingCanvas);
+
+    assert.equal(visualizer.isWorkerMode, false);
+    assert.equal(visualizer.worker, null);
+    assert.equal(contextRequested, true);
+    assert.ok(visualizer.ctx);
+  } finally {
+    globalThis.Worker = originalWorker;
+  }
+});
+
+test("SpectrogramWorkerRenderer manages offscreen rendering pipeline", () => {
+  const mockCtx = {
+    fillRect: () => {},
+    drawImage: () => {},
+    beginPath: () => {},
+    moveTo: () => {},
+    lineTo: () => {},
+    stroke: () => {},
+    strokeRect: () => {},
+    fillText: () => {},
+    createLinearGradient: () => ({ addColorStop: () => {} }),
+    setLineDash: () => {},
+    save: () => {},
+    restore: () => {},
+  };
+  const mockCanvas = {
+    width: 800,
+    height: 400,
+    getContext: () => mockCtx,
+  };
+
+  const renderer = new SpectrogramWorkerRenderer({
+    canvas: mockCanvas,
+    width: 800,
+    height: 400,
+  });
+
+  const dims = renderer.getPlotDimensions();
+  assert.equal(dims.width, 800);
+  assert.equal(dims.height, 400);
+
+  // Resize
+  renderer.resize(1000, 500);
+  assert.equal(renderer.width, 1000);
+  assert.equal(renderer.height, 500);
+
+  // Scale switch
+  renderer.setScale("logarithmic");
+  assert.equal(renderer.isLogarithmic, true);
+
+  // Render frame
+  const testBuffer = new Uint8Array([10, 20, 30, 40]).buffer;
+  assert.doesNotThrow(() => {
+    renderer.renderFrame({
+      data: testBuffer,
+      sampleRate: 44100,
+      minDb: -100,
+      maxDb: -30,
+      peakDb: -60,
+      timestamp: 1000,
+    });
+  });
+
+  // Destroy
+  renderer.destroy();
+  assert.equal(renderer.canvas, null);
+  assert.equal(renderer.ctx, null);
 });

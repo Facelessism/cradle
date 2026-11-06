@@ -21,19 +21,20 @@ The application is a static collection of ES modules. It has no build step and n
 
 ```text
 audio-spectrogram-analyzer/
-|--  index.html          # Controls, canvas, scale toggle, error banner, and recording buttons
-|--  style.css           # Responsive layout, dark/light theme, colormap legend
-|--  scale.js            # Linear/logarithmic frequency scales, Y-to-frequency conversions, and dBFS math
-|--  audio-processor.js  # AudioContext, source routing, analyser, decibel getters, and stream cleanup
-|--  visualizer.js       # Scrolling heatmap, calibrated axes overlay, and dynamic dBFS colorbar
-|--  recorder.js         # MediaRecorder integration and application bootstrap
-|--  ARCHITECTURE.md     # This document
-`--  thumbnail.svg       # Preview thumbnail used by the project registry
+|--  index.html            # Controls, canvas, scale toggle, error banner, and recording buttons
+|--  style.css             # Responsive layout, dark/light theme, colormap legend
+|--  scale.js              # Linear/logarithmic frequency scales, Y-to-frequency conversions, and dBFS math
+|--  audio-processor.js    # AudioContext, source routing, analyser, decibel getters, and stream cleanup
+|--  visualizer.js         # Visualizer controller, OffscreenCanvas worker delegation, and main-thread fallback
+|--  visualizer-worker.js  # Dedicated Web Worker for off-main-thread pixel processing and canvas frame composition
+|--  recorder.js           # MediaRecorder integration and application bootstrap
+|--  ARCHITECTURE.md       # This document
+`--  thumbnail.svg         # Preview thumbnail used by the project registry
 ```
 
 ## System / Project Architecture Overview
 
-The application is split into specialized modules with clear responsibilities. `AudioProcessor` owns the Web Audio graph, `scale.js` provides pure mathematical frequency and decibel mappings, `SpectrogramVisualizer` owns the canvas rendering and overlay axes, and `recorder.js` wires DOM controls and `MediaRecorder`.
+The application is split into specialized modules with clear responsibilities. `AudioProcessor` owns the Web Audio graph, `scale.js` provides pure mathematical frequency and decibel mappings, `SpectrogramVisualizer` manages canvas lifecycle and delegates rendering to `visualizer-worker.js` via `transferControlToOffscreen()` (falling back to main-thread Canvas 2D if unsupported), and `recorder.js` wires DOM controls and `MediaRecorder`.
 
 ```mermaid
 graph TD
@@ -41,28 +42,33 @@ graph TD
     Bootstrap --> Processor[AudioProcessor]
     Bootstrap --> Visualizer[SpectrogramVisualizer]
     Bootstrap --> Recorder[MediaRecorder]
-    Visualizer --> Scale[scale.js]
+    Visualizer -->|transferControlToOffscreen| Worker[visualizer-worker.js]
+    Visualizer -.->|fallback| MainCanvas[Main-Thread Canvas 2D]
+    Worker --> Scale[scale.js]
+    MainCanvas --> Scale
     Source[Microphone or audio file] --> Processor
     Processor --> Analyser[AnalyserNode]
     Analyser --> Speakers[AudioContext destination]
     Analyser --> Stream[MediaStreamDestination]
     Stream --> Recorder
     Analyser --> Visualizer
-    Visualizer --> Canvas[canvas element]
+    Visualizer -->|zero-copy buffer transfer| Worker
+    Worker --> DisplayCanvas[canvas element]
 ```
 
-The analyser is connected to both the speaker destination and a `MediaStreamDestination`, so the visualization and the recording see the same samples. The visualizer queries the processor for the latest frequency array, scales it according to the active scale mode (Linear or Logarithmic), and overlays calibrated axes.
+The analyser is connected to both the speaker destination and a `MediaStreamDestination`, so the visualization and the recording see the same samples. The visualizer queries the processor for the latest frequency array, transfers it via transferable ArrayBuffers to the worker thread, scales it according to the active scale mode (Linear or Logarithmic), and composites calibrated axes.
 
 ## Component Breakdown
 
-| Component               | Responsibility                                                                                                                                                       |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scale.js`              | Pure mathematical conversions for Linear/Logarithmic frequency scales, Y-to-frequency mappings, dBFS conversions, and tick generation.                              |
-| `AudioProcessor`        | Creates the `AudioContext`, obtains a microphone stream or an `<audio>` element source, wires the analyser, exposes decibel/sample rate metrics, and manages lifecycle. |
-| `SpectrogramVisualizer` | Manages canvas dimensions, offscreen scrolling buffers, Magma colormap, time markers, calibrated frequency axes, and the dynamic dBFS colorbar.                    |
-| `recorder.js`           | Binds controls (including scale toggle and FFT size), manages `MediaRecorder`, creates the download blob, and tears down audio resources on unload.                |
-| `index.html`            | Provides microphone, file, record, stop, FFT size, and Scale controls plus the canvas, dBFS legend, and error banner.                                              |
-| `style.css`             | Defines the responsive layout, theme palette, and calibrated legend.                                                                                                |
+| Component                   | Responsibility                                                                                                                                                              |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scale.js`                  | Pure mathematical conversions for Linear/Logarithmic frequency scales, Y-to-frequency mappings, dBFS conversions, and tick generation.                                      |
+| `AudioProcessor`            | Creates the `AudioContext`, obtains a microphone stream or an `<audio>` element source, wires the analyser, exposes decibel/sample rate metrics, and manages lifecycle.     |
+| `SpectrogramVisualizer`     | Orchestrates visualizer lifecycle, transfers canvas control to `visualizer-worker.js`, feeds frequency buffers across threads, and provides main-thread Canvas 2D fallback. |
+| `SpectrogramWorkerRenderer` | Worker-scope renderer (`visualizer-worker.js`) executing pixel mapping, offscreen waterfall scrolling, and axes compositing off the main UI thread.                         |
+| `recorder.js`               | Binds controls (including scale toggle and FFT size), manages `MediaRecorder`, creates the download blob, and tears down audio resources on unload.                         |
+| `index.html`                | Provides microphone, file, record, stop, FFT size, and Scale controls plus the canvas, dBFS legend, and error banner.                                                       |
+| `style.css`                 | Defines the responsive layout, theme palette, and calibrated legend.                                                                                                        |
 
 ## Data Flow / Execution Flow
 
@@ -137,14 +143,19 @@ The analyser is connected to both the speaker destination and a `MediaStreamDest
 
 ### `visualizer.js`
 
-- **`resizeCanvas()`** - sizes the backing store and offscreen buffers based on parent element dimensions and layout margins.
-- **`setScale(scale)`** - switches between Linear and Logarithmic frequency mapping and clears buffers for smooth transition.
+- **`resizeCanvas()`** - sizes the backing store and notifies the worker (or local buffers) based on layout margins.
+- **`setScale(scale)`** - switches between Linear and Logarithmic frequency mapping and notifies the worker.
 - **`generateMagmaColormap()`** - interpolates the Magma color stops into a 256-entry lookup table.
-- **`drawFrequencyAxis()`** - renders calibrated frequency ticks, labels, and horizontal gridlines.
-- **`drawTimeAxis()`** - renders scrolling time tick markers and elapsed time labels.
-- **`drawDecibelColorbar()`** - renders the calibrated dBFS colorbar with live peak indicator needle and numerical readout.
-- **`draw(audioProcessor)`** - shifts heatmap, maps frequency rows to pixels, and composites axes and meters.
-- **`start()` / `stop()` / `destroy()`** - manages the `requestAnimationFrame` lifecycle.
+- **`drawFrequencyAxis()`** - renders calibrated frequency ticks, labels, and horizontal gridlines (main-thread fallback).
+- **`drawTimeAxis()`** - renders scrolling time tick markers and elapsed time labels (main-thread fallback).
+- **`drawDecibelColorbar()`** - renders the calibrated dBFS colorbar with live peak indicator needle and numerical readout (main-thread fallback).
+- **`draw(audioProcessor)`** - copies frequency data into transferable ArrayBuffers and dispatches frame messages to the worker, or executes the main-thread fallback loop.
+- **`start()` / `stop()` / `destroy()`** - manages worker lifecycle and `requestAnimationFrame`.
+
+### `visualizer-worker.js`
+
+- **`SpectrogramWorkerRenderer`** - dedicated worker class executing pixel mapping, waterfall scrolling on offscreen buffers, and frame compositing onto the transferred `OffscreenCanvas`.
+- **`onmessage`** - handles `init`, `resize`, `setScale`, `frame`, `renderStatic`, and `destroy` messages off the main UI thread.
 
 ### `recorder.js`
 
@@ -164,7 +175,10 @@ The analyser is connected to both the speaker destination and a `MediaStreamDest
 
 ## Design Decisions
 
-- **Dedicated Offscreen Heatmap Canvas**: Maintaining the scrolling waterfall on an offscreen canvas and compositing it onto the display canvas prevents axes, gridlines, and text labels from smearing during horizontal scrolling.
+- **OffscreenCanvas & Dedicated Worker Delegation**: Offloading pixel processing and canvas frame composition to a Web Worker via `canvas.transferControlToOffscreen()` ensures that high FFT sizes (up to 4096 bins) and intensive color mapping never block the browser UI thread or cause frame drops during recording or audio playback.
+- **Resilient Main-Thread Canvas 2D Fallback**: If `transferControlToOffscreen` or Web Workers are unavailable, the visualizer automatically falls back to standard in-thread Canvas 2D rendering without crashing or showing blank canvases.
+- **Zero-Copy Transferable Buffers**: Passing raw audio frequency frames to the worker using transferable `ArrayBuffer` objects avoids memory duplication and serialization latency.
+- **Dedicated Offscreen Heatmap Canvas**: Maintaining the scrolling waterfall on an offscreen buffer canvas and compositing it onto the display canvas prevents axes, gridlines, and text labels from smearing during horizontal scrolling.
 - **Analytical Frequency Inversion**: `yToFrequency()` allows row-by-row sampling in logarithmic mode, ensuring low-frequency vowel formants and musical fundamentals occupy a prominent, readable portion of the vertical axis.
 - **Precomputed Colormap**: A `Uint8ClampedArray` with 256 RGBA entries makes the per-bin color lookup constant time and avoids gradient math in the hot loop.
 - **Dynamic dBFS Needle & Readout**: Live peak tracking with exponential decay smoothing gives users instantaneous acoustic level awareness alongside the spectral distribution.
@@ -183,7 +197,7 @@ The project has no npm packages, CDN scripts, fonts, or external assets. A secur
 
 - Add a gain slider and a frequency range selector.
 - Export the spectrogram itself as a PNG in addition to the audio recording.
-- Use an `OffscreenCanvas` worker for very large FFT sizes.
+- ~~Use an `OffscreenCanvas` worker for very large FFT sizes.~~ **Fixed** — delegated via `transferControlToOffscreen()` with main-thread Canvas 2D fallback.
 - Add a pause control that freezes the heatmap without stopping audio.
 - Support drag-and-drop for audio files.
 
