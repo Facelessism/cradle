@@ -1,44 +1,129 @@
 const STORAGE_KEY = "theme";
 
-export function initTheme() {
-  const savedTheme =
-    localStorage.getItem(STORAGE_KEY) ||
-    (window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light");
+export const THEME_MODES = Object.freeze({
+  LIGHT: "light",
+  DARK: "dark",
+  SYSTEM: "system",
+});
 
-  applyTheme(savedTheme);
+export function getSystemTheme() {
+  if (
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  ) {
+    return "dark";
+  }
+  return "light";
 }
 
-export function applyTheme(theme) {
+export function currentMode() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved === "light" || saved === "dark" || saved === "system") {
+    return saved;
+  }
+  return "system";
+}
+
+export function currentTheme() {
+  return document.documentElement.classList.contains("light-theme")
+    ? "light"
+    : "dark";
+}
+
+export function applyHighContrast() {
+  if (typeof window === "undefined" || !window.matchMedia) return;
+  const contrastMore = Boolean(
+    window.matchMedia("(prefers-contrast: more)")?.matches
+  );
+  const forcedColors = Boolean(
+    window.matchMedia("(forced-colors: active)")?.matches
+  );
+
+  document.documentElement.classList.toggle(
+    "high-contrast",
+    contrastMore || forcedColors
+  );
+  document.documentElement.classList.toggle("forced-colors", forcedColors);
+}
+
+export function applyTheme(themeOrMode, { persist = true } = {}) {
   const html = document.documentElement;
   const button = document.getElementById("themeToggle");
 
-  html.classList.toggle("light-theme", theme === "light");
+  let mode = themeOrMode || "system";
+  let visualTheme;
 
-  localStorage.setItem(STORAGE_KEY, theme);
+  if (mode === "system") {
+    visualTheme = getSystemTheme();
+  } else if (mode === "light") {
+    visualTheme = "light";
+  } else {
+    mode = "dark";
+    visualTheme = "dark";
+  }
+
+  html.classList.toggle("light-theme", visualTheme === "light");
+
+  if (persist) {
+    localStorage.setItem(STORAGE_KEY, mode);
+  }
 
   if (button) {
-    button.textContent = theme === "light" ? "☀️" : "🌙";
+    const icon =
+      mode === "system" ? "💻" : visualTheme === "light" ? "☀️" : "🌙";
+    button.textContent = icon;
 
-    button.setAttribute(
-      "aria-label",
-      theme === "light" ? "Switch to dark theme" : "Switch to light theme"
-    );
-
-    button.setAttribute("aria-pressed", theme === "light");
+    const nextMode =
+      mode === "dark" ? "light" : mode === "light" ? "system" : "dark";
+    button.setAttribute("aria-label", `Switch to ${nextMode} theme`);
+    button.setAttribute("aria-pressed", visualTheme === "light");
+    button.setAttribute("data-theme-mode", mode);
   }
+
+  html.dispatchEvent(
+    new CustomEvent("cradle:themechange", {
+      detail: { theme: visualTheme, mode },
+      bubbles: false,
+    })
+  );
 }
 
 export function toggleTheme() {
-  const isLight = document.documentElement.classList.contains("light-theme");
+  const mode = currentMode();
+  const nextMode =
+    mode === "dark" ? "light" : mode === "light" ? "system" : "dark";
+  applyTheme(nextMode);
+}
 
-  applyTheme(isLight ? "dark" : "light");
+export function initTheme() {
+  applyHighContrast();
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved === "light" || saved === "dark") {
+    applyTheme(saved, { persist: true });
+  } else {
+    applyTheme("system", { persist: Boolean(saved) });
+  }
+}
+
+if (typeof window !== "undefined" && window.matchMedia) {
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const onSchemeChange = () => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved || saved === "system") {
+      applyTheme("system", { persist: false });
+    }
+  };
+  darkQuery?.addEventListener?.("change", onSchemeChange);
+
+  const contrastQuery = window.matchMedia("(prefers-contrast: more)");
+  const forcedQuery = window.matchMedia("(forced-colors: active)");
+  contrastQuery?.addEventListener?.("change", applyHighContrast);
+  forcedQuery?.addEventListener?.("change", applyHighContrast);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
-
   document
     .getElementById("themeToggle")
     ?.addEventListener("click", toggleTheme);
