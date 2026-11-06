@@ -175,7 +175,7 @@ renderProjects() re-renders the grid with the filtered list
 - Client-side search and category filtering, offloaded to a Web Worker when available
 - Responsive keyboard shortcuts (`/` search focus, `Esc` clear/close, `T` theme toggle, `?` helper modal)
 - IndexedDB caching of the project list for instant repeat loads, with background refresh
-- Light/dark theme with `localStorage` persistence and an inline pre-paint script to avoid a flash of the wrong theme
+- 3-way theme toggle (Light, Dark, System Default) with `localStorage` persistence, OS `matchMedia('(prefers-color-scheme: dark)')` scheduling auto-detection, automatic high-contrast (`prefers-contrast: more`) and Windows High Contrast (`forced-colors: active`) adaptation, and an inline pre-paint script to avoid flash of wrong theme
 - Progressive enhancement and API fallbacks for Web Workers, IndexedDB, localStorage, Web Audio API, and Clipboard API (see [README.md](README.md#browser-compatibility--progressive-fallbacks))
 - Strict isolation between projects: each lives entirely inside its own folder and can run independently
 
@@ -216,9 +216,10 @@ renderProjects() re-renders the grid with the filtered list
 
 ### `scripts/theme.js`
 
-- `initTheme()` - reads the saved or OS-preferred theme on load
+- `initTheme()` - reads the saved preference or OS-preferred theme on load with high-contrast detection
 - `applyTheme(theme)` - applies the theme class, persists it, updates the toggle button
-- `toggleTheme()` - flips between light and dark
+- `toggleTheme()` - cycles through 3-way modes (Dark → Light → System → Dark)
+- `applyHighContrast()` - adapts to `prefers-contrast: more` and `forced-colors: active` media queries
 
 ### `scripts/worker.js`
 

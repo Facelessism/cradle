@@ -1129,3 +1129,70 @@ select:focus:not(:focus-visible),
   outline: 2px solid var(--color-accent, var(--accent-hover, #2563eb));
   outline-offset: 2px;
 }
+
+/* ── Accessibility: High Contrast & Forced Colors Adaptation ─────────── */
+@media (prefers-contrast: more) {
+  :root {
+    --border: #64748b;
+    --text: #ffffff;
+    --text-secondary: #f1f5f9;
+    --muted: #cbd5e1;
+    --shadow: 0 0 0 2px #ffffff;
+  }
+
+  html.light-theme {
+    --border: #0f172a;
+    --text: #000000;
+    --text-secondary: #0f172a;
+    --muted: #1e293b;
+    --shadow: 0 0 0 2px #000000;
+  }
+
+  .cradle-card,
+  .hero-actions button,
+  .search-wrapper,
+  .category-btn,
+  .theme-toggle,
+  .cradle-theme-toggle {
+    border-width: 2px !important;
+  }
+
+  :focus-visible {
+    outline: 3px solid currentColor !important;
+    outline-offset: 3px !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :root {
+    --border: ButtonBorder;
+    --text: CanvasText;
+    --bg: Canvas;
+    --card: Canvas;
+    --color-accent: Highlight;
+  }
+
+  .cradle-card,
+  .hero-actions button,
+  .search-wrapper,
+  .category-btn,
+  .theme-toggle,
+  .cradle-theme-toggle,
+  .badge {
+    forced-color-adjust: auto;
+    border: 2px solid ButtonBorder !important;
+  }
+
+  :focus-visible {
+    outline: 3px solid Highlight !important;
+    outline-offset: 2px !important;
+  }
+}
+
+html.high-contrast {
+  --border: #94a3b8;
+}
+
+html.high-contrast.light-theme {
+  --border: #0f172a;
+}
