@@ -2,7 +2,7 @@
 
 ## Overview
 
-Browser Storage Inspector & Backup Manager is a client-side dev tool that inspects, searches, filters, edits, and backs up data across LocalStorage, SessionStorage, Cookies, and IndexedDB stores.
+Browser Storage Inspector & Backup Manager is a client-side dev tool that inspects, searches, filters, edits, and backs up data across LocalStorage, SessionStorage, Cookies, and IndexedDB stores, featuring unified multi-store JSON/CSV export/import and a storage quota usage dashboard calculated via `navigator.storage.estimate()`.
 
 ---
 
@@ -10,8 +10,10 @@ Browser Storage Inspector & Backup Manager is a client-side dev tool that inspec
 
 - Provide a single dashboard for inspecting LocalStorage, SessionStorage, Cookies, and IndexedDB
 - Detect each stored value's data type and byte footprint at a glance
-- Support editing, deleting, and clearing entries across all four stores
-- Offer JSON/CSV backup export so storage can be audited or restored
+- Monitor origin storage quota utilization in real-time with an accessible visual progress meter and health indicator
+- Support editing, deleting, and clearing entries across all storage stores
+- Offer one-click unified JSON and CSV backup snapshots across LocalStorage, SessionStorage, and IndexedDB databases
+- Provide safe, validated restoration of backup archives into browser storage
 - Stay fully client-side and dependency-free using native browser storage APIs
 
 ---
@@ -44,13 +46,13 @@ flowchart TD
 
 ## Component Breakdown
 
-| File                 | Role                                                                                          |
-| -------------------- | --------------------------------------------------------------------------------------------- |
-| `storageEngine.js`   | Data type detection (JSON, JWT, Base64, String, Number), byte size estimation, store reading. |
-| `storageExporter.js` | JSON snapshot creation, CSV serialization, backup restoration validation.                     |
-| `script.js`          | Main app controller, event routing, form submissions, DOM table rendering.                    |
-| `index.html`         | Dashboard layout, search & filter toolbar, storage tab sections, input forms.                 |
-| `style.css`          | Glassmorphic cards, data type badge colors, responsive table wrappers.                        |
+| File                 | Role                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `storageEngine.js`   | Data type detection, byte footprint calculation, IndexedDB inspection, and storage quota estimation.               |
+| `storageExporter.js` | Unified multi-store JSON/CSV snapshot serialization, RFC-4180 parsing, import validation, and atomic restoration. |
+| `script.js`          | Main app controller, event routing, quota dashboard updater, IndexedDB manager, and import/export coordination.   |
+| `index.html`         | Dashboard layout, storage quota meter, search & filter toolbar, storage tab sections, input forms.                |
+| `style.css`          | Glassmorphic cards, storage quota progress bar, data type badge colors, responsive table wrappers.                |
 
 ---
 
@@ -81,9 +83,13 @@ refreshAll() re-reads and re-renders the dashboard
 ## Key Features
 
 - Reads and displays LocalStorage, SessionStorage, Cookie, and IndexedDB entries
+- Storage Quota Dashboard with a live meter, percentage, and health classification via `navigator.storage.estimate()`
 - Data type detection: JSON, JWT, Base64, Boolean, Number, String
-- Byte-size estimation per key/value pair with B/KB/MB formatting
-- Live search across keys and values plus a data-type filter dropdown
+- Byte-size estimation per key/value pair with B/KB/MB/GB formatting
+- Live search across keys, values, and database stores plus a data-type filter dropdown
+- One-click Unified JSON Export combining LocalStorage, SessionStorage, Cookies, and IndexedDB
+- One-click Unified CSV Export serializing multi-store data into a tabular format
+- Drag-and-drop / File upload import restoring snapshots to LocalStorage, SessionStorage, and IndexedDB
 - Add, edit, and delete entries via per-store forms and action buttons
 - Clear-all buttons per store and a "Seed Demo Data" helper
 - JSON and CSV export with a versioned snapshot payload
@@ -111,27 +117,34 @@ refreshAll() re-reads and re-renders the dashboard
 
 - `detectDataType(value)` — classifies a raw string as json, jwt, base64, boolean, number, or string
 - `calculateByteSize(key, value)` — estimates UTF-16 byte footprint of a key/value pair
-- `formatBytes(bytes)` — renders the size as B, KB, or MB
+- `formatBytes(bytes)` — renders the size as B, KB, MB, or GB
 - `filterItems(items, query, typeFilter)` — search and data-type filtering
 - `readWebStorage(storeType)` — reads all entries from localStorage or sessionStorage
 - `readCookies()` — parses `document.cookie` into structured items
+- `getStorageQuotaEstimate()` — estimates origin quota and usage using `navigator.storage.estimate()`
+- `readAllIndexedDB()` — discovers and reads all IndexedDB databases, object stores, and records
 
 ### `storageExporter.js`
 
-- `exportToJSON(items, storeType)` — builds a versioned JSON snapshot with metadata
-- `exportToCSV(items)` — serializes rows to CSV with double-quote escaping
-- `validateImportJSON(jsonString)` — checks a snapshot's shape before restore
-- `restoreStorage(dataMap, targetStore, overwrite)` — writes a snapshot back into a store
+- `exportUnifiedJSON(storesData)` — creates multi-store JSON snapshot with metadata and item counts
+- `exportUnifiedCSV(storesData)` — serializes all storage stores into unified CSV table
+- `exportToJSON(items, storeType)` — builds a single-store JSON snapshot with metadata
+- `exportToCSV(items)` — serializes single-store rows to CSV with double-quote escaping
+- `parseCSV(text)` — RFC-4180 compliant CSV parser
+- `validateUnifiedImport(payloadString)` — validates both unified and single-store JSON and CSV snapshots
+- `restoreUnifiedStorage(dataStores, options)` — restores data into LocalStorage, SessionStorage, and IndexedDB
 
 ### `script.js`
 
-- `initializeInspector()` — binds tabs, forms, clear buttons, and toolbar actions
+- `initializeInspector()` — binds tabs, forms, clear buttons, import triggers, and toolbar actions
+- `updateQuotaDashboard()` — renders quota meter, percentage, remaining space, and health badges
 - `refreshAll()` — reads all stores and re-renders
 - `renderAll()` / `renderRows()` — applies filters and builds table rows
+- `handleImportFile()` — reads backup file and executes restoration
+- `exportUnifiedJSON()` / `exportUnifiedCSV()` — triggers unified snapshot downloads
 - `handleFormSubmit()` — saves new entries to the target store
 - `deleteItem()` / `clearStorage()` — removes single entries or whole stores
-- `seedDemoData()` — populates demo records across stores
-- `exportJSON()` / `exportCSV()` / `downloadFile()` — export and download helpers
+- `seedDemoData()` — populates demo records across all stores
 
 ### `index.html`
 
@@ -166,8 +179,7 @@ None beyond native browser APIs. The only external resource is the "Space Grotes
 
 ## Future Improvements
 
-- Add JSON snapshot import/restore to the UI (the exporter already implements `validateImportJSON` and `restoreStorage`)
-- Extend IndexedDB support beyond Chromium-based browsers
+- ~~Add JSON snapshot import/restore to the UI~~ **Fixed** — unified JSON and CSV import/restore across LocalStorage, SessionStorage, and IndexedDB
 - Add copy-to-clipboard for individual values
 - Show a per-store total byte count in the summary grid
 

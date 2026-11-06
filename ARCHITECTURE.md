@@ -219,9 +219,10 @@ renderProjects() re-renders the grid with the filtered list
 
 ### `scripts/theme.js`
 
-- `initTheme()` - reads the saved or OS-preferred theme on load
+- `initTheme()` - reads the saved preference or OS-preferred theme on load with high-contrast detection
 - `applyTheme(theme)` - applies the theme class, persists it, updates the toggle button
-- `toggleTheme()` - flips between light and dark
+- `toggleTheme()` - cycles through 3-way modes (Dark → Light → System → Dark)
+- `applyHighContrast()` - adapts to `prefers-contrast: more` and `forced-colors: active` media queries
 
 ### `scripts/worker.js`
 
@@ -253,6 +254,7 @@ renderProjects() re-renders the grid with the filtered list
 - **Cross-tab cache synchronization via native BroadcastChannel** - when projects or metadata are updated or invalidated in one tab or mini-project, CradleDB dispatches lightweight broadcast notifications over the native `BroadcastChannel` API. Other open tabs reactively synchronize their in-memory state and UI without manual reloads or polling, with built-in self-echo suppression and graceful degradation in unsupported environments.
 - **Web Worker for filtering** - keeps search/category filtering off the main thread as the project list grows, with a synchronous fallback when Workers are unavailable.
 - **Zero-dependency component library** - `src/components/ui` is plain JS/CSS with no build tooling, so any project, including ones written before the library existed, can opt in without adopting a framework.
+- **Global `Alt+H` shortcut & accessible breadcrumb navigation** - `CradleBackToHome` provides standardized navigation back to the root hub from any mini-project with an optional `Alt+H` keyboard shortcut (safely guarded against editable input fields and exposed via `aria-keyshortcuts="Alt+H"`). It also renders an accessible WAI-ARIA 1.2 breadcrumb hierarchy (`Home > [Category] > [Project Title]`) that retains active category filters (`?category=...`) across multi-level navigation.
 - **Per-project ARCHITECTURE.md instead of one giant doc** - each project keeps its own architecture notes; this file documents only the shared root infrastructure and metadata flow.
 - **Engine Modules vs. Inline Logic Rationale** - mini-projects featuring dedicated engine/logic/storage modules (`*Engine.js`, `*Logic.js`, `*Storage.js`) encapsulate pure mathematical, algorithmic, and state computations in UMD modules for headless Node.js unit testing. Meanwhile, inline client scripts (`script.js`) handle DOM bindings, rendering loops, and browser UI fallbacks, ensuring zero-build static browser execution alongside automated test coverage.
 

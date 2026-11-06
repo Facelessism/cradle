@@ -1,28 +1,25 @@
 /**
  * Cradle UI — ThemeToggle Component
  * ────────────────────────────────────
- * A reusable light/dark theme toggle.
+ * A reusable 3-way light/dark/system theme toggle with automatic adaptation
+ * for OS-level preferences and accessibility high-contrast / forced-colors modes.
  *
  * Features:
+ *  - 3-way mode: Light (☀️), Dark (🌙), System Default (💻)
  *  - Detects saved preference through CradleStorage (key: "theme")
- *  - Falls back to OS-level prefers-color-scheme
- *  - Toggles <html class="light-theme"> — same convention as the homepage
- *  - Animated icon transition (moon ↔ sun)
- *  - Accessible: role="switch", aria-checked, aria-label
- *  - Dispatches a custom "cradle:themechange" event on <html>
+ *  - Dynamic system auto-detection via matchMedia('(prefers-color-scheme: dark)')
+ *  - Real-time adaptation for forced-colors and prefers-contrast: more
+ *  - Toggles <html class="light-theme">, <html class="high-contrast">, <html class="forced-colors">
+ *  - Tri-state accessible switch: role="switch", aria-checked ("true"|"false"|"mixed"), aria-label
+ *  - Dispatches custom "cradle:themechange" and "cradle:contrastchange" events on <html>
  *  - Can be dropped anywhere; multiple instances stay in sync
  *
  * Events:
  *   cradle:themechange — dispatched on document.documentElement whenever
- *   the theme changes (toggle click or OS preference change, if the user
- *   hasn't set a manual preference). event.detail = { theme: 'light' | 'dark' }.
- *   This component listens to it internally to keep all toggle instances
- *   on the page in sync. It is also a public hook other projects/pages can
- *   use to react to theme changes without polling <html> class list, e.g.:
+ *   the theme or mode changes. event.detail = { theme: 'light' | 'dark', mode: 'light' | 'dark' | 'system' }.
  *
- *     document.documentElement.addEventListener('cradle:themechange', (e) => {
- *       console.log('theme is now', e.detail.theme);
- *     });
+ *   cradle:contrastchange — dispatched on document.documentElement whenever
+ *   high-contrast or forced-colors state changes. event.detail = { highContrast: boolean, forcedColors: boolean }.
  *
  * Usage (create programmatically):
  *   const toggle = CradleThemeToggle.create({ size: 'md' });
@@ -41,6 +38,14 @@
   const STYLE_ID = "cradle-theme-toggle-styles";
   const STORAGE_KEY = "theme";
   const LIGHT_CLASS = "light-theme";
+  const HIGH_CONTRAST_CLASS = "high-contrast";
+  const FORCED_COLORS_CLASS = "forced-colors";
+
+  const THEME_MODES = Object.freeze({
+    LIGHT: "light",
+    DARK: "dark",
+    SYSTEM: "system",
+  });
 
   /* ── Styles ───────────────────────────────────────────── */
   function injectStyles() {
@@ -101,14 +106,45 @@
         transform: rotate(30deg) scale(0.8);
         opacity: 0;
       }
+
+      /* ── Accessibility: High Contrast & Forced Colors Adaptation ── */
+      @media (prefers-contrast: more) {
+        .cradle-theme-toggle {
+          border-width: 2px !important;
+          border-color: currentColor !important;
+        }
+        .cradle-theme-toggle:focus-visible {
+          outline: 3px solid currentColor !important;
+          outline-offset: 3px !important;
+        }
+      }
+
+      @media (forced-colors: active) {
+        .cradle-theme-toggle {
+          forced-color-adjust: none;
+          border: 2px solid ButtonText !important;
+          background: ButtonFace !important;
+          color: ButtonText !important;
+        }
+        .cradle-theme-toggle:focus-visible {
+          outline: 3px solid Highlight !important;
+          outline-offset: 2px !important;
+        }
+        .cradle-theme-toggle:hover {
+          border-color: Highlight !important;
+          box-shadow: none !important;
+        }
+      }
+
+      html.high-contrast .cradle-theme-toggle {
+        border-width: 2px;
+        border-color: currentColor;
+      }
     `;
     document.head.appendChild(style);
   }
 
   /* ── Theme helpers ────────────────────────────────────── */
-  /* Theme persistence is deliberately delegated to the shared storage helper.
-     CradleStorage itself handles unavailable/blocked browser storage by falling
-     back to memory, so this component never touches localStorage directly. */
   function getStoredTheme() {
     const storage = global.CradleStorage;
     if (!storage || typeof storage.getRaw !== "function") return null;
@@ -122,24 +158,70 @@
   }
 
   function getSystemTheme() {
-    return window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: light)").matches
+    if (typeof window !== "undefined" && window.matchMedia) {
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        return "dark";
+      }
+      if (window.matchMedia("(prefers-color-scheme: light)").matches) {
+        return "light";
+      }
+    }
+    return "dark";
+  }
+
+  function currentMode() {
+    const stored = getStoredTheme();
+    if (
+      stored === THEME_MODES.LIGHT ||
+      stored === THEME_MODES.DARK ||
+      stored === THEME_MODES.SYSTEM
+    ) {
+      return stored;
+    }
+    return THEME_MODES.SYSTEM;
+  }
+
+  function currentTheme() {
+    return document.documentElement.classList.contains(LIGHT_CLASS)
       ? "light"
       : "dark";
   }
 
-  function resolveTheme() {
-    return getStoredTheme() || getSystemTheme();
+  function resolveTheme(mode = null) {
+    const activeMode = mode || currentMode();
+    if (activeMode === THEME_MODES.LIGHT) return "light";
+    if (activeMode === THEME_MODES.DARK) return "dark";
+    return getSystemTheme();
   }
 
-  function applyTheme(theme, { persist = true } = {}) {
+  function applyTheme(themeOrMode, { persist = true } = {}) {
+    let mode;
+    let visualTheme;
+
+    if (themeOrMode === THEME_MODES.SYSTEM) {
+      mode = THEME_MODES.SYSTEM;
+      visualTheme = getSystemTheme();
+    } else if (themeOrMode === THEME_MODES.LIGHT) {
+      mode = THEME_MODES.LIGHT;
+      visualTheme = "light";
+    } else if (themeOrMode === THEME_MODES.DARK) {
+      mode = THEME_MODES.DARK;
+      visualTheme = "dark";
+    } else {
+      mode = THEME_MODES.SYSTEM;
+      visualTheme = getSystemTheme();
+    }
+
     const html = document.documentElement;
-    if (theme === "light") {
+    if (visualTheme === "light") {
       html.classList.add(LIGHT_CLASS);
     } else {
       html.classList.remove(LIGHT_CLASS);
     }
-    if (persist) storeTheme(theme);
+
+    if (persist) {
+      storeTheme(mode);
+    }
 
     /* Update meta theme-color if present to match the active theme */
     if (
@@ -150,78 +232,217 @@
       if (metaTheme && typeof metaTheme.setAttribute === "function") {
         metaTheme.setAttribute(
           "content",
-          theme === "light" ? "#f5f7fb" : "#05070d"
+          visualTheme === "light" ? "#f5f7fb" : "#05070d"
         );
       }
     }
 
-    /* Notify all registered toggle instances */
+    /* Notify all registered toggle instances and external listeners */
     html.dispatchEvent(
       new CustomEvent("cradle:themechange", {
-        detail: { theme },
+        detail: {
+          theme: visualTheme,
+          mode: mode,
+        },
         bubbles: false,
       })
     );
   }
 
-  function currentTheme() {
-    return document.documentElement.classList.contains(LIGHT_CLASS)
-      ? "light"
-      : "dark";
+  /* 3-way toggle sequence: dark -> light -> system -> dark */
+  function getNextMode(mode) {
+    if (mode === THEME_MODES.DARK) return THEME_MODES.LIGHT;
+    if (mode === THEME_MODES.LIGHT) return THEME_MODES.SYSTEM;
+    return THEME_MODES.DARK;
   }
 
-  function toggleTheme() {
-    applyTheme(currentTheme() === "light" ? "dark" : "light");
+  function toggleTheme(explicitMode = null) {
+    if (
+      explicitMode &&
+      (explicitMode === THEME_MODES.LIGHT ||
+        explicitMode === THEME_MODES.DARK ||
+        explicitMode === THEME_MODES.SYSTEM)
+    ) {
+      applyTheme(explicitMode, { persist: true });
+      return;
+    }
+    const nextMode = getNextMode(currentMode());
+    applyTheme(nextMode, { persist: true });
   }
 
-  /* ── Icon mapper ──────────────────────────────────────── */
-  function iconFor(theme) {
-    return theme === "light" ? "☀️" : "🌙";
+  /* ── Icon & Accessibility Mappers ─────────────────────── */
+  function iconFor(theme, mode = null) {
+    const activeMode = mode || currentMode();
+    if (activeMode === THEME_MODES.SYSTEM) return "💻";
+    if (activeMode === THEME_MODES.LIGHT || theme === "light") return "☀️";
+    return "🌙";
   }
 
-  function labelFor(theme) {
-    return theme === "light" ? "Switch to dark theme" : "Switch to light theme";
+  function labelFor(theme, mode = null) {
+    const activeMode = mode || currentMode();
+    const next = getNextMode(activeMode);
+    if (next === THEME_MODES.LIGHT) return "Switch to light theme";
+    if (next === THEME_MODES.DARK) return "Switch to dark theme";
+    return "Switch to system theme";
+  }
+
+  function titleFor(theme, mode = null) {
+    const activeMode = mode || currentMode();
+    const next = getNextMode(activeMode);
+    return `Theme mode: ${activeMode} (active: ${theme}). Switch to ${next} theme.`;
+  }
+
+  function ariaCheckedFor(theme, mode = null) {
+    const activeMode = mode || currentMode();
+    if (activeMode === THEME_MODES.SYSTEM) return "mixed";
+    return theme === "light" ? "true" : "false";
   }
 
   /* ── Sync all toggle instances ────────────────────────── */
-  function syncAll(theme) {
+  function syncAll(theme, mode = null) {
+    const activeMode = mode || currentMode();
     document.querySelectorAll(".cradle-theme-toggle").forEach(btn => {
-      btn.setAttribute("aria-checked", theme === "light" ? "true" : "false");
-      btn.setAttribute("aria-label", labelFor(theme));
+      btn.setAttribute("aria-checked", ariaCheckedFor(theme, activeMode));
+      btn.setAttribute("aria-label", labelFor(theme, activeMode));
+      btn.setAttribute("data-theme-mode", activeMode);
+      btn.title = titleFor(theme, activeMode);
       const icon = btn.querySelector(".cradle-theme-toggle__icon");
-      if (icon) icon.textContent = iconFor(theme);
+      if (icon) icon.textContent = iconFor(theme, activeMode);
     });
   }
 
   /* Listen for theme changes from any source */
   document.documentElement.addEventListener("cradle:themechange", e => {
-    syncAll(e.detail.theme);
+    syncAll(e.detail.theme, e.detail.mode);
   });
 
-  /* Also listen for OS preference changes */
-  if (window.matchMedia) {
-    window
-      .matchMedia("(prefers-color-scheme: light)")
-      .addEventListener("change", e => {
-        /* Only follow OS change if user hasn't set a manual preference */
-        if (!getStoredTheme()) {
-          applyTheme(e.matches ? "light" : "dark", { persist: false });
-        }
-      });
+  /* ── OS Preference Listeners ──────────────────────────── */
+  if (typeof window !== "undefined" && window.matchMedia) {
+    const darkMedia = window.matchMedia("(prefers-color-scheme: dark)");
+    const lightMedia = window.matchMedia("(prefers-color-scheme: light)");
+
+    const onSchemeChange = () => {
+      /* Only follow OS change if user hasn't set an explicit manual preference (i.e. is in system mode) */
+      const stored = getStoredTheme();
+      if (!stored || stored === THEME_MODES.SYSTEM) {
+        applyTheme(THEME_MODES.SYSTEM, { persist: false });
+      }
+    };
+
+    if (darkMedia) {
+      if (typeof darkMedia.addEventListener === "function") {
+        darkMedia.addEventListener("change", onSchemeChange);
+      } else if (typeof darkMedia.addListener === "function") {
+        darkMedia.addListener(onSchemeChange);
+      }
+    }
+
+    if (lightMedia) {
+      if (typeof lightMedia.addEventListener === "function") {
+        lightMedia.addEventListener("change", onSchemeChange);
+      } else if (typeof lightMedia.addListener === "function") {
+        lightMedia.addListener(onSchemeChange);
+      }
+    }
+  }
+
+  /* ── High Contrast & Forced Colors Detection ──────────── */
+  function isHighContrast() {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    try {
+      const moreContrast = Boolean(
+        window.matchMedia("(prefers-contrast: more)")?.matches
+      );
+      const forced = Boolean(
+        window.matchMedia("(forced-colors: active)")?.matches
+      );
+      return moreContrast || forced;
+    } catch {
+      return false;
+    }
+  }
+
+  function isForcedColors() {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    try {
+      return Boolean(window.matchMedia("(forced-colors: active)")?.matches);
+    } catch {
+      return false;
+    }
+  }
+
+  function applyHighContrastAdaptation() {
+    if (typeof document === "undefined" || !document.documentElement) return;
+    const html = document.documentElement;
+    const highContrast = isHighContrast();
+    const forcedColors = isForcedColors();
+
+    if (highContrast) {
+      html.classList.add(HIGH_CONTRAST_CLASS);
+    } else {
+      html.classList.remove(HIGH_CONTRAST_CLASS);
+    }
+
+    if (forcedColors) {
+      html.classList.add(FORCED_COLORS_CLASS);
+    } else {
+      html.classList.remove(FORCED_COLORS_CLASS);
+    }
+
+    html.dispatchEvent(
+      new CustomEvent("cradle:contrastchange", {
+        detail: {
+          highContrast,
+          forcedColors,
+        },
+        bubbles: false,
+      })
+    );
+  }
+
+  if (typeof window !== "undefined" && window.matchMedia) {
+    const contrastMedia = window.matchMedia("(prefers-contrast: more)");
+    const forcedColorsMedia = window.matchMedia("(forced-colors: active)");
+
+    const onContrastChange = () => {
+      applyHighContrastAdaptation();
+    };
+
+    if (contrastMedia) {
+      if (typeof contrastMedia.addEventListener === "function") {
+        contrastMedia.addEventListener("change", onContrastChange);
+      } else if (typeof contrastMedia.addListener === "function") {
+        contrastMedia.addListener(onContrastChange);
+      }
+    }
+
+    if (forcedColorsMedia) {
+      if (typeof forcedColorsMedia.addEventListener === "function") {
+        forcedColorsMedia.addEventListener("change", onContrastChange);
+      } else if (typeof forcedColorsMedia.addListener === "function") {
+        forcedColorsMedia.addListener(onContrastChange);
+      }
+    }
   }
 
   /* ── Factory ──────────────────────────────────────────── */
   const CradleThemeToggle = {
     /**
      * Initialise the theme on the page.
-     * Should be called as early as possible (ideally in <head>)
-     * to avoid flash of wrong theme.
+     * Should be called as early as possible to avoid flash of wrong theme.
      */
     init() {
+      applyHighContrastAdaptation();
       const storedTheme = getStoredTheme();
-      applyTheme(storedTheme || getSystemTheme(), {
-        persist: Boolean(storedTheme),
-      });
+      if (!storedTheme || storedTheme === THEME_MODES.SYSTEM) {
+        applyTheme(THEME_MODES.SYSTEM, {
+          persist: Boolean(storedTheme),
+        });
+      } else {
+        applyTheme(storedTheme, {
+          persist: true,
+        });
+      }
     },
 
     /**
@@ -234,6 +455,7 @@
     create({ size = "md", className = "" } = {}) {
       injectStyles();
       const theme = currentTheme();
+      const mode = currentMode();
 
       const btn = document.createElement("button");
       btn.type = "button";
@@ -246,13 +468,15 @@
         .join(" ");
 
       btn.setAttribute("role", "switch");
-      btn.setAttribute("aria-checked", theme === "light" ? "true" : "false");
-      btn.setAttribute("aria-label", labelFor(theme));
+      btn.setAttribute("aria-checked", ariaCheckedFor(theme, mode));
+      btn.setAttribute("aria-label", labelFor(theme, mode));
+      btn.setAttribute("data-theme-mode", mode);
+      btn.title = titleFor(theme, mode);
 
       const icon = document.createElement("span");
       icon.className = "cradle-theme-toggle__icon";
       icon.setAttribute("aria-hidden", "true");
-      icon.textContent = iconFor(theme);
+      icon.textContent = iconFor(theme, mode);
       btn.appendChild(icon);
 
       btn.addEventListener("click", () => {
@@ -280,11 +504,14 @@
 
         const size = el.dataset.size || "md";
         const theme = currentTheme();
+        const mode = currentMode();
 
         el.classList.add("cradle-theme-toggle", `cradle-theme-toggle--${size}`);
         el.setAttribute("role", "switch");
-        el.setAttribute("aria-checked", theme === "light" ? "true" : "false");
-        el.setAttribute("aria-label", labelFor(theme));
+        el.setAttribute("aria-checked", ariaCheckedFor(theme, mode));
+        el.setAttribute("aria-label", labelFor(theme, mode));
+        el.setAttribute("data-theme-mode", mode);
+        el.title = titleFor(theme, mode);
         el.type = "button";
 
         /* Replace inner content with icon span */
@@ -292,7 +519,7 @@
         const icon = document.createElement("span");
         icon.className = "cradle-theme-toggle__icon";
         icon.setAttribute("aria-hidden", "true");
-        icon.textContent = iconFor(theme);
+        icon.textContent = iconFor(theme, mode);
         el.appendChild(icon);
 
         el.addEventListener("click", () => {
@@ -310,6 +537,15 @@
     applyTheme,
     toggleTheme,
     currentTheme,
+    currentMode,
+    setMode(mode) {
+      applyTheme(mode, { persist: true });
+    },
+    getSystemTheme,
+    isHighContrast,
+    isForcedColors,
+    applyHighContrastAdaptation,
+    THEME_MODES,
   };
 
   /* Init theme immediately (prevents FOIT) */

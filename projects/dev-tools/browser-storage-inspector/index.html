@@ -68,6 +68,58 @@
         </div>
       </header>
 
+      <!-- ── STORAGE QUOTA DASHBOARD ───────────────────────── -->
+      <section class="quota-dashboard" id="quotaDashboard" aria-label="Storage quota usage">
+        <div class="quota-header">
+          <div class="quota-title-group">
+            <div class="quota-title-row">
+              <span class="quota-eyebrow">Origin Storage Quota</span>
+              <span class="quota-status-pill" id="quotaStatusPill">Calculating...</span>
+            </div>
+            <p class="quota-meta" id="quotaMeta">
+              Estimating origin storage footprint via navigator.storage.estimate()...
+            </p>
+          </div>
+          <div class="quota-metric-box">
+            <span class="quota-percent" id="quotaPercent">0%</span>
+            <small>Used</small>
+          </div>
+        </div>
+
+        <div class="quota-progress-wrap">
+          <div
+            class="quota-progress-bar"
+            id="quotaProgressBar"
+            role="progressbar"
+            aria-valuenow="0"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-label="Storage quota usage"
+          >
+            <div class="quota-progress-fill" id="quotaProgressFill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="quota-stats-grid">
+          <div class="quota-stat-item">
+            <span class="stat-label">Used Storage</span>
+            <strong class="stat-value" id="quotaUsedVal">0 B</strong>
+          </div>
+          <div class="quota-stat-item">
+            <span class="stat-label">Remaining Space</span>
+            <strong class="stat-value" id="quotaRemainingVal">0 B</strong>
+          </div>
+          <div class="quota-stat-item">
+            <span class="stat-label">Total Allocated Quota</span>
+            <strong class="stat-value" id="quotaTotalVal">0 B</strong>
+          </div>
+          <div class="quota-stat-item">
+            <span class="stat-label">Quota Health</span>
+            <strong class="stat-value health-optimal" id="quotaHealthVal">Optimal</strong>
+          </div>
+        </div>
+      </section>
+
       <section class="toolbar" aria-label="Inspector controls">
         <label class="search-box">
           <span>Search storage</span>
@@ -111,23 +163,61 @@
             Seed Demo Data
           </button>
           <button
+            id="exportUnifiedJsonBtn"
+            data-cradle-btn
+            data-variant="primary"
+            data-size="sm"
+            type="button"
+            title="Export all stores (localStorage, sessionStorage, IndexedDB) to unified JSON snapshot"
+          >
+            Export All (JSON)
+          </button>
+          <button
+            id="exportUnifiedCsvBtn"
+            data-cradle-btn
+            data-variant="outline"
+            data-size="sm"
+            type="button"
+            title="Export all stores to unified CSV"
+          >
+            Export All (CSV)
+          </button>
+          <button
             id="exportJsonBtn"
             data-cradle-btn
             data-variant="secondary"
             data-size="sm"
             type="button"
+            title="Export currently selected store to JSON"
           >
-            Export JSON
+            Export Store JSON
           </button>
           <button
             id="exportCsvBtn"
             data-cradle-btn
-            data-variant="primary"
+            data-variant="secondary"
             data-size="sm"
             type="button"
+            title="Export currently selected store to CSV"
           >
-            Export CSV
+            Export Store CSV
           </button>
+          <button
+            id="importBtn"
+            data-cradle-btn
+            data-variant="success"
+            data-size="sm"
+            type="button"
+            title="Restore storage from a JSON or CSV backup"
+          >
+            Import Backup
+          </button>
+          <input
+            type="file"
+            id="importFileInput"
+            accept=".json,.csv"
+            style="display: none"
+          />
         </div>
       </section>
 
