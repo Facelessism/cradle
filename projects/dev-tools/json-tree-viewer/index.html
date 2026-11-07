@@ -112,6 +112,50 @@
               <span id="searchCount" class="search-count" hidden></span>
             </div>
           </div>
+
+          <!-- Real-Time JSONPath Filter Bar -->
+          <div class="jsonpath-bar" id="jsonPathBar">
+            <div class="jsonpath-input-group">
+              <span class="jsonpath-icon" title="JSONPath Query Evaluator">💲</span>
+              <input
+                type="text"
+                id="jsonPathInput"
+                class="jsonpath-input"
+                placeholder="JSONPath (e.g. $.store.book[*].author, $..price, $.features[0].name)..."
+                spellcheck="false"
+                autocomplete="off"
+                aria-label="JSONPath Filter Query"
+              />
+              <button
+                id="clearJsonPath"
+                class="jsonpath-clear"
+                hidden
+                aria-label="Clear JSONPath query"
+              >
+                ✕
+              </button>
+              <span
+                id="jsonPathBadge"
+                class="jsonpath-badge badge-idle"
+                role="status"
+                aria-live="polite"
+              >Ready</span>
+              <div id="jsonPathNav" class="jsonpath-nav" hidden>
+                <button id="prevMatchBtn" class="jsonpath-nav-btn" title="Previous match (Shift+Enter)" aria-label="Previous match">▲</button>
+                <span id="matchIndexDisplay" class="jsonpath-match-index">1/1</span>
+                <button id="nextMatchBtn" class="jsonpath-nav-btn" title="Next match (Enter)" aria-label="Next match">▼</button>
+              </div>
+            </div>
+            <div class="jsonpath-presets">
+              <span class="presets-label">Presets:</span>
+              <button type="button" class="preset-chip" data-query="$.features[*].name">$.features[*].name</button>
+              <button type="button" class="preset-chip" data-query="$..status">$..status</button>
+              <button type="button" class="preset-chip" data-query="$.config.*">$.config.*</button>
+              <button type="button" class="preset-chip" data-query="$..name">$..name</button>
+              <button type="button" class="preset-chip" data-query="$.features[?(@.status == 'active')]">$.features[?(@.status == 'active')]</button>
+            </div>
+          </div>
+
           <div class="tree-container" id="treeContainer">
             <p class="tree-placeholder">Parse JSON to see the tree view</p>
           </div>
@@ -144,10 +188,30 @@
         </div>
       </div>
 
+      <!-- Interactive Hover Tooltip for Real-Time Path & Subtree Copy -->
+      <div id="treeHoverTooltip" class="tree-hover-tooltip" hidden role="tooltip" aria-hidden="true">
+        <div class="tooltip-header">
+          <span class="tooltip-tag">Code Reference</span>
+          <code class="tooltip-codepath" id="tooltipCodePath">data</code>
+        </div>
+        <div class="tooltip-actions">
+          <button type="button" class="tooltip-action-btn" id="tooltipCopyCodeBtn" title="Copy code path (e.g. data.users[0].address.city)">
+            📋 Copy Path
+          </button>
+          <button type="button" class="tooltip-action-btn" id="tooltipCopyJsonPathBtn" title="Copy JSONPath (e.g. $.users[0].address.city)">
+            💲 JSONPath
+          </button>
+          <button type="button" class="tooltip-action-btn" id="tooltipCopySubtreeBtn" title="Copy subtree JSON">
+            📦 Copy Subtree
+          </button>
+        </div>
+      </div>
+
       <!-- Toast -->
       <div class="toast" id="toast" hidden></div>
     </main>
 
+    <script src="jsonPathEngine.js"></script>
     <script type="module" src="script.js"></script>
     <script
       src="../../../src/components/ui/BackToHome/BackToHome.js"

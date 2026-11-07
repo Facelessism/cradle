@@ -13,6 +13,23 @@ const clearSearchBtn = document.getElementById("clearSearch");
 const searchCount = document.getElementById("searchCount");
 const toast = document.getElementById("toast");
 
+// JSONPath Query Evaluator & Interactive Node Search Elements
+const jsonPathInput = document.getElementById("jsonPathInput");
+const clearJsonPathBtn = document.getElementById("clearJsonPath");
+const jsonPathBadge = document.getElementById("jsonPathBadge");
+const jsonPathNav = document.getElementById("jsonPathNav");
+const prevMatchBtn = document.getElementById("prevMatchBtn");
+const nextMatchBtn = document.getElementById("nextMatchBtn");
+const matchIndexDisplay = document.getElementById("matchIndexDisplay");
+const presetChips = document.querySelectorAll(".preset-chip");
+
+// Interactive Hover Tooltip Elements
+const treeHoverTooltip = document.getElementById("treeHoverTooltip");
+const tooltipCodePath = document.getElementById("tooltipCodePath");
+const tooltipCopyCodeBtn = document.getElementById("tooltipCopyCodeBtn");
+const tooltipCopyJsonPathBtn = document.getElementById("tooltipCopyJsonPathBtn");
+const tooltipCopySubtreeBtn = document.getElementById("tooltipCopySubtreeBtn");
+
 const statType = document.getElementById("statType");
 const statKeys = document.getElementById("statKeys");
 const statDepth = document.getElementById("statDepth");
@@ -25,6 +42,13 @@ let selectedPath = "";
 let searchMatches = [];
 let currentSearchIndex = -1;
 let collapsedPaths = new Set();
+
+let jsonPathQuery = "";
+let jsonPathMatches = [];
+let currentJsonPathIndex = -1;
+let hoveredNodePath = "";
+let tooltipHideTimer = null;
+let jsonPathDebounceTimer = null;
 
 // ─── Sample Data ───────────────────────────────────────────────────
 const SAMPLE_DATA = {
@@ -87,12 +111,22 @@ function tryParse() {
     setStatus("valid", "✓ Valid JSON");
     renderTree();
     updateStats();
+    if (jsonPathInput && jsonPathInput.value.trim()) {
+      executeJsonPath(jsonPathInput.value);
+    }
   } catch (err) {
     parsedData = null;
     setStatus("error", `✗ ${err.message.substring(0, 60)}`);
     if (treeContainer)
       treeContainer.innerHTML = `<p class="tree-placeholder" style="color:#ef4444">Parse error: ${escapeHtml(err.message)}</p>`;
     clearStats();
+    if (jsonPathBadge) {
+      setJsonPathStatus("idle", "Waiting for valid JSON");
+    }
+    clearJsonPathHighlights();
+    jsonPathMatches = [];
+    currentJsonPathIndex = -1;
+    if (jsonPathNav) jsonPathNav.hidden = true;
   }
 }
 
@@ -185,6 +219,58 @@ function renderTree() {
   const fragment = document.createDocumentFragment();
   renderNode(fragment, parsedData, "", "$", false, 0);
   treeContainer.appendChild(fragment);
+  highlightSearch();
+  applyJsonPathHighlights();
+}
+
+function attachLineHoverAndQuickActions(line, path) {
+  // Quick copy buttons on the line
+  const quickActions = document.createElement("span");
+  quickActions.className = "tree-line-quick";
+
+  const copyPathBtn = document.createElement("span");
+  copyPathBtn.className = "quick-btn";
+  copyPathBtn.title = "Copy code path (data...)";
+  copyPathBtn.textContent = "📋";
+  copyPathBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    const engine =
+      window.JsonPathEngine ||
+      (typeof JsonPathEngine !== "undefined" ? JsonPathEngine : null);
+    const codePath = engine
+      ? engine.formatPathForCode(path, "data")
+      : path.replace(/^\$/, "data");
+    copyToClipboard(codePath, "Code path");
+  });
+
+  const copyJsonBtn = document.createElement("span");
+  copyJsonBtn.className = "quick-btn";
+  copyJsonBtn.title = "Copy subtree JSON";
+  copyJsonBtn.textContent = "📦";
+  copyJsonBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    const engine =
+      window.JsonPathEngine ||
+      (typeof JsonPathEngine !== "undefined" ? JsonPathEngine : null);
+    const subtree = engine ? engine.getValueByPath(parsedData, path) : null;
+    const text =
+      typeof subtree === "object"
+        ? JSON.stringify(subtree, null, 2)
+        : String(subtree);
+    copyToClipboard(text, "Subtree JSON");
+  });
+
+  quickActions.appendChild(copyPathBtn);
+  quickActions.appendChild(copyJsonBtn);
+  line.appendChild(quickActions);
+
+  // Hover interactions for rich tooltip
+  line.addEventListener("mouseenter", () => {
+    showNodeTooltip(path, line);
+  });
+  line.addEventListener("mouseleave", () => {
+    scheduleHideTooltip();
+  });
 }
 
 function renderNode(
@@ -284,6 +370,7 @@ function renderNode(
     line.appendChild(countSpan);
   }
 
+  attachLineHoverAndQuickActions(line, path);
   line.addEventListener("click", () => selectPath(path));
   container.appendChild(line);
 
@@ -347,6 +434,7 @@ function createLeafLine(key, value, path, isArray) {
   }
   line.appendChild(valSpan);
 
+  attachLineHoverAndQuickActions(line, path);
   line.addEventListener("click", () => selectPath(path));
   return line;
 }
@@ -442,15 +530,25 @@ function isArray(obj) {
 }
 
 function expandPathTo(path) {
-  // Parse path and collapse everything except ancestors
-  const parts = path
-    .replace(/\[(\d+)\]/g, ".$1")
-    .split(".")
-    .filter(Boolean);
-  let current = "$";
-  for (let i = 1; i < parts.length; i++) {
-    collapsedPaths.delete(current);
-    current += "." + parts[i];
+  const engine =
+    window.JsonPathEngine ||
+    (typeof JsonPathEngine !== "undefined" ? JsonPathEngine : null);
+  if (engine && typeof engine.getAncestorPaths === "function") {
+    const ancestors = engine.getAncestorPaths(path);
+    for (const anc of ancestors) {
+      collapsedPaths.delete(anc);
+    }
+  } else {
+    // Fallback ancestor resolution
+    const parts = path
+      .replace(/\[(\d+)\]/g, ".$1")
+      .split(".")
+      .filter(Boolean);
+    let current = "$";
+    for (let i = 1; i < parts.length; i++) {
+      collapsedPaths.delete(current);
+      current += "." + parts[i];
+    }
   }
   collapsedPaths.delete(path);
 }
@@ -473,6 +571,211 @@ function clearSearchHighlights() {
   document.querySelectorAll(".tree-line").forEach(el => {
     el.style.background = "";
   });
+}
+
+// ─── JSONPath Query Evaluator ──────────────────────────────────────
+function executeJsonPath(query) {
+  if (!jsonPathInput) return;
+  const raw = query !== undefined ? query : jsonPathInput.value;
+  jsonPathQuery = raw.trim();
+
+  if (clearJsonPathBtn) {
+    clearJsonPathBtn.hidden = jsonPathQuery === "";
+  }
+
+  if (!parsedData) {
+    setJsonPathStatus("idle", "Waiting for valid JSON");
+    clearJsonPathHighlights();
+    jsonPathMatches = [];
+    currentJsonPathIndex = -1;
+    if (jsonPathNav) jsonPathNav.hidden = true;
+    return;
+  }
+
+  if (!jsonPathQuery) {
+    setJsonPathStatus("idle", "Ready");
+    jsonPathInput.classList.remove("input-error");
+    clearJsonPathHighlights();
+    jsonPathMatches = [];
+    currentJsonPathIndex = -1;
+    if (jsonPathNav) jsonPathNav.hidden = true;
+    return;
+  }
+
+  const engine =
+    window.JsonPathEngine ||
+    (typeof JsonPathEngine !== "undefined" ? JsonPathEngine : null);
+  if (!engine) {
+    setJsonPathStatus("error", "JSONPath engine not loaded");
+    return;
+  }
+
+  const result = engine.evaluateJsonPath(parsedData, jsonPathQuery);
+
+  if (!result.isValid) {
+    jsonPathInput.classList.add("input-error");
+    setJsonPathStatus("error", `✗ ${result.error}`);
+    clearJsonPathHighlights();
+    jsonPathMatches = [];
+    currentJsonPathIndex = -1;
+    if (jsonPathNav) jsonPathNav.hidden = true;
+    return;
+  }
+
+  jsonPathInput.classList.remove("input-error");
+  jsonPathMatches = result.matches || [];
+
+  if (jsonPathMatches.length === 0) {
+    setJsonPathStatus("warning", "0 matches");
+    clearJsonPathHighlights();
+    currentJsonPathIndex = -1;
+    if (jsonPathNav) jsonPathNav.hidden = true;
+    return;
+  }
+
+  // Valid matches found
+  const count = jsonPathMatches.length;
+  setJsonPathStatus(
+    "success",
+    `✓ ${count} ${count === 1 ? "match" : "matches"}`
+  );
+  currentJsonPathIndex = 0;
+
+  if (jsonPathNav) {
+    jsonPathNav.hidden = false;
+    updateJsonPathNavDisplay();
+  }
+
+  // Expand ancestors of ALL matches so they are rendered in the DOM
+  for (const match of jsonPathMatches) {
+    const ancestors = engine.getAncestorPaths(match.path);
+    for (const anc of ancestors) {
+      collapsedPaths.delete(anc);
+    }
+  }
+
+  renderTree();
+  applyJsonPathHighlights();
+  scrollToJsonPathMatch(currentJsonPathIndex);
+}
+
+function setJsonPathStatus(type, text) {
+  if (jsonPathBadge) {
+    jsonPathBadge.className = `jsonpath-badge badge-${type}`;
+    jsonPathBadge.textContent = text;
+    jsonPathBadge.title = text;
+  }
+}
+
+function applyJsonPathHighlights() {
+  clearJsonPathHighlights();
+  if (jsonPathMatches.length === 0) return;
+
+  for (let i = 0; i < jsonPathMatches.length; i++) {
+    const match = jsonPathMatches[i];
+    const line = document.querySelector(
+      `.tree-line[data-path="${CSS.escape(match.path)}"]`
+    );
+    if (line) {
+      line.classList.add("jsonpath-match");
+      if (i === currentJsonPathIndex) {
+        line.classList.add("jsonpath-active-match");
+      }
+    }
+  }
+}
+
+function clearJsonPathHighlights() {
+  document
+    .querySelectorAll(
+      ".tree-line.jsonpath-match, .tree-line.jsonpath-active-match"
+    )
+    .forEach(el => {
+      el.classList.remove("jsonpath-match", "jsonpath-active-match");
+    });
+}
+
+function updateJsonPathNavDisplay() {
+  if (matchIndexDisplay && jsonPathMatches.length > 0) {
+    matchIndexDisplay.textContent = `${currentJsonPathIndex + 1}/${jsonPathMatches.length}`;
+  }
+}
+
+function nextJsonPathMatch() {
+  if (jsonPathMatches.length === 0) return;
+  currentJsonPathIndex = (currentJsonPathIndex + 1) % jsonPathMatches.length;
+  updateJsonPathNavDisplay();
+  applyJsonPathHighlights();
+  scrollToJsonPathMatch(currentJsonPathIndex);
+}
+
+function prevJsonPathMatch() {
+  if (jsonPathMatches.length === 0) return;
+  currentJsonPathIndex =
+    (currentJsonPathIndex - 1 + jsonPathMatches.length) %
+    jsonPathMatches.length;
+  updateJsonPathNavDisplay();
+  applyJsonPathHighlights();
+  scrollToJsonPathMatch(currentJsonPathIndex);
+}
+
+function scrollToJsonPathMatch(index) {
+  if (index < 0 || index >= jsonPathMatches.length) return;
+  const match = jsonPathMatches[index];
+  const line = document.querySelector(
+    `.tree-line[data-path="${CSS.escape(match.path)}"]`
+  );
+  if (line) {
+    line.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+}
+
+// ─── Interactive Hover Tooltip ─────────────────────────────────────
+function showNodeTooltip(path, targetElement) {
+  if (!treeHoverTooltip || !path) return;
+  clearTimeout(tooltipHideTimer);
+  hoveredNodePath = path;
+
+  const engine =
+    window.JsonPathEngine ||
+    (typeof JsonPathEngine !== "undefined" ? JsonPathEngine : null);
+  const codePath = engine
+    ? engine.formatPathForCode(path, "data")
+    : path.replace(/^\$/, "data");
+
+  if (tooltipCodePath) {
+    tooltipCodePath.textContent = codePath;
+  }
+
+  const rect = targetElement.getBoundingClientRect();
+  const tooltipWidth = 340;
+  const tooltipHeight = 70;
+
+  let top = rect.top - tooltipHeight - 6;
+  let left = rect.left + 40;
+
+  if (top < 10) {
+    top = rect.bottom + 6;
+  }
+
+  if (left + tooltipWidth > window.innerWidth - 10) {
+    left = Math.max(10, window.innerWidth - tooltipWidth - 10);
+  }
+
+  treeHoverTooltip.style.top = `${top}px`;
+  treeHoverTooltip.style.left = `${left}px`;
+  treeHoverTooltip.hidden = false;
+  treeHoverTooltip.setAttribute("aria-hidden", "false");
+}
+
+function scheduleHideTooltip() {
+  clearTimeout(tooltipHideTimer);
+  tooltipHideTimer = setTimeout(() => {
+    if (treeHoverTooltip) {
+      treeHoverTooltip.hidden = true;
+      treeHoverTooltip.setAttribute("aria-hidden", "true");
+    }
+  }, 200);
 }
 
 // ─── Expand / Collapse All ─────────────────────────────────────────
@@ -623,9 +926,38 @@ document.getElementById("loadSample")?.addEventListener("click", () => {
 // Keyboard shortcuts
 document.addEventListener("keydown", e => {
   if (e.target === jsonInput) return;
+
+  // JSONPath navigation with Enter / Shift+Enter when focused on jsonPathInput
+  if (e.target === jsonPathInput) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (e.shiftKey) {
+        prevJsonPathMatch();
+      } else {
+        nextJsonPathMatch();
+      }
+      return;
+    }
+    if (e.key === "Escape") {
+      jsonPathInput.value = "";
+      jsonPathInput.blur();
+      if (clearJsonPathBtn) clearJsonPathBtn.hidden = true;
+      executeJsonPath("");
+      return;
+    }
+  }
+
   if (e.ctrlKey && e.key === "f") {
     e.preventDefault();
     searchInput?.focus();
+  }
+  if (
+    (e.ctrlKey && e.key === "j") ||
+    (e.ctrlKey && e.shiftKey && (e.key === "F" || e.key === "f"))
+  ) {
+    e.preventDefault();
+    jsonPathInput?.focus();
+    jsonPathInput?.select();
   }
   if (e.key === "Escape") {
     if (searchInput) {
@@ -634,7 +966,83 @@ document.addEventListener("keydown", e => {
     }
     if (clearSearchBtn) clearSearchBtn.hidden = true;
     clearSearchHighlights();
+    scheduleHideTooltip();
   }
+});
+
+// JSONPath input listener with debounce
+jsonPathInput?.addEventListener("input", () => {
+  if (clearJsonPathBtn) clearJsonPathBtn.hidden = jsonPathInput.value === "";
+  clearTimeout(jsonPathDebounceTimer);
+  jsonPathDebounceTimer = setTimeout(() => {
+    executeJsonPath(jsonPathInput.value);
+  }, 150);
+});
+
+clearJsonPathBtn?.addEventListener("click", () => {
+  if (jsonPathInput) {
+    jsonPathInput.value = "";
+    jsonPathInput.classList.remove("input-error");
+  }
+  clearJsonPathBtn.hidden = true;
+  executeJsonPath("");
+});
+
+prevMatchBtn?.addEventListener("click", prevJsonPathMatch);
+nextMatchBtn?.addEventListener("click", nextJsonPathMatch);
+
+presetChips.forEach(chip => {
+  chip.addEventListener("click", () => {
+    const query = chip.dataset.query;
+    if (jsonPathInput && query) {
+      jsonPathInput.value = query;
+      if (clearJsonPathBtn) clearJsonPathBtn.hidden = false;
+      executeJsonPath(query);
+    }
+  });
+});
+
+// Hover tooltip action buttons
+tooltipCopyCodeBtn?.addEventListener("click", () => {
+  if (!hoveredNodePath) return;
+  const engine =
+    window.JsonPathEngine ||
+    (typeof JsonPathEngine !== "undefined" ? JsonPathEngine : null);
+  const codePath = engine
+    ? engine.formatPathForCode(hoveredNodePath, "data")
+    : hoveredNodePath.replace(/^\$/, "data");
+  copyToClipboard(codePath, "Code path");
+  scheduleHideTooltip();
+});
+
+tooltipCopyJsonPathBtn?.addEventListener("click", () => {
+  if (!hoveredNodePath) return;
+  copyToClipboard(hoveredNodePath, "JSONPath");
+  scheduleHideTooltip();
+});
+
+tooltipCopySubtreeBtn?.addEventListener("click", () => {
+  if (!hoveredNodePath || !parsedData) return;
+  const engine =
+    window.JsonPathEngine ||
+    (typeof JsonPathEngine !== "undefined" ? JsonPathEngine : null);
+  const subtree = engine
+    ? engine.getValueByPath(parsedData, hoveredNodePath)
+    : null;
+  const text =
+    typeof subtree === "object"
+      ? JSON.stringify(subtree, null, 2)
+      : String(subtree);
+  copyToClipboard(text, "Subtree JSON");
+  scheduleHideTooltip();
+});
+
+treeHoverTooltip?.addEventListener("mouseenter", () => {
+  clearTimeout(tooltipHideTimer);
+});
+
+treeHoverTooltip?.addEventListener("mouseleave", () => {
+  scheduleHideTooltip();
 });
 
 // ─── Init ──────────────────────────────────────────────────────────
