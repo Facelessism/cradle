@@ -423,4 +423,303 @@
   .search-input {
     width: 140px;
   }
+
+  .jsonpath-clear {
+    right: calc(110px + 0.5rem);
+  }
+
+  .tree-hover-tooltip {
+    max-width: 90vw;
+  }
+}
+
+/* ═══ JSONPath Filter Bar ═══ */
+.jsonpath-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem 0.8rem;
+  background: var(--surface, #1a1a2e);
+  border-bottom: 1px solid var(--border, #334155);
+}
+
+.jsonpath-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  position: relative;
+}
+
+.jsonpath-icon {
+  font-size: 0.85rem;
+  color: #10b981;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.jsonpath-input {
+  flex: 1;
+  background: var(--surface-2, #16213e);
+  color: var(--text, #e2e8f0);
+  border: 1px solid var(--border, #334155);
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  padding-right: 1.5rem;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.8rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.jsonpath-input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.25);
+}
+
+.jsonpath-input.input-error {
+  border-color: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.25);
+}
+
+.jsonpath-clear {
+  position: absolute;
+  right: calc(160px + 0.5rem);
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 2px;
+}
+
+.jsonpath-clear:hover {
+  color: #ef4444;
+}
+
+.jsonpath-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-idle {
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+}
+
+.badge-success {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-error {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge-warning {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.jsonpath-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.jsonpath-nav-btn {
+  background: var(--surface-2, #16213e);
+  color: #94a3b8;
+  border: 1px solid var(--border, #334155);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.jsonpath-nav-btn:hover {
+  color: #10b981;
+  border-color: #10b981;
+}
+
+.jsonpath-match-index {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #10b981;
+  min-width: 30px;
+  text-align: center;
+}
+
+.jsonpath-presets {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.presets-label {
+  font-size: 0.68rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.preset-chip {
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  padding: 1px 7px;
+  font-size: 0.68rem;
+  font-family: "JetBrains Mono", monospace;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.preset-chip:hover {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #10b981;
+}
+
+/* ═══ Highlighting for JSONPath matches ═══ */
+.tree-line.jsonpath-match {
+  background: rgba(16, 185, 129, 0.14) !important;
+  border-left: 3px solid #10b981;
+  padding-left: 4px;
+  border-radius: 2px;
+}
+
+.tree-line.jsonpath-active-match {
+  background: rgba(6, 182, 212, 0.28) !important;
+  border-left: 3px solid #06b6d4;
+  box-shadow: inset 0 0 6px rgba(6, 182, 212, 0.3);
+}
+
+/* Quick Action Buttons on Tree Row */
+.tree-line-quick {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  user-select: none;
+}
+
+.tree-line:hover .tree-line-quick {
+  opacity: 1;
+}
+
+.quick-btn {
+  font-size: 0.7rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.quick-btn:hover {
+  background: rgba(16, 185, 129, 0.3);
+  transform: scale(1.1);
+}
+
+/* ═══ Interactive Hover Tooltip ═══ */
+.tree-hover-tooltip {
+  position: fixed;
+  background: #141726;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 12px rgba(16, 185, 129, 0.15);
+  padding: 0.5rem 0.75rem;
+  z-index: 1000;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-width: 380px;
+  backdrop-filter: blur(8px);
+  animation: tooltipFadeIn 0.15s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tooltip-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tooltip-tag {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.tooltip-codepath {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+  color: #10b981;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: break-all;
+}
+
+.tooltip-actions {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tooltip-action-btn {
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tooltip-action-btn:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10b981;
+  color: #10b981;
 }

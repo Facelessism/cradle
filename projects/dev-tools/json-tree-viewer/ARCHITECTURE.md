@@ -19,9 +19,10 @@ The project is self-contained. It has no package manifest, no build step, and no
 
 ```text
 json-tree-viewer/
-|--  index.html          # Two-panel layout: input editor and tree view
-|--  script.js           # Parser, tree renderer, search, copy, stats
-|--  style.css           # Syntax highlighting, tree styling, responsive rules
+|--  index.html          # Two-panel layout: input editor, JSONPath bar, tree view, hover tooltip
+|--  script.js           # Tree renderer, DOM wiring, search, hover tooltip, copy actions
+|--  jsonPathEngine.js   # Pure JSONPath tokenizer, AST parser, evaluator, path formatter, subtree extractor
+|--  style.css           # Syntax highlighting, JSONPath toolbar, hover tooltip, tree styling
 |--  ARCHITECTURE.md     # This document
 `--  thumbnail.svg       # Preview thumbnail used by the project registry
 ```
@@ -49,14 +50,18 @@ The script is intentionally loaded at the end of the body, so the element lookup
 
 ## Component Breakdown
 
-| Component      | Responsibility                                                                                                                          |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Input editor   | Accepts pasted or typed JSON. The `input` event schedules parsing and updates the byte counter.                                         |
-| Parser         | Calls `JSON.parse` inside a try/catch, reports the error position, and stores the result in `parsedData`.                               |
-| Tree renderer  | Walks the parsed value recursively and appends DOM nodes to a `DocumentFragment` before a single replacement of `treeContainer`.        |
-| Search         | Performs a case-insensitive substring walk over keys and leaf values, then expands the ancestors of the first match.                    |
-| Stats bar      | Reports the root type, key count, depth, byte size, and the currently selected path.                                                    |
-| Path selection | Stores the path of the clicked line, highlights it, and copies it through `navigator.clipboard` with a `document.execCommand` fallback. |
+| Component              | Responsibility                                                                                                                          |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Input editor           | Accepts pasted or typed JSON. The `input` event schedules parsing and updates the byte counter.                                         |
+| Parser                 | Calls `JSON.parse` inside a try/catch, reports the error position, and stores the result in `parsedData`.                               |
+| JSONPath Engine        | Pure helpers: tokenizes queries, parses expressions, evaluates matches (`$..price`, `$.store.book[*].author`), formats code paths.      |
+| JSONPath Filter Bar    | Real-time query input with inline syntax validation, match counters, match navigation (`▲`/`▼`), and one-click preset chips.            |
+| Tree renderer          | Walks the parsed value recursively and appends DOM nodes to a `DocumentFragment` before a single replacement of `treeContainer`.        |
+| Search                 | Performs a case-insensitive substring walk over keys and leaf values, then expands the ancestors of the first match.                    |
+| Interactive Hover Tooltip | Floating glassmorphic tooltip on row hover displaying exact code paths (`data.users[0].address.city`) and 1-click copy buttons.       |
+| Quick Row Actions      | Hover icons directly on tree rows allowing instant code path and subtree JSON copying to clipboard.                                    |
+| Stats bar              | Reports the root type, key count, depth, byte size, and the currently selected path.                                                    |
+| Path selection         | Stores the path of the clicked line, highlights it, and copies it through `navigator.clipboard` with a `document.execCommand` fallback. |
 
 ## Data Flow / Execution Flow
 
@@ -64,24 +69,33 @@ The script is intentionally loaded at the end of the body, so the element lookup
 2. `tryParse()` runs once during initialization, then again 300 ms after every `input` event.
 3. A successful parse replaces `parsedData`, clears the previous tree, and calls `renderTree()` and `updateStats()`.
 4. `renderTree()` creates a `DocumentFragment`, calls `renderNode()` for the root at path `$`, and appends the finished fragment.
-5. `renderNode()` emits one line per object or array, then recurses into children unless the path is present in `collapsedPaths`.
-6. Clicking a toggle updates `collapsedPaths` and re-renders. Clicking a line calls `selectPath()`, which updates the stats bar and the `.selected` class.
-7. Search walks the same data structure, records matching paths, expands ancestors with `expandPathTo()`, and re-renders so the matches can be highlighted.
-8. Format and minify rewrite the editor value with `JSON.stringify` using two-space or zero-space indentation.
+5. `renderNode()` emits one line per object or array, attaches hover tooltip triggers and quick copy action buttons, then recurses into children.
+6. When a JSONPath expression (e.g., `$.store.book[*].author` or `$..price`) is entered:
+   - `JsonPathEngine.evaluateJsonPath` parses the expression and validates syntax in real-time.
+   - If invalid, the syntax error is displayed in the badge with an error outline on the input.
+   - If valid, matching node paths are resolved, ancestors of all matching nodes are automatically expanded, and matching lines receive `.jsonpath-match` styling.
+   - Users navigate matches sequentially via `▲`/`▼` or Enter/Shift+Enter.
+7. Hovering over any tree row activates the floating hover tooltip showing the exact dot/bracket notation code path (`data.users[0].address.city`) with copy buttons for Code Path, JSONPath, and Subtree JSON.
+8. Clicking a toggle updates `collapsedPaths` and re-renders. Clicking a line calls `selectPath()`, which updates the stats bar and the `.selected` class.
+9. Format and minify rewrite the editor value with `JSON.stringify` using two-space or zero-space indentation.
 
 ## Key Features
 
-| Feature             | Description                                                                                       |
-| ------------------- | ------------------------------------------------------------------------------------------------- |
-| Collapsible tree    | Click a node to expand or collapse it. The toolbar can expand or collapse every node at once.     |
-| Syntax highlighting | Keys are cyan, strings green, numbers amber, booleans purple, and null red.                       |
-| Real-time parsing   | Input is parsed after a 300 ms debounce to avoid re-rendering on every keystroke.                 |
-| Search              | Case-insensitive matching across keys and values, with match highlighting and ancestor expansion. |
-| Path copying        | Click any line to select its JSON path, then copy it with the toolbar button.                     |
-| Format and minify   | Pretty-print the current document or compress it to a single line.                                |
-| Sample data         | Loads a realistic nested object for a quick demonstration.                                        |
-| Stats bar           | Shows root type, key count, depth, byte size, and the selected path.                              |
-| Keyboard shortcuts  | Ctrl+F focuses search and Escape clears it.                                                       |
+| Feature                 | Description                                                                                                    |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
+| JSONPath Query Engine   | Supports expressions like `$.store.book[*].author`, `$..price`, `$.config.*`, and filters `[?(@.price < 10)]`. |
+| Inline Syntax Validator | Real-time feedback badge showing syntax error diagnostics (unclosed brackets, trailing dots, empty queries).    |
+| Query Result Highlights | Visual highlight accents on all matching tree lines, with sequential navigation and auto-expansion of parents. |
+| Preset Query Chips      | Quick one-click chips for common exploratory patterns (`$.features[*].name`, `$..status`, `$.config.*`, etc.). |
+| Hover Path Tooltip      | Floating hover tooltip displaying exact code reference path (`data.users[0].address.city`) and copy actions.   |
+| Subtree JSON Copy       | One-click extraction and clipboard copying of full subtrees for any hovered or selected node.                  |
+| Collapsible tree        | Click a node to expand or collapse it. The toolbar can expand or collapse every node at once.                  |
+| Syntax highlighting     | Keys are cyan, strings green, numbers amber, booleans purple, and null red.                                    |
+| Real-time parsing       | Input is parsed after a 300 ms debounce to avoid re-rendering on every keystroke.                              |
+| Search                  | Case-insensitive matching across keys and values, with match highlighting and ancestor expansion.              |
+| Format and minify       | Pretty-print the current document or compress it to a single line.                                             |
+| Stats bar               | Shows root type, key count, depth, byte size, and the selected path.                                           |
+| Keyboard shortcuts      | Ctrl+F focuses search, Ctrl+J focuses JSONPath filter, Enter/Shift+Enter navigates matches, Escape clears.      |
 
 ## Technologies Used
 
@@ -96,20 +110,32 @@ The script is intentionally loaded at the end of the body, so the element lookup
 ### `index.html`
 
 - Defines the two-panel layout: a textarea for input and a scrollable tree container.
+- Houses the JSONPath query evaluator bar with badge, navigation buttons, and preset sample chips.
+- Contains the interactive hover tooltip element for real-time dot/bracket path and subtree copying.
 - Contains the toolbar buttons for sample data, format, minify, expand all, collapse all, and copy path.
 - Provides the search field, match counter, status line, and five statistics fields.
-- Loads `style.css` and `script.js`; there are no third-party scripts.
+- Loads `style.css`, `jsonPathEngine.js`, and `script.js`.
+
+### `jsonPathEngine.js`
+
+- **`parseJsonPath()`** - tokenizes and parses JSONPath query strings into an AST, validating syntax and throwing descriptive errors for malformed expressions.
+- **`evaluateJsonPath()`** - walks data structures recursively to evaluate expressions (`$..price`, `$.store.book[*].author`, filters, slices, wildcards) with recursion limits and cycle detection.
+- **`formatPathForCode()`** - converts JSONPath strings into dot/bracket code paths (`data.users[0].address.city`).
+- **`getValueByPath()`** - retrieves exact values or subtrees given a concrete path.
+- **`getAncestorPaths()`** - decomposes paths into all ancestor prefixes for automated tree node expansion.
 
 ### `script.js`
 
 - **`tryParse()`** - validates the editor contents and reports meaningful parse errors.
-- **`renderTree()` / `renderNode()`** - build the recursive tree and apply collapsed state from `collapsedPaths`.
-- **`createLeafLine()`** - renders primitive values with the correct class for syntax coloring.
+- **`executeJsonPath()` / `applyJsonPathHighlights()`** - handles real-time JSONPath evaluation, error reporting, ancestor expansion, and match navigation.
+- **`showNodeTooltip()` / `scheduleHideTooltip()`** - positions and displays the interactive hover tooltip on tree row hover.
+- **`renderTree()` / `renderNode()`** - build the recursive tree, attach quick row action buttons, and apply collapsed state from `collapsedPaths`.
+- **`createLeafLine()`** - renders primitive values with the correct class for syntax coloring and row hover controls.
 - **`toggleNode()` / `selectPath()`** - manage expansion state and the selected path.
-- **`searchTree()` / `findMatches()` / `highlightSearch()`** - implement search and match highlighting.
+- **`searchTree()` / `findMatches()` / `highlightSearch()`** - implement text search and match highlighting.
 - **`updateStats()` / `countKeys()` / `getDepth()`** - compute the summary shown in the stats bar.
 - **`formatBytes()` / `updateInputSize()`** - report the UTF-8 byte size of the input.
-- **`copyPath()`** - copies the selected path, preferring the async clipboard API and falling back to `execCommand`.
+- **`copyPath()` / `copyToClipboard()`** - copies selected paths and subtrees with async clipboard and execCommand fallback.
 
 ### `style.css`
 
