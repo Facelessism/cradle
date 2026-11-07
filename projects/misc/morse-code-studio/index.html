@@ -6,12 +6,7 @@
     <title>Morse Code Studio</title>
     <meta
       name="description"
-      content="The Morse Code Studio is a browser-based tool that converts plain text into Morse code and decodes Morse code back into text. It also plays Morse code as audio..."
-    />
-
-    <meta
-      name="description"
-      content="Interactive Morse code studio for encoding, decoding, audio playback, and speed tuning."
+      content="Interactive Morse code studio with Web Audio sidetone pitch tuning, Paris and Farnsworth WPM timing controls, and real-time audio input decoder."
     />
     <link
       rel="canonical"
@@ -21,7 +16,7 @@
     <meta property="og:title" content="Morse Code Studio" />
     <meta
       property="og:description"
-      content="Interactive Morse code studio for encoding, decoding, audio playback, and speed tuning."
+      content="Interactive Morse code studio with Web Audio sidetone pitch tuning, Paris and Farnsworth WPM timing controls, and real-time audio input decoder."
     />
     <meta
       property="og:url"
@@ -34,60 +29,244 @@
     <div class="container">
       <header>
         <h1>📡 Morse Code Studio</h1>
-        <p>Encode text, decode Morse code, and play Morse audio.</p>
+        <p>Encode, decode, synthesize CW sidetones, and decode live audio signals in real time.</p>
       </header>
 
       <main role="main">
+        <!-- Text & Morse Editors -->
         <div class="editor-grid">
-          <section class="editor">
-            <label for="inputText">Plain Text</label>
+          <section class="editor" aria-labelledby="input-label">
+            <label id="input-label" for="inputText">Plain Text</label>
             <textarea
               id="inputText"
-              placeholder="Enter text to encode..."
+              placeholder="Enter text to encode (e.g., CQ CQ DE W1AW)..."
               autocomplete="off"
               spellcheck="true"
             ></textarea>
           </section>
 
-          <section class="editor">
-            <label for="outputText">Morse Code</label>
+          <section class="editor" aria-labelledby="output-label">
+            <label id="output-label" for="outputText">Morse Code</label>
             <textarea
               id="outputText"
-              placeholder="Enter Morse code to decode..."
+              placeholder="Enter Morse code to decode (e.g., -.-. --.- / -.-. --.-)..."
               autocomplete="off"
               spellcheck="false"
             ></textarea>
           </section>
         </div>
 
-        <div class="toolbar" aria-label="Morse code controls">
-          <button id="encodeBtn" type="button">Encode →</button>
-          <button id="decodeBtn" type="button">← Decode</button>
-          <button id="playBtn" type="button">▶ Play</button>
-          <button id="copyBtn" type="button">📋 Copy</button>
-          <button id="clearBtn" type="button">🗑 Clear</button>
+        <!-- Main Toolbar -->
+        <div class="toolbar" aria-label="Morse code translation and playback controls">
+          <button id="encodeBtn" type="button" aria-label="Encode plain text to Morse code">Encode →</button>
+          <button id="decodeBtn" type="button" aria-label="Decode Morse code to plain text">← Decode</button>
+          <button id="playBtn" type="button" aria-label="Play Morse code as synthesized audio">▶ Play</button>
+          <button id="copyBtn" type="button" aria-label="Copy output to clipboard">📋 Copy</button>
+          <button id="clearBtn" type="button" aria-label="Clear all input and output fields">🗑 Clear</button>
         </div>
 
-        <section class="card" aria-labelledby="speed-label">
-          <div class="speed-header">
-            <label id="speed-label" for="speedSlider">Playback Speed</label>
-            <span id="speedValue" role="status" aria-live="polite">20 WPM</span>
+        <!-- Audio Synthesis & CW Timing Controls Card -->
+        <section class="card synthesis-card" aria-labelledby="synth-settings-heading">
+          <div class="card-header">
+            <h2 id="synth-settings-heading">🎛 Audio Synthesis & CW Timing</h2>
+            <button id="testPitchBtn" type="button" class="btn-subtle" aria-label="Preview sidetone pitch audio">🔊 Test Sidetone</button>
           </div>
 
-          <input
-            type="range"
-            id="speedSlider"
-            aria-label="Playback Speed"
-            title="Playback Speed: 150 ms"
-            min="50"
-            max="400"
-            value="150"
-            step="10"
-            aria-valuemin="50"
-            aria-valuemax="400"
-            aria-valuenow="150"
-            aria-valuetext="150 ms"
-          />
+          <div class="controls-grid">
+            <!-- Character Speed (Paris standard) -->
+            <div class="control-group">
+              <div class="speed-header">
+                <label id="speed-label" for="speedSlider">Character Speed (Paris WPM)</label>
+                <span id="speedValue" role="status" aria-live="polite">20 WPM</span>
+              </div>
+              <input
+                type="range"
+                id="speedSlider"
+                aria-label="Character Speed in Words Per Minute"
+                min="5"
+                max="60"
+                value="20"
+                step="1"
+                aria-valuemin="5"
+                aria-valuemax="60"
+                aria-valuenow="20"
+                aria-valuetext="20 WPM"
+              />
+              <span class="control-hint">Dit: 60 ms | Dah: 180 ms (standard 50 dot-units PARIS calibration)</span>
+            </div>
+
+            <!-- Sidetone Pitch -->
+            <div class="control-group">
+              <div class="speed-header">
+                <label id="pitch-label" for="pitchSlider">Sidetone Pitch (Frequency)</label>
+                <span id="pitchValue" role="status" aria-live="polite">650 Hz</span>
+              </div>
+              <input
+                type="range"
+                id="pitchSlider"
+                aria-label="Sidetone Pitch in Hertz"
+                min="300"
+                max="1000"
+                value="650"
+                step="10"
+                aria-valuemin="300"
+                aria-valuemax="1000"
+                aria-valuenow="650"
+                aria-valuetext="650 Hz"
+              />
+              <span class="control-hint">Adjustable CW audio carrier frequency (300 Hz – 1000 Hz)</span>
+            </div>
+          </div>
+
+          <!-- Farnsworth Timing Section -->
+          <div class="farnsworth-section">
+            <div class="farnsworth-header">
+              <label class="toggle-container" for="farnsworthToggle">
+                <input type="checkbox" id="farnsworthToggle" aria-label="Enable Farnsworth Timing" />
+                <span class="toggle-text">Enable ARRL Farnsworth Spacing</span>
+              </label>
+              <span class="badge-hint">Amateur Radio CW Learning Mode</span>
+            </div>
+
+            <div id="farnsworthControls" class="farnsworth-controls is-disabled">
+              <div class="speed-header">
+                <label id="farnsworth-label" for="farnsworthSlider">Overall Farnsworth Speed</label>
+                <span id="farnsworthValue" role="status" aria-live="polite">12 WPM</span>
+              </div>
+              <input
+                type="range"
+                id="farnsworthSlider"
+                aria-label="Farnsworth Overall Speed in Words Per Minute"
+                min="5"
+                max="60"
+                value="12"
+                step="1"
+                aria-valuemin="5"
+                aria-valuemax="60"
+                aria-valuenow="12"
+                aria-valuetext="12 WPM"
+                disabled
+              />
+              <span class="control-hint">Maintains fast character sound while elongating pauses between letters and words.</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Live Audio Decoder Card (CW Listener) -->
+        <section class="card decoder-card" aria-labelledby="decoder-heading">
+          <div class="card-header">
+            <div>
+              <h2 id="decoder-heading">🎙 Live Audio Decoder (CW Listener)</h2>
+              <p class="section-subtitle">Real-time CW audio demodulation via Web Audio AnalyserNode FFT peak detection & tone thresholding</p>
+            </div>
+            <span id="decoderStatus" class="status-badge status-idle">Idle</span>
+          </div>
+
+          <!-- Decoder Top Bar -->
+          <div class="decoder-toolbar">
+            <button id="startDecoderBtn" type="button" class="btn-listen" aria-label="Start audio listening and decoding">🎤 Start Listening</button>
+
+            <div class="indicators-group">
+              <div class="indicator-item">
+                <span class="indicator-label">CW Carrier:</span>
+                <div id="cwSignalLed" class="signal-led" title="Carrier Tone Detected" aria-label="CW Tone Carrier Active Indicator"></div>
+              </div>
+              <div class="indicator-item">
+                <span class="indicator-label">Buffer:</span>
+                <span id="liveMorseBuffer" class="morse-buffer-pill" aria-label="Current character Morse symbols in progress">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Real-Time Spectrum Canvas Visualizer -->
+          <div class="visualizer-container">
+            <canvas id="decoderVisualizer" width="700" height="90" aria-label="Audio frequency spectrum visualizer"></canvas>
+            <div class="visualizer-legend">
+              <span id="detectedPeakFreq">Detected Peak: -- Hz</span>
+              <span id="signalLevelText">Signal Level: -- / 100</span>
+              <span id="thresholdLineText">Threshold: 40</span>
+            </div>
+          </div>
+
+          <!-- Decoder Tuning Controls -->
+          <div class="decoder-tuning-grid">
+            <div class="control-group">
+              <div class="speed-header">
+                <label id="dec-freq-label" for="decoderFreqSlider">Target Tone Pitch</label>
+                <span id="decoderFreqValue" role="status" aria-live="polite">650 Hz</span>
+              </div>
+              <input
+                type="range"
+                id="decoderFreqSlider"
+                aria-label="Decoder Target Pitch in Hertz"
+                min="300"
+                max="1000"
+                value="650"
+                step="10"
+                aria-valuemin="300"
+                aria-valuemax="1000"
+                aria-valuenow="650"
+                aria-valuetext="650 Hz"
+              />
+            </div>
+
+            <div class="control-group">
+              <div class="speed-header">
+                <label id="dec-thresh-label" for="decoderThresholdSlider">Audio Threshold</label>
+                <span id="decoderThresholdValue" role="status" aria-live="polite">40</span>
+              </div>
+              <input
+                type="range"
+                id="decoderThresholdSlider"
+                aria-label="Decoder Audio Magnitude Threshold"
+                min="10"
+                max="90"
+                value="40"
+                step="2"
+                aria-valuemin="10"
+                aria-valuemax="90"
+                aria-valuenow="40"
+                aria-valuetext="40"
+              />
+            </div>
+
+            <div class="control-group">
+              <div class="speed-header">
+                <label id="dec-wpm-label" for="decoderWpmSlider">Decoder WPM</label>
+                <span id="decoderWpmValue" role="status" aria-live="polite">20 WPM</span>
+              </div>
+              <input
+                type="range"
+                id="decoderWpmSlider"
+                aria-label="Decoder Speed in Words Per Minute"
+                min="5"
+                max="60"
+                value="20"
+                step="1"
+                aria-valuemin="5"
+                aria-valuemax="60"
+                aria-valuenow="20"
+                aria-valuetext="20 WPM"
+              />
+            </div>
+          </div>
+
+          <!-- Live Decoded Text Stream -->
+          <div class="decoded-stream-section">
+            <label id="decoded-feed-label" for="decodedFeed">Live Decoded Plain Text</label>
+            <textarea
+              id="decodedFeed"
+              readonly
+              placeholder="Decoded text will stream here as audio beeps are recognized from your microphone or input..."
+              aria-label="Live decoded text stream"
+            ></textarea>
+
+            <div class="decoded-actions">
+              <button id="copyDecodedBtn" type="button" aria-label="Copy decoded text to clipboard">📋 Copy Decoded</button>
+              <button id="clearDecodedBtn" type="button" aria-label="Clear decoded text">🗑 Clear Decoded</button>
+              <button id="sendToInputBtn" type="button" aria-label="Send decoded text to input textarea">⬆ Send to Plain Text</button>
+            </div>
+          </div>
         </section>
       </main>
     </div>
