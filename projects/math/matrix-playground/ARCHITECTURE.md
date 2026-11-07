@@ -78,7 +78,9 @@ DOM render updates result matrix grid & step progress bar
 
 ## Key Features
 
-- Eight operations: Add, Multiply, Determinant, Inverse, Transpose, LU Decomposition, QR Decomposition, and Eigenvalues
+- Nine operations: Add, Multiply, Determinant, Inverse, Transpose, Gauss-Jordan Row Reduction, LU Decomposition, QR Decomposition, and Eigenvalue Decomposition
+- Step-by-step Gauss-Jordan Row Reduction with interactive animation of elementary row operations (Swap $R_i \leftrightarrow R_j$, Scale $R_i \leftarrow c \cdot R_i$, Eliminate $R_i \leftarrow R_i - c \cdot R_j$), accompanied by active row highlights, pivot cell indicators, and mathematical badges
+- Eigenvalue Decomposition Suite ($A = V \cdot \Lambda \cdot V^{-1}$) for 2x2 and 3x3 matrices: computes monic characteristic polynomials ($P(\lambda) = 0$), spectral eigenvalues (real and complex), nullspace eigenvector bases, modal matrix $V$, diagonal matrix $\Lambda$, and matrix reconstruction verification
 - Editable 2x2, 3x3, and 4x4 matrix grids with live recomputation on every keystroke
 - Six presets: Identity, 45° Rotation, 2D Shear, Magic Square, Symmetric, and Hilbert matrices
 - Random fill, Identity fill, and Clear All actions
@@ -111,9 +113,13 @@ DOM render updates result matrix grid & step progress bar
 - `determinant(matrix)` — LU elimination with partial pivoting for n >= 3
 - `inverse(matrix)` — Gauss-Jordan elimination on an augmented matrix
 - `rank(matrix)` — row-echelon-form rank
+- `gaussJordanSteps(matrix)` — step-by-step Gauss-Jordan elimination returning step snapshots with elementary row operations (swap, scale, eliminate), pivot coordinates, active rows, and math annotations
+- `characteristicPolynomial(matrix)` — computes monic characteristic polynomial coefficients, equation strings, and LaTeX representations for 2x2 and 3x3 matrices
+- `eigenvalues(matrix)` — 2x2/3x3 characteristic polynomial roots, including complex conjugate pairs
+- `eigenvectors(matrix, evs)` — exact nullspace eigenvector basis for 2x2 and 3x3 matrices (using robust cross-product normal vectors for 3x3 rank-2 systems and plane projection for rank-1 systems)
+- `eigenDecomposition(matrix)` — full spectral decomposition returning characteristic polynomial, eigenvalues, eigenvectors, diagonalizability check, modal matrix $V$, diagonal matrix $\Lambda$, $V^{-1}$, and reconstruction verification
 - `luDecomposition(matrix)` — Doolittle method returning `{ L, U }`
 - `qrDecomposition(matrix)` — Gram-Schmidt orthogonalisation returning `{ Q, R }`
-- `eigenvalues(matrix)` — 2x2/3x3 characteristic polynomial roots, including complex pairs
 
 ### `matrixStorage.js`
 
@@ -126,9 +132,12 @@ DOM render updates result matrix grid & step progress bar
 
 - `state` — selected operation, dimensions, matrices, and stepper timeline
 - `init()` — theme setup, event listeners, initial grid render
-- `setOperation(op)` / `updateOpUI()` — operation switching and UI updates
+- `setOperation(op)` / `updateOpUI()` — operation switching and UI updates, managing Gauss-Jordan and Eigen panels
 - `rebuildGrids()` / `renderMatrixGrid(container, rows, cols, ...)` — matrix input rendering
-- `computeAndBuildTimeline()` — dispatches to per-operation timeline builders (`buildAddTimeline`, `buildMultiplyTimeline`, `buildLUTimeline`, `buildQRTimeline`, `buildEigenTimeline`, etc.)
+- `computeAndBuildTimeline()` — dispatches to per-operation timeline builders (`buildAddTimeline`, `buildMultiplyTimeline`, `buildGaussJordanTimeline`, `buildLUTimeline`, `buildQRTimeline`, `buildEigenTimeline`, etc.)
+- `buildGaussJordanTimeline()` — populates stepper with step-by-step row operation snapshots, pivot tracking, and active rows
+- `buildEigenTimeline()` — constructs 4-stage educational timeline: Characteristic Equation, Eigenvalue Spectrum, Eigenvector Basis, and Modal Diagonalization
+- `renderEigenDecompPanel(decomp)` — renders dedicated card showing characteristic equation, spectrum with normalized eigenvectors, and miniature $V \cdot \Lambda \cdot V^{-1}$ factor blocks
 - `prevStep()` / `nextStep()` / `startAnimation()` / `pauseAnimation()` / `resetStepper()` — stepper playback
 - `openLatexModal()` / `copyLatexToClipboard()` — LaTeX export flow
 
@@ -137,7 +146,9 @@ DOM render updates result matrix grid & step progress bar
 - Cradle design tokens with `--theme-accent` overrides
 - `.matrix-bracket` left/right — brackets framing each matrix grid
 - `.matrix-cell-input` / `.matrix-cell-result` — editable and result cells
-- `.cell-highlight-active` + `pulseHighlight` — active-cell animation during playback
+- `.cell-pivot`, `.cell-highlight-source-row`, `.cell-highlight-target-row` — visual badges and highlights for Gauss-Jordan steps
+- `.row-op-badge` — color-coded tags for swap, scale, eliminate, and complete row operations
+- `.decomp-details-panel`, `.decomp-card`, `.decomp-spectrum-grid`, `.mini-matrix` — responsive cards and mini-matrices for Eigenvalue Decomposition
 - `.modal-backdrop` / `.modal-content` — LaTeX export modal
 - Responsive breakpoints at 1024px and 640px
 
@@ -147,7 +158,9 @@ DOM render updates result matrix grid & step progress bar
 
 - **Pure engine isolated from UI** — `matrixEngine.js` and `matrixStorage.js` expose their API through a UMD-style wrapper (window global plus `module.exports`) so they run in the browser and can be imported in Node for testing.
 - **Step-timeline rendering** — `script.js` builds a timeline of snapshots (text, scratchpad, partial result, active cells) so the stepper replays computations without re-running the math.
-- **Textbook algorithms** — Doolittle LU and Gram-Schmidt QR are chosen for clarity over performance, which is fine for small 2x2/3x3/4x4 matrices.
+- **Elementary Row Operations in Gauss-Jordan** — Row swaps with partial pivoting ensure numerical stability, while scaling normalizes pivots to 1 and row eliminations eliminate both above and below the pivot, yielding canonical RREF.
+- **Formulaic Nullspace Eigenvectors** — For 3x3 matrices with distinct eigenvalues, taking the maximal cross product among rows of $(A - \lambda I)$ analytically extracts the exact nullspace vector without gaussian back-substitution roundoff error.
+- **Educational Spectral Decomposition Suite** — Presents eigenvalue decomposition both as step-by-step progression through stages and as a cohesive matrix factorization ($A = V \Lambda V^{-1}$), handling repeated eigenvalues and non-diagonalizable defective matrices gracefully.
 - **Eigenvalue solver handles complex roots** — the 3x3 characteristic cubic uses the Cardano/trigonometric solution so rotation-like matrices produce correct complex eigenvalue pairs.
 
 ---

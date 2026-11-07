@@ -142,6 +142,14 @@
             <button
               type="button"
               class="op-btn"
+              data-op="gauss"
+              title="Step-by-Step Gauss-Jordan Row Reduction"
+            >
+              <i class="fa-solid fa-arrow-down-1-9"></i> Gauss-Jordan
+            </button>
+            <button
+              type="button"
+              class="op-btn"
               data-op="lu"
               title="LU Decomposition"
             >
@@ -159,9 +167,9 @@
               type="button"
               class="op-btn"
               data-op="eigen"
-              title="Eigenvalues Analysis"
+              title="Eigenvalue Decomposition & Characteristic Polynomial"
             >
-              <i class="fa-solid fa-wave-square"></i> Eigenvalues
+              <i class="fa-solid fa-wave-square"></i> Eigen Decomp
             </button>
           </div>
         </section>
@@ -386,6 +394,16 @@
             <div id="grid-result" class="matrix-grid result-grid"></div>
             <div class="matrix-bracket right"></div>
           </div>
+
+          <!-- Row Operation Legend for Gauss-Jordan -->
+          <div id="row-op-legend" class="row-op-legend hidden">
+            <span class="legend-badge legend-pivot"><i class="fa-solid fa-bullseye"></i> Pivot Element</span>
+            <span class="legend-badge legend-source"><i class="fa-solid fa-arrow-right"></i> Pivot Row</span>
+            <span class="legend-badge legend-target"><i class="fa-solid fa-pen-to-square"></i> Eliminated Row</span>
+          </div>
+
+          <!-- Extended Decomposition / Educational Panel -->
+          <div id="decomp-details" class="decomp-details-panel hidden" aria-live="polite"></div>
         </div>
       </section>
     </main>
