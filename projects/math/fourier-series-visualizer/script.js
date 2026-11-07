@@ -7,9 +7,23 @@
 /* ──── DOM Refs ────────────────────────────────────────────────────── */
 const compositeCanvas = document.getElementById("compositeCanvas");
 const harmonicsCanvas = document.getElementById("harmonicsCanvas");
+const epicyclesCanvas = document.getElementById("epicyclesCanvas");
+const spectrumCanvas = document.getElementById("spectrumCanvas");
+
 const ctxComposite = compositeCanvas ? compositeCanvas.getContext("2d") : null;
 const ctxHarmonics = harmonicsCanvas ? harmonicsCanvas.getContext("2d") : null;
+const ctxEpicycles = epicyclesCanvas ? epicyclesCanvas.getContext("2d") : null;
+const ctxSpectrum = spectrumCanvas ? spectrumCanvas.getContext("2d") : null;
 
+// Mode navigation
+const tabWaveforms = document.getElementById("tabWaveforms");
+const tabEpicycles = document.getElementById("tabEpicycles");
+const controlsWaveforms = document.getElementById("controlsWaveforms");
+const controlsEpicycles = document.getElementById("controlsEpicycles");
+const workspaceWaveforms = document.getElementById("workspaceWaveforms");
+const workspaceEpicycles = document.getElementById("workspaceEpicycles");
+
+// Waveform Controls
 const waveBtns = document.querySelectorAll(".wave-btn");
 const freqSlider = document.getElementById("freqSlider");
 const harmCount = document.getElementById("harmCount");
@@ -28,7 +42,57 @@ const statusRight = document.getElementById("statusRight");
 const themeToggle = document.getElementById("theme-toggle");
 const themeIcon = document.getElementById("theme-icon");
 
+// Epicycle Source & Presets
+const srcPresetsBtn = document.getElementById("srcPresetsBtn");
+const srcDrawBtn = document.getElementById("srcDrawBtn");
+const srcUploadBtn = document.getElementById("srcUploadBtn");
+const presetsSubpanel = document.getElementById("presetsSubpanel");
+const drawSubpanel = document.getElementById("drawSubpanel");
+const uploadSubpanel = document.getElementById("uploadSubpanel");
+const presetBtns = document.querySelectorAll(".preset-btn");
+const clearDrawBtn = document.getElementById("clearDrawBtn");
+const traceDrawBtn = document.getElementById("traceDrawBtn");
+const drawCanvasHint = document.getElementById("drawCanvasHint");
+
+// Epicycle SVG Upload
+const svgFileInput = document.getElementById("svgFileInput");
+const uploadSvgTrigger = document.getElementById("uploadSvgTrigger");
+const svgPathInput = document.getElementById("svgPathInput");
+const loadSvgPathBtn = document.getElementById("loadSvgPathBtn");
+
+// Epicycle Controls
+const epicycleCountSlider = document.getElementById("epicycleCountSlider");
+const epicycleCountDisplay = document.getElementById("epicycleCountDisplay");
+const epicycleResolutionSelect = document.getElementById("epicycleResolutionSelect");
+const epicycleSpeedSlider = document.getElementById("epicycleSpeedSlider");
+const epicycleSpeedDisplay = document.getElementById("epicycleSpeedDisplay");
+const epicycleScrubber = document.getElementById("epicycleScrubber");
+const epicycleScrubberDisplay = document.getElementById("epicycleScrubberDisplay");
+const epicyclePlayBtn = document.getElementById("epicyclePlayBtn");
+const epicyclePlayIcon = document.getElementById("epicyclePlayIcon");
+const epicycleResetBtn = document.getElementById("epicycleResetBtn");
+
+// Epicycle Toggles & Themes
+const chkCircles = document.getElementById("chkCircles");
+const chkVectors = document.getElementById("chkVectors");
+const chkTrail = document.getElementById("chkTrail");
+const chkOriginal = document.getElementById("chkOriginal");
+const epicycleThemeSelect = document.getElementById("epicycleThemeSelect");
+
+// Epicycle Metrics & Status
+const metricPoints = document.getElementById("metricPoints");
+const metricHarmonics = document.getElementById("metricHarmonics");
+const metricEnergy = document.getElementById("metricEnergy");
+const metricMaxRadius = document.getElementById("metricMaxRadius");
+const tipCoordDisplay = document.getElementById("tipCoordDisplay");
+const epicyclesMeta = document.getElementById("epicyclesMeta");
+const spectrumMeta = document.getElementById("spectrumMeta");
+const epicyclesStatusLeft = document.getElementById("epicyclesStatusLeft");
+const epicyclesStatusRight = document.getElementById("epicyclesStatusRight");
+
 /* ──── State ──────────────────────────────────────────────────────── */
+let activeVisualizerMode = "waveforms"; // 'waveforms' | 'epicycles'
+
 const WAVE_COLORS = [
   "#ef4444",
   "#f59e0b",
@@ -44,6 +108,41 @@ const WAVE_COLORS = [
   "#d946ef",
 ];
 
+const EPICYCLE_THEMES = {
+  indigo: {
+    circle: "rgba(99, 102, 241, 0.22)",
+    vector: "#818cf8",
+    trail: "#6366f1",
+    trailGlow: "rgba(99, 102, 241, 0.4)",
+    ref: "rgba(255, 255, 255, 0.22)",
+    tip: "#ffffff",
+  },
+  rainbow: {
+    circle: "rainbow",
+    vector: "rainbow",
+    trail: "#ec4899",
+    trailGlow: "rgba(236, 72, 153, 0.4)",
+    ref: "rgba(255, 255, 255, 0.22)",
+    tip: "#fbbf24",
+  },
+  amber: {
+    circle: "rgba(245, 158, 11, 0.22)",
+    vector: "#fbbf24",
+    trail: "#f59e0b",
+    trailGlow: "rgba(245, 158, 11, 0.4)",
+    ref: "rgba(255, 255, 255, 0.22)",
+    tip: "#fffbeb",
+  },
+  emerald: {
+    circle: "rgba(16, 185, 129, 0.22)",
+    vector: "#34d399",
+    trail: "#10b981",
+    trailGlow: "rgba(16, 185, 129, 0.4)",
+    ref: "rgba(255, 255, 255, 0.22)",
+    tip: "#d1fae5",
+  },
+};
+
 const state = {
   waveType: "square",
   frequency: 100,
@@ -55,6 +154,30 @@ const state = {
   activeHarmonics: new Set(), // Set of 1-indexed active harmonic numbers
   dpr: 1,
   firstRender: true,
+};
+
+const epicycleState = {
+  source: "presets", // 'presets' | 'draw' | 'upload'
+  preset: "heart",
+  resolution: 150,
+  kEpicycles: 50,
+  speed: 8000, // ms per full loop
+  isPlaying: true,
+  time: 0,
+  colorTheme: "indigo",
+  showCircles: true,
+  showVectors: true,
+  showTrail: true,
+  showOriginal: true,
+  isDrawing: false,
+  drawPoints: [],
+  rawPoints: [],
+  zeroCenteredPoints: [],
+  scaledPoints: [],
+  dftComponents: [],
+  tracedPath: [],
+  animId: null,
+  lastFrameTime: null,
 };
 
 /* ──── Canvas Sizing ───────────────────────────────────────────────── */
@@ -69,13 +192,15 @@ function resizeCanvas(canvas) {
   canvas.height = rect.height * dpr;
   canvas.style.width = rect.width + "px";
   canvas.style.height = rect.height + "px";
-  if (ctxComposite) ctxComposite.setTransform(dpr, 0, 0, dpr, 0, 0);
-  if (ctxHarmonics) ctxHarmonics.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const ctx = canvas.getContext("2d");
+  if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 function resizeAllCanvases() {
   resizeCanvas(compositeCanvas);
   resizeCanvas(harmonicsCanvas);
+  resizeCanvas(epicyclesCanvas);
+  resizeCanvas(spectrumCanvas);
 }
 
 /* ──── Drawing Helpers ────────────────────────────────────────────── */
@@ -553,6 +678,639 @@ speedSlider?.addEventListener("input", () => {
     statusLeft.textContent = `Animation speed: ${state.speed}ms per cycle`;
 });
 
+/* ──── Epicycle Tracing & Complex 1D DFT Engine ──────────────────── */
+
+function switchVisualizerMode(mode) {
+  activeVisualizerMode = mode;
+
+  if (tabWaveforms) {
+    tabWaveforms.classList.toggle("active", mode === "waveforms");
+    tabWaveforms.setAttribute("aria-selected", String(mode === "waveforms"));
+  }
+  if (tabEpicycles) {
+    tabEpicycles.classList.toggle("active", mode === "epicycles");
+    tabEpicycles.setAttribute("aria-selected", String(mode === "epicycles"));
+  }
+
+  if (controlsWaveforms) {
+    controlsWaveforms.style.display = mode === "waveforms" ? "block" : "none";
+  }
+  if (controlsEpicycles) {
+    controlsEpicycles.style.display = mode === "epicycles" ? "block" : "none";
+  }
+  if (workspaceWaveforms) {
+    workspaceWaveforms.style.display = mode === "waveforms" ? "block" : "none";
+  }
+  if (workspaceEpicycles) {
+    workspaceEpicycles.style.display = mode === "epicycles" ? "block" : "none";
+  }
+
+  resizeAllCanvases();
+
+  if (mode === "epicycles") {
+    if (epicycleState.dftComponents.length === 0) {
+      loadPreset("heart");
+    }
+    if (!epicycleState.animId) {
+      epicycleState.lastFrameTime = performance.now();
+      epicycleState.animId = requestAnimationFrame(updateAndRenderEpicycles);
+    }
+  } else {
+    render();
+  }
+}
+
+function extractSvgPathData(svgText) {
+  if (typeof DOMParser !== "undefined") {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(svgText, "image/svg+xml");
+      const paths = doc.querySelectorAll("path");
+      if (paths.length > 0) {
+        let combined = "";
+        paths.forEach(p => {
+          const d = p.getAttribute("d");
+          if (d) combined += " " + d;
+        });
+        if (combined.trim()) return combined.trim();
+      }
+      const polylines = doc.querySelectorAll("polygon, polyline");
+      if (polylines.length > 0) {
+        const pts = polylines[0].getAttribute("points");
+        if (pts) {
+          const coords = pts.trim().split(/[\s,]+/);
+          let d = "M " + coords[0] + " " + coords[1];
+          for (let i = 2; i < coords.length; i += 2) {
+            d += " L " + coords[i] + " " + coords[i + 1];
+          }
+          return d + " Z";
+        }
+      }
+    } catch (_) {}
+  }
+
+  const match = svgText.match(/<path[^>]*\sd=["']([^"']+)["']/i);
+  return match ? match[1] : svgText;
+}
+
+function loadEpicycleShapeFromPoints(rawPoints, shapeLabel = "Custom") {
+  if (!rawPoints || rawPoints.length === 0) return;
+
+  const w = epicyclesCanvas ? epicyclesCanvas.width / state.dpr : 600;
+  const h = epicyclesCanvas ? epicyclesCanvas.height / state.dpr : 380;
+
+  // 1. Arc-length uniform resampling
+  const resampled = resamplePoints(
+    rawPoints,
+    epicycleState.resolution,
+    true
+  );
+  epicycleState.rawPoints = resampled;
+
+  // 2. Center around origin (0, 0) and scale to canvas viewport
+  const zeroCentered = centerAndScalePoints(resampled, w, h, 60, true);
+  epicycleState.zeroCenteredPoints = zeroCentered;
+
+  // 3. Offset to canvas center for reference path rendering
+  epicycleState.scaledPoints = zeroCentered.map(p => ({
+    x: p.x + w / 2,
+    y: p.y + h / 2,
+  }));
+
+  // 4. Compute 1D Complex DFT
+  const dft = dft1DComplex(zeroCentered, true);
+  epicycleState.dftComponents = dft;
+
+  // 5. Update slider bounds and epicycles count
+  if (epicycleCountSlider) {
+    epicycleCountSlider.max = String(dft.length);
+    if (epicycleState.kEpicycles > dft.length || epicycleState.kEpicycles <= 1) {
+      epicycleState.kEpicycles = Math.min(50, dft.length);
+      epicycleCountSlider.value = String(epicycleState.kEpicycles);
+    }
+  }
+
+  // 6. Reset trajectory
+  epicycleState.tracedPath = [];
+  epicycleState.time = 0;
+
+  updateEpicycleUI(shapeLabel);
+  renderSpectrumCanvas();
+}
+
+function loadPreset(presetName) {
+  epicycleState.preset = presetName;
+  const pts = generateParametricShape(presetName, epicycleState.resolution);
+  const capitalized =
+    presetName.charAt(0).toUpperCase() + presetName.slice(1);
+  loadEpicycleShapeFromPoints(pts, capitalized);
+
+  presetBtns.forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.preset === presetName);
+  });
+}
+
+function updateEpicycleUI(shapeLabel = "") {
+  const energy = computeDftEnergy(
+    epicycleState.dftComponents,
+    epicycleState.kEpicycles
+  );
+
+  if (epicycleCountDisplay) {
+    epicycleCountDisplay.textContent = `${epicycleState.kEpicycles} (${energy.percentage}%)`;
+  }
+  if (metricPoints) {
+    metricPoints.textContent = String(epicycleState.resolution);
+  }
+  if (metricHarmonics) {
+    metricHarmonics.textContent = `${epicycleState.kEpicycles} / ${epicycleState.dftComponents.length}`;
+  }
+  if (metricEnergy) {
+    metricEnergy.textContent = `${energy.percentage}%`;
+  }
+  if (metricMaxRadius && epicycleState.dftComponents[0]) {
+    metricMaxRadius.textContent = `${epicycleState.dftComponents[0].amp.toFixed(1)} px`;
+  }
+  if (epicyclesMeta) {
+    const label = shapeLabel || epicycleState.preset;
+    epicyclesMeta.textContent = `${epicycleState.kEpicycles} epicycles · ${label} · ${(epicycleState.speed / 1000).toFixed(1)}s`;
+  }
+  if (spectrumMeta) {
+    spectrumMeta.textContent = `Top ${epicycleState.kEpicycles} of ${epicycleState.dftComponents.length} harmonics active`;
+  }
+  if (epicyclesStatusLeft) {
+    epicyclesStatusLeft.textContent = `Decomposed ${epicycleState.resolution} points into ${epicycleState.dftComponents.length} complex Fourier harmonics`;
+  }
+}
+
+function updateScrubberUI() {
+  if (epicycleScrubber) {
+    const normalized = (epicycleState.time / (2 * Math.PI)) * 1000;
+    epicycleScrubber.value = String(Math.round(normalized));
+  }
+  if (epicycleScrubberDisplay) {
+    const piMultiple = (epicycleState.time / Math.PI).toFixed(2);
+    epicycleScrubberDisplay.textContent = `${piMultiple}π`;
+  }
+}
+
+function updateAndRenderEpicycles(timestamp) {
+  if (!epicycleState.lastFrameTime) epicycleState.lastFrameTime = timestamp;
+  const dt = timestamp - epicycleState.lastFrameTime;
+  epicycleState.lastFrameTime = timestamp;
+
+  if (activeVisualizerMode === "epicycles") {
+    if (
+      epicycleState.isPlaying &&
+      !epicycleState.isDrawing &&
+      epicycleState.dftComponents.length > 0
+    ) {
+      const deltaT = (2 * Math.PI * dt) / epicycleState.speed;
+      epicycleState.time += deltaT;
+      if (epicycleState.time >= 2 * Math.PI) {
+        epicycleState.time = epicycleState.time % (2 * Math.PI);
+        epicycleState.tracedPath = [];
+      }
+      updateScrubberUI();
+    }
+
+    renderEpicyclesStage();
+    renderSpectrumCanvas();
+  }
+
+  epicycleState.animId = requestAnimationFrame(updateAndRenderEpicycles);
+}
+
+function renderEpicyclesStage() {
+  if (!ctxEpicycles || !epicyclesCanvas) return;
+  const w = epicyclesCanvas.width / state.dpr;
+  const h = epicyclesCanvas.height / state.dpr;
+  if (w <= 0 || h <= 0) return;
+
+  clearCanvas(ctxEpicycles, w, h);
+  drawGrid(ctxEpicycles, w, h);
+
+  const theme =
+    EPICYCLE_THEMES[epicycleState.colorTheme] || EPICYCLE_THEMES.indigo;
+
+  // If user is currently drawing
+  if (epicycleState.isDrawing && epicycleState.drawPoints.length > 1) {
+    ctxEpicycles.strokeStyle = "var(--theme-accent)";
+    ctxEpicycles.lineWidth = 2.5;
+    ctxEpicycles.beginPath();
+    for (let i = 0; i < epicycleState.drawPoints.length; i++) {
+      const pt = epicycleState.drawPoints[i];
+      if (i === 0) ctxEpicycles.moveTo(pt.x, pt.y);
+      else ctxEpicycles.lineTo(pt.x, pt.y);
+    }
+    ctxEpicycles.stroke();
+    return;
+  }
+
+  if (epicycleState.dftComponents.length === 0) return;
+
+  // 1. Reference shape
+  if (epicycleState.showOriginal && epicycleState.scaledPoints.length > 1) {
+    ctxEpicycles.strokeStyle = theme.ref;
+    ctxEpicycles.lineWidth = 1;
+    ctxEpicycles.setLineDash([4, 4]);
+    ctxEpicycles.beginPath();
+    for (let i = 0; i < epicycleState.scaledPoints.length; i++) {
+      const p = epicycleState.scaledPoints[i];
+      if (i === 0) ctxEpicycles.moveTo(p.x, p.y);
+      else ctxEpicycles.lineTo(p.x, p.y);
+    }
+    ctxEpicycles.closePath();
+    ctxEpicycles.stroke();
+    ctxEpicycles.setLineDash([]);
+  }
+
+  // 2. Epicycle evaluation
+  const origin = { x: w / 2, y: h / 2 };
+  const { circles, tip } = sampleEpicycles(
+    epicycleState.dftComponents,
+    epicycleState.time,
+    epicycleState.kEpicycles,
+    origin
+  );
+
+  // 3. Accumulate tip into trail
+  if (epicycleState.isPlaying && !epicycleState.isDrawing) {
+    epicycleState.tracedPath.push({ x: tip.x, y: tip.y });
+    if (epicycleState.tracedPath.length > epicycleState.resolution * 2.2) {
+      epicycleState.tracedPath.shift();
+    }
+  }
+
+  // 4. Traced path
+  if (epicycleState.showTrail && epicycleState.tracedPath.length > 1) {
+    ctxEpicycles.strokeStyle = theme.trail;
+    ctxEpicycles.lineWidth = 2.5;
+    ctxEpicycles.shadowColor = theme.trailGlow;
+    ctxEpicycles.shadowBlur = 8;
+    ctxEpicycles.beginPath();
+    for (let i = 0; i < epicycleState.tracedPath.length; i++) {
+      const p = epicycleState.tracedPath[i];
+      if (i === 0) ctxEpicycles.moveTo(p.x, p.y);
+      else ctxEpicycles.lineTo(p.x, p.y);
+    }
+    ctxEpicycles.stroke();
+    ctxEpicycles.shadowBlur = 0;
+  }
+
+  // 5. Epicycles (circles & radii vectors)
+  for (let i = 0; i < circles.length; i++) {
+    const c = circles[i];
+    if (c.radius < 0.4) continue;
+
+    const circleColor =
+      theme.circle === "rainbow"
+        ? `hsla(${(i * 360) / circles.length}, 80%, 65%, 0.22)`
+        : theme.circle;
+
+    const vectorColor =
+      theme.vector === "rainbow"
+        ? `hsl(${(i * 360) / circles.length}, 85%, 65%)`
+        : theme.vector;
+
+    if (epicycleState.showCircles) {
+      ctxEpicycles.strokeStyle = circleColor;
+      ctxEpicycles.lineWidth = 1;
+      ctxEpicycles.beginPath();
+      ctxEpicycles.arc(c.prevX, c.prevY, c.radius, 0, 2 * Math.PI);
+      ctxEpicycles.stroke();
+    }
+
+    if (epicycleState.showVectors) {
+      ctxEpicycles.strokeStyle = vectorColor;
+      ctxEpicycles.lineWidth = 1.2;
+      ctxEpicycles.beginPath();
+      ctxEpicycles.moveTo(c.prevX, c.prevY);
+      ctxEpicycles.lineTo(c.x, c.y);
+      ctxEpicycles.stroke();
+
+      ctxEpicycles.fillStyle = vectorColor;
+      ctxEpicycles.beginPath();
+      ctxEpicycles.arc(c.x, c.y, 1.8, 0, 2 * Math.PI);
+      ctxEpicycles.fill();
+    }
+  }
+
+  // 6. Tip drawing head
+  ctxEpicycles.fillStyle = theme.tip;
+  ctxEpicycles.shadowColor = theme.trail;
+  ctxEpicycles.shadowBlur = 10;
+  ctxEpicycles.beginPath();
+  ctxEpicycles.arc(tip.x, tip.y, 4, 0, 2 * Math.PI);
+  ctxEpicycles.fill();
+  ctxEpicycles.shadowBlur = 0;
+
+  if (tipCoordDisplay) {
+    tipCoordDisplay.textContent = `x: ${Math.round(tip.x)}, y: ${Math.round(tip.y)}`;
+  }
+}
+
+function renderSpectrumCanvas() {
+  if (!ctxSpectrum || !spectrumCanvas) return;
+  const w = spectrumCanvas.width / state.dpr;
+  const h = spectrumCanvas.height / state.dpr;
+  if (w <= 0 || h <= 0) return;
+
+  clearCanvas(ctxSpectrum, w, h);
+
+  const comps = epicycleState.dftComponents;
+  if (!comps || comps.length === 0) return;
+
+  const maxAmp = comps[0] && comps[0].amp > 0 ? comps[0].amp : 1;
+  const totalBars = Math.min(comps.length, 120);
+  const barWidth = Math.max(1, (w - totalBars) / totalBars);
+  const activeLimit = Math.min(epicycleState.kEpicycles, totalBars);
+
+  for (let i = 0; i < totalBars; i++) {
+    const c = comps[i];
+    const barHeight = Math.max(2, (c.amp / maxAmp) * (h - 24));
+    const x = i * (barWidth + 1);
+    const y = h - barHeight - 4;
+
+    if (i < activeLimit) {
+      ctxSpectrum.fillStyle = "var(--theme-accent)";
+      ctxSpectrum.globalAlpha = 0.85;
+    } else {
+      ctxSpectrum.fillStyle = "rgba(255, 255, 255, 0.15)";
+      ctxSpectrum.globalAlpha = 0.4;
+    }
+
+    ctxSpectrum.fillRect(x, y, barWidth, barHeight);
+  }
+  ctxSpectrum.globalAlpha = 1;
+
+  // Cutoff marker
+  const cutoffX = activeLimit * (barWidth + 1);
+  ctxSpectrum.strokeStyle = "#ef4444";
+  ctxSpectrum.lineWidth = 1.5;
+  ctxSpectrum.setLineDash([3, 3]);
+  ctxSpectrum.beginPath();
+  ctxSpectrum.moveTo(cutoffX, 0);
+  ctxSpectrum.lineTo(cutoffX, h);
+  ctxSpectrum.stroke();
+  ctxSpectrum.setLineDash([]);
+}
+
+function initDrawingOnCanvas() {
+  if (!epicyclesCanvas) return;
+
+  epicyclesCanvas.addEventListener("pointerdown", e => {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    try {
+      epicyclesCanvas.setPointerCapture(e.pointerId);
+    } catch (_) {}
+
+    const rect = epicyclesCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    epicycleState.isDrawing = true;
+    epicycleState.drawPoints = [{ x, y }];
+    epicycleState.tracedPath = [];
+    if (drawCanvasHint) drawCanvasHint.style.display = "none";
+  });
+
+  epicyclesCanvas.addEventListener("pointermove", e => {
+    if (!epicycleState.isDrawing) return;
+    const rect = epicyclesCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const last =
+      epicycleState.drawPoints[epicycleState.drawPoints.length - 1];
+    if (!last || Math.hypot(x - last.x, y - last.y) > 2) {
+      epicycleState.drawPoints.push({ x, y });
+    }
+  });
+
+  const finishDrawing = e => {
+    if (!epicycleState.isDrawing) return;
+    epicycleState.isDrawing = false;
+    try {
+      epicyclesCanvas.releasePointerCapture(e.pointerId);
+    } catch (_) {}
+
+    if (epicycleState.drawPoints.length > 5) {
+      loadEpicycleShapeFromPoints(epicycleState.drawPoints, "Custom Drawing");
+    }
+  };
+
+  epicyclesCanvas.addEventListener("pointerup", finishDrawing);
+  epicyclesCanvas.addEventListener("pointercancel", finishDrawing);
+
+  // Drag and drop SVG files
+  epicyclesCanvas.addEventListener("dragover", e => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  epicyclesCanvas.addEventListener("drop", e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleSvgFile(e.dataTransfer.files[0]);
+    }
+  });
+}
+
+function handleSvgFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const text = ev.target ? ev.target.result : "";
+    if (typeof text === "string" && text.length > 0) {
+      const pathData = extractSvgPathData(text);
+      if (pathData) {
+        const pts = parseSvgPathToPoints(
+          pathData,
+          epicycleState.resolution
+        );
+        if (pts.length > 0) {
+          loadEpicycleShapeFromPoints(pts, file.name.replace(/\.svg$/i, ""));
+          if (svgPathInput) svgPathInput.value = pathData.slice(0, 200) + "...";
+        }
+      }
+    }
+  };
+  reader.readAsText(file);
+}
+
+function initEpicycleControls() {
+  // Mode switcher tabs
+  tabWaveforms?.addEventListener("click", () => switchVisualizerMode("waveforms"));
+  tabEpicycles?.addEventListener("click", () => switchVisualizerMode("epicycles"));
+
+  // Source selector tabs
+  srcPresetsBtn?.addEventListener("click", () => {
+    srcPresetsBtn.classList.add("active");
+    srcDrawBtn?.classList.remove("active");
+    srcUploadBtn?.classList.remove("active");
+    if (presetsSubpanel) presetsSubpanel.style.display = "block";
+    if (drawSubpanel) drawSubpanel.style.display = "none";
+    if (uploadSubpanel) uploadSubpanel.style.display = "none";
+    if (drawCanvasHint) drawCanvasHint.style.display = "none";
+  });
+
+  srcDrawBtn?.addEventListener("click", () => {
+    srcDrawBtn.classList.add("active");
+    srcPresetsBtn?.classList.remove("active");
+    srcUploadBtn?.classList.remove("active");
+    if (presetsSubpanel) presetsSubpanel.style.display = "none";
+    if (drawSubpanel) drawSubpanel.style.display = "block";
+    if (uploadSubpanel) uploadSubpanel.style.display = "none";
+    if (drawCanvasHint) drawCanvasHint.style.display = "flex";
+  });
+
+  srcUploadBtn?.addEventListener("click", () => {
+    srcUploadBtn.classList.add("active");
+    srcPresetsBtn?.classList.remove("active");
+    srcDrawBtn?.classList.remove("active");
+    if (presetsSubpanel) presetsSubpanel.style.display = "none";
+    if (drawSubpanel) drawSubpanel.style.display = "none";
+    if (uploadSubpanel) uploadSubpanel.style.display = "block";
+    if (drawCanvasHint) drawCanvasHint.style.display = "none";
+  });
+
+  // Preset buttons
+  presetBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const preset = btn.dataset.preset;
+      if (preset) loadPreset(preset);
+    });
+  });
+
+  // Draw subpanel buttons
+  clearDrawBtn?.addEventListener("click", () => {
+    epicycleState.drawPoints = [];
+    epicycleState.tracedPath = [];
+    if (drawCanvasHint) drawCanvasHint.style.display = "flex";
+    if (ctxEpicycles && epicyclesCanvas) {
+      clearCanvas(
+        ctxEpicycles,
+        epicyclesCanvas.width / state.dpr,
+        epicyclesCanvas.height / state.dpr
+      );
+      drawGrid(
+        ctxEpicycles,
+        epicyclesCanvas.width / state.dpr,
+        epicyclesCanvas.height / state.dpr
+      );
+    }
+  });
+
+  traceDrawBtn?.addEventListener("click", () => {
+    if (epicycleState.drawPoints.length > 5) {
+      loadEpicycleShapeFromPoints(epicycleState.drawPoints, "Custom Drawing");
+    } else {
+      loadPreset(epicycleState.preset);
+    }
+  });
+
+  // Upload subpanel
+  uploadSvgTrigger?.addEventListener("click", () => {
+    svgFileInput?.click();
+  });
+
+  svgFileInput?.addEventListener("change", () => {
+    if (svgFileInput.files && svgFileInput.files[0]) {
+      handleSvgFile(svgFileInput.files[0]);
+    }
+  });
+
+  loadSvgPathBtn?.addEventListener("click", () => {
+    if (svgPathInput && svgPathInput.value.trim()) {
+      const pathData = extractSvgPathData(svgPathInput.value.trim());
+      const pts = parseSvgPathToPoints(pathData, epicycleState.resolution);
+      if (pts.length > 0) {
+        loadEpicycleShapeFromPoints(pts, "Custom SVG Path");
+      }
+    }
+  });
+
+  // Epicycle Count Slider
+  epicycleCountSlider?.addEventListener("input", () => {
+    epicycleState.kEpicycles = parseInt(epicycleCountSlider.value, 10);
+    epicycleState.tracedPath = [];
+    updateEpicycleUI();
+    renderSpectrumCanvas();
+  });
+
+  // Point resolution select
+  epicycleResolutionSelect?.addEventListener("change", () => {
+    epicycleState.resolution = parseInt(epicycleResolutionSelect.value, 10);
+    if (epicycleState.rawPoints.length > 0) {
+      loadEpicycleShapeFromPoints(epicycleState.rawPoints, "Re-sampled");
+    } else {
+      loadPreset(epicycleState.preset);
+    }
+  });
+
+  // Speed slider
+  epicycleSpeedSlider?.addEventListener("input", () => {
+    epicycleState.speed = parseInt(epicycleSpeedSlider.value, 10);
+    if (epicycleSpeedDisplay) {
+      epicycleSpeedDisplay.textContent = `${(epicycleState.speed / 1000).toFixed(1)}s`;
+    }
+    updateEpicycleUI();
+  });
+
+  // Scrubber
+  epicycleScrubber?.addEventListener("input", () => {
+    const val = parseInt(epicycleScrubber.value, 10);
+    epicycleState.time = (val / 1000) * 2 * Math.PI;
+    updateScrubberUI();
+    renderEpicyclesStage();
+  });
+
+  // Play/Pause button
+  epicyclePlayBtn?.addEventListener("click", () => {
+    epicycleState.isPlaying = !epicycleState.isPlaying;
+    if (epicyclePlayBtn) {
+      epicyclePlayBtn.innerHTML = epicycleState.isPlaying
+        ? '<i class="fa-solid fa-pause" id="epicyclePlayIcon"></i> Pause'
+        : '<i class="fa-solid fa-play" id="epicyclePlayIcon"></i> Play';
+    }
+  });
+
+  // Reset button
+  epicycleResetBtn?.addEventListener("click", () => {
+    epicycleState.time = 0;
+    epicycleState.tracedPath = [];
+    updateScrubberUI();
+    renderEpicyclesStage();
+  });
+
+  // Toggles
+  chkCircles?.addEventListener("change", () => {
+    epicycleState.showCircles = chkCircles.checked;
+    renderEpicyclesStage();
+  });
+  chkVectors?.addEventListener("change", () => {
+    epicycleState.showVectors = chkVectors.checked;
+    renderEpicyclesStage();
+  });
+  chkTrail?.addEventListener("change", () => {
+    epicycleState.showTrail = chkTrail.checked;
+    renderEpicyclesStage();
+  });
+  chkOriginal?.addEventListener("change", () => {
+    epicycleState.showOriginal = chkOriginal.checked;
+    renderEpicyclesStage();
+  });
+
+  // Theme selector
+  epicycleThemeSelect?.addEventListener("change", () => {
+    epicycleState.colorTheme = epicycleThemeSelect.value;
+    renderEpicyclesStage();
+  });
+
+  initDrawingOnCanvas();
+}
+
 /* ──── Initialisation ─────────────────────────────────────────────── */
 function init() {
   initTheme();
@@ -563,6 +1321,9 @@ function init() {
 
   // Build harmonic list
   buildHarmonicList();
+
+  // Epicycles setup
+  initEpicycleControls();
 
   // First render
   render();
@@ -576,12 +1337,34 @@ function init() {
 // Resize observer
 const resizeObserver = new ResizeObserver(() => {
   resizeAllCanvases();
-  render();
+  if (activeVisualizerMode === "waveforms") {
+    render();
+  } else {
+    renderEpicyclesStage();
+    renderSpectrumCanvas();
+  }
 });
 if (compositeCanvas?.parentElement)
   resizeObserver.observe(compositeCanvas.parentElement);
 if (harmonicsCanvas?.parentElement)
   resizeObserver.observe(harmonicsCanvas.parentElement);
+if (epicyclesCanvas?.parentElement)
+  resizeObserver.observe(epicyclesCanvas.parentElement);
+if (spectrumCanvas?.parentElement)
+  resizeObserver.observe(spectrumCanvas.parentElement);
+
+// Module Exports for Node testing
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    state,
+    epicycleState,
+    switchVisualizerMode,
+    extractSvgPathData,
+    loadEpicycleShapeFromPoints,
+    loadPreset,
+    EPICYCLE_THEMES,
+  };
+}
 
 // Init on DOM ready
 if (document.readyState === "loading") {
