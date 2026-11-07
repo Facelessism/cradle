@@ -448,6 +448,60 @@ p {
   border-radius: var(--cradle-radius-sm, 8px);
 }
 
+/* ── KaTeX Math Formula Rendering ───────────────────────────────── */
+
+.tool-btn.active {
+  background: rgba(37, 99, 235, 0.25);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.markdown-body .math-block {
+  margin: 1.2em 0;
+  padding: 0.8em 1em;
+  background: rgba(37, 99, 235, 0.04);
+  border: 1px solid var(--cradle-border, #374151);
+  border-radius: var(--cradle-radius-sm, 8px);
+  overflow-x: auto;
+  text-align: center;
+}
+
+.markdown-body .katex-display {
+  margin: 0.5em 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+
+.markdown-body .katex {
+  font-size: 1.1em;
+  text-rendering: auto;
+}
+
+.markdown-body .katex-block-fallback {
+  margin: 1em 0;
+  padding: 0.75em 1em;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px dashed var(--cradle-border, #374151);
+  border-radius: 6px;
+  text-align: center;
+  color: var(--cradle-highlight, #93c5fd);
+}
+
+.markdown-body .katex-inline-fallback {
+  padding: 2px 4px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  color: var(--cradle-highlight, #93c5fd);
+}
+
+.markdown-body .katex-error {
+  color: var(--cradle-danger, #ef4444);
+  font-family: monospace;
+  font-size: 0.9em;
+  border-bottom: 1px dashed var(--cradle-danger, #ef4444);
+}
+
 /* ── Status Bar ─────────────────────────────────────────────────── */
 
 .status-bar {
