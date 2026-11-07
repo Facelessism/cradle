@@ -62,6 +62,32 @@
         </div>
 
         <div class="header-actions">
+          <!-- Mode Switcher Tabs -->
+          <div class="mode-nav" role="tablist" aria-label="Visualizer Mode">
+            <button
+              type="button"
+              class="mode-tab-btn active"
+              role="tab"
+              id="tabWaveforms"
+              aria-selected="true"
+              aria-controls="workspaceWaveforms"
+              data-mode="waveforms"
+            >
+              <i class="fa-solid fa-wave-square"></i> Waveforms
+            </button>
+            <button
+              type="button"
+              class="mode-tab-btn"
+              role="tab"
+              id="tabEpicycles"
+              aria-selected="false"
+              aria-controls="workspaceEpicycles"
+              data-mode="epicycles"
+            >
+              <i class="fa-solid fa-compass-drafting"></i> Epicycle Tracing
+            </button>
+          </div>
+
           <button
             type="button"
             id="theme-toggle"
@@ -80,192 +106,515 @@
     <main class="app-container">
       <!-- ----------- CONTROLS PANEL ----------- -->
       <aside class="panel controls-panel" aria-label="Controls">
-        <!-- Wave Type -->
-        <section class="card">
-          <h2 class="card-title">
-            <i class="fa-solid fa-wave-square"></i> Wave Type
-          </h2>
-          <div class="wave-grid">
-            <button type="button" class="wave-btn active" data-wave="square">
-              <i class="fa-solid fa-grip-lines"></i> Square
-            </button>
-            <button type="button" class="wave-btn" data-wave="sawtooth">
-              <i class="fa-solid fa-chart-line"></i> Sawtooth
-            </button>
-            <button type="button" class="wave-btn" data-wave="triangle">
-              <i class="fa-solid fa-chart-gantt"></i> Triangle
-            </button>
-            <button type="button" class="wave-btn" data-wave="sine">
-              <i class="fa-solid fa-wave-sine"></i> Sine
-            </button>
-          </div>
-        </section>
+        <!-- WAVEFORMS VIEW CONTROLS -->
+        <div id="controlsWaveforms" class="view-panel view-waveforms">
+          <!-- Wave Type -->
+          <section class="card">
+            <h2 class="card-title">
+              <i class="fa-solid fa-wave-square"></i> Wave Type
+            </h2>
+            <div class="wave-grid">
+              <button type="button" class="wave-btn active" data-wave="square">
+                <i class="fa-solid fa-grip-lines"></i> Square
+              </button>
+              <button type="button" class="wave-btn" data-wave="sawtooth">
+                <i class="fa-solid fa-chart-line"></i> Sawtooth
+              </button>
+              <button type="button" class="wave-btn" data-wave="triangle">
+                <i class="fa-solid fa-chart-gantt"></i> Triangle
+              </button>
+              <button type="button" class="wave-btn" data-wave="sine">
+                <i class="fa-solid fa-wave-sine"></i> Sine
+              </button>
+            </div>
+          </section>
 
-        <!-- Frequency -->
-        <section class="card">
-          <h2 class="card-title">
-            <i class="fa-solid fa-sliders"></i> Frequency
-          </h2>
-          <div class="harmonic-control">
-            <label for="freqSlider">Hz</label>
-            <input
-              type="range"
-              id="freqSlider"
-              min="20"
-              max="500"
-              step="1"
-              value="100"
-              aria-label="Fundamental frequency"
-              title="Fundamental frequency: 100 Hz"
-              aria-valuemin="20"
-              aria-valuemax="500"
-              aria-valuenow="100"
-              aria-valuetext="100 Hz"
-            />
-            <span class="range-value" id="freqDisplay">100 Hz</span>
-          </div>
-        </section>
+          <!-- Frequency -->
+          <section class="card">
+            <h2 class="card-title">
+              <i class="fa-solid fa-sliders"></i> Frequency
+            </h2>
+            <div class="harmonic-control">
+              <label for="freqSlider">Hz</label>
+              <input
+                type="range"
+                id="freqSlider"
+                min="20"
+                max="500"
+                step="1"
+                value="100"
+                aria-label="Fundamental frequency"
+                title="Fundamental frequency: 100 Hz"
+                aria-valuemin="20"
+                aria-valuemax="500"
+                aria-valuenow="100"
+                aria-valuetext="100 Hz"
+              />
+              <span class="range-value" id="freqDisplay">100 Hz</span>
+            </div>
+          </section>
 
-        <!-- Harmonics Count -->
-        <section class="card">
-          <h2 class="card-title">
-            <i class="fa-solid fa-layer-group"></i> Harmonics
-          </h2>
-          <div class="harmonic-control">
-            <label for="harmCount">Count</label>
-            <input
-              type="range"
-              id="harmCount"
-              min="1"
-              max="20"
-              step="1"
-              value="5"
-              aria-label="Number of harmonics"
-              title="Number of harmonics: 5"
-              aria-valuemin="1"
-              aria-valuemax="20"
-              aria-valuenow="5"
-              aria-valuetext="5 harmonics"
-            />
-            <span class="range-value" id="harmDisplay">5</span>
-          </div>
-        </section>
+          <!-- Harmonics Count -->
+          <section class="card">
+            <h2 class="card-title">
+              <i class="fa-solid fa-layer-group"></i> Harmonics
+            </h2>
+            <div class="harmonic-control">
+              <label for="harmCount">Count</label>
+              <input
+                type="range"
+                id="harmCount"
+                min="1"
+                max="20"
+                step="1"
+                value="5"
+                aria-label="Number of harmonics"
+                title="Number of harmonics: 5"
+                aria-valuemin="1"
+                aria-valuemax="20"
+                aria-valuenow="5"
+                aria-valuetext="5 harmonics"
+              />
+              <span class="range-value" id="harmDisplay">5</span>
+            </div>
+          </section>
 
-        <!-- Animation -->
-        <section class="card">
-          <h2 class="card-title"><i class="fa-solid fa-play"></i> Animation</h2>
-          <div class="harmonic-control">
-            <label for="speedSlider">Speed</label>
-            <input
-              type="range"
-              id="speedSlider"
-              min="200"
-              max="3000"
-              step="100"
-              value="1200"
-              aria-label="Animation speed"
-              title="Animation speed: 1.2s"
-              aria-valuemin="200"
-              aria-valuemax="3000"
-              aria-valuenow="1200"
-              aria-valuetext="1.2s"
-            />
-            <span class="range-value" id="speedDisplay">1.2s</span>
-          </div>
-          <div class="form-row" style="margin-top: var(--cradle-space-2)">
-            <button type="button" class="btn btn-primary" id="animateBtn">
-              <i class="fa-solid fa-play" id="animateIcon"></i> Animate Build
-            </button>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              id="resetBtn"
-              aria-label="Reset waveform"
-            >
-              <i class="fa-solid fa-rotate-left"></i>
-            </button>
-          </div>
-        </section>
+          <!-- Animation -->
+          <section class="card">
+            <h2 class="card-title"><i class="fa-solid fa-play"></i> Animation</h2>
+            <div class="harmonic-control">
+              <label for="speedSlider">Speed</label>
+              <input
+                type="range"
+                id="speedSlider"
+                min="200"
+                max="3000"
+                step="100"
+                value="1200"
+                aria-label="Animation speed"
+                title="Animation speed: 1.2s"
+                aria-valuemin="200"
+                aria-valuemax="3000"
+                aria-valuenow="1200"
+                aria-valuetext="1.2s"
+              />
+              <span class="range-value" id="speedDisplay">1.2s</span>
+            </div>
+            <div class="form-row" style="margin-top: var(--cradle-space-2)">
+              <button type="button" class="btn btn-primary" id="animateBtn">
+                <i class="fa-solid fa-play" id="animateIcon"></i> Animate Build
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                id="resetBtn"
+                aria-label="Reset waveform"
+              >
+                <i class="fa-solid fa-rotate-left"></i>
+              </button>
+            </div>
+          </section>
 
-        <!-- Harmonic List -->
-        <section class="card">
-          <h2 class="card-title">
-            <i class="fa-solid fa-list"></i> Harmonic Toggle
-          </h2>
-          <div class="harmonic-list" id="harmonicList">
-            <!-- Populated by script.js -->
-          </div>
-        </section>
+          <!-- Harmonic List -->
+          <section class="card">
+            <h2 class="card-title">
+              <i class="fa-solid fa-list"></i> Harmonic Toggle
+            </h2>
+            <div class="harmonic-list" id="harmonicList">
+              <!-- Populated by script.js -->
+            </div>
+          </section>
+        </div>
+
+        <!-- EPICYCLES VIEW CONTROLS -->
+        <div id="controlsEpicycles" class="view-panel view-epicycles" style="display: none">
+          <!-- Shape Source Card -->
+          <section class="card">
+            <h2 class="card-title">
+              <i class="fa-solid fa-bezier-curve"></i> Shape Source
+            </h2>
+            <div class="source-grid" role="tablist" aria-label="Shape input source">
+              <button
+                type="button"
+                class="source-tab-btn active"
+                id="srcPresetsBtn"
+                data-source="presets"
+              >
+                <i class="fa-solid fa-shapes"></i> Presets
+              </button>
+              <button
+                type="button"
+                class="source-tab-btn"
+                id="srcDrawBtn"
+                data-source="draw"
+              >
+                <i class="fa-solid fa-pen-nib"></i> Draw
+              </button>
+              <button
+                type="button"
+                class="source-tab-btn"
+                id="srcUploadBtn"
+                data-source="upload"
+              >
+                <i class="fa-solid fa-upload"></i> SVG
+              </button>
+            </div>
+
+            <!-- Presets Subpanel -->
+            <div id="presetsSubpanel" class="subpanel">
+              <div class="preset-grid">
+                <button type="button" class="preset-btn active" data-preset="heart">
+                  <i class="fa-solid fa-heart"></i> Heart
+                </button>
+                <button type="button" class="preset-btn" data-preset="star">
+                  <i class="fa-solid fa-star"></i> Star
+                </button>
+                <button type="button" class="preset-btn" data-preset="infinity">
+                  <i class="fa-solid fa-infinity"></i> Infinity
+                </button>
+                <button type="button" class="preset-btn" data-preset="butterfly">
+                  <i class="fa-solid fa-gem"></i> Butterfly
+                </button>
+                <button type="button" class="preset-btn" data-preset="pi">
+                  <i class="fa-solid fa-circle-dot"></i> Fourier &pi;
+                </button>
+                <button type="button" class="preset-btn" data-preset="circle">
+                  <i class="fa-regular fa-circle"></i> Circle
+                </button>
+              </div>
+            </div>
+
+            <!-- Draw Subpanel -->
+            <div id="drawSubpanel" class="subpanel" style="display: none">
+              <p class="subpanel-tip">
+                <i class="fa-solid fa-hand-pointer"></i> Drag across the stage canvas to draw an arbitrary closed curve.
+              </p>
+              <div class="form-row">
+                <button type="button" class="btn btn-secondary" id="clearDrawBtn" style="flex: 1">
+                  <i class="fa-solid fa-trash-can"></i> Clear
+                </button>
+                <button type="button" class="btn btn-primary" id="traceDrawBtn" style="flex: 1">
+                  <i class="fa-solid fa-play"></i> Re-trace
+                </button>
+              </div>
+            </div>
+
+            <!-- Upload Subpanel -->
+            <div id="uploadSubpanel" class="subpanel" style="display: none">
+              <input
+                type="file"
+                id="svgFileInput"
+                accept=".svg,image/svg+xml"
+                style="display: none"
+                aria-label="Upload SVG vector file"
+              />
+              <button
+                type="button"
+                class="btn btn-secondary upload-dropzone-btn"
+                id="uploadSvgTrigger"
+              >
+                <i class="fa-solid fa-file-arrow-up"></i> Select SVG File
+              </button>
+              <div class="svg-path-row">
+                <label for="svgPathInput" class="sr-only">Or paste SVG Path data</label>
+                <textarea
+                  id="svgPathInput"
+                  class="svg-path-input"
+                  placeholder="Or paste SVG path data (d=&quot;M...&quot;)"
+                  rows="2"
+                ></textarea>
+                <button type="button" class="btn btn-primary" id="loadSvgPathBtn">
+                  <i class="fa-solid fa-code"></i> Trace Path
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Epicycles Count Card -->
+          <section class="card">
+            <h2 class="card-title">
+              <i class="fa-solid fa-layer-group"></i> Epicycles Count
+            </h2>
+            <div class="harmonic-control">
+              <label for="epicycleCountSlider">Count</label>
+              <input
+                type="range"
+                id="epicycleCountSlider"
+                min="1"
+                max="150"
+                step="1"
+                value="50"
+                aria-label="Number of Fourier epicycles"
+                title="Number of epicycles: 50"
+              />
+              <span class="range-value" id="epicycleCountDisplay">50</span>
+            </div>
+            <div class="harmonic-control">
+              <label for="epicycleResolutionSelect">Points</label>
+              <select id="epicycleResolutionSelect" class="select-input">
+                <option value="100">100 points</option>
+                <option value="150" selected>150 points</option>
+                <option value="250">250 points</option>
+                <option value="400">400 points</option>
+              </select>
+            </div>
+          </section>
+
+          <!-- Orbit Animation Card -->
+          <section class="card">
+            <h2 class="card-title">
+              <i class="fa-solid fa-play"></i> Orbit Animation
+            </h2>
+            <div class="harmonic-control">
+              <label for="epicycleSpeedSlider">Speed</label>
+              <input
+                type="range"
+                id="epicycleSpeedSlider"
+                min="2000"
+                max="25000"
+                step="500"
+                value="8000"
+                aria-label="Animation loop duration"
+                title="Loop duration: 8.0s"
+              />
+              <span class="range-value" id="epicycleSpeedDisplay">8.0s</span>
+            </div>
+            <div class="harmonic-control">
+              <label for="epicycleScrubber">Phase</label>
+              <input
+                type="range"
+                id="epicycleScrubber"
+                min="0"
+                max="1000"
+                step="1"
+                value="0"
+                aria-label="Time phase scrubber"
+              />
+              <span class="range-value" id="epicycleScrubberDisplay">0.0&pi;</span>
+            </div>
+            <div class="form-row" style="margin-top: var(--cradle-space-2)">
+              <button type="button" class="btn btn-primary" id="epicyclePlayBtn">
+                <i class="fa-solid fa-pause" id="epicyclePlayIcon"></i> Pause
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                id="epicycleResetBtn"
+                aria-label="Reset epicycles"
+              >
+                <i class="fa-solid fa-rotate-left"></i>
+              </button>
+            </div>
+          </section>
+
+          <!-- Display Toggles Card -->
+          <section class="card">
+            <h2 class="card-title">
+              <i class="fa-solid fa-sliders"></i> Display Toggles
+            </h2>
+            <div class="toggle-list">
+              <label class="toggle-item">
+                <input type="checkbox" id="chkCircles" checked />
+                <span>Epicycle Circles</span>
+              </label>
+              <label class="toggle-item">
+                <input type="checkbox" id="chkVectors" checked />
+                <span>Radii Vectors</span>
+              </label>
+              <label class="toggle-item">
+                <input type="checkbox" id="chkTrail" checked />
+                <span>Traced Path</span>
+              </label>
+              <label class="toggle-item">
+                <input type="checkbox" id="chkOriginal" checked />
+                <span>Reference Shape</span>
+              </label>
+            </div>
+            <div class="harmonic-control" style="margin-top: var(--cradle-space-3); margin-bottom: 0;">
+              <label for="epicycleThemeSelect">Theme</label>
+              <select id="epicycleThemeSelect" class="select-input">
+                <option value="indigo">Neon Indigo</option>
+                <option value="rainbow">Spectral Rainbow</option>
+                <option value="amber">Cyber Amber</option>
+                <option value="emerald">Aurora Emerald</option>
+              </select>
+            </div>
+          </section>
+
+          <!-- DFT Metrics Card -->
+          <section class="card">
+            <h2 class="card-title">
+              <i class="fa-solid fa-chart-pie"></i> DFT Spectrum
+            </h2>
+            <div class="metrics-grid">
+              <div class="metric-item">
+                <span class="metric-label">Points (N)</span>
+                <span class="metric-val" id="metricPoints">150</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Epicycles (K)</span>
+                <span class="metric-val" id="metricHarmonics">50</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Energy</span>
+                <span class="metric-val" id="metricEnergy">98.5%</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">Max Radius</span>
+                <span class="metric-val" id="metricMaxRadius">—</span>
+              </div>
+            </div>
+          </section>
+        </div>
       </aside>
 
       <!-- ----------- WORKSPACE PANEL ----------- -->
       <section class="panel workspace-panel" aria-label="Visualization">
-        <!-- Composite Waveform -->
-        <div class="canvas-card">
-          <div class="canvas-header">
-            <h3 class="canvas-title">
-              <i
-                class="fa-solid fa-chart-line"
-                style="color: var(--theme-accent)"
-              ></i>
-              Composite Waveform
-            </h3>
-            <span class="canvas-meta" id="compositeMeta">—</span>
+        <!-- WAVEFORMS VIEW WORKSPACE -->
+        <div id="workspaceWaveforms" class="view-panel view-waveforms">
+          <!-- Composite Waveform -->
+          <div class="canvas-card">
+            <div class="canvas-header">
+              <h3 class="canvas-title">
+                <i
+                  class="fa-solid fa-chart-line"
+                  style="color: var(--theme-accent)"
+                ></i>
+                Composite Waveform
+              </h3>
+              <span class="canvas-meta" id="compositeMeta">—</span>
+            </div>
+            <div class="canvas-wrap">
+              <canvas
+                id="compositeCanvas"
+                aria-label="Composite Fourier waveform"
+              ></canvas>
+            </div>
+            <div class="legend" id="compositeLegend">
+              <span class="legend-item">
+                <span
+                  class="legend-swatch"
+                  style="background: var(--theme-accent)"
+                ></span>
+                Composite
+              </span>
+            </div>
           </div>
-          <div class="canvas-wrap">
-            <canvas
-              id="compositeCanvas"
-              aria-label="Composite Fourier waveform"
-            ></canvas>
+
+          <!-- Individual Harmonics -->
+          <div class="canvas-card">
+            <div class="canvas-header">
+              <h3 class="canvas-title">
+                <i
+                  class="fa-solid fa-bars-progress"
+                  style="color: var(--theme-accent)"
+                ></i>
+                Individual Harmonics
+              </h3>
+              <span class="canvas-meta" id="harmonicsMeta">—</span>
+            </div>
+            <div class="canvas-wrap">
+              <canvas
+                id="harmonicsCanvas"
+                aria-label="Individual harmonic waveforms"
+              ></canvas>
+            </div>
+            <div class="status-bar" role="status" aria-live="polite">
+              <span id="statusLeft">Drag sliders to adjust parameters</span>
+              <span id="statusRight">Fourier Series: f(t) = &Sigma; a<sub>n</sub>&middot;sin(n&omega;t)</span>
+            </div>
           </div>
-          <div class="legend" id="compositeLegend">
-            <span class="legend-item">
-              <span
-                class="legend-swatch"
-                style="background: var(--theme-accent)"
-              ></span>
-              Composite
-            </span>
+
+          <!-- Info -->
+          <div class="info-card">
+            <h3><i class="fa-solid fa-lightbulb"></i> How it works</h3>
+            <p>
+              The Fourier series decomposes any periodic waveform into a sum of
+              sine and cosine waves (harmonics). The fundamental frequency
+              determines the pitch, and each harmonic contributes at an integer
+              multiple of that frequency. <strong>Square</strong> waves use odd
+              harmonics, <strong>Sawtooth</strong> uses all harmonics, and
+              <strong>Triangle</strong> uses odd harmonics that decay more
+              rapidly.
+            </p>
+            <span class="formula">f(t) = &Sigma; b<sub>n</sub> &middot; sin(n &middot; &omega;<sub>0</sub> &middot; t)</span>
           </div>
         </div>
 
-        <!-- Individual Harmonics -->
-        <div class="canvas-card">
-          <div class="canvas-header">
-            <h3 class="canvas-title">
-              <i
-                class="fa-solid fa-bars-progress"
-                style="color: var(--theme-accent)"
-              ></i>
-              Individual Harmonics
-            </h3>
-            <span class="canvas-meta" id="harmonicsMeta">—</span>
+        <!-- EPICYCLES VIEW WORKSPACE -->
+        <div id="workspaceEpicycles" class="view-panel view-epicycles" style="display: none">
+          <!-- Epicycles Stage -->
+          <div class="canvas-card">
+            <div class="canvas-header">
+              <h3 class="canvas-title">
+                <i
+                  class="fa-solid fa-compass-drafting"
+                  style="color: var(--theme-accent)"
+                ></i>
+                Fourier Epicycles Stage
+              </h3>
+              <span class="canvas-meta" id="epicyclesMeta">—</span>
+            </div>
+            <div class="canvas-wrap epicycles-stage-wrap">
+              <canvas
+                id="epicyclesCanvas"
+                aria-label="Fourier series epicycles orbiting stage"
+              ></canvas>
+              <div class="draw-canvas-hint" id="drawCanvasHint" style="display: none">
+                <i class="fa-solid fa-pencil"></i> Click &amp; drag on canvas to sketch a custom shape
+              </div>
+            </div>
+            <div class="legend" id="epicyclesLegend">
+              <span class="legend-item">
+                <span class="legend-swatch" style="background: var(--theme-accent)"></span>
+                Traced Curve
+              </span>
+              <span class="legend-item">
+                <span class="legend-swatch" style="background: rgba(255, 255, 255, 0.25)"></span>
+                Orbiting Epicycles
+              </span>
+              <span class="legend-item">
+                <span class="legend-swatch" style="background: rgba(255, 255, 255, 0.45)"></span>
+                Reference Shape
+              </span>
+              <span class="legend-item tip-coord-item">
+                <i class="fa-solid fa-crosshairs"></i> <span id="tipCoordDisplay">x: 0, y: 0</span>
+              </span>
+            </div>
           </div>
-          <div class="canvas-wrap">
-            <canvas
-              id="harmonicsCanvas"
-              aria-label="Individual harmonic waveforms"
-            ></canvas>
-          </div>
-          <div class="status-bar" role="status" aria-live="polite">
-            <span id="statusLeft">Drag sliders to adjust parameters</span>
-            <span id="statusRight">Fourier Series: f(t) = Σ aₙ·sin(nωt)</span>
-          </div>
-        </div>
 
-        <!-- Info -->
-        <div class="info-card">
-          <h3><i class="fa-solid fa-lightbulb"></i> How it works</h3>
-          <p>
-            The Fourier series decomposes any periodic waveform into a sum of
-            sine and cosine waves (harmonics). The fundamental frequency
-            determines the pitch, and each harmonic contributes at an integer
-            multiple of that frequency. <strong>Square</strong> waves use odd
-            harmonics, <strong>Sawtooth</strong> uses all harmonics, and
-            <strong>Triangle</strong> uses odd harmonics that decay more
-            rapidly.
-          </p>
-          <span class="formula">f(t) = Σ bₙ · sin(n · ω₀ · t)</span>
+          <!-- DFT Amplitude Spectrum -->
+          <div class="canvas-card">
+            <div class="canvas-header">
+              <h3 class="canvas-title">
+                <i
+                  class="fa-solid fa-chart-column"
+                  style="color: var(--theme-accent)"
+                ></i>
+                DFT Amplitude Spectrum (|X<sub>k</sub>|)
+              </h3>
+              <span class="canvas-meta" id="spectrumMeta">—</span>
+            </div>
+            <div class="canvas-wrap" style="height: 140px;">
+              <canvas
+                id="spectrumCanvas"
+                aria-label="DFT harmonic amplitude spectrum bar chart"
+              ></canvas>
+            </div>
+            <div class="status-bar" role="status" aria-live="polite">
+              <span id="epicyclesStatusLeft">Ready — select a preset or sketch a custom curve</span>
+              <span id="epicyclesStatusRight">Complex DFT: z(t) = &Sigma; X<sub>k</sub> &middot; e<sup>i&middot;k&middot;t</sup></span>
+            </div>
+          </div>
+
+          <!-- Epicycles Theory Info Card -->
+          <div class="info-card">
+            <h3><i class="fa-solid fa-lightbulb"></i> How Complex DFT &amp; Epicycles Work</h3>
+            <p>
+              By treating 2D path coordinates as complex numbers <code>z<sub>n</sub> = x<sub>n</sub> + i&middot;y<sub>n</sub></code>, the 1D Complex Discrete Fourier Transform (DFT) decomposes any closed contour into rotating circular vectors (epicycles). Each epicycle orbits with angular frequency <code>k</code>, radius <code>|X<sub>k</sub>|</code>, and phase <code>&phi;<sub>k</sub></code>. Stacking them tip-to-tail yields a mechanical chain whose drawing head reproduces the original drawing in real time!
+            </p>
+            <span class="formula">X<sub>k</sub> = (1/N) &Sigma; z<sub>n</sub> &middot; e<sup>-i 2&pi; k n / N</sup> &emsp;&Longleftrightarrow&emsp; z(t) = &Sigma; X<sub>k</sub> &middot; e<sup>i k t</sup></span>
+          </div>
         </div>
       </section>
     </main>
