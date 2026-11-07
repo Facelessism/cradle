@@ -170,9 +170,55 @@
 
               <div class="config-group">
                 <label>
-                  <input type="checkbox" id="showAreas" />
+                  <input type="checkbox" id="showAreas" checked />
                   Enable Named Areas
                 </label>
+              </div>
+
+              <div class="config-group">
+                <label>
+                  <input type="checkbox" id="enableNamedLines" />
+                  Explicit Named Lines
+                </label>
+              </div>
+
+              <div class="config-group">
+                <label>
+                  <input type="checkbox" id="includeResponsiveCSS" checked />
+                  Include Responsive CSS
+                </label>
+              </div>
+            </div>
+
+            <!-- Named Lines Configuration Card -->
+            <div
+              class="card named-lines-card"
+              id="namedLinesCard"
+              style="display: none"
+            >
+              <div class="card-header-row">
+                <h2>🏷️ Named Grid Lines</h2>
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  id="autoInferLinesBtn"
+                  title="Auto-generate line names from current areas"
+                >
+                  ⚡ Auto-Name
+                </button>
+              </div>
+              <p class="hint-text">
+                Assign bracketed line names e.g. <code>[main-start]</code>
+              </p>
+
+              <div class="named-lines-section">
+                <h3>Column Lines (<span id="colLinesCount">4</span>)</h3>
+                <div class="named-lines-list" id="colLinesList"></div>
+              </div>
+
+              <div class="named-lines-section" style="margin-top: 0.8rem">
+                <h3>Row Lines (<span id="rowLinesCount">4</span>)</h3>
+                <div class="named-lines-list" id="rowLinesList"></div>
               </div>
             </div>
 
@@ -289,13 +335,54 @@
             <!-- Live Preview Card -->
             <div class="card preview-card">
               <div class="preview-header">
-                <h2>👁 Live Preview</h2>
+                <div class="preview-title-group">
+                  <h2>👁 Live Preview</h2>
+                  <div
+                    class="breakpoint-toggle-group"
+                    role="group"
+                    aria-label="Responsive Viewport Breakpoints"
+                  >
+                    <button
+                      type="button"
+                      class="bp-btn active"
+                      data-bp="desktop"
+                      id="bpDesktopBtn"
+                      title="Desktop view (100% width)"
+                    >
+                      🖥️ Desktop
+                    </button>
+                    <button
+                      type="button"
+                      class="bp-btn"
+                      data-bp="tablet"
+                      id="bpTabletBtn"
+                      title="Tablet view (768px width)"
+                    >
+                      💻 Tablet (768px)
+                    </button>
+                    <button
+                      type="button"
+                      class="bp-btn"
+                      data-bp="mobile"
+                      id="bpMobileBtn"
+                      title="Mobile view (375px width)"
+                    >
+                      📱 Mobile (375px)
+                    </button>
+                  </div>
+                </div>
                 <div class="preview-info" role="status" aria-live="polite">
                   <span id="gridSizeLabel" class="badge">3 × 3</span>
                   <span id="itemCountLabel" class="badge">0 items</span>
+                  <span id="viewportLabel" class="badge badge-bp">100% Desktop</span>
                 </div>
               </div>
-              <div class="preview-container">
+              <div class="drag-hint-banner" id="dragHintBanner">
+                <span class="drag-hint-text">
+                  ✨ <strong>Visual Drag-to-Merge:</strong> Click &amp; drag across grid cells to visually define named areas
+                </span>
+              </div>
+              <div class="preview-container" id="previewContainer">
                 <div class="grid-preview" id="gridPreview">
                   <!-- Grid items render here -->
                 </div>
