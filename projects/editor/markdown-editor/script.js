@@ -14,8 +14,9 @@ const $lineInfo = document.getElementById("lineInfo");
 const $readTime = document.getElementById("readTime");
 const $paneDivider = document.getElementById("paneDivider");
 const $editorContainer = document.getElementById("editorContainer");
+const $btnSyncScroll = document.getElementById("btn-sync-scroll");
 
-/* ── Marked.js Configuration ────────────────────────────────────── */
+/* ── Marked.js & KaTeX Configuration ────────────────────────────── */
 
 let markedConfigured = false;
 
@@ -49,6 +50,81 @@ function getMarked() {
   return marked;
 }
 
+/**
+ * Returns the global KaTeX instance when loaded via CDN.
+ */
+function getKaTeX() {
+  const katex = typeof window !== "undefined" ? window.katex : undefined;
+  if (!katex || typeof katex.renderToString !== "function") return null;
+  return katex;
+}
+
+/**
+ * Pre-processes math formulas ($...$ inline, $$...$$ block) to protect them
+ * from Markdown syntax mangling, parses Markdown, and renders KaTeX output.
+ */
+function processMathInMarkdown(md, marked) {
+  const katex = getKaTeX();
+  const mathPlaceholders = [];
+
+  // 1. Block math: $$ ... $$
+  let text = md.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
+    const id = `@@KATEX_BLOCK_${mathPlaceholders.length}@@`;
+    mathPlaceholders.push({ id, formula: formula.trim(), displayMode: true });
+    return `\n\n${id}\n\n`;
+  });
+
+  // 2. Inline math: $ ... $ (excluding escaped \$)
+  text = text.replace(
+    /(?<!\\|\$)\$(?!\$)((?:\\\$|[^\$\n])+?)(?<!\\)\$/g,
+    (match, formula) => {
+      const id = `@@KATEX_INLINE_${mathPlaceholders.length}@@`;
+      mathPlaceholders.push({
+        id,
+        formula: formula.trim(),
+        displayMode: false,
+      });
+      return id;
+    }
+  );
+
+  let html = marked.parse(text);
+
+  for (const item of mathPlaceholders) {
+    let rendered;
+    if (katex) {
+      try {
+        rendered = katex.renderToString(item.formula, {
+          displayMode: item.displayMode,
+          throwOnError: false,
+        });
+      } catch (err) {
+        rendered = `<span class="katex-error">${escapeHtml(item.formula)}</span>`;
+      }
+    } else {
+      rendered = item.displayMode
+        ? `<div class="katex-block-fallback font-mono">$$${escapeHtml(item.formula)}$$</div>`
+        : `<span class="katex-inline-fallback font-mono">$${escapeHtml(item.formula)}$</span>`;
+    }
+
+    if (item.displayMode) {
+      const pRegex = new RegExp(`<p>\\s*${item.id}\\s*<\\/p>`, "g");
+      if (pRegex.test(html)) {
+        html = html.replace(pRegex, `<div class="math-block">${rendered}</div>`);
+      } else {
+        html = html.replace(
+          new RegExp(item.id, "g"),
+          `<div class="math-block">${rendered}</div>`
+        );
+      }
+    } else {
+      html = html.replace(new RegExp(item.id, "g"), rendered);
+    }
+  }
+
+  return html;
+}
+
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -71,6 +147,24 @@ Start typing on the **left** and see the **live preview** on the right.
 - Inline \`code\` and fenced code blocks
 - Blockquotes and horizontal rules
 - Tables
+- **Live KaTeX Math Rendering** ($...$ and $$...$$)
+- **Synchronized Bi-Directional Scrolling**
+
+## Mathematical Formulas (KaTeX)
+
+Einstein's mass-energy equivalence: $E = mc^2$ and spectral root $\\lambda_i \\in \\mathbb{R}$.
+
+The Gaussian integral in display block mode:
+
+$$
+\\int_{-\\infty}^{\\infty} e^{-x^2} \\, dx = \\sqrt{\\pi}
+$$
+
+Euler's identity:
+
+$$
+e^{i\\pi} + 1 = 0
+$$
 
 ## Code Example
 
@@ -84,11 +178,13 @@ console.log(greet("World"));
 
 ## Table
 
-| Feature       | Status |
-|---------------|--------|
-| Live Preview  | ✅ Done |
-| Toolbar       | ✅ Done |
-| Export        | ✅ Done |
+| Feature              | Status  |
+|----------------------|---------|
+| Live Preview         | ✅ Done |
+| KaTeX Math Formulas  | ✅ Done |
+| Sync Bi-Dir Scroll   | ✅ Done |
+| Toolbar & Shortcuts  | ✅ Done |
+| Export MD & HTML     | ✅ Done |
 
 > Markdown makes writing for the web fast and enjoyable.
 
@@ -100,6 +196,13 @@ console.log(greet("World"));
 /* ── State ──────────────────────────────────────────────────────── */
 
 let suppressInput = false;
+let isSyncScrollEnabled = true;
+let isSyncingScroll = false;
+
+const raf =
+  typeof requestAnimationFrame === "function"
+    ? requestAnimationFrame
+    : cb => setTimeout(cb, 0);
 
 /* ── Core Render ────────────────────────────────────────────────── */
 
@@ -113,7 +216,7 @@ function renderPreview() {
   }
 
   try {
-    $preview.innerHTML = marked.parse(md);
+    $preview.innerHTML = processMathInMarkdown(md, marked);
   } catch (e) {
     $preview.innerHTML = `<p style="color:var(--cradle-danger,#dc2626)">Parse error: ${escapeHtml(e.message)}</p>`;
   }
@@ -210,6 +313,14 @@ const actions = {
       "\n| Column 1 | Column 2 | Column 3 |\n|----------|----------|----------|\n| Cell 1   | Cell 2   | Cell 3   |\n| Cell 4   | Cell 5   | Cell 6   |\n"
     );
   },
+  math() {
+    const sel = getSelection_();
+    if (sel.text.includes("\n")) {
+      wrapSelection("$$\n", "\n$$", "E = mc^2");
+    } else {
+      wrapSelection("$", "$", "E = mc^2");
+    }
+  },
 };
 
 /* ── Selection / Cursor Helpers ─────────────────────────────────── */
@@ -303,7 +414,7 @@ function exportHTML() {
   if (!content.trim()) return;
   const marked = getMarked();
   const rendered = marked
-    ? marked.parse(content)
+    ? processMathInMarkdown(content, marked)
     : `<pre>${escapeHtml(content)}</pre>`;
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -311,6 +422,7 @@ function exportHTML() {
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Exported Document</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
            max-width: 800px; margin: 2rem auto; padding: 0 1rem; line-height: 1.6;
@@ -325,6 +437,7 @@ function exportHTML() {
     th { background: #f9fafb; }
     img { max-width: 100%; }
     a { color: #2563eb; }
+    .math-block { margin: 1.2em 0; text-align: center; overflow-x: auto; }
   </style>
 </head>
 <body>
@@ -389,6 +502,7 @@ document.addEventListener("keydown", e => {
     k: "link",
     q: "quote",
     h: "heading",
+    m: "math",
     "`": "code",
   };
 
@@ -403,6 +517,92 @@ document.addEventListener("keydown", e => {
     exportMarkdown();
   }
 });
+
+/* ── Synchronized Bi-Directional Scroll ─────────────────────────── */
+
+function initSyncScroll() {
+  if (!$editor || !$preview) return;
+
+  function handleEditorScroll() {
+    if (!isSyncScrollEnabled || isSyncingScroll) return;
+    isSyncingScroll = true;
+
+    const editorScrollTop = $editor.scrollTop;
+    const editorScrollHeight = $editor.scrollHeight - $editor.clientHeight;
+    const previewScrollHeight = $preview.scrollHeight - $preview.clientHeight;
+
+    if (editorScrollHeight <= 0 || previewScrollHeight <= 0) {
+      isSyncingScroll = false;
+      return;
+    }
+
+    const lines = $editor.value.split("\n");
+    const totalLines = Math.max(1, lines.length);
+    const lineHeight = $editor.scrollHeight / totalLines;
+    const currentLine = editorScrollTop / lineHeight;
+    const scrollRatio = Math.min(Math.max(currentLine / totalLines, 0), 1);
+
+    if (editorScrollTop <= 5) {
+      $preview.scrollTop = 0;
+    } else if (editorScrollTop >= editorScrollHeight - 5) {
+      $preview.scrollTop = previewScrollHeight;
+    } else {
+      $preview.scrollTop = scrollRatio * previewScrollHeight;
+    }
+
+    raf(() => {
+      isSyncingScroll = false;
+    });
+  }
+
+  function handlePreviewScroll() {
+    if (!isSyncScrollEnabled || isSyncingScroll) return;
+    isSyncingScroll = true;
+
+    const previewScrollTop = $preview.scrollTop;
+    const previewScrollHeight = $preview.scrollHeight - $preview.clientHeight;
+    const editorScrollHeight = $editor.scrollHeight - $editor.clientHeight;
+
+    if (previewScrollHeight <= 0 || editorScrollHeight <= 0) {
+      isSyncingScroll = false;
+      return;
+    }
+
+    const scrollRatio = Math.min(
+      Math.max(previewScrollTop / previewScrollHeight, 0),
+      1
+    );
+
+    if (previewScrollTop <= 5) {
+      $editor.scrollTop = 0;
+    } else if (previewScrollTop >= previewScrollHeight - 5) {
+      $editor.scrollTop = editorScrollHeight;
+    } else {
+      $editor.scrollTop = scrollRatio * editorScrollHeight;
+    }
+
+    raf(() => {
+      isSyncingScroll = false;
+    });
+  }
+
+  $editor.addEventListener("scroll", handleEditorScroll, { passive: true });
+  $preview.addEventListener("scroll", handlePreviewScroll, { passive: true });
+
+  if ($btnSyncScroll) {
+    $btnSyncScroll.addEventListener("click", () => {
+      isSyncScrollEnabled = !isSyncScrollEnabled;
+      $btnSyncScroll.classList.toggle("active", isSyncScrollEnabled);
+      $btnSyncScroll.setAttribute(
+        "aria-pressed",
+        isSyncScrollEnabled ? "true" : "false"
+      );
+      $btnSyncScroll.title = isSyncScrollEnabled
+        ? "Synchronized Scrolling: ON"
+        : "Synchronized Scrolling: OFF";
+    });
+  }
+}
 
 /* ── Event Listeners ────────────────────────────────────────────── */
 
@@ -438,9 +638,21 @@ $editor.addEventListener("keydown", e => {
   const saved = localStorage.getItem("md_editor_content");
   $editor.value = saved !== null ? saved : DEFAULT_MARKDOWN;
   syncAll();
+  initSyncScroll();
 
   /* Auto-save every 2 seconds */
   setInterval(() => {
     localStorage.setItem("md_editor_content", $editor.value);
   }, 2000);
 })();
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    getMarked,
+    getKaTeX,
+    processMathInMarkdown,
+    escapeHtml,
+    actions,
+    initSyncScroll,
+  };
+}

@@ -51,7 +51,7 @@ function createElement() {
   };
 }
 
-function runEditor(marked) {
+function runEditor(marked, katex = null) {
   const elements = new Map();
   let lastBlob = null;
 
@@ -72,6 +72,7 @@ function runEditor(marked) {
 
   const window = {};
   if (marked) window.marked = marked;
+  if (katex) window.katex = katex;
 
   const sandbox = {
     document,
@@ -161,4 +162,110 @@ test("HTML export falls back to an escaped pre block without marked", () => {
   assert.match(exported, /Welcome to Markdown Editor/);
   assert.doesNotMatch(exported, /<h1>/);
   assert.equal(blob.options.type, "text/html;charset=utf-8");
+});
+
+test("KaTeX renders mathematical formulas (inline and block) when available", () => {
+  const renderedFormulas = [];
+  const fakeKaTeX = {
+    renderToString(formula, opts) {
+      renderedFormulas.push({ formula, displayMode: opts.displayMode });
+      return `<span class="katex-rendered-${opts.displayMode ? "block" : "inline"}">${formula}</span>`;
+    },
+  };
+
+  const fakeMarked = {
+    setOptions() {},
+    use() {},
+    Renderer: class {
+      code() {
+        return "";
+      }
+    },
+    parse(markdown) {
+      return markdown;
+    },
+  };
+
+  const { elements } = runEditor(fakeMarked, fakeKaTeX);
+  const preview = elements.get("preview");
+
+  assert.ok(
+    renderedFormulas.length >= 2,
+    "Should render both inline and block math"
+  );
+  assert.ok(
+    renderedFormulas.some(
+      f => f.formula.includes("E = mc^2") && !f.displayMode
+    )
+  );
+  assert.ok(
+    renderedFormulas.some(f => f.formula.includes("\\int") && f.displayMode)
+  );
+  assert.match(preview.innerHTML, /katex-rendered-inline/);
+  assert.match(preview.innerHTML, /katex-rendered-block/);
+});
+
+test("KaTeX degrades gracefully to fallback containers when KaTeX is missing", () => {
+  const fakeMarked = {
+    setOptions() {},
+    use() {},
+    Renderer: class {
+      code() {
+        return "";
+      }
+    },
+    parse(markdown) {
+      return markdown;
+    },
+  };
+
+  const { elements } = runEditor(fakeMarked, null);
+  const preview = elements.get("preview");
+
+  assert.match(preview.innerHTML, /katex-inline-fallback/);
+  assert.match(preview.innerHTML, /katex-block-fallback/);
+  assert.match(preview.innerHTML, /\$E = mc\^2\$/);
+});
+
+test("Synchronized scrolling controller aligns editor and preview panes bi-directionally", () => {
+  const { elements } = runEditor();
+  const editor = elements.get("editor");
+  const preview = elements.get("preview");
+  const syncBtn = elements.get("btn-sync-scroll");
+
+  // Mock dimensions
+  editor.scrollTop = 0;
+  editor.scrollHeight = 1000;
+  editor.clientHeight = 200;
+
+  preview.scrollTop = 0;
+  preview.scrollHeight = 1500;
+  preview.clientHeight = 300;
+
+  const editorScrollHandler = editor.listeners.get("scroll");
+  const previewScrollHandler = preview.listeners.get("scroll");
+
+  assert.equal(typeof editorScrollHandler, "function");
+  assert.equal(typeof previewScrollHandler, "function");
+
+  // Editor scrolls to 400 (50% of 800 scrollable)
+  editor.scrollTop = 400;
+  editorScrollHandler();
+  assert.ok(preview.scrollTop > 0);
+
+  // Top snap
+  editor.scrollTop = 2;
+  editorScrollHandler();
+  assert.equal(preview.scrollTop, 0);
+
+  // Bottom snap
+  editor.scrollTop = 800;
+  editorScrollHandler();
+  assert.equal(preview.scrollTop, 1200);
+
+  // Toggle sync scroll button
+  const toggleHandler = syncBtn.listeners.get("click");
+  assert.equal(typeof toggleHandler, "function");
+  toggleHandler();
+  assert.equal(syncBtn.title, "Synchronized Scrolling: OFF");
 });
