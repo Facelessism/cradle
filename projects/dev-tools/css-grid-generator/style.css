@@ -492,11 +492,204 @@ html.light-theme .preview-container::before {
   position: absolute;
   font-size: 0.6rem;
   color: var(--accent);
-  opacity: 0.7;
+  opacity: 0.85;
   font-family: var(--font-mono);
   font-weight: 700;
   pointer-events: none;
   z-index: 3;
+  white-space: nowrap;
+}
+
+.grid-line-marker.has-named-line {
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.15);
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+/* ========== Breakpoints & Viewports ========== */
+.preview-title-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.breakpoint-toggle-group {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+}
+
+.bp-btn {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: calc(var(--radius-sm) - 2px);
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bp-btn:hover {
+  color: var(--text);
+  background: var(--card-hover);
+}
+
+.bp-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+.badge-bp {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--success);
+}
+
+.preview-container {
+  transition: max-width 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
+}
+
+.preview-container.viewport-tablet {
+  max-width: 768px !important;
+  margin: 0 auto;
+  box-shadow: 0 0 0 2px var(--border), 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.preview-container.viewport-mobile {
+  max-width: 375px !important;
+  margin: 0 auto;
+  box-shadow: 0 0 0 2px var(--border), 0 12px 36px rgba(0, 0, 0, 0.6);
+}
+
+/* ========== Drag-to-Merge Cell Canvas ========== */
+.drag-hint-banner {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px dashed rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.grid-preview {
+  user-select: none;
+}
+
+.grid-cell-slot {
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.015);
+  min-height: 52px;
+  cursor: crosshair;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+html.light-theme .grid-cell-slot {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.grid-cell-slot:hover {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: var(--accent);
+}
+
+.grid-cell-slot.cell-drag-selected {
+  background: rgba(59, 130, 246, 0.3) !important;
+  border: 2px dashed var(--accent) !important;
+  box-shadow: 0 0 12px var(--accent-glow);
+  transform: scale(0.98);
+}
+
+.grid-cell-slot .slot-coord {
+  font-size: 0.65rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ========== Named Lines Manager Card ========== */
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.72rem;
+}
+
+.hint-text {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+.named-lines-section h3 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+}
+
+.named-lines-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.named-line-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.named-line-label {
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  width: 55px;
+  flex-shrink: 0;
+}
+
+.named-line-input {
+  flex: 1;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+}
+
+.named-line-input:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 /* ========== Code Card ========== */
