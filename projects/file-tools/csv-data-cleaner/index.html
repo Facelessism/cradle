@@ -3,20 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CSV Data Cleaner</title>
+    <title>CSV Data Cleaner & Dataset Profiler</title>
     <meta
       name="description"
-      content="Clean, filter, remove duplicates, and reformat CSV data tables directly in your browser."
+      content="Automated dataset profiling, column type inference (DateTime, Numeric, Boolean, Categorical), anomaly detection, one-click imputation, and multi-format CSV/JSON export."
     />
     <link
       rel="canonical"
       href="https://facelessism.github.io/cradle/projects/file-tools/csv-data-cleaner/"
     />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="CSV Data Cleaner" />
+    <meta property="og:title" content="CSV Data Cleaner & Dataset Profiler" />
     <meta
       property="og:description"
-      content="Clean, filter, remove duplicates, and reformat CSV data tables directly in your browser."
+      content="Automated dataset profiling, column type inference, anomaly detection, one-click imputation, and CSV/JSON export."
     />
     <meta
       property="og:url"
@@ -31,18 +31,19 @@
         <p class="eyebrow">File Tools</p>
         <h1>CSV Data Cleaner</h1>
         <p>
-          Paste or upload CSV data, remove common issues, preview the cleaned
-          table, and export a tidy CSV file.
+          Automated column type profiling (DateTime, Numeric, Boolean, Categorical, String),
+          anomaly detection, one-click missing value imputation, text normalization, and export to CSV or JSON.
         </p>
       </header>
 
       <section class="workspace">
+        <!-- Input & Transformations Panel -->
         <div class="input-panel">
           <div class="panel-heading">
             <h2>Source CSV</h2>
-            <label class="file-button">
+            <label class="file-button" for="fileInput">
               Upload CSV
-              <input id="fileInput" type="file" accept=".csv,text/csv" />
+              <input id="fileInput" type="file" accept=".csv,text/csv" aria-label="Upload CSV file" />
             </label>
           </div>
 
@@ -50,25 +51,61 @@
             id="csvInput"
             spellcheck="false"
             aria-label="Raw CSV input data"
+            placeholder="Paste CSV text here or upload a file..."
           ></textarea>
 
-          <div class="actions">
-            <button id="loadSampleBtn" type="button" class="secondary-button">
+          <!-- Primary Actions -->
+          <div class="actions" aria-label="CSV Action Controls">
+            <button id="loadSampleBtn" type="button" class="secondary-button" aria-label="Load rich sample dataset">
               Load Sample
             </button>
-            <button id="cleanBtn" type="button" class="primary-button">
+            <button id="cleanBtn" type="button" class="primary-button" aria-label="Analyze and clean CSV data">
               Clean CSV
             </button>
-            <button id="downloadBtn" type="button" class="secondary-button">
-              Download Cleaned CSV
+            <button id="downloadBtn" type="button" class="secondary-button" aria-label="Download cleaned data as CSV">
+              Download CSV
+            </button>
+            <button id="downloadJsonBtn" type="button" class="secondary-button" aria-label="Download cleaned data as JSON">
+              Download JSON
+            </button>
+            <button id="copyJsonBtn" type="button" class="secondary-button" aria-label="Copy cleaned dataset as JSON">
+              Copy JSON
             </button>
           </div>
 
-          <p id="message" class="message" role="status"></p>
+          <!-- One-Click Batch Transformations Toolbar -->
+          <div class="transform-toolbar" aria-label="Batch Transformation Controls">
+            <span class="toolbar-label">One-Click Transformations:</span>
+            <div class="transform-actions">
+              <div class="impute-control-group">
+                <label for="imputeStrategySelect" class="sr-only">Imputation Strategy</label>
+                <select id="imputeStrategySelect" aria-label="Select missing value imputation strategy">
+                  <option value="auto">Auto (Mean/Mode)</option>
+                  <option value="mean">Numeric Mean</option>
+                  <option value="median">Numeric Median</option>
+                  <option value="mode">Category Mode</option>
+                </select>
+                <button id="imputeBtn" type="button" class="transform-btn" aria-label="Apply one-click imputation to missing values">
+                  ✨ Impute Missing
+                </button>
+              </div>
+
+              <button id="normalizeBtn" type="button" class="transform-btn" aria-label="Normalize whitespace and clean text">
+                🔤 Normalize Text
+              </button>
+
+              <button id="dedupeBtn" type="button" class="transform-btn" aria-label="Deduplicate repeated rows">
+                🔁 Deduplicate Rows
+              </button>
+            </div>
+          </div>
+
+          <p id="message" class="message" role="status" aria-live="polite"></p>
         </div>
 
-        <aside class="summary-panel">
-          <h2>Clean Summary</h2>
+        <!-- Summary & Stats Panel -->
+        <aside class="summary-panel" aria-labelledby="summary-heading">
+          <h2 id="summary-heading">Clean Summary</h2>
           <div class="stats-grid">
             <article>
               <strong id="beforeRows">0</strong>
@@ -86,18 +123,45 @@
               <strong id="emptyRowsRemoved">0</strong>
               <span>Empty rows removed</span>
             </article>
-          </div>
-          <div class="missing-card">
-            <strong id="missingValues">0</strong>
-            <span>Missing values detected</span>
+            <article>
+              <strong id="missingValues">0</strong>
+              <span>Missing values</span>
+            </article>
+            <article>
+              <strong id="anomaliesDetected">0</strong>
+              <span>Anomalies flagged</span>
+            </article>
           </div>
         </aside>
       </section>
 
-      <section class="table-section">
+      <!-- Column Type Profiling & Anomaly Dashboard -->
+      <section class="profiling-section" aria-labelledby="profiling-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="profiling-heading">📊 Column Type Profiling & Anomaly Overview</h2>
+            <p class="section-desc">Automated schema inference, missing value rates, and statistical boundaries.</p>
+          </div>
+        </div>
+
+        <div id="columnProfilesWrap" class="profiles-grid">
+          <div class="empty-state">Run cleaner to profile columns.</div>
+        </div>
+      </section>
+
+      <!-- Cleaned Preview Table Section -->
+      <section class="table-section" aria-labelledby="preview-heading">
         <div class="table-heading">
-          <h2>Cleaned Preview</h2>
-          <p id="previewMeta">Run the cleaner to preview rows.</p>
+          <div>
+            <h2 id="preview-heading">Cleaned Preview</h2>
+            <p id="previewMeta">Run the cleaner to preview rows.</p>
+          </div>
+          <div class="legend-wrap" aria-label="Cell highlighting legend">
+            <span class="legend-pill pill-missing">Missing</span>
+            <span class="legend-pill pill-outlier">Outlier</span>
+            <span class="legend-pill pill-whitespace">Whitespace</span>
+            <span class="legend-pill pill-mixed">Type Mismatch</span>
+          </div>
         </div>
         <div id="tableWrap" class="table-wrap">
           <div class="empty-state">No cleaned data yet.</div>
