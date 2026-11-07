@@ -69,20 +69,24 @@ Because the algorithm functions mutate `isVisited`, `distance`, and `previousNod
 
 ## Key Features
 
-- **Three algorithms** - BFS, Dijkstra, and A* share the same node model and return shape.
+- **Five algorithms** - BFS, Dijkstra, A*, Bidirectional Dijkstra, and Bidirectional A* share the same node model and return shape.
+- **Bidirectional Search** - Animates two expanding exploration frontiers (Forward from Start, Backward from End) until they converge, dramatically reducing visited node counts.
+- **8-Directional Diagonal Movement** - Allows diagonal navigation with realistic Euclidean cost ($\sqrt{2} \approx 1.414$), producing direct diagonal routes.
+- **Configurable Corner-Cutting Prevention** - Prevents diagonal traversal through obstacle corners and diagonal wall slits when enabled.
+- **Multiple Heuristic Models** - Supports Manhattan, Euclidean, Chebyshev, and Octile distance functions for directional A* searches.
 - **Wall drawing** - Drag across the grid to add or remove walls.
 - **Movable endpoints** - Drag the start and end nodes to a new cell.
 - **Maze generation** - Randomized wall placement produces a fresh obstacle layout while keeping the endpoints clear.
 - **Speed control** - A selector sets the delay between visited nodes for the next run.
-- **Path reconstruction** - Each algorithm records `previousNode`, and a shared helper walks it back from the end node.
-- **Status messages** - An `aria-live` status line reports when no path exists and when the search is complete.
-- **Native controls** - The toolbar uses real buttons and selects, so it works with keyboard navigation out of the box.
+- **Path reconstruction** - Each algorithm records predecessor pointers or bidirectional meeting points, tracing the optimal connected path.
+- **Metrics & Status messages** - An `aria-live` status line reports visited node counts, path length, and total traversal cost.
+- **Native controls** - The toolbar uses real buttons, selects, and checkboxes with accessible keyboard navigation.
 
 ## Technologies Used
 
 - HTML5, CSS3, and vanilla ES6+ JavaScript.
 - CSS Grid for the cell layout.
-- CSS transitions and keyframe animations for the visited and path states.
+- CSS transitions and keyframe animations for the forward/backward visited and path states.
 - `setTimeout` and promises for animation pacing.
 - Native ES modules for source organization.
 
@@ -90,9 +94,9 @@ Because the algorithm functions mutate `isVisited`, `distance`, and `previousNod
 
 ### `index.html`
 
-- Declares the control bar: algorithm select, speed select, generate maze, clear path, clear walls only, and clear board.
+- Declares the control bar: algorithm select (including Bidirectional A* and Bidirectional Dijkstra), heuristic select (Manhattan, Euclidean, Chebyshev, Octile), movement mode select (4-way vs 8-way), corner cutting toggle, speed select, generate maze, clear path, clear walls only, and clear board.
 - Hosts the grid container and the status message.
-- Includes the legend that explains wall, visited, path, start, and end colors.
+- Includes the legend explaining wall, forward visited, backward visited, path, start, and end colors.
 - Loads `app.js` as a module.
 
 ### `grid.js`
@@ -101,30 +105,35 @@ Because the algorithm functions mutate `isVisited`, `distance`, and `previousNod
 - **`initGrid()`** - builds cells, assigns `dataset.r` and `dataset.c`, and attaches the start and end markers.
 - **`setupEventListeners()`** - handles mousedown, mouseover while dragging, and document mouseup.
 - **`handleCellInteraction()`** - flips a node between wall and floor while protecting the endpoints.
-- **`clearBoard()` / `clearWalls()` / `clearPath()`** - resets full board, walls only, or visited/path visualization state.
+- **`clearBoard()` / `clearWalls()` / `clearPath()`** - resets full board, walls only, or visited/path visualization state (including `.visited-forward` and `.visited-backward`).
 - **`getStartNode()` / `getEndNode()`** - locate the endpoints without scanning the DOM.
 
 ### `algorithms.js`
 
+- **`heuristics`** - dictionary of distance heuristics: `manhattan`, `euclidean`, `chebyshev`, and `octile`.
+- **`calculateHeuristic(nodeA, nodeB, type)`** - evaluates the selected distance heuristic.
+- **`getNeighbors(node, grid, options)`** - evaluates 4-way or 8-way neighbors, assigning cardinal (1) and diagonal ($\sqrt{2}$) step weights and enforcing corner-cutting constraints.
+- **`getUnvisitedNeighbors(node, grid, options)`** - filters unvisited, non-wall neighbors.
 - **`bfs()`** - level-order search with a queue; optimal for unweighted grids.
-- **`dijkstra()`** - repeatedly takes the closest unvisited node and relaxes its neighbors.
-- **`astar()`** - like Dijkstra but orders the open set by distance plus Manhattan heuristic.
-- **`getNodesInShortestPathOrder()`** - walks `previousNode` from the end node back to the start.
-- **`getUnvisitedNeighbors()`** - returns in-bounds, non-wall, unvisited neighbors.
-- **`updateUnvisitedNeighbors()`** - assigns distance and predecessor for Dijkstra and A*.
+- **`dijkstra()`** - Dijkstra relaxation with unvisited node evaluation.
+- **`astar()`** - heuristic-guided A* search supporting all four distance models and 8-way diagonal routing.
+- **`bidirectionalDijkstra()`** - simultaneous forward and backward Dijkstra searches alternating frontiers until meeting at an optimal intersection.
+- **`bidirectionalAstar()`** - simultaneous forward and backward A* searches estimating $f$-costs towards opposite endpoints until convergence.
+- **`getNodesInShortestPathOrder()`** - walks `previousNode` back to the start.
 
 ### `app.js`
 
 - Binds the controls and guards against starting a second run while one is animating.
-- Resets node state before each run so previous distances do not leak into the next algorithm.
-- Converts the speed selector into a millisecond delay.
-- Reports the result in the status line and handles the no-path case.
+- Manages control availability (disabling corner-cutting for orthogonal movement, enabling heuristics for A* variants).
+- Resets node state before each run and invokes the selected algorithm with options.
+- Converts the speed selector into a millisecond delay and animates forward and backward frontiers.
+- Reports the result with visited node counts, path lengths, and path traversal costs.
 
 ### `style.css`
 
-- Lays out the control bar and the fixed-ratio grid.
-- Defines the wall, visited, path, start, and end colors for both themes.
-- Uses `animation: pop` on visited cells to make the traversal direction readable.
+- Lays out the control bar, responsive controls, and fixed-ratio grid.
+- Defines start, end, wall, path, `.visited-forward` (cyan), and `.visited-backward` (violet) colors for both light and dark themes.
+- Uses `animation: pop` on visited cells to make the dual-frontier traversal directions visually distinct.
 - Shrinks cell gaps and control widths at narrow viewports.
 
 ### `thumbnail.svg`
@@ -134,11 +143,11 @@ Because the algorithm functions mutate `isVisited`, `distance`, and `previousNod
 ## Design Decisions
 
 - **DOM cells instead of canvas**: CSS classes and transitions give accessible elements and readable state without a custom canvas renderer.
-- **Pure-ish algorithms**: The search functions receive a grid and return ordered arrays. They mutate node bookkeeping, but they do not create DOM nodes, which keeps them portable.
-- **Shared return shape**: Every algorithm returns `visitedNodesInOrder` and `shortestPathNodes`, so the animation layer does not branch by algorithm.
-- **Previous-node reconstruction**: Storing a predecessor pointer is cheaper than keeping a separate parent map and works for all three searches.
-- **Animation in the controller**: The algorithms finish immediately; pacing is a presentation concern owned by `app.js`.
-- **Manhattan heuristic**: A* uses a grid-appropriate heuristic that is admissible for four-direction movement.
+- **Pure algorithms**: The search functions receive a grid and return ordered arrays of visited and path nodes.
+- **Dual-Frontier Coloring**: Visited nodes carry `visitDirection: 'forward' | 'backward'`, enabling distinct animations for expanding search frontiers from both endpoints.
+- **Corner-Cutting Prevention**: When 8-directional movement is enabled with corner cutting prevented, diagonal transitions require both adjacent orthogonal cells to be walkable, preventing clipping through obstacle corners.
+- **Octile Heuristic for 8-Way Routing**: Octile distance accurately accounts for diagonal step weights ($\sqrt{2}$) alongside cardinal step weights (1), providing an admissible and consistent heuristic for diagonal A*.
+- **Metrics Feedback**: Displaying visited node counts and path costs directly demonstrates the search efficiency gains of bidirectional exploration.
 
 ## Dependencies
 
