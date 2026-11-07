@@ -7,6 +7,98 @@ const ContrastEngine = (() => {
     uiAA: 3,
   };
 
+  const APCA_THRESHOLDS = {
+    fluentText: 90, // Preferred for fluent text reading (14-16px normal)
+    bodyText: 75, // Minimum for standard body copy (16px normal, 14px bold)
+    largeText: 60, // Minimum for 24px normal or 18px bold content
+    headlineText: 45, // Minimum for 36px normal or 24px bold / large UI
+    uiComponents: 30, // Minimum for icons, non-text, borders, disabled controls
+  };
+
+  // APCA G-4g reference constants (W3C WCAG 3 candidate algorithm)
+  const APCA_CONSTANTS = {
+    mainTRC: 2.4,
+    sRco: 0.2126729,
+    sGco: 0.7151522,
+    sBco: 0.072175,
+    normBG: 0.56,
+    normTXT: 0.57,
+    revTXT: 0.62,
+    revBG: 0.65,
+    blkThrs: 0.022,
+    blkClmp: 1.414,
+    scaleBoW: 1.14,
+    scaleWoB: 1.14,
+    loBoWoffset: 0.027,
+    loWoBoffset: 0.027,
+    loClip: 0.001,
+    deltaYmin: 0.0005,
+  };
+
+  // Color Vision Deficiency (CVD) simulation matrices
+  const CVD_TYPES = {
+    normal: {
+      id: "normal",
+      label: "Normal Vision",
+      shortLabel: "Normal",
+      description: "Standard trichromatic color vision",
+      matrix: [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+      ],
+      svgFilter: "none",
+    },
+    protanopia: {
+      id: "protanopia",
+      label: "Protanopia",
+      shortLabel: "Red-Blind",
+      description: "L-cone deficiency / red-insensitivity (~1% males)",
+      matrix: [
+        [0.56667, 0.43333, 0.0],
+        [0.55833, 0.44167, 0.0],
+        [0.0, 0.24167, 0.75833],
+      ],
+      svgFilter: "url(#cvd-protanopia)",
+    },
+    deuteranopia: {
+      id: "deuteranopia",
+      label: "Deuteranopia",
+      shortLabel: "Green-Blind",
+      description: "M-cone deficiency / green-insensitivity (~5% males)",
+      matrix: [
+        [0.625, 0.375, 0.0],
+        [0.7, 0.3, 0.0],
+        [0.0, 0.3, 0.7],
+      ],
+      svgFilter: "url(#cvd-deuteranopia)",
+    },
+    tritanopia: {
+      id: "tritanopia",
+      label: "Tritanopia",
+      shortLabel: "Blue-Blind",
+      description: "S-cone deficiency / blue-insensitivity (rare, <0.1%)",
+      matrix: [
+        [0.95, 0.05, 0.0],
+        [0.0, 0.43333, 0.56667],
+        [0.0, 0.475, 0.525],
+      ],
+      svgFilter: "url(#cvd-tritanopia)",
+    },
+    achromatopsia: {
+      id: "achromatopsia",
+      label: "Achromatopsia",
+      shortLabel: "Monochrome",
+      description: "Total color blindness / luminance only (~0.003%)",
+      matrix: [
+        [0.299, 0.587, 0.114],
+        [0.299, 0.587, 0.114],
+        [0.299, 0.587, 0.114],
+      ],
+      svgFilter: "url(#cvd-achromatopsia)",
+    },
+  };
+
   const SAMPLE_PALETTES = [
     { name: "Cradle Dark", foreground: "#e2e8f0", background: "#020617" },
     { name: "Ocean CTA", foreground: "#ffffff", background: "#0f766e" },
@@ -175,6 +267,154 @@ const ContrastEngine = (() => {
 }`;
   }
 
+  // ─── APCA (Advanced Perceptual Contrast Algorithm) WCAG 3.0 ───────
+  function sRGBtoY({ r, g, b }) {
+    function exp(chan) {
+      return Math.pow(chan / 255.0, APCA_CONSTANTS.mainTRC);
+    }
+    return (
+      APCA_CONSTANTS.sRco * exp(r) +
+      APCA_CONSTANTS.sGco * exp(g) +
+      APCA_CONSTANTS.sBco * exp(b)
+    );
+  }
+
+  function APCAcontrast(txtY, bgY) {
+    let SAPC = 0.0;
+    let outputContrast = 0.0;
+
+    const ytxt =
+      txtY >= APCA_CONSTANTS.blkThrs
+        ? txtY
+        : txtY + Math.pow(APCA_CONSTANTS.blkThrs - txtY, APCA_CONSTANTS.blkClmp);
+    const ybg =
+      bgY >= APCA_CONSTANTS.blkThrs
+        ? bgY
+        : bgY + Math.pow(APCA_CONSTANTS.blkThrs - bgY, APCA_CONSTANTS.blkClmp);
+
+    if (Math.abs(ybg - ytxt) < APCA_CONSTANTS.deltaYmin) {
+      return 0.0;
+    }
+
+    // Black on White (Dark text on light background) -> positive Lc
+    if (ybg > ytxt) {
+      SAPC =
+        (Math.pow(ybg, APCA_CONSTANTS.normBG) -
+          Math.pow(ytxt, APCA_CONSTANTS.normTXT)) *
+        APCA_CONSTANTS.scaleBoW;
+      outputContrast =
+        SAPC < APCA_CONSTANTS.loClip ? 0.0 : SAPC - APCA_CONSTANTS.loBoWoffset;
+    }
+    // White on Black (Light text on dark background) -> negative Lc
+    else {
+      SAPC =
+        (Math.pow(ybg, APCA_CONSTANTS.revBG) -
+          Math.pow(ytxt, APCA_CONSTANTS.revTXT)) *
+        APCA_CONSTANTS.scaleWoB;
+      outputContrast =
+        SAPC > -APCA_CONSTANTS.loClip ? 0.0 : SAPC + APCA_CONSTANTS.loWoBoffset;
+    }
+
+    return Number((outputContrast * 100.0).toFixed(1));
+  }
+
+  function calculateApca(foreground, background) {
+    const fg = hexToRgb(foreground);
+    const bg = hexToRgb(background);
+    const txtY = sRGBtoY(fg);
+    const bgY = sRGBtoY(bg);
+    return APCAcontrast(txtY, bgY);
+  }
+
+  function getApcaStatus(lc) {
+    const abs = Math.abs(lc);
+    let rating = "Fail";
+    let detail = "Insufficient contrast for readable text";
+
+    if (abs >= APCA_THRESHOLDS.fluentText) {
+      rating = "Preferred Body";
+      detail = "Ideal for fluent body reading (300-400 weight, 14-16px)";
+    } else if (abs >= APCA_THRESHOLDS.bodyText) {
+      rating = "Minimum Body";
+      detail = "Minimum for standard body copy (400 weight 16px, or 700 bold 14px)";
+    } else if (abs >= APCA_THRESHOLDS.largeText) {
+      rating = "Content Text";
+      detail = "Acceptable for large content (400 weight 24px, or 700 bold 18px)";
+    } else if (abs >= APCA_THRESHOLDS.headlineText) {
+      rating = "Headings Only";
+      detail = "Large display headlines (400 weight 36px, or 700 bold 24px)";
+    } else if (abs >= APCA_THRESHOLDS.uiComponents) {
+      rating = "Non-Text & Spot";
+      detail = "Icons, non-text UI components, borders, and disabled controls";
+    }
+
+    return {
+      score: lc,
+      absScore: abs,
+      polarity:
+        lc > 0
+          ? "Dark on Light (BoW)"
+          : lc < 0
+            ? "Light on Dark (WoB)"
+            : "None",
+      rating,
+      detail,
+      fluentText: abs >= APCA_THRESHOLDS.fluentText,
+      bodyText: abs >= APCA_THRESHOLDS.bodyText,
+      largeText: abs >= APCA_THRESHOLDS.largeText,
+      headlineText: abs >= APCA_THRESHOLDS.headlineText,
+      uiComponents: abs >= APCA_THRESHOLDS.uiComponents,
+    };
+  }
+
+  // ─── CVD (Color Vision Deficiency) Simulation ──────────────────────
+  function simulateCvd(hexColor, cvdType = "normal") {
+    const norm = normalizeHex(hexColor);
+    if (!norm) return null;
+    const type = CVD_TYPES[cvdType] || CVD_TYPES.normal;
+    if (cvdType === "normal") return norm;
+
+    const rgb = hexToRgb(norm);
+    const m = type.matrix;
+    const r = m[0][0] * rgb.r + m[0][1] * rgb.g + m[0][2] * rgb.b;
+    const g = m[1][0] * rgb.r + m[1][1] * rgb.g + m[1][2] * rgb.b;
+    const b = m[2][0] * rgb.r + m[2][1] * rgb.g + m[2][2] * rgb.b;
+
+    return rgbToHex({
+      r: clampChannel(r),
+      g: clampChannel(g),
+      b: clampChannel(b),
+    });
+  }
+
+  function getCvdSimulationReport(foreground, background) {
+    const fg = normalizeHex(foreground);
+    const bg = normalizeHex(background);
+    if (!fg || !bg) return null;
+
+    const results = {};
+    for (const [key, type] of Object.entries(CVD_TYPES)) {
+      const simFg = simulateCvd(fg, key);
+      const simBg = simulateCvd(bg, key);
+      const ratio = calculateContrastRatio(simFg, simBg);
+      const apca = calculateApca(simFg, simBg);
+      results[key] = {
+        id: type.id,
+        label: type.label,
+        shortLabel: type.shortLabel,
+        description: type.description,
+        svgFilter: type.svgFilter,
+        simulatedForeground: simFg,
+        simulatedBackground: simBg,
+        ratio,
+        wcagStatus: getWcagStatus(ratio),
+        apca,
+        apcaStatus: getApcaStatus(apca),
+      };
+    }
+    return results;
+  }
+
   function getContrastReport(foreground, background) {
     const fg = normalizeHex(foreground);
     const bg = normalizeHex(background);
@@ -187,12 +427,19 @@ const ContrastEngine = (() => {
     }
 
     const ratio = calculateContrastRatio(fg, bg);
+    const apca = calculateApca(fg, bg);
+    const apcaStatus = getApcaStatus(apca);
+    const cvd = getCvdSimulationReport(fg, bg);
+
     return {
       valid: true,
       foreground: fg,
       background: bg,
       ratio,
       status: getWcagStatus(ratio),
+      apca,
+      apcaStatus,
+      cvd,
       suggestions: suggestAccessibleAlternatives(fg, bg),
       cssVariables: getCssVariables(fg, bg),
     };
@@ -201,7 +448,16 @@ const ContrastEngine = (() => {
   return {
     SAMPLE_PALETTES,
     WCAG_THRESHOLDS,
+    APCA_THRESHOLDS,
+    APCA_CONSTANTS,
+    CVD_TYPES,
     calculateContrastRatio,
+    calculateApca,
+    getApcaStatus,
+    APCAcontrast,
+    sRGBtoY,
+    simulateCvd,
+    getCvdSimulationReport,
     getContrastReport,
     getCssVariables,
     getRelativeLuminance,

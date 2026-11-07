@@ -37,9 +37,23 @@
               ratios for readable text and accessible interface elements.
             </p>
           </div>
-          <div class="ratio-meter" aria-live="polite">
-            <span id="ratioValue">21.00</span>
-            <small>contrast ratio</small>
+          <div class="meters-cluster" aria-live="polite">
+            <div class="ratio-meter" title="WCAG 2.1 relative luminance contrast ratio">
+              <div class="meter-header">
+                <small>WCAG 2.1</small>
+                <span id="wcagBadge" class="meter-badge pass">AAA</span>
+              </div>
+              <span id="ratioValue">21.00</span>
+              <small class="meter-sub">contrast ratio</small>
+            </div>
+            <div class="ratio-meter apca-meter" title="W3C WCAG 3.0 APCA (Advanced Perceptual Contrast Algorithm) lightness contrast">
+              <div class="meter-header">
+                <small>WCAG 3 APCA</small>
+                <span id="apcaBadge" class="meter-badge pass">Preferred</span>
+              </div>
+              <span id="apcaValue">Lc 106.1</span>
+              <small id="apcaPolarity" class="meter-sub">Dark on Light</small>
+            </div>
           </div>
         </div>
 
@@ -81,9 +95,44 @@
               </div>
             </div>
 
-            <div id="samplePreview" class="sample-preview">
-              <span>Sample text</span>
-              <strong>Buttons, labels, and body copy preview here.</strong>
+            <!-- CVD Simulation Selector -->
+            <div class="cvd-section">
+              <div class="cvd-header">
+                <label>👁️ Vision Simulation (CVD)</label>
+                <span id="activeCvdLabel" class="cvd-indicator">Normal Vision</span>
+              </div>
+              <div class="cvd-tabs" role="tablist" aria-label="Color vision deficiency filters">
+                <button type="button" class="cvd-tab active" data-cvd="normal" role="tab" aria-selected="true">Normal</button>
+                <button type="button" class="cvd-tab" data-cvd="protanopia" role="tab" aria-selected="false" title="Red-blind (L-cone deficiency)">Protanopia</button>
+                <button type="button" class="cvd-tab" data-cvd="deuteranopia" role="tab" aria-selected="false" title="Green-blind (M-cone deficiency)">Deuteranopia</button>
+                <button type="button" class="cvd-tab" data-cvd="tritanopia" role="tab" aria-selected="false" title="Blue-blind (S-cone deficiency)">Tritanopia</button>
+                <button type="button" class="cvd-tab" data-cvd="achromatopsia" role="tab" aria-selected="false" title="Total color blindness">Achromatopsia</button>
+              </div>
+            </div>
+
+            <!-- Live Typography & Button Preview -->
+            <div id="samplePreview" class="sample-preview" aria-label="Live typography and button component preview">
+              <div class="preview-typography">
+                <div class="preview-headline">Headline Text (32px Bold)</div>
+                <div class="preview-subheading">Subheading &amp; Section Title (20px Semibold)</div>
+                <p class="preview-body">
+                  Standard body text (16px). Accessible design accommodates diverse visual acuities, ambient lighting, and color vision deficiencies across modern digital interfaces.
+                </p>
+                <div class="preview-caption">Small caption, footnote, &amp; metadata (13px Regular)</div>
+              </div>
+
+              <div class="preview-components">
+                <div class="preview-components-heading">UI Components Preview:</div>
+                <div class="preview-buttons-row">
+                  <button type="button" class="preview-btn-solid" id="previewSolidBtn">Primary Action</button>
+                  <button type="button" class="preview-btn-outline" id="previewOutlineBtn">Secondary Action</button>
+                  <span class="preview-pill-badge" id="previewPillBadge">Status Pill</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="cvdInfoBar" class="cvd-info-bar" hidden>
+              <span id="cvdInfoText">Normal Vision: Full color spectrum</span>
             </div>
 
             <p
@@ -97,8 +146,20 @@
             </button>
           </section>
 
-          <section class="results" aria-label="WCAG results">
+          <section class="results" aria-label="Accessibility results">
+            <div class="section-heading">
+              <h2>WCAG 2.1 Compliance</h2>
+              <p>Conformance criteria for AA and AAA thresholds.</p>
+            </div>
             <div class="status-grid" id="statusGrid"></div>
+
+            <div class="apca-section">
+              <div class="section-heading">
+                <h2>WCAG 3.0 APCA Lightness Contrast (Lc)</h2>
+                <p>Advanced perceptual readability criteria based on human spatial vision.</p>
+              </div>
+              <div class="status-grid apca-grid" id="apcaGrid"></div>
+            </div>
 
             <div class="suggestions">
               <div class="section-heading">
@@ -112,6 +173,15 @@
           </section>
         </div>
 
+        <!-- Color Vision Deficiency Comparison Grid -->
+        <section class="cvd-matrix-section" aria-labelledby="cvdMatrixTitle">
+          <div class="section-heading">
+            <h2 id="cvdMatrixTitle">Color Vision Deficiency (CVD) Matrix</h2>
+            <p>Side-by-side simulation of how your active color pair appears across common vision conditions.</p>
+          </div>
+          <div id="cvdCardsGrid" class="cvd-cards-grid"></div>
+        </section>
+
         <section class="palettes" aria-labelledby="palettesTitle">
           <div class="section-heading">
             <h2 id="palettesTitle">Local Sample Palettes</h2>
@@ -121,6 +191,40 @@
         </section>
       </section>
     </main>
+
+    <!-- SVG Filters for Real-Time Color Vision Deficiency Simulation -->
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" aria-hidden="true" focusable="false">
+      <defs>
+        <filter id="cvd-protanopia" color-interpolation-filters="linearRGB">
+          <feColorMatrix type="matrix" values="
+            0.56667 0.43333 0.00000 0 0
+            0.55833 0.44167 0.00000 0 0
+            0.00000 0.24167 0.75833 0 0
+            0.00000 0.00000 0.00000 1 0" />
+        </filter>
+        <filter id="cvd-deuteranopia" color-interpolation-filters="linearRGB">
+          <feColorMatrix type="matrix" values="
+            0.62500 0.37500 0.00000 0 0
+            0.70000 0.30000 0.00000 0 0
+            0.00000 0.30000 0.70000 0 0
+            0.00000 0.00000 0.00000 1 0" />
+        </filter>
+        <filter id="cvd-tritanopia" color-interpolation-filters="linearRGB">
+          <feColorMatrix type="matrix" values="
+            0.95000 0.05000 0.00000 0 0
+            0.00000 0.43333 0.56667 0 0
+            0.00000 0.47500 0.52500 0 0
+            0.00000 0.00000 0.00000 1 0" />
+        </filter>
+        <filter id="cvd-achromatopsia" color-interpolation-filters="linearRGB">
+          <feColorMatrix type="matrix" values="
+            0.29900 0.58700 0.11400 0 0
+            0.29900 0.58700 0.11400 0 0
+            0.29900 0.58700 0.11400 0 0
+            0.00000 0.00000 0.00000 1 0" />
+        </filter>
+      </defs>
+    </svg>
 
     <script
       src="../../../src/components/ui/BackToHome/BackToHome.js"
