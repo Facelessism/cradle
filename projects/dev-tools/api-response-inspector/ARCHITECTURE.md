@@ -40,31 +40,33 @@ index.html --> apiEngine.js (pure logic) --> script.js (DOM + fetch) --> rendere
 
 ## Component Breakdown
 
-| File           | Responsibility                                                                                                                                |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apiEngine.js` | Header text parsing, response header formatting, byte/duration formatting, JSON pretty-printing, status tone mapping, request option building |
-| `script.js`    | Reads form inputs, calls `fetch`, times the request, renders headers/body, copy-to-clipboard                                                  |
-| `index.html`   | Request form (method, URL, headers, body) and result panels                                                                                   |
-| `style.css`    | Layout and responsive styling using `--cradle-*` design tokens                                                                                |
+| File           | Responsibility                                                                                                                                                                             |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apiEngine.js` | Pure helpers: cURL command tokenizer & parser, code snippet generators (cURL, fetch, Python), timing breakdown computer, header parsing, byte/duration formatting, JSON pretty-printing |
+| `script.js`    | Reads form inputs, handles cURL import drawer, executes fetch, computes waterfall metrics, renders response & snippets, handles request replay & copy-to-clipboard                            |
+| `index.html`   | Request form with cURL import modal/drawer, quick sample templates, response summary, latency waterfall, code snippet export, and output panels                                           |
+| `style.css`    | Layout and responsive styling using `--cradle-*` tokens, timing waterfall bar styling, code snippet tabs, and cURL modal styles                                                            |
 
 ## Data Flow / Execution Flow
 
-1. User enters a URL (and optionally a method, headers, body) and clicks Send.
+1. User enters a URL (or imports a raw cURL command via the Import cURL drawer) and clicks Send.
 2. `script.js` builds fetch options via `APIEngine.buildRequestOptions`.
-3. `fetch()` is called; `performance.now()` measures elapsed time before/after.
-4. On success, the response status, headers, and body text are formatted via
-   `apiEngine.js` helpers and rendered into the DOM.
-5. On failure (network error, invalid URL, or a CORS block), an error message
-   is shown instead of the result panel.
+3. `fetch()` is executed; `performance.now()` measures elapsed round-trip time.
+4. Latency breakdown (DNS, TCP, TTFB, Download) is computed via `APIEngine.computeTimingBreakdown` using `PerformanceResourceTiming` data (or proportional fallback if CORS hides raw resource timings).
+5. On success, the response status, waterfall timing bars, headers, body text, and exportable code snippets (cURL, fetch, Python) are generated via `apiEngine.js` helpers and rendered into the DOM.
+6. The user can click **Replay Request** to immediately re-execute the request with the identical configuration.
+7. On failure (network error, invalid URL, or CORS block), a contextual error message is displayed.
 
 ## Key Features
 
-- Status code, response time, response size, and header count summary
-- Full response header list
-- JSON body auto-pretty-printed; non-JSON bodies shown as raw text
-- Custom request headers and body (for POST/PUT/PATCH)
-- Copy-to-clipboard for the response body
-- Responsive layout for mobile
+- **cURL Import Parser**: Ingests raw command-line cURL requests (including multi-line continuations `\`/`^`, flags `-X`, `-H`, `-d`/`--data`, `-u`, `--url`) directly into UI inputs with quick samples (GET, POST JSON, Bearer Auth).
+- **Code Snippet Generation**: One-click copyable snippets in cURL, JavaScript (`fetch`), and Python (`requests`) reflecting current method, headers, and request body.
+- **Request Replay Engine**: One-click replay of the active request configuration directly from the inspector bar.
+- **Latency Waterfall & Timing Breakdown**: High-resolution performance metrics detailing DNS Lookup, TCP Handshake, TTFB (Time to First Byte), and Content Download with proportional percentage bars.
+- **Status & Metric Badges**: Status code, response duration, response payload size, and header count summary.
+- **Header & Body Inspection**: Full response header list with pretty-printed formatted JSON and raw body fallback.
+- **Copy Utilities**: Copy-to-clipboard for response payload and exported code snippets.
+- **Responsive Layout**: Designed for mobile and desktop screens using Cradle design tokens.
 
 ## Technologies Used
 
