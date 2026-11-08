@@ -11,6 +11,8 @@
   --color-end: #ef4444;
   --color-wall: #374151;
   --color-visited: #93c5fd;
+  --color-visited-forward: #38bdf8;
+  --color-visited-backward: #c084fc;
   --color-path: #f59e0b;
 }
 
@@ -25,6 +27,8 @@
     --border-color: #374151;
     --color-wall: #4b5563;
     --color-visited: #1e40af;
+    --color-visited-forward: #0284c7;
+    --color-visited-backward: #7c3aed;
   }
 }
 
@@ -79,6 +83,28 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-primary);
+}
+
+.control-group.disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 select,
@@ -157,6 +183,14 @@ select,
   animation: pop 0.3s ease-out;
 }
 
+.box.visited-forward {
+  background: var(--color-visited-forward);
+}
+
+.box.visited-backward {
+  background: var(--color-visited-backward);
+}
+
 .box.path {
   background: var(--color-path);
   animation: pop 0.3s ease-out;
@@ -215,6 +249,14 @@ select,
 
 .cell.visited {
   background: var(--color-visited);
+}
+
+.cell.visited.visited-forward {
+  background: var(--color-visited-forward);
+}
+
+.cell.visited.visited-backward {
+  background: var(--color-visited-backward);
 }
 
 .cell.path {

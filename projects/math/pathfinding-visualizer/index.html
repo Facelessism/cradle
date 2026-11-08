@@ -35,7 +35,7 @@
       <header class="header">
         <h1>Pathfinding Algorithm Visualizer</h1>
         <p class="subtitle">
-          Visualize A*, Dijkstra, and BFS step-by-step on an interactive grid.
+          Visualize A*, Dijkstra, BFS, Bidirectional A*, and Bidirectional Dijkstra with 4-way/8-way movement and multiple heuristics.
         </p>
       </header>
 
@@ -46,7 +46,31 @@
             <option value="astar">A* Search</option>
             <option value="dijkstra">Dijkstra's Algorithm</option>
             <option value="bfs">Breadth-First Search (BFS)</option>
+            <option value="bidirectional-astar">Bidirectional A* Search</option>
+            <option value="bidirectional-dijkstra">Bidirectional Dijkstra</option>
           </select>
+        </div>
+        <div class="control-group" id="heuristic-group">
+          <label for="heuristic-select">Heuristic:</label>
+          <select id="heuristic-select">
+            <option value="manhattan" selected>Manhattan</option>
+            <option value="euclidean">Euclidean</option>
+            <option value="chebyshev">Chebyshev</option>
+            <option value="octile">Octile</option>
+          </select>
+        </div>
+        <div class="control-group" id="movement-group">
+          <label for="movement-select">Movement:</label>
+          <select id="movement-select">
+            <option value="orthogonal" selected>4-Way (Orthogonal)</option>
+            <option value="diagonal">8-Way (Diagonal)</option>
+          </select>
+        </div>
+        <div class="control-group" id="corner-cutting-group">
+          <label class="checkbox-label" for="corner-cutting-toggle">
+            <input type="checkbox" id="corner-cutting-toggle" checked />
+            Prevent Corner Cutting
+          </label>
         </div>
         <div class="control-group">
           <label for="speed-select">Animation Speed:</label>
@@ -81,7 +105,8 @@
         </div>
         <div class="legend-item"><span class="box end"></span> End Node</div>
         <div class="legend-item"><span class="box wall"></span> Wall</div>
-        <div class="legend-item"><span class="box visited"></span> Visited</div>
+        <div class="legend-item"><span class="box visited visited-forward"></span> Visited (Forward)</div>
+        <div class="legend-item"><span class="box visited visited-backward"></span> Visited (Backward)</div>
         <div class="legend-item">
           <span class="box path"></span> Shortest Path
         </div>

@@ -107,8 +107,14 @@ export class Grid {
         node.distance = Infinity;
         node.totalDistance = Infinity;
         node.heuristic = 0;
+        node.visitDirection = null;
         if (node.element) {
-          node.element.classList.remove("visited", "path");
+          node.element.classList.remove(
+            "visited",
+            "visited-forward",
+            "visited-backward",
+            "path"
+          );
         }
       }
     }
