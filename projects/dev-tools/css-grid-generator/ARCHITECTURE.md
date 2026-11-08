@@ -6,16 +6,18 @@
 
 ## Overview
 
-CSS Grid Generator lets users design CSS Grid layouts visually in the browser. Users configure columns, rows, gap sizes, and item placements, then see a live preview and export production-ready HTML/CSS code. It includes several built-in layout presets (Holy Grail, Sidebar, Dashboard, etc.) and supports named grid areas for semantic layouts.
+CSS Grid Generator lets users design CSS Grid layouts visually in the browser. Users configure columns, rows, gap sizes, and item placements, then see a live preview and export production-ready HTML/CSS code. It includes several built-in layout presets (Holy Grail, Sidebar, Dashboard, etc.), an interactive drag-to-merge cell canvas for visual `grid-template-areas` definition, explicit named grid lines ([main-start] ... [main-end]), and real-time responsive breakpoint preview toggles (desktop, tablet, mobile) with production-ready media query generation.
 
 ---
 
 ## Purpose & Goals
 
 - Provide an intuitive visual interface for designing CSS Grid layouts
-- Generate clean, production-ready HTML and CSS code
+- Enable frictionless visual drag-to-merge cell interactions for defining 2D `grid-template-areas`
+- Support explicit named grid lines for semantic, clean CSS grid templates
+- Provide instant responsive preview testing across mobile (375px), tablet (768px), and desktop (100%) viewports
+- Generate clean, production-ready, readable HTML and CSS code with optional responsive media queries
 - Include common layout presets for quick prototyping
-- Support named grid areas for semantic layouts
 - Keep the codebase vanilla HTML/CSS/JS with no build step
 
 ---
@@ -97,16 +99,17 @@ User clicks Copy → clipboard API copies code
 
 ## Key Features
 
-- Interactive grid configuration (columns, rows, column/row sizing, gaps)
-- Visual grid item placement with click-to-select editing
-- Named grid areas support with template generation
-- 6 built-in layout presets (Holy Grail, Sidebar, Cards, Dashboard, Gallery, Blog)
-- Live preview with grid line markers
-- Export CSS-only, HTML-only, or combined code
-- Copy to clipboard with visual feedback
-- Grid line number indicators for debugging
-- Responsive two-column layout (collapses on mobile)
-- Dark theme (default) with light theme support via system toggle
+- **Interactive Drag-to-Merge Cell Canvas** — Click and drag across rectangular grid cells to merge them visually into named `grid-template-areas` with live preview and automatic naming.
+- **Explicit Named Grid Lines** — Assign bracketed line names (e.g. `[main-start] 1fr [main-end]`, `[header-start] auto [header-end]`) to column and row tracks, with auto-infer generation from area boundaries.
+- **Responsive Breakpoint Viewport Toggles** — Instant real-time preview switches between Desktop (100%), Tablet (768px), and Mobile (375px) with device frames.
+- **Responsive Media Query Generation** — Automatically outputs `@media (max-width: 768px)` CSS rules for mobile single-column stacking and adaptive area layouts.
+- **Interactive Grid Configuration** — Steppers and inputs for columns, rows, custom sizing (`fr`, `px`, `repeat()`), and row/column gaps.
+- **Visual Grid Item Placement** — Click-to-select items with color pickers, area names, and coordinate controls.
+- **Named Grid Areas Support** — Auto-builds 2D `grid-template-areas` matrix (`"header header" "sidebar main" "footer footer"`).
+- **6 Built-in Layout Presets** — Holy Grail, Sidebar, Cards, Dashboard, Gallery, and Blog layouts with pre-configured named areas and lines.
+- **Live Preview & Visual Line Markers** — Numbered and named grid line indicators along column and row edges.
+- **Code Export with Highlighting** — Export CSS-only, HTML-only, or combined code with one-click clipboard copying.
+- **Dark/Light Theme** — Seamless theme styling with CSS custom properties.
 
 ---
 
@@ -131,42 +134,48 @@ User clicks Copy → clipboard API copies code
 - `GridEngine.ITEM_COLORS` — Palette of 12 colors cycled for new items
 - `GridEngine.resolveColumnTemplate(count, sizeStr)` — Converts count + sizing string to CSS grid-template-columns
 - `GridEngine.resolveRowTemplate(count, sizeStr)` — Converts count + sizing string to CSS grid-template-rows
-- `GridEngine.buildTemplateAreas(cols, rows, items)` — Generates grid-template-areas string from item placements
-- `GridEngine.generateCSS(config, items)` — Produces complete CSS code string
-- `GridEngine.generateHTML(items, useAreas)` — Produces HTML markup string
+- `GridEngine.splitTracks(template, count)` — Splits tracks taking `repeat()` into account
+- `GridEngine.formatLineName(names)` — Sanitizes and formats CSS line names with brackets `[name]`
+- `GridEngine.resolveColumnTemplateWithNames(count, sizeStr, namedLines)` — Interleaves column track sizing with explicit line names
+- `GridEngine.resolveRowTemplateWithNames(count, sizeStr, namedLines)` — Interleaves row track sizing with explicit line names
+- `GridEngine.inferNamedLinesFromAreas(cols, rows, items)` — Automatically generates conventional line names from area boundaries
+- `GridEngine.mergeCellsToItem(r1, c1, r2, c2, areaName, color)` — Normalizes drag coordinates into standard item geometry
+- `GridEngine.buildTemplateAreas(cols, rows, items)` — Generates 2D `grid-template-areas` matrix string
+- `GridEngine.generateCSS(config, items)` — Produces complete CSS code with named lines, areas, and responsive media queries
+- `GridEngine.generateHTML(items, useAreas)` — Produces clean HTML markup string
 - `GridEngine.generateCode(tab, config, items)` — Returns CSS, HTML, or both based on selected tab
-- `GridEngine.nextColor(count)` — Returns next palette color based on item count
-- `GridEngine.autoAreaName(count)` — Suggests a name for new items
 
 ### `script.js`
 
-- `getConfig()` — Reads current UI state into a config object
-- `render()` — Full re-render: updates preview grid, line markers, and code output
-- `renderLineMarkers(config)` — Draws column/row line number markers in the preview
-- `highlightCode()` — Applies syntax highlighting to the code output
-- `selectItem(idx)` / `deselectItem()` — Manages item selection and shows config card
+- `getConfig()` — Reads current UI state, named lines, and responsive preferences
+- `render()` — Full re-render: renders interactive cell slots, positioned items, line markers, and code output
+- `initDragToMerge()` — Pointer capture events (`pointerdown`, `pointermove`, `pointerup`) for drag-to-merge cell selection
+- `setBreakpoint(bp)` — Switches preview container viewport dimensions (`desktop`, `tablet`, `mobile`) and adapts layout preview
+- `renderNamedLinesManager(config)` — Populates and synchronizes column and row line name inputs
+- `renderLineMarkers(config)` — Positions top and left grid line markers with optional explicit line names
+- `highlightCode()` — Applies syntax highlighting to CSS and HTML output
+- `selectItem(idx)` / `deselectItem()` — Manages item selection and displays item configuration card
 - `addItem()` / `removeItem()` / `resetGrid()` — Item and grid lifecycle management
-- `loadPreset(name)` — Loads a preset layout configuration
-- `copyCode()` — Copies generated code to clipboard
+- `loadPreset(name)` — Loads a preset layout configuration with inferred line names
 
 ### `style.css`
 
-- CSS custom properties for dark/light theming
+- CSS custom properties for dark and light themes
+- Interactive drag-to-merge cell canvas styling with `.grid-cell-slot` and `.cell-drag-selected` highlights
+- Responsive breakpoint preview viewport frames (`.viewport-tablet`, `.viewport-mobile`)
+- Named lines manager card, line rows, and explicit line badges (`.has-named-line`)
 - Two-column workspace layout with responsive collapse
-- Grid preview container with dashed border and subtle grid background
-- Selected item highlight with blue outline and glow
-- Code output panel with monospace font and basic syntax colors
-- Stepper controls, preset buttons, and config form styling
+- Code output panel with monospace typography and syntax token coloring
 
 ---
 
 ## Design Decisions
 
-- **Engine/UI separation** — `gridEngine.js` contains zero DOM references, making it testable in Node.js
-- **No framework** — Vanilla JS keeps the learning curve low and avoids build steps
-- **Real-time preview** — Every input change triggers a full re-render for instant feedback
-- **Named areas as opt-in** — Users must enable the checkbox; items use `grid-column`/`grid-row` by default for maximum flexibility
-- **Cradle conventions** — Uses shared `escapeHtml.js` and `BackToHome.js` components, follows the project's font and token system
+- **Visual Drag-to-Merge Interaction** — Instead of requiring users to manually type 1-based start and end row/column indices into inputs, the visual drag-to-merge canvas lets users select any 2D region directly. The bounding rectangle is normalized and instantly converted into a named area.
+- **Explicit Named Lines Support** — Follows W3C CSS Grid Level 1 specification for bracketed line names (`[line-start] track [line-end]`), with auto-inference from area bounds for maximum productivity.
+- **Embedded Viewport Breakpoint Testing** — Provides real-time preview switches (Desktop, Tablet 768px, Mobile 375px) without requiring browser window resizing or external dev tools.
+- **Engine/UI Separation** — `gridEngine.js` remains completely pure without DOM dependencies, exporting via UMD/CommonJS for direct unit testing in Node.js.
+- **No Build Step** — Entirely vanilla HTML, CSS, and modern JavaScript.
 
 ---
 

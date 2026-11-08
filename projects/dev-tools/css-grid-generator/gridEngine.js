@@ -370,7 +370,7 @@ const GridEngine = (() => {
    * @returns {string}
    */
   function resolveColumnTemplate(count, sizeStr) {
-    const parts = sizeStr.trim().split(/\s+/);
+    const parts = (sizeStr || "").trim().split(/\s+/).filter(Boolean);
     if (parts.length >= count) return parts.slice(0, count).join(" ");
     if (parts.length > 0) return `repeat(${count}, ${parts[0]})`;
     return `repeat(${count}, 1fr)`;
@@ -383,16 +383,181 @@ const GridEngine = (() => {
    * @returns {string}
    */
   function resolveRowTemplate(count, sizeStr) {
-    const parts = sizeStr.trim().split(/\s+/);
+    const parts = (sizeStr || "").trim().split(/\s+/).filter(Boolean);
     if (parts.length >= count) return parts.slice(0, count).join(" ");
     if (parts.length > 0) return `repeat(${count}, ${parts[0]})`;
     return `repeat(${count}, auto)`;
   }
 
   /**
+   * Split a track template into individual track expressions.
+   * Handles repeat(count, track) expansion.
+   * @param {string} template
+   * @param {number} count
+   * @returns {Array<string>}
+   */
+  function splitTracks(template, count) {
+    const str = (template || "").trim();
+    const repeatMatch = str.match(/^repeat\(\s*(\d+)\s*,\s*([^)]+)\)$/i);
+    if (repeatMatch) {
+      const repVal = repeatMatch[2].trim();
+      return Array.from({ length: count }, () => repVal);
+    }
+    const parts = str.split(/\s+/).filter(Boolean);
+    if (parts.length >= count) return parts.slice(0, count);
+    const result = [...parts];
+    const fallback = parts[parts.length - 1] || "1fr";
+    while (result.length < count) {
+      result.push(fallback);
+    }
+    return result;
+  }
+
+  /**
+   * Format line names into a valid CSS bracketed line name string, e.g. "[main-start]"
+   * or "[header-end main-start]".
+   * @param {string|Array<string>} names
+   * @returns {string}
+   */
+  function formatLineName(names) {
+    if (!names) return "";
+    let str = Array.isArray(names) ? names.join(" ") : String(names);
+    str = str.replace(/[\[\]]/g, "").trim();
+    if (!str) return "";
+    const tokens = str
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(n => n.replace(/[^a-zA-Z0-9_-]/g, ""));
+    if (tokens.length === 0) return "";
+    return `[${tokens.join(" ")}]`;
+  }
+
+  /**
+   * Generate CSS grid-template-columns with explicit line names.
+   * @param {number} count - Number of columns
+   * @param {string} sizeStr - Sizing string
+   * @param {Array<string>} namedLines - Array of line names for lines 0 to count
+   * @returns {string}
+   */
+  function resolveColumnTemplateWithNames(count, sizeStr, namedLines = []) {
+    const template = resolveColumnTemplate(count, sizeStr);
+    const tracks = splitTracks(template, count);
+    let res = "";
+
+    for (let i = 0; i < count; i++) {
+      const lineName = namedLines[i] ? formatLineName(namedLines[i]) : "";
+      if (lineName) res += `${lineName} `;
+      res += tracks[i] || "1fr";
+      res += " ";
+    }
+
+    const lastLine = namedLines[count] ? formatLineName(namedLines[count]) : "";
+    if (lastLine) res += `${lastLine}`;
+
+    return res.trim();
+  }
+
+  /**
+   * Generate CSS grid-template-rows with explicit line names.
+   * @param {number} count - Number of rows
+   * @param {string} sizeStr - Sizing string
+   * @param {Array<string>} namedLines - Array of line names for lines 0 to count
+   * @returns {string}
+   */
+  function resolveRowTemplateWithNames(count, sizeStr, namedLines = []) {
+    const template = resolveRowTemplate(count, sizeStr);
+    const tracks = splitTracks(template, count);
+    let res = "";
+
+    for (let i = 0; i < count; i++) {
+      const lineName = namedLines[i] ? formatLineName(namedLines[i]) : "";
+      if (lineName) res += `${lineName} `;
+      res += tracks[i] || "auto";
+      res += " ";
+    }
+
+    const lastLine = namedLines[count] ? formatLineName(namedLines[count]) : "";
+    if (lastLine) res += `${lastLine}`;
+
+    return res.trim();
+  }
+
+  /**
+   * Automatically infer conventional line names from named grid areas.
+   * e.g., area "main" spanning cols 2-4 and rows 2-3 creates lines:
+   *   col 2: [main-start], col 4: [main-end]
+   *   row 2: [main-start], row 3: [main-end]
+   * @param {number} cols
+   * @param {number} rows
+   * @param {Array} items
+   * @returns {{ colLines: Array<string>, rowLines: Array<string> }}
+   */
+  function inferNamedLinesFromAreas(cols, rows, items) {
+    const colLines = Array.from({ length: cols + 1 }, () => []);
+    const rowLines = Array.from({ length: rows + 1 }, () => []);
+
+    if (!items || !Array.isArray(items)) {
+      return {
+        colLines: colLines.map(() => ""),
+        rowLines: rowLines.map(() => ""),
+      };
+    }
+
+    items.forEach(item => {
+      if (!item.areaName || !item.areaName.trim()) return;
+      const name = item.areaName.trim().replace(/\s+/g, "-");
+      const cStart = Math.max(0, Math.min(cols, (item.colStart || 1) - 1));
+      const cEnd = Math.max(0, Math.min(cols, (item.colEnd || 2) - 1));
+      const rStart = Math.max(0, Math.min(rows, (item.rowStart || 1) - 1));
+      const rEnd = Math.max(0, Math.min(rows, (item.rowEnd || 2) - 1));
+
+      const startColTag = `${name}-start`;
+      const endColTag = `${name}-end`;
+      const startRowTag = `${name}-start`;
+      const endRowTag = `${name}-end`;
+
+      if (!colLines[cStart].includes(startColTag)) colLines[cStart].push(startColTag);
+      if (!colLines[cEnd].includes(endColTag)) colLines[cEnd].push(endColTag);
+      if (!rowLines[rStart].includes(startRowTag)) rowLines[rStart].push(startRowTag);
+      if (!rowLines[rEnd].includes(endRowTag)) rowLines[rEnd].push(endRowTag);
+    });
+
+    return {
+      colLines: colLines.map(arr => arr.join(" ")),
+      rowLines: rowLines.map(arr => arr.join(" ")),
+    };
+  }
+
+  /**
+   * Helper to construct a normalized grid item from cell drag coordinates.
+   * @param {number} startRow - 1-based start row
+   * @param {number} startCol - 1-based start col
+   * @param {number} endRow - 1-based end row
+   * @param {number} endCol - 1-based end col
+   * @param {string} [areaName]
+   * @param {string} [color]
+   * @returns {object}
+   */
+  function mergeCellsToItem(startRow, startCol, endRow, endCol, areaName = "", color = "#3b82f6") {
+    const rMin = Math.min(startRow, endRow);
+    const rMax = Math.max(startRow, endRow);
+    const cMin = Math.min(startCol, endCol);
+    const cMax = Math.max(startCol, endCol);
+
+    return {
+      colStart: cMin,
+      colEnd: cMax + 1,
+      rowStart: rMin,
+      rowEnd: rMax + 1,
+      areaName: areaName.trim(),
+      color: color || "#3b82f6",
+    };
+  }
+
+  /**
    * Build the CSS `grid-area` or `grid-column`/`grid-row` string for an item.
    * @param {object} item - The grid item
-   * @returns {object} { styleString, areaName }
+   * @returns {object} { cols, rows, area }
    */
   function buildItemStyle(item) {
     const cols = `grid-column: ${item.colStart} / ${item.colEnd};`;
@@ -427,16 +592,44 @@ const GridEngine = (() => {
   }
 
   /**
-   * Generate full CSS code string for the grid.
+   * Generate full CSS code string for the grid, including optional named lines and responsive queries.
    * @param {object} config
    * @param {Array} items
    * @returns {string}
    */
   function generateCSS(config, items) {
-    const { columns, rows, colSize, rowSize, colGap, rowGap, showAreas } =
-      config;
-    const colTemplate = resolveColumnTemplate(columns, colSize);
-    const rowTemplate = resolveRowTemplate(rows, rowSize);
+    const {
+      columns,
+      rows,
+      colSize,
+      rowSize,
+      colGap,
+      rowGap,
+      showAreas,
+      enableNamedLines,
+      namedColLines,
+      namedRowLines,
+      includeResponsiveCSS,
+    } = config;
+
+    let colTemplate;
+    let rowTemplate;
+
+    if (enableNamedLines && (namedColLines || namedRowLines)) {
+      colTemplate = resolveColumnTemplateWithNames(
+        columns,
+        colSize,
+        namedColLines || []
+      );
+      rowTemplate = resolveRowTemplateWithNames(
+        rows,
+        rowSize,
+        namedRowLines || []
+      );
+    } else {
+      colTemplate = resolveColumnTemplate(columns, colSize);
+      rowTemplate = resolveRowTemplate(rows, rowSize);
+    }
 
     let css = `.grid-container {\n`;
     css += `  display: grid;\n`;
@@ -469,6 +662,37 @@ const GridEngine = (() => {
       css += `  font-weight: 600;\n`;
       css += `}\n`;
     });
+
+    if (includeResponsiveCSS) {
+      css += `\n/* Responsive Breakpoints */\n`;
+      css += `@media (max-width: 768px) {\n`;
+      css += `  .grid-container {\n`;
+      css += `    grid-template-columns: 1fr;\n`;
+      css += `    grid-template-rows: auto;\n`;
+
+      if (showAreas && items.length > 0) {
+        const distinctAreas = [];
+        items.forEach(it => {
+          if (it.areaName && !distinctAreas.includes(it.areaName)) {
+            distinctAreas.push(it.areaName);
+          }
+        });
+        if (distinctAreas.length > 0) {
+          css += `    grid-template-areas:\n      ${distinctAreas.map(a => `"${a}"`).join("\n      ")};\n`;
+        }
+      }
+
+      css += `  }\n`;
+
+      if (!showAreas) {
+        items.forEach((item, idx) => {
+          const name = item.areaName || `item-${idx + 1}`;
+          css += `  .${name} {\n    grid-column: 1 / -1;\n    grid-row: auto;\n  }\n`;
+        });
+      }
+
+      css += `}\n`;
+    }
 
     return css;
   }
@@ -560,6 +784,12 @@ const GridEngine = (() => {
     ITEM_COLORS,
     resolveColumnTemplate,
     resolveRowTemplate,
+    splitTracks,
+    formatLineName,
+    resolveColumnTemplateWithNames,
+    resolveRowTemplateWithNames,
+    inferNamedLinesFromAreas,
+    mergeCellsToItem,
     buildItemStyle,
     buildTemplateAreas,
     generateCSS,
@@ -569,3 +799,7 @@ const GridEngine = (() => {
     autoAreaName,
   };
 })();
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = GridEngine;
+}
