@@ -183,3 +183,138 @@ test("fuzz testing: parseCsv survives randomized, malformed, and adversarial inp
     assert.throws(() => CsvCleaner.parseCsv(input), /CSV input must be a string/);
   }
 });
+
+test("profileColumns infers types and computes statistical distributions", () => {
+  const dataset = {
+    headers: ["BirthDate", "Score", "Active", "Tier", "Description"],
+    rows: [
+      ["1990-05-12", "85", "true", "Gold", "Top performer"],
+      ["1988-11-23", "92", "false", "Silver", "Solid worker"],
+      ["1995-02-14", "78", "yes", "Gold", "New recruit"],
+      ["1992-08-30", "96", "no", "Bronze", "Contributor"],
+      ["", "88", "true", "Silver", "Senior lead"],
+    ],
+  };
+
+  const profiles = CsvCleaner.profileColumns(dataset);
+  assert.equal(profiles.length, 5);
+
+  assert.equal(profiles[0].header, "BirthDate");
+  assert.equal(profiles[0].inferredType, "DateTime");
+  assert.equal(profiles[0].missingCount, 1);
+  assert.equal(profiles[0].missingPct, 20);
+
+  assert.equal(profiles[1].header, "Score");
+  assert.equal(profiles[1].inferredType, "Numeric");
+  assert.equal(profiles[1].stats.min, 78);
+  assert.equal(profiles[1].stats.max, 96);
+  assert.equal(profiles[1].stats.mean, 87.8);
+  assert.equal(profiles[1].stats.median, 88);
+
+  assert.equal(profiles[2].header, "Active");
+  assert.equal(profiles[2].inferredType, "Boolean");
+
+  assert.equal(profiles[3].header, "Tier");
+  assert.equal(profiles[3].inferredType, "Categorical");
+  assert.equal(profiles[3].uniqueCount, 3);
+
+  assert.equal(profiles[4].header, "Description");
+  assert.equal(profiles[4].inferredType, "String");
+});
+
+test("detectAnomalies flags outliers, unexpected whitespace, and mixed formats", () => {
+  const dataset = {
+    headers: ["Salary", "Joined", "Status"],
+    rows: [
+      ["50000", "2022-01-01", "Active"],
+      ["52000", "2022-02-01", "Active"],
+      ["48000", "2022-03-01", "Pending"],
+      ["51000", "2022-04-01", "Active"],
+      ["53000", "2022-05-01", "Pending"],
+      ["500000", "2022-06-01", "Active"], // Outlier
+      ["50500", "not-a-date", "Active"],   // Mixed format in DateTime
+      ["51500", "2022-07-01", " Active "], // Whitespace
+    ],
+  };
+
+  const anomalies = CsvCleaner.detectAnomalies(dataset);
+  const outlierAnomalies = anomalies.filter(a => a.type === "outlier");
+  const whitespaceAnomalies = anomalies.filter(a => a.type === "whitespace");
+  const mixedAnomalies = anomalies.filter(a => a.type === "mixed_format");
+
+  assert.ok(outlierAnomalies.length >= 1, "Should detect salary outlier");
+  assert.equal(outlierAnomalies[0].value, "500000");
+
+  assert.ok(whitespaceAnomalies.length >= 1, "Should detect unexpected whitespace");
+  assert.equal(whitespaceAnomalies[0].value, " Active ");
+
+  assert.ok(mixedAnomalies.length >= 1, "Should detect non-date value in DateTime column");
+  assert.equal(mixedAnomalies[0].value, "not-a-date");
+});
+
+test("imputeMissingValues fills missing cells using mean, median, and mode", () => {
+  const dataset = {
+    headers: ["Score", "Role"],
+    rows: [
+      ["10", "Dev"],
+      ["20", "Dev"],
+      ["30", "Manager"],
+      ["", ""],
+    ],
+  };
+
+  // Mean imputation
+  const imputedMean = CsvCleaner.imputeMissingValues(dataset, { strategy: "mean" });
+  assert.equal(imputedMean.dataset.rows[3][0], "20");
+  assert.equal(imputedMean.imputedCount, 1);
+
+  // Auto imputation (mean/median for numeric, mode for categorical)
+  const imputedAuto = CsvCleaner.imputeMissingValues(dataset, { strategy: "auto" });
+  assert.equal(imputedAuto.dataset.rows[3][0], "20");
+  assert.equal(imputedAuto.dataset.rows[3][1], "Dev");
+  assert.equal(imputedAuto.imputedCount, 2);
+});
+
+test("normalizeTextCells trims, collapses whitespace, and strips control characters", () => {
+  const dataset = {
+    headers: ["Name", "Title"],
+    rows: [
+      ["  Alice   Smith  ", "Lead\tEngineer"],
+      ["Bob\u00A0Jones", "Software\u0000Developer"],
+    ],
+  };
+
+  const result = CsvCleaner.normalizeTextCells(dataset);
+  assert.equal(result.dataset.rows[0][0], "Alice Smith");
+  assert.equal(result.dataset.rows[0][1], "Lead Engineer");
+  assert.equal(result.dataset.rows[1][0], "Bob Jones");
+  assert.equal(result.dataset.rows[1][1], "Software Developer");
+  assert.equal(result.modifiedCount, 4);
+});
+
+test("exportJson serializes dataset with typed values and nulls", () => {
+  const dataset = {
+    headers: ["Name", "Age", "Employed", "Notes"],
+    rows: [
+      ["Asha", "30", "true", "Top recruit"],
+      ["Vikram", "42", "false", ""],
+    ],
+  };
+
+  const jsonStr = CsvCleaner.exportJson(dataset, { typed: true });
+  const parsed = JSON.parse(jsonStr);
+
+  assert.equal(parsed.length, 2);
+  assert.deepEqual(parsed[0], {
+    Name: "Asha",
+    Age: 30,
+    Employed: true,
+    Notes: "Top recruit",
+  });
+  assert.deepEqual(parsed[1], {
+    Name: "Vikram",
+    Age: 42,
+    Employed: false,
+    Notes: null,
+  });
+});
