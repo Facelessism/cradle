@@ -131,3 +131,115 @@ test("MatrixStorage formats LaTeX, CSV, and handles presets", () => {
   ]);
   assert.strictEqual(csv, "1,2\n3,4");
 });
+
+test("MatrixEngine computes step-by-step Gauss-Jordan row reduction", () => {
+  const A = [
+    [2, 1],
+    [4, 5],
+  ];
+
+  const steps = engine.gaussJordanSteps(A);
+  assert.ok(steps.length > 1);
+  assert.strictEqual(steps[0].type, "initial");
+  assert.strictEqual(steps[steps.length - 1].type, "complete");
+
+  const finalMatrix = steps[steps.length - 1].matrix;
+  assert.deepStrictEqual(finalMatrix, [
+    [1, 0],
+    [0, 1],
+  ]);
+
+  // Test singular matrix reduction
+  const singular = [
+    [1, 2],
+    [2, 4],
+  ];
+  const singularSteps = engine.gaussJordanSteps(singular);
+  const singularFinal = singularSteps[singularSteps.length - 1].matrix;
+  assert.deepStrictEqual(singularFinal, [
+    [1, 2],
+    [0, 0],
+  ]);
+
+  // Check step annotation and properties
+  const scaleOrElimStep = steps.find(s => s.type === "eliminate" || s.type === "scale");
+  assert.ok(scaleOrElimStep);
+  assert.ok(typeof scaleOrElimStep.annotation === "string");
+  assert.ok(Array.isArray(scaleOrElimStep.activeRows));
+});
+
+test("MatrixEngine computes characteristic polynomial for 2x2 and 3x3 matrices", () => {
+  const A2 = [
+    [2, 1],
+    [1, 2],
+  ];
+  const poly2 = engine.characteristicPolynomial(A2);
+  assert.strictEqual(poly2.degree, 2);
+  assert.strictEqual(poly2.trace, 4);
+  assert.strictEqual(poly2.determinant, 3);
+  assert.ok(poly2.equation.includes("λ²"));
+  assert.ok(poly2.equation.includes("4λ"));
+  assert.ok(poly2.equation.includes("3"));
+
+  const A3 = [
+    [3, 0, 0],
+    [0, 2, 0],
+    [0, 0, 1],
+  ];
+  const poly3 = engine.characteristicPolynomial(A3);
+  assert.strictEqual(poly3.degree, 3);
+  assert.strictEqual(poly3.trace, 6);
+  assert.strictEqual(poly3.determinant, 6);
+  assert.ok(poly3.equation.includes("λ³"));
+});
+
+test("MatrixEngine calculates eigenvectors for 2x2 and 3x3 matrices", () => {
+  const A = [
+    [2, 1],
+    [1, 2],
+  ];
+  const evs = engine.eigenvalues(A);
+  const evecs = engine.eigenvectors(A, evs);
+
+  assert.strictEqual(evecs.length, 2);
+  assert.strictEqual(evecs[0].isComplex, false);
+  assert.strictEqual(evecs[1].isComplex, false);
+
+  // Check Av = λv for first eigenvalue
+  const lambda1 = evecs[0].eigenvalue.real;
+  const v1 = evecs[0].normalized;
+  const Av1 = [
+    A[0][0] * v1[0] + A[0][1] * v1[1],
+    A[1][0] * v1[0] + A[1][1] * v1[1],
+  ];
+  assert.ok(Math.abs(Av1[0] - lambda1 * v1[0]) < 1e-4);
+  assert.ok(Math.abs(Av1[1] - lambda1 * v1[1]) < 1e-4);
+});
+
+test("MatrixEngine performs full Eigenvalue Decomposition (A = V·Λ·V⁻¹)", () => {
+  const A = [
+    [2, 1],
+    [1, 2],
+  ];
+  const decomp = engine.eigenDecomposition(A);
+
+  assert.strictEqual(decomp.isDiagonalizable, true);
+  assert.ok(decomp.V);
+  assert.ok(decomp.Lambda);
+  assert.ok(decomp.Vinv);
+  assert.ok(decomp.reconstructed);
+
+  // Reconstructed matrix must closely match original A
+  assert.strictEqual(Math.round(decomp.reconstructed[0][0]), 2);
+  assert.strictEqual(Math.round(decomp.reconstructed[0][1]), 1);
+  assert.strictEqual(Math.round(decomp.reconstructed[1][0]), 1);
+  assert.strictEqual(Math.round(decomp.reconstructed[1][1]), 2);
+
+  // Defective / non-diagonalizable matrix test
+  const defective = [
+    [1, 1],
+    [0, 1],
+  ];
+  const defDecomp = engine.eigenDecomposition(defective);
+  assert.strictEqual(defDecomp.isDiagonalizable, false);
+});

@@ -65,6 +65,9 @@ const latexOutput = document.getElementById("latex-output");
 const modalClose = document.getElementById("modal-close");
 const btnCopyLatex = document.getElementById("btn-copy-latex");
 
+const decompDetails = document.getElementById("decomp-details");
+const rowOpLegend = document.getElementById("row-op-legend");
+
 // Theme Toggle DOM references
 const themeToggle = document.getElementById("theme-toggle");
 const themeIcon = document.getElementById("theme-icon");
@@ -96,8 +99,21 @@ if (themeToggle) {
   });
 }
 
+function isUnaryOp(op) {
+  return [
+    "determinant",
+    "inverse",
+    "transpose",
+    "lu",
+    "qr",
+    "eigen",
+    "gauss",
+  ].includes(op);
+}
+
 function formatNum(n) {
   if (n === null || n === undefined) return "";
+  if (typeof n === "string") return n;
   if (Math.abs(n) < 1e-9) return "0";
   if (Number.isInteger(n)) return n.toString();
   return Number(n.toFixed(2)).toString();
@@ -185,6 +201,10 @@ function setOperation(op) {
   } else if (op === "multiply") {
     state.rowsB = state.colsA;
   } else if (["determinant", "inverse", "lu", "qr", "eigen"].includes(op)) {
+    if (op === "eigen" && state.rowsA > 3) {
+      state.rowsA = 3;
+      if (rowsASelect) rowsASelect.value = 3;
+    }
     state.colsA = state.rowsA;
     if (colsASelect) colsASelect.value = state.rowsA;
   }
@@ -195,14 +215,7 @@ function setOperation(op) {
 
 function updateOpUI() {
   const op = state.selectedOp;
-  const isUnary = [
-    "determinant",
-    "inverse",
-    "transpose",
-    "lu",
-    "qr",
-    "eigen",
-  ].includes(op);
+  const isUnary = isUnaryOp(op);
 
   if (cardB) cardB.style.display = isUnary ? "none" : "block";
 
@@ -215,7 +228,8 @@ function updateOpUI() {
       transpose: "<strong>A<sup>T</sup></strong>",
       lu: "<strong>A = L·U</strong>",
       qr: "<strong>A = Q·R</strong>",
-      eigen: "<strong>λ I</strong>",
+      eigen: "<strong>A·v = λ·v</strong>",
+      gauss: "<strong>RREF(A)</strong>",
     };
     mathOperator.innerHTML = iconMap[op] || "=";
   }
@@ -224,12 +238,20 @@ function updateOpUI() {
     const titleMap = {
       lu: "Decomposed Result L & U",
       qr: "Decomposed Result Q & R",
-      eigen: "Eigenvalues Spectrum λ",
+      eigen: "Eigenvalue Decomposition (A = V·Λ·V⁻¹)",
       determinant: "Determinant Scalar",
       inverse: "Inverse Matrix A⁻¹",
       transpose: "Transposed Matrix Aᵀ",
+      gauss: "Gauss-Jordan Row Reduction (RREF)",
     };
     resultTitle.textContent = titleMap[op] || "Result Matrix C";
+  }
+
+  if (rowOpLegend) {
+    rowOpLegend.classList.toggle("hidden", op !== "gauss");
+  }
+  if (decompDetails) {
+    decompDetails.classList.toggle("hidden", op !== "eigen");
   }
 
   if (rowsBSelect) {
@@ -261,6 +283,10 @@ function onDimensionsChange() {
   } else if (
     ["determinant", "inverse", "lu", "qr", "eigen"].includes(state.selectedOp)
   ) {
+    if (state.selectedOp === "eigen" && state.rowsA > 3) {
+      state.rowsA = 3;
+      if (rowsASelect) rowsASelect.value = 3;
+    }
     state.colsA = state.rowsA;
     if (colsASelect) colsASelect.value = state.rowsA;
   } else {
@@ -277,15 +303,7 @@ function rebuildGrids() {
   state.matrixB = createEmptyMatrix(state.rowsB, state.colsB, 1);
 
   renderMatrixGrid(gridA, state.rowsA, state.colsA, "a", state.matrixA);
-  const isUnary = [
-    "determinant",
-    "inverse",
-    "transpose",
-    "lu",
-    "qr",
-    "eigen",
-  ].includes(state.selectedOp);
-  if (!isUnary) {
+  if (!isUnaryOp(state.selectedOp)) {
     renderMatrixGrid(gridB, state.rowsB, state.colsB, "b", state.matrixB);
   }
 
@@ -302,6 +320,10 @@ function loadMatrixAData(data) {
   if (
     ["determinant", "inverse", "lu", "qr", "eigen"].includes(state.selectedOp)
   ) {
+    if (state.selectedOp === "eigen" && state.rowsA > 3) {
+      state.rowsA = 3;
+      if (rowsASelect) rowsASelect.value = 3;
+    }
     state.colsA = state.rowsA;
     if (colsASelect) colsASelect.value = state.rowsA;
   }
@@ -361,6 +383,8 @@ function computeAndBuildTimeline() {
       buildQRTimeline();
     } else if (state.selectedOp === "eigen") {
       buildEigenTimeline();
+    } else if (state.selectedOp === "gauss") {
+      buildGaussJordanTimeline();
     }
   } catch (err) {
     state.steps = [
@@ -480,17 +504,99 @@ function buildQRTimeline() {
   });
 }
 
+function buildGaussJordanTimeline() {
+  const rawSteps = engine.gaussJordanSteps(state.matrixA);
+  state.steps = rawSteps.map(s => ({
+    text: s.description,
+    scratchpad: s.annotation,
+    result: s.matrix,
+    pivot: s.pivot,
+    activeRows: s.activeRows,
+    opType: s.type,
+    factor: s.factor,
+  }));
+}
+
 function buildEigenTimeline() {
-  const evs = engine.eigenvalues(state.matrixA);
-  const formatted = evs.map((ev, idx) => [
-    `λ${idx + 1}`,
-    ev.imag !== 0 ? `${ev.real} ± ${Math.abs(ev.imag)}i` : `${ev.real}`,
-  ]);
+  const n = state.rowsA;
+  if (n !== 2 && n !== 3) {
+    state.steps.push({
+      text: "Eigenvalue analysis and decomposition supports 2x2 and 3x3 square matrices.",
+      scratchpad: "Select 2x2 or 3x3 dimension.",
+      result: [["N/A"]],
+    });
+    return;
+  }
+
+  const decomp = engine.eigenDecomposition(state.matrixA);
+  const poly = decomp.characteristicPolynomial;
+  const evs = decomp.eigenvalues;
+  const evecs = decomp.eigenvectors;
+
+  // Stage 1: Characteristic equation
   state.steps.push({
-    text: `Calculated Characteristic Polynomial Eigenvalues for Matrix A.`,
-    scratchpad: `det(A - λI) = 0`,
-    result: formatted,
+    text: `Stage 1: Formulate the Characteristic Equation det(A - λI) = 0 for the ${n}×${n} matrix.`,
+    scratchpad: `Characteristic Polynomial: ${poly.equation}`,
+    result: state.matrixA,
+    stage: "poly",
+    decomp: decomp,
   });
+
+  // Stage 2: Eigenvalues roots
+  const evRows = evs.map((e, idx) => {
+    const valStr =
+      e.imag !== 0 ? `${e.real} ± ${Math.abs(e.imag)}i` : `${e.real}`;
+    return [`λ${idx + 1}`, valStr];
+  });
+  state.steps.push({
+    text: `Stage 2: Solve roots of the polynomial equation P(λ) = 0 to obtain the spectral eigenvalues.`,
+    scratchpad: evs
+      .map(
+        (e, idx) =>
+          `λ${idx + 1} = ${e.imag !== 0 ? `${e.real} ± ${Math.abs(e.imag)}i` : e.real}`
+      )
+      .join(", "),
+    result: evRows,
+    stage: "eigenvalues",
+    decomp: decomp,
+  });
+
+  // Stage 3: Eigenvector basis
+  const evecRows = evecs.map((ev, idx) => {
+    const vecStr = ev.normalized ? `[${ev.normalized.join(", ")}]ᵀ` : "(complex)";
+    return [`v${idx + 1}`, vecStr];
+  });
+  state.steps.push({
+    text: `Stage 3: Calculate eigenvector basis by finding non-trivial nullspace solutions satisfying (A - λI)v = 0.`,
+    scratchpad: evecs
+      .map(
+        (ev, idx) =>
+          `v${idx + 1} = ${ev.normalized ? `[${ev.normalized.join(", ")}]ᵀ` : "complex"}`
+      )
+      .join("  |  "),
+    result: evecRows,
+    stage: "eigenvectors",
+    decomp: decomp,
+  });
+
+  // Stage 4: Modal matrix & Diagonalization A = V · Λ · V⁻¹
+  if (decomp.isDiagonalizable && decomp.V && decomp.Lambda) {
+    state.steps.push({
+      text: `Stage 4: Diagonalization complete: A = V · Λ · V⁻¹, where V is the modal matrix and Λ is the diagonal spectral matrix.`,
+      scratchpad: `A = V · Λ · V⁻¹ (Diagonalizable over ℝ)`,
+      result: decomp.Lambda,
+      stage: "decomp",
+      decomp: decomp,
+    });
+  } else {
+    state.steps.push({
+      text: `Stage 4: Diagonalization check: Matrix is not diagonalizable over ℝ (contains complex eigenvalues or deficient eigenspace).`,
+      scratchpad: `Not diagonalizable over ℝ`,
+      result: evRows,
+      stage: "decomp",
+      decomp: decomp,
+    });
+  }
 }
 
 function updateStepUI() {
@@ -499,6 +605,7 @@ function updateStepUI() {
       explanationText.textContent = "No calculation steps available.";
     if (mathScratchpad) mathScratchpad.textContent = "";
     if (gridResult) gridResult.innerHTML = "";
+    if (decompDetails) decompDetails.innerHTML = "";
     return;
   }
 
@@ -508,9 +615,21 @@ function updateStepUI() {
       : state.steps[state.steps.length - 1];
 
   if (explanationText) explanationText.textContent = step.text;
-  if (mathScratchpad) mathScratchpad.textContent = step.scratchpad;
+  if (mathScratchpad) {
+    if (state.selectedOp === "gauss" && step.opType) {
+      mathScratchpad.innerHTML = `<span class="row-op-badge ${step.opType}">${step.scratchpad}</span>`;
+    } else {
+      mathScratchpad.textContent = step.scratchpad;
+    }
+  }
 
-  renderResultGrid(step.result);
+  renderResultGrid(step.result, step);
+
+  if (state.selectedOp === "eigen" && step.decomp) {
+    renderEigenDecompPanel(step.decomp);
+  } else if (decompDetails) {
+    decompDetails.innerHTML = "";
+  }
 
   if (stepCounter) {
     const displayIndex =
@@ -534,7 +653,7 @@ function updateStepUI() {
   if (btnNext) btnNext.disabled = state.currentStep >= state.steps.length - 1;
 }
 
-function renderResultGrid(resultMatrix) {
+function renderResultGrid(resultMatrix, step = null) {
   if (!gridResult || !resultMatrix) return;
   gridResult.innerHTML = "";
 
@@ -542,14 +661,120 @@ function renderResultGrid(resultMatrix) {
   const cols = resultMatrix[0].length;
   gridResult.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
 
+  const isGauss = state.selectedOp === "gauss" && step;
+  const pivotRow = isGauss && step.pivot ? step.pivot[0] : -1;
+  const pivotCol = isGauss && step.pivot ? step.pivot[1] : -1;
+  const activeRows = isGauss && step.activeRows ? step.activeRows : [];
+
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const cell = document.createElement("div");
       cell.className = "matrix-cell-result";
+
+      if (isGauss) {
+        if (r === pivotRow && c === pivotCol) {
+          cell.classList.add("cell-pivot");
+        } else if (r === activeRows[0]) {
+          cell.classList.add("cell-highlight-source-row");
+        } else if (activeRows.length > 1 && r === activeRows[1]) {
+          cell.classList.add("cell-highlight-target-row");
+        }
+      }
+
       cell.textContent = formatNum(resultMatrix[r][c]);
       gridResult.appendChild(cell);
     }
   }
+}
+
+function renderEigenDecompPanel(decomp) {
+  if (!decompDetails || !decomp) return;
+
+  const poly = decomp.characteristicPolynomial;
+  const evs = decomp.eigenvalues;
+  const evecs = decomp.eigenvectors;
+
+  let html = `
+    <div class="decomp-card">
+      <div class="decomp-section">
+        <h4 class="decomp-heading"><i class="fa-solid fa-square-root-variable"></i> Characteristic Polynomial</h4>
+        <div class="decomp-poly-box font-mono">${poly.equation}</div>
+        <div class="decomp-poly-subtext">det(A - λI) = 0 &bull; Trace = ${poly.trace}, Det = ${poly.determinant}</div>
+      </div>
+
+      <div class="decomp-section">
+        <h4 class="decomp-heading"><i class="fa-solid fa-wave-square"></i> Spectrum & Eigenvectors</h4>
+        <div class="decomp-spectrum-grid">
+  `;
+
+  for (let i = 0; i < evs.length; i++) {
+    const ev = evs[i];
+    const vec = evecs[i];
+    const evVal =
+      ev.imag !== 0 ? `${ev.real} ± ${Math.abs(ev.imag)}i` : `${ev.real}`;
+    const vecVal =
+      vec && vec.normalized
+        ? `[${vec.normalized.join(", ")}]ᵀ`
+        : "(No real vector)";
+
+    html += `
+      <div class="spectrum-item">
+        <div class="spectrum-lambda">λ<sub>${i + 1}</sub> = <span class="val font-mono">${evVal}</span></div>
+        <div class="spectrum-vector">v<sub>${i + 1}</sub> = <span class="val font-mono">${vecVal}</span></div>
+      </div>
+    `;
+  }
+
+  html += `
+        </div>
+      </div>
+  `;
+
+  if (decomp.isDiagonalizable && decomp.V && decomp.Lambda) {
+    const formatSmallMatrix = m => {
+      let mHtml = '<div class="mini-matrix">';
+      for (let r = 0; r < m.length; r++) {
+        mHtml += '<div class="mini-matrix-row">';
+        for (let c = 0; c < m[0].length; c++) {
+          mHtml += `<span class="mini-cell font-mono">${formatNum(m[r][c])}</span>`;
+        }
+        mHtml += "</div>";
+      }
+      mHtml += "</div>";
+      return mHtml;
+    };
+
+    html += `
+      <div class="decomp-section">
+        <h4 class="decomp-heading"><i class="fa-solid fa-network-wired"></i> Diagonalization: A = V · Λ · V⁻¹</h4>
+        <div class="decomp-factor-row">
+          <div class="factor-block">
+            <span class="factor-label">Modal Matrix V</span>
+            ${formatSmallMatrix(decomp.V)}
+          </div>
+          <span class="factor-op">·</span>
+          <div class="factor-block">
+            <span class="factor-label">Diagonal Λ</span>
+            ${formatSmallMatrix(decomp.Lambda)}
+          </div>
+          <span class="factor-op">·</span>
+          <div class="factor-block">
+            <span class="factor-label">V⁻¹</span>
+            ${formatSmallMatrix(decomp.Vinv || decomp.V)}
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    html += `
+      <div class="decomp-notice">
+        <i class="fa-solid fa-circle-info"></i> Matrix is not diagonalizable over the real numbers ℝ (contains complex eigenvalues or lacks linearly independent eigenvectors).
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+  decompDetails.innerHTML = html;
 }
 
 function prevStep() {
@@ -614,15 +839,7 @@ function fillRandom() {
     }
   }
   renderMatrixGrid(gridA, state.rowsA, state.colsA, "a", state.matrixA);
-  const isUnary = [
-    "determinant",
-    "inverse",
-    "transpose",
-    "lu",
-    "qr",
-    "eigen",
-  ].includes(state.selectedOp);
-  if (!isUnary) {
+  if (!isUnaryOp(state.selectedOp)) {
     renderMatrixGrid(gridB, state.rowsB, state.colsB, "b", state.matrixB);
   }
   computeAndBuildTimeline();
@@ -636,15 +853,7 @@ function fillIdentity() {
     ? engine.createIdentity(state.rowsB)
     : createEmptyMatrix(state.rowsB, state.colsB, 0);
   renderMatrixGrid(gridA, state.rowsA, state.colsA, "a", state.matrixA);
-  const isUnary = [
-    "determinant",
-    "inverse",
-    "transpose",
-    "lu",
-    "qr",
-    "eigen",
-  ].includes(state.selectedOp);
-  if (!isUnary) {
+  if (!isUnaryOp(state.selectedOp)) {
     renderMatrixGrid(gridB, state.rowsB, state.colsB, "b", state.matrixB);
   }
   computeAndBuildTimeline();
@@ -654,15 +863,7 @@ function clearAll() {
   state.matrixA = createEmptyMatrix(state.rowsA, state.colsA, 0);
   state.matrixB = createEmptyMatrix(state.rowsB, state.colsB, 0);
   renderMatrixGrid(gridA, state.rowsA, state.colsA, "a", state.matrixA);
-  const isUnary = [
-    "determinant",
-    "inverse",
-    "transpose",
-    "lu",
-    "qr",
-    "eigen",
-  ].includes(state.selectedOp);
-  if (!isUnary) {
+  if (!isUnaryOp(state.selectedOp)) {
     renderMatrixGrid(gridB, state.rowsB, state.colsB, "b", state.matrixB);
   }
   computeAndBuildTimeline();
