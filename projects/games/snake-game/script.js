@@ -515,6 +515,7 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   /* ── Initial Render ── */
+  gameOverModal.hidden = true;
   updateHUD();
   render();
 });
