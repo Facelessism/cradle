@@ -16,6 +16,55 @@
     RIGHT: { x: 1, y: 0, name: "RIGHT" },
   };
 
+  const MODES = {
+    CLASSIC: "classic",
+    MAZE: "maze",
+  };
+
+  /**
+   * Builds the fixed inner-wall layout used by Maze mode.
+   * Four corner brackets plus two short centre bars. The snake's starting
+   * row is always left clear so the opening moves are safe.
+   *
+   * @param {number} [gridSize=20]
+   * @returns {Array<Object>} Obstacle coordinates [{ x, y }]
+   */
+  function createMazeObstacles(gridSize = GRID_SIZE) {
+    const cells = new Map();
+    const add = (x, y) => {
+      if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
+        cells.set(`${x},${y}`, { x, y });
+      }
+    };
+
+    const margin = 3;
+    const arm = 5;
+    const far = gridSize - 1 - margin;
+    const mid = Math.floor(gridSize / 2);
+
+    for (let i = 0; i < arm; i++) {
+      // Horizontal arms of each corner bracket
+      add(margin + i, margin);
+      add(far - i, margin);
+      add(margin + i, far);
+      add(far - i, far);
+      // Vertical arms of each corner bracket
+      add(margin, margin + i);
+      add(far, margin + i);
+      add(margin, far - i);
+      add(far, far - i);
+    }
+
+    // Two short bars above and below the centre
+    for (let x = mid - 2; x <= mid + 1; x++) {
+      add(x, margin + 3);
+      add(x, far - 3);
+    }
+
+    // Keep the starting row clear
+    return [...cells.values()].filter(cell => cell.y !== mid);
+  }
+
   /**
    * Creates an initial snake game state.
    *
@@ -23,6 +72,7 @@
    * @param {number} [options.gridSize=20]
    * @param {number} [options.initialLength=3]
    * @param {number} [options.highScore=0]
+   * @param {string} [options.mode="classic"] - "classic" or "maze"
    * @returns {Object} initial state
    */
   function createInitialState(options = {}) {
@@ -36,10 +86,15 @@
       { x: midX - 2, y: midY },
     ];
 
-    const food = generateFood(snake, gridSize);
+    const mode = options.mode === MODES.MAZE ? MODES.MAZE : MODES.CLASSIC;
+    const obstacles = mode === MODES.MAZE ? createMazeObstacles(gridSize) : [];
+
+    const food = generateFood(snake, gridSize, Math.random, obstacles);
 
     return {
       gridSize,
+      mode,
+      obstacles,
       snake,
       direction: DIRECTIONS.RIGHT,
       nextDirection: DIRECTIONS.RIGHT,
@@ -48,7 +103,7 @@
       highScore: options.highScore || 0,
       isGameOver: false,
       isPaused: false,
-      deathReason: null, // "self" | "wall"
+      deathReason: null, // "self" | "wall" | "obstacle" | "win"
     };
   }
 
@@ -98,6 +153,18 @@
   }
 
   /**
+   * Checks if position hits an inner obstacle (Maze mode).
+   *
+   * @param {Object} position - { x, y }
+   * @param {Array<Object>} [obstacles=[]]
+   * @returns {boolean}
+   */
+  function checkObstacleCollision(position, obstacles = []) {
+    if (!position || !Array.isArray(obstacles)) return false;
+    return obstacles.some(o => o.x === position.x && o.y === position.y);
+  }
+
+  /**
    * Checks if position collides with any segment in the snake body (Self-Collision Detection).
    * Addresses Issue #998: accurately detects when the snake head steers into its own segments.
    *
@@ -117,17 +184,26 @@
   }
 
   /**
-   * Generates a random food coordinate not currently occupied by the snake.
+   * Generates a random food coordinate not occupied by the snake or obstacles.
    *
    * @param {Array<Object>} snake - Current snake segments
    * @param {number} [gridSize=20]
    * @param {Function} [randomFn=Math.random]
+   * @param {Array<Object>} [obstacles=[]] - Cells food must never spawn on
    * @returns {Object|null} Food coordinate { x, y } or null if grid is full
    */
-  function generateFood(snake, gridSize = GRID_SIZE, randomFn = Math.random) {
+  function generateFood(
+    snake,
+    gridSize = GRID_SIZE,
+    randomFn = Math.random,
+    obstacles = []
+  ) {
     const occupied = new Set();
     if (Array.isArray(snake)) {
       snake.forEach(seg => occupied.add(`${seg.x},${seg.y}`));
+    }
+    if (Array.isArray(obstacles)) {
+      obstacles.forEach(o => occupied.add(`${o.x},${o.y}`));
     }
 
     const emptyCells = [];
@@ -171,11 +247,21 @@
       };
     }
 
-    // 2. Food check
+    // 2. Obstacle collision check (Maze mode)
+    if (checkObstacleCollision(nextHead, state.obstacles)) {
+      return {
+        ...state,
+        direction,
+        isGameOver: true,
+        deathReason: "obstacle",
+      };
+    }
+
+    // 3. Food check
     const isEating =
       state.food && nextHead.x === state.food.x && nextHead.y === state.food.y;
 
-    // 3. Self-collision check (Issue #998)
+    // 4. Self-collision check (Issue #998)
     if (checkSelfCollision(nextHead, state.snake, isEating)) {
       return {
         ...state,
@@ -185,7 +271,7 @@
       };
     }
 
-    // 4. Move snake
+    // 5. Move snake
     const newSnake = [nextHead, ...state.snake];
     if (!isEating) {
       newSnake.pop(); // Remove tail segment
@@ -194,7 +280,7 @@
     const newScore = isEating ? state.score + 10 : state.score;
     const newHighScore = Math.max(state.highScore, newScore);
     const newFood = isEating
-      ? generateFood(newSnake, state.gridSize, randomFn)
+      ? generateFood(newSnake, state.gridSize, randomFn, state.obstacles)
       : state.food;
 
     return {
@@ -212,10 +298,13 @@
 
   exports.GRID_SIZE = GRID_SIZE;
   exports.DIRECTIONS = DIRECTIONS;
+  exports.MODES = MODES;
+  exports.createMazeObstacles = createMazeObstacles;
   exports.createInitialState = createInitialState;
   exports.isValidDirectionChange = isValidDirectionChange;
   exports.getNextHeadPosition = getNextHeadPosition;
   exports.checkWallCollision = checkWallCollision;
+  exports.checkObstacleCollision = checkObstacleCollision;
   exports.checkSelfCollision = checkSelfCollision;
   exports.generateFood = generateFood;
   exports.stepGame = stepGame;

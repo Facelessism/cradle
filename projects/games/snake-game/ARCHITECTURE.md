@@ -49,6 +49,7 @@ flowchart TD
         CollisionCheck{Collision Check}
         SelfColl[checkSelfCollision]
         WallColl[checkWallCollision]
+        ObsColl[checkObstacleCollision]
         FoodSpawn[generateFood RNG]
     end
 
@@ -56,6 +57,7 @@ flowchart TD
     Step --> CollisionCheck
     CollisionCheck --> SelfColl
     CollisionCheck --> WallColl
+    CollisionCheck --> ObsColl
     Step --> FoodSpawn
     Step -->|Next State| State
     State --> Canvas
@@ -64,7 +66,7 @@ flowchart TD
     State --> Storage
 ```
 
-1. **State Engine (`snakeEngine.js`)**: Encapsulates pure state calculations (`createInitialState`, `stepGame`, `checkSelfCollision`, `checkWallCollision`, `generateFood`). It does not reference `window`, `document`, or DOM elements.
+1. **State Engine (`snakeEngine.js`)**: Encapsulates pure state calculations (`createInitialState`, `stepGame`, `checkSelfCollision`, `checkWallCollision`, `checkObstacleCollision`, `generateFood`, `createMazeObstacles`). It does not reference `window`, `document`, or DOM elements.
 2. **Controller & Renderer (`script.js`)**: Coordinates the `requestAnimationFrame` game loop, synchronizes user input queues, renders the board on the Canvas context, generates audio sound effects, and updates the HUD.
 3. **Storage (`CradleStorage`)**: Safely stores and retrieves high scores across sessions using Cradle's standardized storage interface.
 
@@ -98,12 +100,12 @@ Game loop (requestAnimationFrame) ticks at the selected difficulty speed
 stepGame executes in snakeEngine:
   - Validates direction change
   - Computes next head position
-  - Runs checkSelfCollision & checkWallCollision
+  - Runs checkWallCollision, checkObstacleCollision (Maze mode) & checkSelfCollision
   - Checks food consumption and grows snake body
   - Spawns new food on unoccupied grid cell if consumed
 ↓
 If collision occurs:
-  - Sets isGameOver = true with specific deathReason ("self" or "wall")
+  - Sets isGameOver = true with specific deathReason ("self", "wall" or "obstacle")
   - Triggers game-over audio sound
   - Displays Game Over modal with score summary
 ↓
@@ -148,11 +150,13 @@ Canvas renders updated snake, food, and grid; HUD updates DOM scores
 
 ### `snakeEngine.js`
 
-- `createInitialState(options)`: Instantiates fresh game state with default 3-segment snake centered on grid.
+- `createInitialState(options)`: Instantiates fresh game state with default 3-segment snake centered on grid. `options.mode` is `"classic"` (default, no inner walls) or `"maze"` (adds `state.obstacles`).
+- `createMazeObstacles(gridSize)`: Returns the fixed Maze-mode wall layout (four corner brackets and two centre bars), keeping the snake's starting row clear.
 - `isValidDirectionChange(currentDir, nextDir)`: Rejects 180° immediate reversal moves.
 - `checkWallCollision(position, gridSize)`: Evaluates if position is outside bounds `[0, gridSize - 1]`.
+- `checkObstacleCollision(position, obstacles)`: Checks if position overlaps an inner obstacle cell.
 - `checkSelfCollision(nextHead, body, willGrow)`: Checks if the new head coordinate overlaps any existing body segment.
-- `generateFood(snake, gridSize, randomFn)`: Locates an empty cell not occupied by the snake.
+- `generateFood(snake, gridSize, randomFn, obstacles)`: Locates an empty cell not occupied by the snake or any obstacle.
 - `stepGame(state, randomFn)`: Pure deterministic transition advancing the state by one frame.
 
 ### `script.js`
@@ -193,7 +197,6 @@ Canvas renders updated snake, food, and grid; HUD updates DOM scores
 
 ## Future Improvements
 
-- Add obstacle / maze modes with inner barriers.
 - Implement special power-up food types (speed boost, double points, ghost mode).
 - Add particle explosion effects on game over.
 - Introduce local two-player split-screen or duel mode.

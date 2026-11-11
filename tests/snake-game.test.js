@@ -161,3 +161,117 @@ test("generateFood never spawns on top of existing snake segments", () => {
   const food = SnakeEngine.generateFood(snake, gridSize);
   assert.deepEqual(food, { x: 4, y: 4 });
 });
+
+test("Classic mode (default) has no obstacles", () => {
+  const state = SnakeEngine.createInitialState();
+  assert.equal(state.mode, "classic");
+  assert.deepEqual(state.obstacles, []);
+
+  const explicit = SnakeEngine.createInitialState({ mode: "unknown" });
+  assert.equal(explicit.mode, "classic");
+  assert.deepEqual(explicit.obstacles, []);
+});
+
+test("Maze mode creates obstacles that don't overlap the snake or food", () => {
+  const state = SnakeEngine.createInitialState({ mode: "maze" });
+  assert.equal(state.mode, "maze");
+  assert.ok(state.obstacles.length > 0, "Maze mode should have obstacles");
+
+  const blocked = new Set(state.obstacles.map(o => `${o.x},${o.y}`));
+  state.snake.forEach(seg =>
+    assert.equal(blocked.has(`${seg.x},${seg.y}`), false)
+  );
+  assert.equal(blocked.has(`${state.food.x},${state.food.y}`), false);
+
+  // All obstacles are inside the board
+  state.obstacles.forEach(o => {
+    assert.equal(SnakeEngine.checkWallCollision(o, state.gridSize), false);
+  });
+});
+
+test("Maze mode keeps the snake's opening path clear", () => {
+  let state = SnakeEngine.createInitialState({ mode: "maze" });
+  state.food = null;
+  const head = state.snake[0];
+  // Moving RIGHT from the start must reach the outer wall without hitting an obstacle
+  for (let x = head.x + 1; x < state.gridSize; x++) {
+    state = SnakeEngine.stepGame({ ...state, food: { x: 0, y: 0 } });
+    assert.equal(state.isGameOver, false, `crashed early at x=${x}`);
+  }
+});
+
+test("checkObstacleCollision detects obstacle hits", () => {
+  const obstacles = [
+    { x: 3, y: 3 },
+    { x: 4, y: 3 },
+  ];
+  assert.equal(
+    SnakeEngine.checkObstacleCollision({ x: 3, y: 3 }, obstacles),
+    true
+  );
+  assert.equal(
+    SnakeEngine.checkObstacleCollision({ x: 5, y: 3 }, obstacles),
+    false
+  );
+  assert.equal(SnakeEngine.checkObstacleCollision({ x: 3, y: 3 }, []), false);
+  assert.equal(SnakeEngine.checkObstacleCollision({ x: 3, y: 3 }), false);
+});
+
+test("stepGame ends the game when the snake hits an obstacle", () => {
+  const state = {
+    ...SnakeEngine.createInitialState({ mode: "maze" }),
+    snake: [
+      { x: 5, y: 5 },
+      { x: 4, y: 5 },
+      { x: 3, y: 5 },
+    ],
+    direction: SnakeEngine.DIRECTIONS.RIGHT,
+    nextDirection: SnakeEngine.DIRECTIONS.RIGHT,
+    obstacles: [{ x: 6, y: 5 }],
+    food: { x: 0, y: 0 },
+  };
+
+  const next = SnakeEngine.stepGame(state);
+  assert.equal(next.isGameOver, true);
+  assert.equal(next.deathReason, "obstacle");
+  // Snake does not move into the obstacle
+  assert.deepEqual(next.snake[0], { x: 5, y: 5 });
+});
+
+test("generateFood never spawns inside obstacles", () => {
+  const gridSize = 3;
+  const snake = [{ x: 0, y: 0 }];
+  // Block every cell except (2,2)
+  const obstacles = [];
+  for (let x = 0; x < gridSize; x++) {
+    for (let y = 0; y < gridSize; y++) {
+      if (!(x === 0 && y === 0) && !(x === 2 && y === 2)) {
+        obstacles.push({ x, y });
+      }
+    }
+  }
+  for (let i = 0; i < 20; i++) {
+    const food = SnakeEngine.generateFood(
+      snake,
+      gridSize,
+      Math.random,
+      obstacles
+    );
+    assert.deepEqual(food, { x: 2, y: 2 });
+  }
+});
+
+test("Food eaten in Maze mode respawns outside obstacles", () => {
+  const base = SnakeEngine.createInitialState({ mode: "maze" });
+  const head = base.snake[0];
+  const state = { ...base, food: { x: head.x + 1, y: head.y } };
+
+  for (let i = 0; i < 50; i++) {
+    const next = SnakeEngine.stepGame(state);
+    assert.equal(next.score, 10);
+    assert.equal(
+      SnakeEngine.checkObstacleCollision(next.food, next.obstacles),
+      false
+    );
+  }
+});
