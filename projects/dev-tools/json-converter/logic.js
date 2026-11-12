@@ -236,7 +236,7 @@ function escapeCsv(value) {
     return `"${stringValue.replace(/"/g, '""')}"`;
   }
 
-  return stringValue;
+ 
 }
 
 /**
@@ -274,40 +274,48 @@ function flattenObj(obj, prefix, result, seen, depth) {
     return result;
   }
 
-  if (typeof obj === "object") {
-    if (seen.has(obj)) {
-      result[prefix || "value"] = "[Circular]";
-      return result;
-    }
-    seen.add(obj);
-  }
-
-  if (typeof obj !== "object" || Array.isArray(obj)) {
-    result[prefix || "value"] = String(obj);
-    return result;
-  }
-
+if (typeof obj === "object") {
   if (seen.has(obj)) {
     result[prefix || "value"] = "[Circular reference]";
     return result;
   }
+
   seen.add(obj);
 
-  const keys = Object.keys(obj);
+  try {
+    if (Array.isArray(obj)) {
+      if (obj.length === 0) {
+        result[prefix || "value"] = "";
+        return result;
+      }
 
-  if (keys.length === 0) {
-    result[prefix || "value"] = "";
+      for (let index = 0; index < obj.length; index++) {
+        const item = obj[index];
+        const newPrefix = prefix ? `${prefix}.${index}` : String(index);
+        flattenObj(item, newPrefix, result, seen, depth + 1);
+      }
+
+      return result;
+    }
+
+    const keys = Object.keys(obj);
+
+    if (keys.length === 0) {
+      result[prefix || "value"] = "";
+      return result;
+    }
+
+    for (const key of keys) {
+      const newPrefix = prefix ? `${prefix}.${key}` : key;
+      flattenObj(obj[key], newPrefix, result, seen, depth + 1);
+    }
+
     return result;
+  } finally {
+    seen.delete(obj);
   }
-
-  for (const key of keys) {
-    const newPrefix = prefix ? `${prefix}.${key}` : key;
-
-    flattenObj(obj[key], newPrefix, result, seen, depth + 1);
-  }
-
-  return result;
 }
+ 
 
 /**
  * Serialize a JavaScript value to CSV.
