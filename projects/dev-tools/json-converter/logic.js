@@ -146,61 +146,41 @@ function toYaml(
     return "~";
   }
 
-  if (typeof obj === "object") {
-    if (seen.has(obj)) {
-      return "~";
+ if (typeof obj === "object") {
+  if (seen.has(obj)) {
+    return "[Circular reference]";
+  }
+
+  seen.add(obj);
+
+  try {
+    if (Array.isArray(obj)) {
+      if (obj.length === 0) {
+        return "[]";
+      }
+
+      return (
+        "\n" +
+        obj
+          .map(item => {
+            const value = toYaml(item, indent + 1, depth + 1, maxDepth, seen);
+
+            if (typeof item === "object" && item !== null) {
+              const lines = value.split("\n");
+              const firstLine = lines.shift();
+              const rest = lines.map(line => pad + "  " + line).join("\n");
+
+              return (
+                pad + "- " + firstLine.trimStart() + (rest ? "\n" + rest : "")
+              );
+            }
+
+            return pad + "- " + value;
+          })
+          .join("\n")
+      );
     }
-    seen.add(obj);
-  }
 
-  if (typeof obj === "boolean") {
-    return obj ? "true" : "false";
-  }
-
-  if (typeof obj === "number") {
-    return Number.isFinite(obj) ? String(obj) : "~";
-  }
-
-  if (typeof obj === "string") {
-    return obj === "" ? "''" : quoteYaml(obj);
-  }
-
-  if (typeof obj === "object") {
-    if (seen.has(obj)) {
-      return "[Circular reference]";
-    }
-    seen.add(obj);
-  }
-
-  if (Array.isArray(obj)) {
-    if (obj.length === 0) {
-      return "[]";
-    }
-
-    return (
-      "\n" +
-      obj
-        .map(item => {
-          const value = toYaml(item, indent + 1, seen);
-
-          if (typeof item === "object" && item !== null) {
-            const lines = value.split("\n");
-            const firstLine = lines.shift();
-
-            const rest = lines.map(line => pad + "  " + line).join("\n");
-
-            return (
-              pad + "- " + firstLine.trimStart() + (rest ? "\n" + rest : "")
-            );
-          }
-
-          return pad + "- " + value;
-        })
-        .join("\n")
-    );
-  }
-
-  if (typeof obj === "object") {
     const keys = Object.keys(obj);
 
     if (keys.length === 0) {
@@ -211,10 +191,9 @@ function toYaml(
       "\n" +
       keys
         .map(key => {
-          const value = toYaml(obj[key], indent + 1, seen);
+          const value = toYaml(obj[key], indent + 1, depth + 1, maxDepth, seen);
 
           const needsKeyQuote = /[:\-#\[\]{},"'!&*?|>%@`\n\r\s]/.test(key);
-
           const formattedKey = needsKeyQuote ? quoteYaml(key) : key;
 
           const valueIsObject =
@@ -233,7 +212,10 @@ function toYaml(
         })
         .join("\n")
     );
+  } finally {
+    seen.delete(obj);
   }
+}
 
   return String(obj);
 }
