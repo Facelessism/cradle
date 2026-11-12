@@ -399,7 +399,21 @@ test("fuzz testing: toYaml, toCsv, and toXml handle deeply nested, circular, and
     assert.ok(typeof toXml(obj, "item") === "string");
   }
 });
+test("YAML and CSV handle shared references and mark real cycles", () => {
+  const shared = { name: "Alice" };
 
+  const yaml = toYaml({ first: shared, second: shared });
+  assert.equal((yaml.match(/name: Alice/g) || []).length, 2);
+
+  const csv = toCsv({ first: shared, second: shared });
+  assert.equal(csv, "first.name,second.name\nAlice,Alice");
+
+  const circular = {};
+  circular.self = circular;
+
+  assert.match(toYaml(circular), /\[Circular reference\]/);
+  assert.match(toCsv(circular), /\[Circular reference\]/);
+});
 /* ------------------------------------------------------------------ */
 /* Unicode surrogate pairs, emoji, and supplementary plane characters */
 /* ------------------------------------------------------------------ */
