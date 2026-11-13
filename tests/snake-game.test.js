@@ -14,7 +14,36 @@ test("createInitialState initializes standard snake game state", () => {
   assert.ok(state.food, "Food should be generated");
   assert.equal(state.direction.name, "RIGHT");
 });
+test("createInitialState respects custom initialLength", () => {
+  const state = SnakeEngine.createInitialState({
+    initialLength: 5,
+  });
 
+  assert.equal(
+    state.snake.length,
+    5,
+    "Snake should use the requested initialLength"
+  );
+});
+test("createInitialState rejects initialLength larger than gridSize", () => {
+  assert.throws(
+    () =>
+      SnakeEngine.createInitialState({
+        gridSize: 4,
+        initialLength: 5,
+      }),
+    /initialLength cannot be greater than gridSize/
+  );
+});
+test("createInitialState rejects non-positive initialLength", () => {
+  assert.throws(
+    () =>
+      SnakeEngine.createInitialState({
+        initialLength: 0,
+      }),
+    /initialLength must be a positive integer/
+  );
+});
 test("isValidDirectionChange prevents 180-degree suicidal reversal", () => {
   const { UP, DOWN, LEFT, RIGHT } = SnakeEngine.DIRECTIONS;
 

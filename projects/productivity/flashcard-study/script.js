@@ -480,18 +480,29 @@ function importDecks(file) {
   reader.onload = e => {
     try {
       const imported = JSON.parse(e.target.result);
-      if (imported.decks && Array.isArray(imported.decks)) {
-        data.decks.push(...imported.decks);
-        if (imported.sessions) data.sessions += imported.sessions;
-        saveData();
-        renderDashboard();
+      const result = FlashcardEngine.mergeImportedBackup(data, imported);
+
+      if (!result.success) {
+        alert(`Invalid flashcard backup: ${result.error}`);
+        return;
+      }
+
+      data = result.data;
+      saveData();
+      renderDashboard();
+
+      if (result.skippedDecks > 0) {
+        alert(
+          `Import complete: ${result.importedDecks} new deck(s) added; ${result.skippedDecks} existing deck(s) skipped.`
+        );
       } else {
-        alert("Invalid flashcard file format.");
+        alert(`Import complete: ${result.importedDecks} deck(s) added.`);
       }
     } catch {
       alert("Could not parse the import file.");
     }
   };
+  reader.onerror = () => alert("Could not read the import file.");
   reader.readAsText(file);
 }
 

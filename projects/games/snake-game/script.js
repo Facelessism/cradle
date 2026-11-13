@@ -519,16 +519,27 @@ document.addEventListener("DOMContentLoaded", () => {
   canvas.addEventListener(
     "touchstart",
     e => {
+      // Prevent page scroll / browser gestures while swiping on the canvas
+      if (e.cancelable) e.preventDefault();
       const touch = e.touches[0];
       touchStartX = touch.clientX;
       touchStartY = touch.clientY;
     },
-    { passive: true }
+    { passive: false }
+  );
+
+  canvas.addEventListener(
+    "touchmove",
+    e => {
+      if (e.cancelable) e.preventDefault();
+    },
+    { passive: false }
   );
 
   canvas.addEventListener(
     "touchend",
     e => {
+      if (e.cancelable) e.preventDefault();
       const touch = e.changedTouches[0];
       const deltaX = touch.clientX - touchStartX;
       const deltaY = touch.clientY - touchStartY;
@@ -546,7 +557,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
     },
-    { passive: true }
+    { passive: false }
   );
 
   /* ── Initial Render ── */

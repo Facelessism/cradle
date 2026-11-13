@@ -75,16 +75,20 @@
    * @param {string} [options.mode="classic"] - "classic" or "maze"
    * @returns {Object} initial state
    */
-  function createInitialState(options = {}) {
-    const gridSize = options.gridSize || GRID_SIZE;
-    const midX = Math.floor(gridSize / 2);
-    const midY = Math.floor(gridSize / 2);
+  function createInitialState({
+    gridSize = 20,
+    initialLength = 3,
+    highScore = 0,
+  } = {}) {
+    if (!Number.isInteger(initialLength) || initialLength < 1) {
+      throw new RangeError("initialLength must be a positive integer");
+    }
 
-    const snake = [
-      { x: midX, y: midY },
-      { x: midX - 1, y: midY },
-      { x: midX - 2, y: midY },
-    ];
+    if (initialLength > gridSize) {
+      throw new RangeError(
+        "initialLength cannot be greater than gridSize"
+      );
+    }
 
     const mode = options.mode === MODES.MAZE ? MODES.MAZE : MODES.CLASSIC;
     const obstacles = mode === MODES.MAZE ? createMazeObstacles(gridSize) : [];
@@ -96,17 +100,16 @@
       mode,
       obstacles,
       snake,
-      direction: DIRECTIONS.RIGHT,
-      nextDirection: DIRECTIONS.RIGHT,
-      food,
+      direction: { ...DIRECTIONS.RIGHT },
+      nextDirection: { ...DIRECTIONS.RIGHT },
+      food: generateFood(snake, gridSize),
       score: 0,
-      highScore: options.highScore || 0,
+      highScore,
       isGameOver: false,
       isPaused: false,
       deathReason: null, // "self" | "wall" | "obstacle" | "win"
     };
   }
-
   /**
    * Checks whether a new direction is a valid move (prevents 180-degree reversing into own neck).
    *
