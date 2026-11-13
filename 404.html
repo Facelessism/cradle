@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404: Page Not Found | Cradle</title>
+
+    <meta
+      name="description"
+      content="Page not found — Cradle curated archive of experiments."
+    />
+    <meta name="theme-color" content="#05070d" />
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+    <link rel="apple-touch-icon" href="assets/icon-192.png" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="src/components/ui/tokens.css" />
+
+    <!-- Safe storage helper must load before the anti-flash theme bootstrap. -->
+    <script src="src/components/ui/storage.js"></script>
+
+    <!-- Prevent flash of wrong theme before CSS loads -->
+    <script>
+      (function () {
+        var storedTheme =
+          window.CradleStorage && window.CradleStorage.getRaw
+            ? window.CradleStorage.getRaw("theme")
+            : null;
+        var t =
+          storedTheme ||
+          (window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: light)").matches
+            ? "light"
+            : "dark");
+        if (t === "light") {
+          document.documentElement.classList.add("light-theme");
+        }
+        var meta =
+          typeof document.querySelector === "function"
+            ? document.querySelector('meta[name="theme-color"]')
+            : null;
+        if (meta) {
+          meta.setAttribute("content", t === "light" ? "#f5f7fb" : "#05070d");
+        }
+      })();
+    </script>
+
+    <style>
+      .error-page-wrapper {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .error-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .error-logo {
+        font-family: "Space Grotesk", system-ui, sans-serif;
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        color: var(--text);
+        text-decoration: none;
+      }
+
+      .error-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 2rem 1.5rem 4rem;
+        max-width: 650px;
+        margin: 0 auto;
+      }
+
+      .error-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.35rem 0.85rem;
+        border-radius: 9999px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: rgba(239, 68, 68, 0.12);
+        color: var(--cradle-danger, #ef4444);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        margin-bottom: 1.5rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .error-code {
+        font-family: "Space Grotesk", system-ui, sans-serif;
+        font-size: clamp(5rem, 15vw, 9rem);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.06em;
+        background: linear-gradient(
+          135deg,
+          var(--text) 30%,
+          var(--accent-hover) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 1rem;
+      }
+
+      .error-title {
+        font-family: "Space Grotesk", system-ui, sans-serif;
+        font-size: clamp(1.5rem, 4vw, 2.25rem);
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.02em;
+        margin-bottom: 1rem;
+      }
+
+      .error-desc {
+        color: var(--muted);
+        font-size: 1.1rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+        max-width: 480px;
+      }
+
+      .error-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .btn-home {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.75rem;
+        background: var(--color-accent, var(--cradle-accent, #2563eb));
+        color: #ffffff;
+        font-family: "Space Grotesk", system-ui, sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: var(--transition);
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+      }
+
+      .btn-home:hover {
+        background: var(--accent-hover, #1d4ed8);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+        color: #ffffff;
+      }
+
+      .btn-home:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 3px;
+      }
+
+      .error-footer {
+        padding: 1.5rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="error-page-wrapper">
+      <header class="error-header">
+        <a href="index.html" class="error-logo" aria-label="Cradle home"
+          >Cradle</a
+        >
+        <div class="hero-actions">
+          <button
+            id="themeToggle"
+            data-cradle-theme-toggle
+            data-size="md"
+            class="theme-toggle"
+            aria-label="Toggle theme"
+          ></button>
+        </div>
+      </header>
+
+      <main id="main-content" class="error-main" role="main">
+        <div class="error-badge">404 Error</div>
+        <h1 class="error-code">404</h1>
+        <h2 class="error-title">Page Not Found</h2>
+        <p class="error-desc">
+          The mini-project, experiment, or page you are looking for does not
+          exist or has been moved.
+        </p>
+        <div class="error-actions">
+          <a
+            href="index.html"
+            class="btn-home"
+            data-cradle-btn
+            data-variant="primary"
+            data-size="lg"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Home
+          </a>
+        </div>
+      </main>
+
+      <footer class="error-footer">
+        <p>
+          Looking for experiments?
+          <a href="index.html" class="footer-link"
+            >Explore all minis in the gallery</a
+          >
+        </p>
+      </footer>
+    </div>
+
+    <!-- Floating BackToHome shared component -->
+    <a
+      data-cradle-back-to-home
+      data-label="Back to Home"
+      data-to="index.html"
+    ></a>
+
+    <script src="src/components/ui/sanitizeHtml.js"></script>
+    <script src="src/components/ui/Button/Button.js"></script>
+    <script src="src/components/ui/ThemeToggle/ThemeToggle.js"></script>
+    <script src="src/components/ui/BackToHome/BackToHome.js"></script>
+  </body>
+</html>
