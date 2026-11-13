@@ -275,5 +275,6 @@ Before releasing Cradle or deploying to any public or staging host (GitHub Pages
 - **CSP (Content Security Policy):** The root landing page enforces a minimal baseline CSP meta tag (`default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; ...`). Minis requiring external scripts extend this policy per [THIRD_PARTY_POLICY.md](THIRD_PARTY_POLICY.md) and [MINI_CONTRACT.md](docs/MINI_CONTRACT.md).
 - **Subresource Integrity (SRI):** Mandatory cryptographic hashes on third-party CDN assets.
 - **Security Headers:** `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and `Permissions-Policy`.
+- **Vercel Deployment Headers (`vercel.json`):** Automatic header enforcement on Vercel preview and production environments (`X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`, `Permissions-Policy`, and `Content-Security-Policy-Report-Only`).
 - **Dependency & Worker Integrity:** CI audit gates, lockfile enforcement, and same-origin worker hash verification.
 - **Pre-Flight Sign-Off:** Verification matrix and test commands before going live.
