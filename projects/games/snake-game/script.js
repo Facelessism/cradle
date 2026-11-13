@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const highScoreEl = document.getElementById("highScoreValue");
   const lengthEl = document.getElementById("lengthValue");
   const speedSelect = document.getElementById("speedSelect");
+  const modeSelect = document.getElementById("modeSelect");
   const startBtn = document.getElementById("startBtn");
   const pauseBtn = document.getElementById("pauseBtn");
   const resetBtn = document.getElementById("resetBtn");
@@ -129,8 +130,15 @@ document.addEventListener("DOMContentLoaded", () => {
     hard: 60,
   };
 
+  function getSelectedMode() {
+    return modeSelect?.value === SnakeEngine.MODES.MAZE
+      ? SnakeEngine.MODES.MAZE
+      : SnakeEngine.MODES.CLASSIC;
+  }
+
   let gameState = SnakeEngine.createInitialState({
     highScore: loadHighScore(),
+    mode: getSelectedMode(),
   });
 
   let gameLoopId = null;
@@ -232,7 +240,10 @@ document.addEventListener("DOMContentLoaded", () => {
     inputQueue = [];
 
     const currentHigh = Math.max(gameState.highScore, loadHighScore());
-    gameState = SnakeEngine.createInitialState({ highScore: currentHigh });
+    gameState = SnakeEngine.createInitialState({
+      highScore: currentHigh,
+      mode: getSelectedMode(),
+    });
 
     startBtn.hidden = false;
     startBtn.textContent = "▶ Start";
@@ -261,6 +272,8 @@ document.addEventListener("DOMContentLoaded", () => {
       deathReasonEl.textContent = "💀 You collided with your own body!";
     } else if (gameState.deathReason === "wall") {
       deathReasonEl.textContent = "💥 You crashed into the wall!";
+    } else if (gameState.deathReason === "obstacle") {
+      deathReasonEl.textContent = "🧱 You crashed into an obstacle!";
     } else if (gameState.deathReason === "win") {
       deathReasonEl.textContent =
         "🏆 Incredible! You completely filled the grid!";
@@ -300,6 +313,23 @@ document.addEventListener("DOMContentLoaded", () => {
       ctx.moveTo(0, y);
       ctx.lineTo(canvas.width, y);
       ctx.stroke();
+    }
+
+    // Draw Obstacles (Maze mode)
+    if (gameState.obstacles && gameState.obstacles.length > 0) {
+      ctx.save();
+      gameState.obstacles.forEach(o => {
+        const ox = o.x * TILE_SIZE;
+        const oy = o.y * TILE_SIZE;
+        ctx.fillStyle = "#475569";
+        ctx.fillRect(ox, oy, TILE_SIZE, TILE_SIZE);
+        ctx.fillStyle = "#64748b";
+        ctx.fillRect(ox + 2, oy + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+        ctx.strokeStyle = "#1e293b";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(ox + 0.5, oy + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
+      });
+      ctx.restore();
     }
 
     // Draw Food (Glowing Orb / Apple)
@@ -414,6 +444,11 @@ document.addEventListener("DOMContentLoaded", () => {
   startBtn.addEventListener("click", startGame);
   pauseBtn.addEventListener("click", pauseGame);
   resetBtn.addEventListener("click", resetGame);
+  // Switching mode starts a fresh board in the chosen layout
+  modeSelect?.addEventListener("change", () => {
+    resetGame();
+    modeSelect.blur();
+  });
   restartBtn.addEventListener("click", () => {
     resetGame();
     startGame();
