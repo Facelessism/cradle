@@ -116,7 +116,7 @@ Final WPM calculated → Rank assigned → Results overlay displayed
 
 - `startGame()`: Initializes the game state and timer.
 - `tick()`: Manages the second-by-second updates for the timer and AI.
-- `calculateWpm()`: Computes words per minute based on elapsed time and correct words.
+- `calculateWpm()`: Computes conventional typing-test WPM using correctly typed characters, where five characters equal one word.
 - `stepBackWord()`: Reverses the last submitted word, decrements completed counts, and restores state.
 - `recalculateStreak()`: Recomputes the active consecutive correct word streak from typed history.
 - `handleBackspace()`: Intercepts Backspace on empty input to step back into the previous word.

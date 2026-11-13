@@ -328,11 +328,39 @@ function generateWords(count, selectedDifficulty = state.difficulty) {
   return words;
 }
 
+function calculateCorrectCharacters(gameState = state) {
+  if (
+    !gameState ||
+    !Array.isArray(gameState.typedWords) ||
+    !Array.isArray(gameState.words)
+  ) {
+    return 0;
+  }
+
+  return gameState.typedWords.reduce((total, typedWord, index) => {
+    const targetWord = gameState.words[index];
+
+    if (typedWord === targetWord) {
+      return total + targetWord.length;
+    }
+
+    return total;
+  }, 0);
+}
+
 function calculateWpm(gameState = state) {
   if (!gameState || !gameState.startTime) return 0;
-  const elapsed = (Date.now() - gameState.startTime) / 1000 / 60;
-  if (elapsed <= 0) return 0;
-  return Math.round((gameState.correctWords || 0) / elapsed);
+
+  const elapsedMinutes =
+    (Date.now() - gameState.startTime) / 1000 / 60;
+
+  if (elapsedMinutes <= 0) return 0;
+
+  const correctCharacters = calculateCorrectCharacters(gameState);
+
+  return Math.round(
+    (correctCharacters / 5) / elapsedMinutes
+  );
 }
 
 function recalculateStreak(typedWords, targetWords) {
@@ -738,6 +766,7 @@ if (bestWpmEl) bestWpmEl.textContent = state.bestWpm;
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     WORD_BANKS,
+    calculateCorrectCharacters,
     calculateWpm,
     recalculateStreak,
     stepBackWord,
