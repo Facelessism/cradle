@@ -5,54 +5,39 @@
 /**
  * 1. REMOVE ANTISEMIC OUTLINE SUPPRESSIONS
  * Explicitly replaces any legacy global "outline: none" anti-patterns.
- */
-button,
-a,
-input,
-select,
-textarea,
-[tabindex="0"] {
-  /* Resets baseline browser behavior ahead of custom design hydration */
-  outline: mix(transparent, inherit);
+/* WCAG 2.2 Keyboard Focus Framework */
+
+:root {
+  --focus-ring-color: #f59e0b;
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 3px;
 }
 
-/**
- * 2. CORE :FOCUS-VISIBLE KEYBOARD NAVIGATION RULES
- * Triggers distinct visual focus rings *only* when keyboard inputs demand them.
- */
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-[tabindex="0"]:focus-visible {
-  /* Dual-layer high-contrast boundary ring */
-  outline: 3px solid #f59e0b; /* Vibrant Amber/Gold matching WCAG contrast requirements */
-  outline-offset: 3px;
-
-  /* Box shadow adds inner definition spacing to prevent element overlapping */
-  box-shadow:
-    0 0 0 3px #1e293b,
-    0 0 12px 4px rgba(245, 158, 11, 0.4);
-
-  /* Smooth transition ensuring quick visual tracking */
-  transition:
-    outline-offset 0.15s ease-in-out,
-    box-shadow 0.15s ease-in-out;
+/* Visible keyboard focus for interactive elements */
+:where(
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role="button"],
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
 }
 
-/**
- * 3. WINDOWS FORCED COLORS / HIGH CONTRAST MODE FALLBACKS
- * Guarantees system-level color changes are respected perfectly.
- */
+/* Windows High Contrast Mode */
 @media (forced-colors: active) {
-  button:focus-visible,
-  a:focus-visible,
-  input:focus-visible,
-  select:focus-visible,
-  textarea:focus-visible,
-  [tabindex="0"]:focus-visible {
-    /* Forces the browser's semantic focus system theme color */
+  :where(
+    button,
+    a,
+    input,
+    select,
+    textarea,
+    [role="button"],
+    [tabindex]:not([tabindex="-1"])
+  ):focus-visible {
     outline: 3px dashed Highlight;
     outline-offset: 4px;
     box-shadow: none;
