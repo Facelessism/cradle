@@ -363,7 +363,9 @@ test("fuzz testing: parseJSON handles malformed, randomized, and adversarial syn
     const res = parseJSON(input);
     assert.equal(res.valid, false);
     assert.ok(res.error);
-    assert.ok(typeof res.error.message === "string" && res.error.message.length > 0);
+    assert.ok(
+      typeof res.error.message === "string" && res.error.message.length > 0
+    );
     assert.ok(res.error.line >= 1);
     assert.ok(res.error.column >= 1);
   }
@@ -406,7 +408,8 @@ test("fuzz testing: toYaml, toCsv, and toXml handle deeply nested, circular, and
 
 test("parseJSON correctly preserves escaped surrogate pairs and raw emoji", () => {
   // Escaped surrogate pairs
-  const jsonWithSurrogates = '{"emoji":"\\uD83D\\uDE00","party":"\\uD83C\\uDF89","astral":"\\uD842\\uDFB7"}';
+  const jsonWithSurrogates =
+    '{"emoji":"\\uD83D\\uDE00","party":"\\uD83C\\uDF89","astral":"\\uD842\\uDFB7"}';
   const parsed = parseJSON(jsonWithSurrogates);
 
   assert.equal(parsed.valid, true);
@@ -483,4 +486,26 @@ test("highlightJSON safely processes strings and keys with surrogate pairs and e
   assert.ok(html.includes("😀"));
   assert.ok(html.includes("𠮷"));
   assert.ok(html.includes("hl-string"));
+});
+
+/* ------------------------------------------------------------------ */
+/* Cycle detection: shared references vs real cycles (#1166)          */
+/* ------------------------------------------------------------------ */
+
+test("shared references are not reported as circular", () => {
+  const shared = { x: 1 };
+  const data = { a: shared, b: shared };
+
+  assert.ok(!toYaml(data).includes("[Circular"));
+  assert.ok(!toCsv([data]).includes("[Circular"));
+  assert.ok(!toXml(data, "root").includes("[Circular"));
+});
+
+test("real cycles are still reported as circular", () => {
+  const loop = { name: "a" };
+  loop.self = loop;
+
+  assert.ok(toYaml(loop).includes("[Circular"));
+  assert.ok(toCsv([loop]).includes("[Circular"));
+  assert.ok(toXml(loop, "root").includes("[Circular"));
 });

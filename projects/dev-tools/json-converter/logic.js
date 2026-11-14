@@ -146,13 +146,6 @@ function toYaml(
     return "~";
   }
 
-  if (typeof obj === "object") {
-    if (seen.has(obj)) {
-      return "~";
-    }
-    seen.add(obj);
-  }
-
   if (typeof obj === "boolean") {
     return obj ? "true" : "false";
   }
@@ -169,7 +162,7 @@ function toYaml(
     if (seen.has(obj)) {
       return "[Circular reference]";
     }
-    seen.add(obj);
+    seen = new Set(seen).add(obj);
   }
 
   if (Array.isArray(obj)) {
@@ -181,7 +174,7 @@ function toYaml(
       "\n" +
       obj
         .map(item => {
-          const value = toYaml(item, indent + 1, seen);
+          const value = toYaml(item, indent + 1, depth + 1, maxDepth, seen);
 
           if (typeof item === "object" && item !== null) {
             const lines = value.split("\n");
@@ -211,7 +204,7 @@ function toYaml(
       "\n" +
       keys
         .map(key => {
-          const value = toYaml(obj[key], indent + 1, seen);
+          const value = toYaml(obj[key], indent + 1, depth + 1, maxDepth, seen);
 
           const needsKeyQuote = /[:\-#\[\]{},"'!&*?|>%@`\n\r\s]/.test(key);
 
@@ -297,19 +290,13 @@ function flattenObj(obj, prefix, result, seen, depth) {
       result[prefix || "value"] = "[Circular]";
       return result;
     }
-    seen.add(obj);
+    seen = new Set(seen).add(obj);
   }
 
   if (typeof obj !== "object" || Array.isArray(obj)) {
     result[prefix || "value"] = String(obj);
     return result;
   }
-
-  if (seen.has(obj)) {
-    result[prefix || "value"] = "[Circular reference]";
-    return result;
-  }
-  seen.add(obj);
 
   const keys = Object.keys(obj);
 
@@ -438,7 +425,7 @@ function toXml(
     if (seen.has(obj)) {
       return `${pad}<${name}>[Circular reference]</${name}>`;
     }
-    seen.add(obj);
+    seen = new Set(seen).add(obj);
   }
 
   if (
@@ -474,7 +461,14 @@ function toXml(
       .map(key => {
         const childName = isValidXmlName(key) ? key : sanitizeXmlName(key);
 
-        return toXml(obj[key], childName, indent + 1, depth + 1, maxDepth, seen);
+        return toXml(
+          obj[key],
+          childName,
+          indent + 1,
+          depth + 1,
+          maxDepth,
+          seen
+        );
       })
       .join("\n");
 
