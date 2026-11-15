@@ -10,6 +10,7 @@ import {
   fetchAndCacheProjects as fetchAndCacheProjectsDB,
   subscribeToSync,
 } from "./src/utils/cradleDb.js";
+import { pickRandomProject } from "./src/utils/randomProjectPicker.js";
 import {
   createFilterWorker,
   DEFAULT_WORKER_RETRY_CONFIG,
@@ -23,6 +24,7 @@ import { registerServiceWorker } from "./src/utils/serviceWorkerRegistration.js"
 
 const projectsGrid = document.getElementById("projects-grid");
 const searchInput = document.getElementById("search");
+const surpriseButton = document.getElementById("surprise-me");
 const categoriesContainer = document.getElementById("categories");
 const projectCount = document.getElementById("project-count");
 const clearFiltersBtn = document.getElementById("clear-filters");
@@ -61,6 +63,7 @@ updateClearSearchButton();
 
 let allProjects = [];
 let selectedCategory = "all";
+const LAST_SURPRISE_PROJECT_KEY = "cradle:last-surprise-project";
 let activeSuggestionIndex = -1;
 let currentSuggestions = [];
 let activeCardIndex = -1;
@@ -950,6 +953,53 @@ searchInput.addEventListener("keydown", event => {
 if (clearFiltersBtn) {
   clearFiltersBtn.addEventListener("click", clearFilters);
 }
+
+   
+if (surpriseButton) {
+  surpriseButton.addEventListener("click", () => {
+    // Get projects matching the active category and search query.
+    const query = searchInput.value.toLowerCase().trim();
+
+    const filteredProjects = filterProjects(
+      allProjects,
+      selectedCategory,
+      query
+    );
+
+    // Read the previously selected surprise project.
+    const lastPickedPath = window.CradleStorage.getRaw(
+      LAST_SURPRISE_PROJECT_KEY,
+      null
+    );
+
+    // Select a random project without repeating the previous one.
+    const project = pickRandomProject(
+      filteredProjects,
+      lastPickedPath
+    );
+
+    // Handle empty results safely.
+    if (!project) {
+      if (copyStatus) {
+        copyStatus.textContent = "No projects available to discover.";
+      }
+      return;
+    }
+
+    // Save the selected project for the next click.
+    window.CradleStorage.setRaw(
+      LAST_SURPRISE_PROJECT_KEY,
+      project.path
+    );
+
+    // Record the project in recently opened projects.
+    recordRecentlyOpenedProject(project);
+
+    // Open the selected mini-project.
+    window.location.href = getProjectUrl(project.path);
+  });
+}
+
 
 if (clearRecentProjectsBtn) {
   clearRecentProjectsBtn.addEventListener("click", clearRecentProjects);
