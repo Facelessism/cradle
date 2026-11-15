@@ -5,6 +5,11 @@
 }
 
 :root {
+  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.65);
+  --focus-ring-offset: 2px;
+}
+
+:root {
   --bg: var(--cradle-bg, #05070d);
   --bg-secondary: var(--cradle-bg-secondary, #0b1220);
 
@@ -47,6 +52,14 @@ html.light-theme {
   --color-accent: var(--accent-hover, #1d4ed8);
 
   --shadow: rgba(0, 0, 0, 0.08);
+}
+
+/* Consistent keyboard focus indicator */
+:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
+  border-radius: 4px;
 }
 
 html {
@@ -1195,4 +1208,69 @@ html.high-contrast {
 
 html.high-contrast.light-theme {
   --border: #0f172a;
+}
+
+
+
+/* ==========================================
+   ACCESSIBLE KEYBOARD FOCUS INDICATORS
+========================================== */
+
+:root {
+  --focus-ring: 3px solid #3b82f6;
+  --focus-ring-offset: 3px;
+}
+
+/* All interactive elements */
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: 4px;
+}
+
+/* Theme Toggle */
+.theme-toggle:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Buttons */
+button:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Navigation Links */
+nav a:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Project Cards */
+.projects-grid a:focus-visible,
+.projects-grid button:focus-visible,
+.projects-grid [role="button"]:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Search Input */
+input:focus-visible,
+select:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Footer Links */
+.footer-link:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Modal Buttons */
+.shortcuts-close-btn:focus-visible,
+.your-data-close-btn:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
