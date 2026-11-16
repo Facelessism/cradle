@@ -281,6 +281,48 @@ h1 {
   margin-top: 4px;
 }
 
+/* Power-up legend */
+.powerup-legend {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 16px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.powerup-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.powerup-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  color: #0f172a;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.powerup-icon--bonus {
+  background: #facc15;
+}
+
+.powerup-icon--slow {
+  background: #38bdf8;
+}
+
+.powerup-icon--shrink {
+  background: #c084fc;
+}
+
 .kbd {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
