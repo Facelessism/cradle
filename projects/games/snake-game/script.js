@@ -73,6 +73,16 @@ document.addEventListener("DOMContentLoaded", () => {
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
         osc.start(now);
         osc.stop(now + 0.35);
+      } else if (type === "powerup") {
+        // Bright rising arpeggio
+        osc.type = "square";
+        osc.frequency.setValueAtTime(523, now);
+        osc.frequency.setValueAtTime(659, now + 0.06);
+        osc.frequency.setValueAtTime(784, now + 0.12);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+        osc.start(now);
+        osc.stop(now + 0.22);
       } else if (type === "turn") {
         // Soft click
         osc.type = "triangle";
@@ -139,12 +149,47 @@ document.addEventListener("DOMContentLoaded", () => {
   let gameState = SnakeEngine.createInitialState({
     highScore: loadHighScore(),
     mode: getSelectedMode(),
+    powerUps: true,
   });
 
   let gameLoopId = null;
   let isRunning = false;
   let lastTickTime = 0;
   let inputQueue = [];
+
+  /* ── Drawing Helpers ── */
+  // Rounded rectangle path with a plain-rect fallback for browsers without ctx.roundRect
+  function roundRect(x, y, w, h, r) {
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(x, y, w, h, r);
+    } else {
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + w, y);
+      ctx.lineTo(x + w, y + h);
+      ctx.lineTo(x, y + h);
+      ctx.closePath();
+    }
+  }
+
+  /* ── Power-Up Visuals ── */
+  const POWER_UP_STYLES = {
+    [SnakeEngine.POWER_UP_TYPES.BONUS]: {
+      color: "#facc15",
+      symbol: "★",
+      label: "+50",
+    },
+    [SnakeEngine.POWER_UP_TYPES.SLOW]: {
+      color: "#38bdf8",
+      symbol: "❄",
+      label: "SLOW",
+    },
+    [SnakeEngine.POWER_UP_TYPES.SHRINK]: {
+      color: "#c084fc",
+      symbol: "✂",
+      label: "SHRINK",
+    },
+  };
+  const POWER_UP_BLINK_TICKS = 15;
 
   /* ── Canvas Metrics ── */
   const TILE_COUNT = gameState.gridSize; // 20
@@ -172,8 +217,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function gameTick(currentTime) {
     if (!isRunning) return;
 
+    // Slow power-up stretches the tick interval while it is active
     const currentSpeed =
-      SPEED_PRESETS[speedSelect.value] || SPEED_PRESETS.medium;
+      (SPEED_PRESETS[speedSelect.value] || SPEED_PRESETS.medium) *
+      SnakeEngine.getSpeedMultiplier(gameState);
 
     if (currentTime - lastTickTime >= currentSpeed) {
       lastTickTime = currentTime;
@@ -184,11 +231,23 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const prevScore = gameState.score;
+      const prevPowerUp = gameState.powerUp;
       gameState = SnakeEngine.stepGame(gameState);
 
-      // Check for score increase (food eaten)
+      const head = gameState.snake[0];
+      const collectedPowerUp =
+        prevPowerUp &&
+        !gameState.isGameOver &&
+        head.x === prevPowerUp.x &&
+        head.y === prevPowerUp.y;
+
+      if (collectedPowerUp) {
+        playSound("powerup");
+      }
+
+      // Check for score increase (food eaten or bonus power-up)
       if (gameState.score > prevScore) {
-        playSound("eat");
+        if (!collectedPowerUp) playSound("eat");
         if (gameState.score > gameState.highScore) {
           saveHighScore(gameState.score);
         }
@@ -243,6 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
     gameState = SnakeEngine.createInitialState({
       highScore: currentHigh,
       mode: getSelectedMode(),
+      powerUps: true,
     });
 
     startBtn.hidden = false;
@@ -362,6 +422,41 @@ document.addEventListener("DOMContentLoaded", () => {
       ctx.restore();
     }
 
+    // Draw Power-Up (diamond with a symbol; blinks shortly before it vanishes)
+    const powerUp = gameState.powerUp;
+    const blinkHidden =
+      powerUp &&
+      powerUp.ticksLeft <= POWER_UP_BLINK_TICKS &&
+      Math.floor(performance.now() / 150) % 2 === 0;
+    if (powerUp && !blinkHidden) {
+      const style = POWER_UP_STYLES[powerUp.type];
+      if (style) {
+        const cx = powerUp.x * TILE_SIZE + TILE_SIZE / 2;
+        const cy = powerUp.y * TILE_SIZE + TILE_SIZE / 2;
+        const half = TILE_SIZE / 2 - 1;
+
+        ctx.save();
+        ctx.shadowColor = style.color;
+        ctx.shadowBlur = 14;
+        ctx.fillStyle = style.color;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - half);
+        ctx.lineTo(cx + half, cy);
+        ctx.lineTo(cx, cy + half);
+        ctx.lineTo(cx - half, cy);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "#0f172a";
+        ctx.font = `bold ${Math.round(TILE_SIZE * 0.55)}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(style.symbol, cx, cy + 1);
+        ctx.restore();
+      }
+    }
+
     // Draw Snake
     const snake = gameState.snake;
     for (let i = snake.length - 1; i >= 0; i--) {
@@ -377,7 +472,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ctx.shadowBlur = 10;
         ctx.fillStyle = "#34d399";
         ctx.beginPath();
-        ctx.roundRect(sx + 1, sy + 1, TILE_SIZE - 2, TILE_SIZE - 2, 6);
+        roundRect(sx + 1, sy + 1, TILE_SIZE - 2, TILE_SIZE - 2, 6);
         ctx.fill();
 
         // Eyes on the head
@@ -416,9 +511,28 @@ document.addEventListener("DOMContentLoaded", () => {
         const t = i / snake.length; // 0 (near head) to 1 (tail)
         ctx.fillStyle = `hsl(${155 - t * 25}, ${80 - t * 20}%, ${45 - t * 10}%)`;
         ctx.beginPath();
-        ctx.roundRect(sx + 1.5, sy + 1.5, TILE_SIZE - 3, TILE_SIZE - 3, 4);
+        roundRect(sx + 1.5, sy + 1.5, TILE_SIZE - 3, TILE_SIZE - 3, 4);
         ctx.fill();
       }
+      ctx.restore();
+    }
+
+    // Active timed effect indicator (top bar that shrinks as the effect runs out)
+    const effect = gameState.activeEffect;
+    if (effect && POWER_UP_STYLES[effect.type]) {
+      const style = POWER_UP_STYLES[effect.type];
+      const total = SnakeEngine.POWER_UP_CONFIG.slowTicks;
+      const fraction = Math.max(0, Math.min(1, effect.ticksLeft / total));
+
+      ctx.save();
+      ctx.fillStyle = "rgba(15, 23, 42, 0.7)";
+      ctx.fillRect(0, 0, canvas.width, 6);
+      ctx.fillStyle = style.color;
+      ctx.fillRect(0, 0, canvas.width * fraction, 6);
+      ctx.font = "bold 12px 'Outfit', sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "top";
+      ctx.fillText(`${style.symbol} ${style.label}`, canvas.width - 6, 10);
       ctx.restore();
     }
 

@@ -22,6 +22,26 @@
   };
 
   /**
+   * Special food types. Durations are measured in game ticks so they pause
+   * with the game and do not depend on the selected speed.
+   */
+  const POWER_UP_TYPES = {
+    BONUS: "bonus", // Instant +50 points
+    SLOW: "slow", // Snake moves slower for a while
+    SHRINK: "shrink", // Instantly removes tail segments
+  };
+
+  const POWER_UP_CONFIG = {
+    spawnChance: 0.25, // Chance to spawn after eating normal food
+    lifetimeTicks: 60, // How long an uncollected power-up stays on the board
+    bonusPoints: 50,
+    slowTicks: 50,
+    slowMultiplier: 1.6, // Tick interval multiplier while slowed
+    shrinkSegments: 3,
+    minLength: 3, // Shrink never takes the snake below this length
+  };
+
+  /**
    * Builds the fixed inner-wall layout used by Maze mode.
    * Four corner brackets plus two short centre bars. The snake's starting
    * row is always left clear so the opening moves are safe.
@@ -73,27 +93,34 @@
    * @param {number} [options.initialLength=3]
    * @param {number} [options.highScore=0]
    * @param {string} [options.mode="classic"] - "classic" or "maze"
+   * @param {boolean} [options.powerUps=false] - Enable special power-up food
    * @returns {Object} initial state
    */
   function createInitialState({
     gridSize = 20,
     initialLength = 3,
     highScore = 0,
+    mode: requestedMode = MODES.CLASSIC,
+    powerUps = false,
   } = {}) {
     if (!Number.isInteger(initialLength) || initialLength < 1) {
       throw new RangeError("initialLength must be a positive integer");
     }
 
     if (initialLength > gridSize) {
-      throw new RangeError(
-        "initialLength cannot be greater than gridSize"
-      );
+      throw new RangeError("initialLength cannot be greater than gridSize");
     }
 
-    const mode = options.mode === MODES.MAZE ? MODES.MAZE : MODES.CLASSIC;
-    const obstacles = mode === MODES.MAZE ? createMazeObstacles(gridSize) : [];
+    const startX = Math.floor(gridSize / 2);
+    const startY = Math.floor(gridSize / 2);
 
-    const food = generateFood(snake, gridSize, Math.random, obstacles);
+    const snake = Array.from({ length: initialLength }, (_, index) => ({
+      x: startX - index,
+      y: startY,
+    }));
+
+    const mode = requestedMode === MODES.MAZE ? MODES.MAZE : MODES.CLASSIC;
+    const obstacles = mode === MODES.MAZE ? createMazeObstacles(gridSize) : [];
 
     return {
       gridSize,
@@ -102,12 +129,15 @@
       snake,
       direction: { ...DIRECTIONS.RIGHT },
       nextDirection: { ...DIRECTIONS.RIGHT },
-      food: generateFood(snake, gridSize),
+      food: generateFood(snake, gridSize, Math.random, obstacles),
       score: 0,
       highScore,
       isGameOver: false,
       isPaused: false,
       deathReason: null, // "self" | "wall" | "obstacle" | "win"
+      powerUpsEnabled: powerUps === true,
+      powerUp: null, // { x, y, type, ticksLeft } while on the board
+      activeEffect: null, // { type, ticksLeft } while a timed effect runs
     };
   }
   /**
@@ -225,6 +255,82 @@
   }
 
   /**
+   * Picks a power-up type and a free cell for it.
+   * The cell is never on the snake, an obstacle, or the normal food.
+   *
+   * @param {Object} state - Game state ({ snake, gridSize, obstacles, food })
+   * @param {Function} [randomFn=Math.random]
+   * @returns {Object|null} { x, y, type, ticksLeft } or null if no free cell
+   */
+  function spawnPowerUp(state, randomFn = Math.random) {
+    const blocked = Array.isArray(state.obstacles) ? [...state.obstacles] : [];
+    if (state.food) blocked.push(state.food);
+
+    const cell = generateFood(state.snake, state.gridSize, randomFn, blocked);
+    if (!cell) return null;
+
+    const types = Object.values(POWER_UP_TYPES);
+    const type = types[Math.floor(randomFn() * types.length)] || types[0];
+
+    return {
+      x: cell.x,
+      y: cell.y,
+      type,
+      ticksLeft: POWER_UP_CONFIG.lifetimeTicks,
+    };
+  }
+
+  /**
+   * Applies a collected power-up to an already-moved state.
+   *
+   * @param {Object} state - State after the snake has moved onto the power-up
+   * @param {string} type - One of POWER_UP_TYPES
+   * @returns {Object} New state with the effect applied
+   */
+  function applyPowerUp(state, type) {
+    switch (type) {
+      case POWER_UP_TYPES.BONUS:
+        return { ...state, score: state.score + POWER_UP_CONFIG.bonusPoints };
+      case POWER_UP_TYPES.SLOW:
+        return {
+          ...state,
+          activeEffect: {
+            type: POWER_UP_TYPES.SLOW,
+            ticksLeft: POWER_UP_CONFIG.slowTicks,
+          },
+        };
+      case POWER_UP_TYPES.SHRINK: {
+        const newLength = Math.max(
+          POWER_UP_CONFIG.minLength,
+          state.snake.length - POWER_UP_CONFIG.shrinkSegments
+        );
+        return { ...state, snake: state.snake.slice(0, newLength) };
+      }
+      default:
+        return state;
+    }
+  }
+
+  /**
+   * Returns the multiplier the UI should apply to its tick interval.
+   * 1 means normal speed; larger means slower.
+   *
+   * @param {Object} state
+   * @returns {number}
+   */
+  function getSpeedMultiplier(state) {
+    if (
+      state &&
+      state.activeEffect &&
+      state.activeEffect.type === POWER_UP_TYPES.SLOW &&
+      state.activeEffect.ticksLeft > 0
+    ) {
+      return POWER_UP_CONFIG.slowMultiplier;
+    }
+    return 1;
+  }
+
+  /**
    * Advances the game state by one tick.
    *
    * @param {Object} state - Current game state
@@ -263,6 +369,12 @@
     // 3. Food check
     const isEating =
       state.food && nextHead.x === state.food.x && nextHead.y === state.food.y;
+    const collectedPowerUp =
+      state.powerUp &&
+      nextHead.x === state.powerUp.x &&
+      nextHead.y === state.powerUp.y
+        ? state.powerUp
+        : null;
 
     // 4. Self-collision check (Issue #998)
     if (checkSelfCollision(nextHead, state.snake, isEating)) {
@@ -281,27 +393,82 @@
     }
 
     const newScore = isEating ? state.score + 10 : state.score;
-    const newHighScore = Math.max(state.highScore, newScore);
-    const newFood = isEating
-      ? generateFood(newSnake, state.gridSize, randomFn, state.obstacles)
-      : state.food;
 
-    return {
+    // Power-up still on the board after this move (expires when its timer runs out)
+    let powerUp = null;
+    if (state.powerUp && !collectedPowerUp && state.powerUp.ticksLeft > 1) {
+      powerUp = { ...state.powerUp, ticksLeft: state.powerUp.ticksLeft - 1 };
+    }
+
+    // Normal food never spawns on the power-up cell
+    let newFood = state.food;
+    if (isEating) {
+      const blocked = Array.isArray(state.obstacles)
+        ? [...state.obstacles]
+        : [];
+      if (powerUp) blocked.push(powerUp);
+      newFood = generateFood(newSnake, state.gridSize, randomFn, blocked);
+      if (newFood === null && powerUp) {
+        // Only the power-up's cell is free: drop it so food can still spawn
+        powerUp = null;
+        newFood = generateFood(
+          newSnake,
+          state.gridSize,
+          randomFn,
+          state.obstacles
+        );
+      }
+    }
+
+    // Count down the active timed effect (it applies to this tick, then expires)
+    let activeEffect = null;
+    if (state.activeEffect && state.activeEffect.ticksLeft > 1) {
+      activeEffect = {
+        ...state.activeEffect,
+        ticksLeft: state.activeEffect.ticksLeft - 1,
+      };
+    }
+
+    let next = {
       ...state,
       snake: newSnake,
       direction,
       nextDirection: direction,
       food: newFood,
       score: newScore,
-      highScore: newHighScore,
+      powerUp,
+      activeEffect,
       isGameOver: newFood === null, // Win condition if all cells filled
       deathReason: newFood === null ? "win" : null,
     };
+
+    if (collectedPowerUp) {
+      next = applyPowerUp(next, collectedPowerUp.type);
+    }
+
+    // Occasionally spawn a new power-up after eating normal food
+    if (
+      state.powerUpsEnabled &&
+      isEating &&
+      !next.isGameOver &&
+      !next.powerUp &&
+      randomFn() < POWER_UP_CONFIG.spawnChance
+    ) {
+      next = { ...next, powerUp: spawnPowerUp(next, randomFn) };
+    }
+
+    next.highScore = Math.max(state.highScore, next.score);
+    return next;
   }
 
   exports.GRID_SIZE = GRID_SIZE;
   exports.DIRECTIONS = DIRECTIONS;
   exports.MODES = MODES;
+  exports.POWER_UP_TYPES = POWER_UP_TYPES;
+  exports.POWER_UP_CONFIG = POWER_UP_CONFIG;
+  exports.spawnPowerUp = spawnPowerUp;
+  exports.applyPowerUp = applyPowerUp;
+  exports.getSpeedMultiplier = getSpeedMultiplier;
   exports.createMazeObstacles = createMazeObstacles;
   exports.createInitialState = createInitialState;
   exports.isValidDirectionChange = isValidDirectionChange;

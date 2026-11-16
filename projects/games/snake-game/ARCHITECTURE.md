@@ -157,6 +157,9 @@ Canvas renders updated snake, food, and grid; HUD updates DOM scores
 - `checkObstacleCollision(position, obstacles)`: Checks if position overlaps an inner obstacle cell.
 - `checkSelfCollision(nextHead, body, willGrow)`: Checks if the new head coordinate overlaps any existing body segment.
 - `generateFood(snake, gridSize, randomFn, obstacles)`: Locates an empty cell not occupied by the snake or any obstacle.
+- `spawnPowerUp(state, randomFn)`: Places a random power-up (`bonus`, `slow` or `shrink`) on a free cell that is not the snake, an obstacle or the normal food.
+- `applyPowerUp(state, type)`: Applies a collected power-up — `bonus` adds 50 points, `shrink` removes 3 tail segments (minimum length 3), `slow` starts a timed `activeEffect`.
+- `getSpeedMultiplier(state)`: Returns the tick-interval multiplier for the UI (1.6 while `slow` is active, otherwise 1).
 - `stepGame(state, randomFn)`: Pure deterministic transition advancing the state by one frame.
 
 ### `script.js`
@@ -185,6 +188,24 @@ Canvas renders updated snake, food, and grid; HUD updates DOM scores
 
 ---
 
+## Power-Ups
+
+Power-ups are enabled with `createInitialState({ powerUps: true })` (the game UI always enables them; the engine default is off so the core rules stay unchanged for other callers).
+
+- After normal food is eaten there is a 25% chance a power-up appears, if none is already on the board.
+- An uncollected power-up disappears after 60 ticks and blinks during its last 15.
+- Timers are counted in game ticks, so they pause with the game and are independent of the selected speed.
+- Power-ups never block or change collision rules, and normal food never spawns on a power-up cell.
+- `createInitialState` resets `powerUp` and `activeEffect` to `null`, so Reset, Play Again and mode changes clear all power-up state.
+
+| Power-up | Look             | Effect                                  |
+| -------- | ---------------- | --------------------------------------- |
+| Bonus    | Gold diamond ★   | +50 points instantly                    |
+| Slow     | Blue diamond ❄   | Snake moves 1.6× slower for 50 ticks    |
+| Shrink   | Purple diamond ✂ | Removes 3 tail segments (never below 3) |
+
+---
+
 ## Dependencies
 
 | Dependency             | Version | How loaded                     | Purpose                                     |
@@ -197,7 +218,6 @@ Canvas renders updated snake, food, and grid; HUD updates DOM scores
 
 ## Future Improvements
 
-- Implement special power-up food types (speed boost, double points, ghost mode).
 - Add particle explosion effects on game over.
 - Introduce local two-player split-screen or duel mode.
 
