@@ -231,6 +231,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const prevScore = gameState.score;
+      const prevHighScore = gameState.highScore;
       const prevPowerUp = gameState.powerUp;
       gameState = SnakeEngine.stepGame(gameState);
 
@@ -248,7 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Check for score increase (food eaten or bonus power-up)
       if (gameState.score > prevScore) {
         if (!collectedPowerUp) playSound("eat");
-        if (gameState.score > gameState.highScore) {
+        if (gameState.score > prevHighScore) {
           saveHighScore(gameState.score);
         }
       }
