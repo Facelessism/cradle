@@ -80,8 +80,12 @@
               <span class="car-label">You</span>
             </div>
           </div>
-          <div class="track-progress">
-            <div class="progress-bar" id="progressBar"></div>
+                   <div class="track-progress track-progress--opponent" aria-label="AI Racer progress">
+            <div class="progress-bar progress-bar--opponent" id="opponentProgressBar"></div>
+            <span class="progress-label" id="opponentProgressLabel">0%</span>
+          </div>
+          <div class="track-progress track-progress--player" aria-label="Your progress">
+            <div class="progress-bar progress-bar--player" id="progressBar"></div>
             <span class="progress-label" id="progressLabel">0%</span>
           </div>
           <div class="track-distance">
