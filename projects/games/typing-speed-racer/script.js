@@ -273,6 +273,8 @@ const accuracyEl = doc?.getElementById("accuracy");
 const streakEl = doc?.getElementById("streak");
 const progressBar = doc?.getElementById("progressBar");
 const progressLabel = doc?.getElementById("progressLabel");
+const opponentProgressBar = doc?.getElementById("opponentProgressBar");
+const opponentProgressLabel = doc?.getElementById("opponentProgressLabel");
 const playerCar = doc?.getElementById("playerCar");
 const playerLane = doc?.getElementById("playerLane");
 const opponentLane = doc?.getElementById("opponentLane");
@@ -530,6 +532,13 @@ function updateStats() {
     ? opponentLane.querySelector(".car-icon")
     : null;
   if (opponentCar) opponentCar.style.left = state.opponentPos + "%";
+
+  // Opponent progress bar (same scale as the player's: car left = progress * 0.85)
+  const opponentProgress = Math.min(state.opponentPos / 0.85, 100);
+  if (opponentProgressBar)
+    opponentProgressBar.style.width = opponentProgress + "%";
+  if (opponentProgressLabel)
+    opponentProgressLabel.textContent = Math.round(opponentProgress) + "%";
 }
 
 function addWordBatch() {
@@ -665,6 +674,8 @@ function resetGame() {
 
   if (progressBar) progressBar.style.width = "0%";
   if (progressLabel) progressLabel.textContent = "0%";
+  if (opponentProgressBar) opponentProgressBar.style.width = "0%";
+  if (opponentProgressLabel) opponentProgressLabel.textContent = "0%";
   if (playerCar) playerCar.style.left = "0%";
 
   const opponentCar = opponentLane

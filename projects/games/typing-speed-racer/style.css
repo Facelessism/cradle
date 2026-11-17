@@ -462,3 +462,23 @@
     padding: 0.4rem 0.5rem;
   }
 }
+/* ── Separate progress bars: AI Racer vs You ── */
+.track-progress--opponent,
+.track-progress--player {
+  margin-top: 0.5rem;
+}
+
+.progress-bar--opponent {
+  background: #ef4444; /* red = AI Racer */
+}
+
+.progress-bar--player {
+  background: #6366f1; /* indigo = You */
+}
+
+@media (max-width: 600px) {
+  .track-progress--opponent,
+  .track-progress--player {
+    margin-top: 0.35rem;
+  }
+}
