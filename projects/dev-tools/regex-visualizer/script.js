@@ -23,6 +23,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const templateButtons = document.querySelectorAll(".btn-template");
 
+  // ReDoS & CodeGen DOM Elements
+  const redosComplexityBadge = document.getElementById("redosComplexityBadge");
+  const redosSeverityBadge = document.getElementById("redosSeverityBadge");
+  const redosMeterFill = document.getElementById("redosMeterFill");
+  const redosDiagnosis = document.getElementById("redosDiagnosis");
+  const redosRecommendationsContainer = document.getElementById("redosRecommendationsContainer");
+  const redosRecommendationsList = document.getElementById("redosRecommendationsList");
+  const redosPayloadContainer = document.getElementById("redosPayloadContainer");
+  const redosPayloadCode = document.getElementById("redosPayloadCode");
+  const copyPayloadBtn = document.getElementById("copyPayloadBtn");
+
+  const langTabs = document.querySelectorAll(".lang-tab");
+  const codeSnippetOutput = document.getElementById("codeSnippetOutput");
+  const copySnippetBtn = document.getElementById("copySnippetBtn");
+  let currentSelectedLang = "javascript";
+
   // Synchronize scrolling between overlay and textarea
   testStringInput.addEventListener("scroll", () => {
     highlightsOverlay.scrollTop = testStringInput.scrollTop;
@@ -88,6 +104,146 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Language Tab Switching for Code Generation
+  if (langTabs) {
+    langTabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        langTabs.forEach(t => {
+          t.classList.remove("active");
+          t.setAttribute("aria-selected", "false");
+        });
+        tab.classList.add("active");
+        tab.setAttribute("aria-selected", "true");
+        currentSelectedLang = tab.getAttribute("data-lang") || "javascript";
+        renderCodeSnippets(regexInput.value, flagsInput.value);
+      });
+    });
+  }
+
+  // Copy Snippet to Clipboard
+  if (copySnippetBtn && codeSnippetOutput) {
+    copySnippetBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(codeSnippetOutput.textContent);
+        const originalText = copySnippetBtn.textContent;
+        copySnippetBtn.textContent = "✓ Copied!";
+        copySnippetBtn.classList.add("btn-copied");
+        setTimeout(() => {
+          copySnippetBtn.textContent = originalText;
+          copySnippetBtn.classList.remove("btn-copied");
+        }, 2000);
+      } catch (err) {
+        console.error("Clipboard copy failed", err);
+      }
+    });
+  }
+
+  // Copy Attack Payload to Clipboard
+  if (copyPayloadBtn && redosPayloadCode) {
+    copyPayloadBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(redosPayloadCode.textContent);
+        const originalText = copyPayloadBtn.textContent;
+        copyPayloadBtn.textContent = "✓ Copied!";
+        setTimeout(() => {
+          copyPayloadBtn.textContent = originalText;
+        }, 2000);
+      } catch (err) {
+        console.error("Clipboard copy failed", err);
+      }
+    });
+  }
+
+  // Render ReDoS Complexity Meter
+  function renderReDoSMeter(pattern) {
+    if (!redosMeterFill || !redosComplexityBadge || !redosSeverityBadge) return;
+    const analysis =
+      typeof RegexEngine !== "undefined" &&
+      typeof RegexEngine.analyzeReDoS === "function"
+        ? RegexEngine.analyzeReDoS(pattern)
+        : {
+            score: 0,
+            severity: "safe",
+            complexity: "O(n) - Linear",
+            isSafe: true,
+            isUnsafe: false,
+            reason: null,
+            recommendations: ["Pattern demonstrates safe linear-time matching."],
+            attackPayload: null,
+          };
+
+    // Update Complexity & Severity Badges
+    redosComplexityBadge.textContent =
+      analysis.complexity.split(" - ")[0] || "O(n)";
+    redosComplexityBadge.title = `Estimated time complexity: ${analysis.complexity}`;
+
+    redosSeverityBadge.className = "badge";
+    if (analysis.severity === "critical") {
+      redosSeverityBadge.classList.add("badge-critical");
+      redosSeverityBadge.textContent = "Critical ReDoS";
+    } else if (analysis.severity === "moderate") {
+      redosSeverityBadge.classList.add("badge-moderate");
+      redosSeverityBadge.textContent = "Moderate Risk";
+    } else if (analysis.severity === "low") {
+      redosSeverityBadge.classList.add("badge-low");
+      redosSeverityBadge.textContent = "Low Risk";
+    } else {
+      redosSeverityBadge.classList.add("badge-safe");
+      redosSeverityBadge.textContent = "Safe";
+    }
+
+    // Update Meter Fill Bar
+    const fillPercent = Math.max(8, Math.min(100, analysis.score));
+    redosMeterFill.style.width = `${fillPercent}%`;
+    redosMeterFill.className = `redos-meter-fill fill-${analysis.severity}`;
+
+    // Diagnosis Text
+    if (redosDiagnosis) {
+      if (analysis.isUnsafe) {
+        redosDiagnosis.innerHTML = `<strong>⚠️ Vulnerability Detected:</strong> ${escapeHtml(
+          analysis.reason || "High risk of catastrophic backtracking"
+        )}`;
+      } else {
+        redosDiagnosis.textContent =
+          "Pattern demonstrates safe linear-time execution characteristics (Safe against ReDoS).";
+      }
+    }
+
+    // Remediation Recommendations
+    if (redosRecommendationsContainer && redosRecommendationsList) {
+      if (analysis.recommendations && analysis.recommendations.length > 0) {
+        redosRecommendationsList.innerHTML = analysis.recommendations
+          .map(rec => `<li>${escapeHtml(rec)}</li>`)
+          .join("");
+        redosRecommendationsContainer.classList.remove("hidden");
+      } else {
+        redosRecommendationsContainer.classList.add("hidden");
+      }
+    }
+
+    // Attack Payload
+    if (redosPayloadContainer && redosPayloadCode) {
+      if (analysis.attackPayload) {
+        redosPayloadCode.textContent = analysis.attackPayload;
+        redosPayloadContainer.classList.remove("hidden");
+      } else {
+        redosPayloadContainer.classList.add("hidden");
+      }
+    }
+  }
+
+  // Render Multi-Language Code Snippets
+  function renderCodeSnippets(pattern, flags) {
+    if (!codeSnippetOutput) return;
+    const lang = currentSelectedLang || "javascript";
+    const snippet =
+      typeof RegexEngine !== "undefined" &&
+      typeof RegexEngine.generateCodeSnippet === "function"
+        ? RegexEngine.generateCodeSnippet(pattern, flags, lang)
+        : `// ${lang} regex generation`;
+    codeSnippetOutput.textContent = snippet;
+  }
+
   // Run initial state
   runRegexProcessor();
 
@@ -102,6 +258,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const testString = testStringInput.value;
 
     regexError.classList.add("hidden");
+
+    // Always update ReDoS complexity meter and code generation snippets
+    renderReDoSMeter(pattern);
+    renderCodeSnippets(pattern, flags);
 
     if (!pattern) {
       highlightsOverlay.innerHTML = escapeHtml(testString);

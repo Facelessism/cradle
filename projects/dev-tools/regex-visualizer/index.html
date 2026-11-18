@@ -104,6 +104,14 @@
                 >
                   IPv4 Address
                 </button>
+                <button
+                  class="btn btn-template btn-template-redos"
+                  data-regex="^([a-zA-Z0-9]+)+$"
+                  data-flags="gd"
+                  data-text="aaaaaaaaaaaaaaaaaaaaaaaaX"
+                >
+                  ⚠️ ReDoS Test ((a+)+$)
+                </button>
               </div>
             </div>
 
@@ -154,6 +162,44 @@
               </div>
               <div class="error-banner hidden" id="regexError">
                 Invalid Regular Expression
+              </div>
+            </div>
+
+            <!-- ReDoS Catastrophic Backtracking Meter Card -->
+            <div class="card redos-card">
+              <div class="redos-header">
+                <h2>🛡️ ReDoS Backtracking Meter</h2>
+                <div class="redos-badges">
+                  <span id="redosComplexityBadge" class="badge badge-complexity">O(n)</span>
+                  <span id="redosSeverityBadge" class="badge badge-safe">Safe</span>
+                </div>
+              </div>
+              <div class="redos-meter-wrapper" aria-label="Catastrophic Backtracking Risk Meter">
+                <div class="redos-meter-track">
+                  <div id="redosMeterFill" class="redos-meter-fill fill-safe" style="width: 10%;"></div>
+                </div>
+                <div class="redos-meter-labels">
+                  <span>Safe O(n)</span>
+                  <span>Low</span>
+                  <span>Moderate O(n²)</span>
+                  <span>Critical O(2ⁿ)</span>
+                </div>
+              </div>
+              <div class="redos-body">
+                <p id="redosDiagnosis" class="redos-diagnosis">
+                  Pattern demonstrates safe linear-time matching.
+                </p>
+                <div id="redosRecommendationsContainer" class="redos-recommendations-box hidden">
+                  <h3>Remediation Recommendations</h3>
+                  <ul id="redosRecommendationsList" class="recommendations-list"></ul>
+                </div>
+                <div id="redosPayloadContainer" class="redos-payload-box hidden">
+                  <div class="payload-header">
+                    <span>Example Backtracking Attack Payload:</span>
+                    <button id="copyPayloadBtn" class="btn btn-small" type="button" aria-label="Copy attack payload to clipboard">📋 Copy</button>
+                  </div>
+                  <code id="redosPayloadCode" class="payload-code"></code>
+                </div>
               </div>
             </div>
 
@@ -258,6 +304,28 @@
                     </tr>
                   </tbody>
                 </table>
+              </div>
+            </div>
+
+            <!-- Multi-Language Code Generation Card -->
+            <div class="card codegen-card">
+              <div class="codegen-header">
+                <h2>💻 Multi-Language Code Generation</h2>
+                <div class="codegen-actions">
+                  <button id="copySnippetBtn" class="btn btn-small btn-copy" type="button" aria-label="Copy generated code snippet to clipboard">
+                    📋 Copy Snippet
+                  </button>
+                </div>
+              </div>
+              <div class="lang-tabs-bar" role="tablist" aria-label="Target programming language for regex code snippet">
+                <button class="lang-tab active" data-lang="javascript" role="tab" aria-selected="true" type="button">JavaScript</button>
+                <button class="lang-tab" data-lang="python" role="tab" aria-selected="false" type="button">Python</button>
+                <button class="lang-tab" data-lang="go" role="tab" aria-selected="false" type="button">Go</button>
+                <button class="lang-tab" data-lang="rust" role="tab" aria-selected="false" type="button">Rust</button>
+                <button class="lang-tab" data-lang="java" role="tab" aria-selected="false" type="button">Java</button>
+              </div>
+              <div class="codegen-snippet-container">
+                <pre class="codegen-pre"><code id="codeSnippetOutput" class="code-font"></code></pre>
               </div>
             </div>
           </section>

@@ -28,19 +28,26 @@
   }
 
   /**
-   * Helper to inspect pattern for catastrophic backtracking risks (ReDoS).
-   * Identifies:
-   * 1. Nested quantifiers: e.g. (a+)+, (a*)*, ([0-9]+)+, (\d+)+, ((a|a?)+)+
-   * 2. Overlapping alternation with repetition: e.g. (a|aa)+, (a|a)+, (a|a?)+
-   * 3. Adjacent unconstrained repetitions: e.g. .*.*, \d+\d+, \w+\w+
+   * Comprehensive ReDoS (Regular Expression Denial of Service)
+   * catastrophic backtracking complexity estimator and analyzer.
+   * Analyzes nested quantifiers, overlapping alternation, and adjacent unbounded repetitions.
    */
-  function detectCatastrophicPattern(pattern) {
+  function analyzeReDoS(pattern) {
     if (typeof pattern !== "string" || !pattern) {
       return {
+        score: 0,
+        severity: "safe",
+        complexity: "O(n) - Linear",
         isSafe: true,
         isUnsafe: false,
         reason: null,
+        type: "clean",
         pattern: String(pattern ?? ""),
+        vulnerabilities: [],
+        recommendations: [
+          "Pattern is empty or trivial. No backtracking risk.",
+        ],
+        attackPayload: null,
       };
     }
 
@@ -50,12 +57,32 @@
         /(?:\.\*|\.\+|\\[dwsp]\+|\\[dwsp]\*|[a-zA-Z0-9_]\[[a-zA-Z0-9_\-]+\]\+)(?:\.\*|\.\+|\\[dwsp]\+|\\[dwsp]\*)/;
       if (adjacentRepetitionRegex.test(pattern)) {
         return {
+          score: 70,
+          severity: "moderate",
+          complexity: "O(n²) - Polynomial",
           isSafe: false,
           isUnsafe: true,
           reason:
             "Potentially catastrophic backtracking: adjacent unbounded quantifiers detected",
           type: "adjacent-quantifiers",
           pattern,
+          vulnerabilities: [
+            {
+              type: "adjacent-quantifiers",
+              title: "Adjacent Unbounded Quantifiers",
+              severity: "moderate",
+              explanation:
+                "Two or more unbounded repetitions placed consecutively without non-overlapping delimiters cause polynomial O(n²) backtracking when matching fails.",
+              recommendation:
+                "Consolidate adjacent repetitions (e.g., change '.*.*' to '.*' or '\\d+\\d+' to '\\d{2,}').",
+            },
+          ],
+          recommendations: [
+            "Consolidate adjacent quantifiers into a single repetition (e.g. replace '.*.*' with '.*').",
+            "Insert explicit non-overlapping delimiters between repeated tokens.",
+            "Use bounded quantifiers {min,max} instead of open-ended wildcards.",
+          ],
+          attackPayload: "a".repeat(80) + "!",
         };
       }
 
@@ -163,11 +190,30 @@
               // Group is repeated. Check for nested repetition:
               if (group.hasQuantifier || group.hasSubgroupWithQuantifier) {
                 return {
+                  score: 100,
+                  severity: "critical",
+                  complexity: "O(2ⁿ) - Exponential",
                   isSafe: false,
                   isUnsafe: true,
                   reason: `Potentially catastrophic backtracking: nested quantifier detected '(...)${groupQuantifier}'`,
                   type: "nested-quantifier",
                   pattern,
+                  vulnerabilities: [
+                    {
+                      type: "nested-quantifier",
+                      title: "Nested Quantifier ReDoS Risk",
+                      severity: "critical",
+                      explanation: `Group containing an inner quantifier is repeated with an outer quantifier '${groupQuantifier}'. This causes exponential O(2ⁿ) backtracking permutations on mismatched strings.`,
+                      recommendation:
+                        "Flatten nested repetition. Change '(X+)+' to 'X+' or apply repetition only at a single hierarchy level.",
+                    },
+                  ],
+                  recommendations: [
+                    "Remove redundant nested repetition: flatten '(a+)+' to 'a+'.",
+                    "Use atomic grouping '(?>...)' or possessive quantifiers '++' where supported by your target runtime.",
+                    "Ensure inner and outer sub-patterns match disjoint character sets.",
+                  ],
+                  attackPayload: "a".repeat(25) + "X",
                 };
               }
 
@@ -186,11 +232,30 @@
                       br2.includes("?")
                     ) {
                       return {
+                        score: 95,
+                        severity: "critical",
+                        complexity: "O(2ⁿ) - Exponential",
                         isSafe: false,
                         isUnsafe: true,
                         reason: `Potentially catastrophic backtracking: overlapping alternation with repetition '(${branches.join("|")})${groupQuantifier}'`,
                         type: "overlapping-alternation",
                         pattern,
+                        vulnerabilities: [
+                          {
+                            type: "overlapping-alternation",
+                            title: "Overlapping Alternation in Repeated Group",
+                            severity: "critical",
+                            explanation: `Alternation branches '${br1}' and '${br2}' can both match the same input inside a repeated group '${groupQuantifier}', creating exponential state explosion.`,
+                            recommendation:
+                              "Make alternation branches mutually exclusive so they do not share any common prefixes or matching characters.",
+                          },
+                        ],
+                        recommendations: [
+                          "Refactor alternation branches to be strictly mutually exclusive.",
+                          "Extract common prefixes outside the repeated alternation group (e.g. 'a(b|c)+' instead of '(ab|ac)+').",
+                          "Disallow empty or optional paths inside repeated alternation branches.",
+                        ],
+                        attackPayload: "a".repeat(25) + "X",
                       };
                     }
                   }
@@ -258,38 +323,294 @@
         i++;
       }
 
-      // Additional regex checks for fast nested-quantifier detection:
+      // Fast check for nested quantifiers regex
       const nestedQuantifierRegex = /\((?:[^()\\]|\\.)*[+*?{][^()]*\)[+*{]/;
       if (nestedQuantifierRegex.test(pattern)) {
         return {
+          score: 100,
+          severity: "critical",
+          complexity: "O(2ⁿ) - Exponential",
           isSafe: false,
           isUnsafe: true,
           reason:
             "Potentially catastrophic backtracking: nested quantifier detected",
           type: "nested-quantifier",
           pattern,
+          vulnerabilities: [
+            {
+              type: "nested-quantifier",
+              title: "Nested Quantifier Detected",
+              severity: "critical",
+              explanation:
+                "Pattern contains nested repetitions that induce exponential backtracking upon trailing match failure.",
+              recommendation:
+                "Flatten nested repetitions into a single quantifier.",
+            },
+          ],
+          recommendations: [
+            "Flatten nested quantifiers into a single non-nested quantifier.",
+            "Use possessive quantifiers or atomic groups if available.",
+          ],
+          attackPayload: "a".repeat(25) + "X",
         };
       }
 
+      // Safe pattern
       return {
+        score: 5,
+        severity: "safe",
+        complexity: "O(n) - Linear",
         isSafe: true,
         isUnsafe: false,
         reason: null,
+        type: "clean",
         pattern,
+        vulnerabilities: [],
+        recommendations: [
+          "Pattern demonstrates safe linear-time execution characteristics.",
+          "No catastrophic backtracking vulnerabilities detected.",
+        ],
+        attackPayload: null,
       };
     } catch {
       return {
+        score: 10,
+        severity: "safe",
+        complexity: "O(n) - Linear",
         isSafe: true,
         isUnsafe: false,
         reason: null,
+        type: "clean",
         pattern,
+        vulnerabilities: [],
+        recommendations: ["Pattern parsed safely."],
+        attackPayload: null,
       };
     }
+  }
+
+  /**
+   * Helper to inspect pattern for catastrophic backtracking risks (ReDoS).
+   * Backwards compatible delegate to analyzeReDoS.
+   */
+  function detectCatastrophicPattern(pattern) {
+    return analyzeReDoS(pattern);
   }
 
   /** Boolean helper for catastrophic pattern check */
   function isCatastrophicPattern(pattern) {
     return detectCatastrophicPattern(pattern).isUnsafe;
+  }
+
+  /**
+   * Generates production-ready, idiomatically formatted regex code snippets
+   * with flag support and proper string escaping across multiple programming languages.
+   *
+   * Supported languages:
+   * - JavaScript (RegExp)
+   * - Python (re)
+   * - Go (regexp)
+   * - Rust (regex)
+   * - Java (java.util.regex.Pattern)
+   */
+  function generateCodeSnippet(pattern, flags = "g", language = "javascript") {
+    const safePattern =
+      typeof pattern === "string" ? pattern : String(pattern ?? "");
+    const cleanFlags = sanitizeFlags(flags);
+    const lang = (language || "javascript").toLowerCase();
+
+    const hasG = cleanFlags.includes("g");
+    const hasI = cleanFlags.includes("i");
+    const hasM = cleanFlags.includes("m");
+    const hasS = cleanFlags.includes("s");
+    const hasU = cleanFlags.includes("u");
+
+    switch (lang) {
+      case "javascript":
+      case "js": {
+        const escapedForSlash = safePattern.replace(/(?<!\\)\//g, "\\/");
+        return `// JavaScript (RegExp)
+const regex = /${escapedForSlash}/${cleanFlags};
+const text = "sample text to test";
+
+// Check if pattern matches
+if (regex.test(text)) {
+  console.log("Match found!");
+}
+
+// Extract all matches
+const matches = [...text.matchAll(regex)];
+for (const match of matches) {
+  console.log(\`Found '\${match[0]}' at index \${match.index}\`);
+}`;
+      }
+
+      case "python":
+      case "py": {
+        const pyFlags = [];
+        if (hasI) pyFlags.push("re.IGNORECASE");
+        if (hasM) pyFlags.push("re.MULTILINE");
+        if (hasS) pyFlags.push("re.DOTALL");
+        if (hasU) pyFlags.push("re.UNICODE");
+        const flagsStr = pyFlags.length > 0 ? pyFlags.join(" | ") : "0";
+
+        let pyPattern = safePattern;
+        let quote = '"';
+        if (pyPattern.includes('"') && !pyPattern.includes("'")) {
+          quote = "'";
+        } else if (pyPattern.includes('"')) {
+          pyPattern = pyPattern.replace(/"/g, '\\"');
+        }
+
+        return `# Python (re module)
+import re
+
+pattern = r${quote}${pyPattern}${quote}
+flags = ${flagsStr}
+text = "sample text to test"
+
+# Search for first match
+match = re.search(pattern, text, flags)
+if match:
+    print(f"Match found: {match.group(0)} at span {match.span()}")
+
+# Find all matches
+for m in re.finditer(pattern, text, flags):
+    print(f"Found '{m.group(0)}' at {m.span()}")`;
+      }
+
+      case "go":
+      case "golang": {
+        let goPattern = safePattern;
+        let prefixFlags = "";
+        if (hasI) prefixFlags += "i";
+        if (hasM) prefixFlags += "m";
+        if (hasS) prefixFlags += "s";
+        if (prefixFlags) {
+          goPattern = `(?${prefixFlags})${goPattern}`;
+        }
+
+        let patternLit;
+        if (!goPattern.includes("`")) {
+          patternLit = `\`${goPattern}\``;
+        } else {
+          patternLit = JSON.stringify(goPattern);
+        }
+
+        return `// Go (regexp package)
+package main
+
+import (
+\t"fmt"
+\t"regexp"
+)
+
+func main() {
+\tpattern := ${patternLit}
+\tre := regexp.MustCompile(pattern)
+\ttext := "sample text to test"
+
+\t// Check if text matches
+\tif re.MatchString(text) {
+\t\tfmt.Println("Match found!")
+\t}
+
+\t// Find all matching substrings with byte offsets
+\tmatches := re.FindAllStringIndex(text, -1)
+\tfor _, loc := range matches {
+\t\tfmt.Printf("Found '%s' at [%d, %d]\\n", text[loc[0]:loc[1]], loc[0], loc[1])
+\t}
+}`;
+      }
+
+      case "rust": {
+        let rustPattern = safePattern;
+        let rustLit;
+        if (!rustPattern.includes('"')) {
+          rustLit = `r"${rustPattern}"`;
+        } else if (!rustPattern.includes('r#"') && !rustPattern.includes('"#')) {
+          rustLit = `r#"${rustPattern}"#`;
+        } else {
+          rustLit = `r##"${rustPattern}"##`;
+        }
+
+        const builderCalls = [];
+        if (hasI) builderCalls.push("        .case_insensitive(true)");
+        if (hasM) builderCalls.push("        .multi_line(true)");
+        if (hasS) builderCalls.push("        .dot_matches_new_line(true)");
+        if (hasU) builderCalls.push("        .unicode(true)");
+
+        const builderChain =
+          builderCalls.length > 0 ? "\n" + builderCalls.join("\n") : "";
+
+        return `// Rust (regex crate)
+use regex::RegexBuilder;
+
+fn main() {
+    let re = RegexBuilder::new(${rustLit})${builderChain}
+        .build()
+        .expect("Invalid regex pattern");
+
+    let text = "sample text to test";
+
+    // Test for a match
+    if re.is_match(text) {
+        println!("Match found!");
+    }
+
+    // Iterate over matches
+    for mat in re.find_iter(text) {
+        println!("Found '{}' at [{}..{}]", mat.as_str(), mat.start(), mat.end());
+    }
+}`;
+      }
+
+      case "java": {
+        const javaFlags = [];
+        if (hasI) javaFlags.push("Pattern.CASE_INSENSITIVE");
+        if (hasM) javaFlags.push("Pattern.MULTILINE");
+        if (hasS) javaFlags.push("Pattern.DOTALL");
+        if (hasU) javaFlags.push("Pattern.UNICODE_CHARACTER_CLASS");
+        const flagsStr = javaFlags.length > 0 ? javaFlags.join(" | ") : "0";
+
+        // Double escape backslashes and escape quotes for Java string literals
+        const javaPattern = safePattern
+          .replace(/\\/g, "\\\\")
+          .replace(/"/g, '\\"');
+
+        return `// Java (java.util.regex)
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
+public class RegexDemo {
+    public static void main(String[] args) {
+        String regex = "${javaPattern}";
+        int flags = ${flagsStr};
+        Pattern pattern = Pattern.compile(regex, flags);
+        String text = "sample text to test";
+
+        // Find and iterate matches
+        Matcher matcher = pattern.matcher(text);
+        while (matcher.find()) {
+            System.out.println("Found '" + matcher.group() + "' at [" + matcher.start() + ", " + matcher.end() + "]");
+        }
+    }
+}`;
+      }
+
+      default:
+        return generateCodeSnippet(safePattern, cleanFlags, "javascript");
+    }
+  }
+
+  function generateAllCodeSnippets(pattern, flags = "g") {
+    return {
+      javascript: generateCodeSnippet(pattern, flags, "javascript"),
+      python: generateCodeSnippet(pattern, flags, "python"),
+      go: generateCodeSnippet(pattern, flags, "go"),
+      rust: generateCodeSnippet(pattern, flags, "rust"),
+      java: generateCodeSnippet(pattern, flags, "java"),
+    };
   }
 
   /** Safely compile RegExp instance or return error */
@@ -876,5 +1197,8 @@
     executeMatch,
     detectCatastrophicPattern,
     isCatastrophicPattern,
+    analyzeReDoS,
+    generateCodeSnippet,
+    generateAllCodeSnippets,
   };
 });
