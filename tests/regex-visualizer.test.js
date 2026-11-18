@@ -376,3 +376,110 @@ test("named capture groups generate data-group-name attributes in pill overlays"
   assert.ok(rendered.includes('data-group-num="1"'));
   assert.ok(rendered.includes("42"));
 });
+
+test("generateCodeSnippet creates accurate JavaScript RegExp code snippets", () => {
+  const js = RegexEngine.generateCodeSnippet("foo/bar", "gi", "javascript");
+  assert.ok(js.includes("const regex = /foo\\/bar/gi;"));
+  assert.ok(js.includes("regex.test(text)"));
+  assert.ok(js.includes("text.matchAll(regex)"));
+});
+
+test("generateCodeSnippet creates accurate Python re code snippets with flags and escaping", () => {
+  const py = RegexEngine.generateCodeSnippet("\\d{4}-\\d{2}", "im", "python");
+  assert.ok(py.includes("import re"));
+  assert.ok(py.includes('pattern = r"\\d{4}-\\d{2}"'));
+  assert.ok(py.includes("re.IGNORECASE | re.MULTILINE"));
+  assert.ok(py.includes("re.search(pattern, text, flags)"));
+  assert.ok(py.includes("re.finditer(pattern, text, flags)"));
+});
+
+test("generateCodeSnippet creates accurate Go regexp code snippets", () => {
+  const go = RegexEngine.generateCodeSnippet("[a-z]+@[a-z]+", "i", "go");
+  assert.ok(go.includes('"regexp"'));
+  assert.ok(go.includes("regexp.MustCompile(pattern)"));
+  assert.ok(go.includes("(?i)[a-z]+@[a-z]+"));
+  assert.ok(go.includes("re.MatchString(text)"));
+  assert.ok(go.includes("re.FindAllStringIndex(text, -1)"));
+});
+
+test("generateCodeSnippet creates accurate Rust regex code snippets", () => {
+  const rust = RegexEngine.generateCodeSnippet("\\w+", "im", "rust");
+  assert.ok(rust.includes("use regex::RegexBuilder;"));
+  assert.ok(rust.includes('RegexBuilder::new(r"\\w+")'));
+  assert.ok(rust.includes(".case_insensitive(true)"));
+  assert.ok(rust.includes(".multi_line(true)"));
+  assert.ok(rust.includes("re.is_match(text)"));
+  assert.ok(rust.includes("re.find_iter(text)"));
+});
+
+test("generateCodeSnippet creates accurate Java Pattern code snippets with escaped literals", () => {
+  const java = RegexEngine.generateCodeSnippet('\\d+"test"', "im", "java");
+  assert.ok(java.includes("import java.util.regex.Pattern;"));
+  assert.ok(java.includes("import java.util.regex.Matcher;"));
+  assert.ok(java.includes('\\\\d+\\"test\\"'));
+  assert.ok(java.includes("Pattern.CASE_INSENSITIVE | Pattern.MULTILINE"));
+  assert.ok(java.includes("Pattern.compile(regex, flags)"));
+  assert.ok(java.includes("matcher.find()"));
+});
+
+test("generateAllCodeSnippets returns snippets for all 5 target languages", () => {
+  const all = RegexEngine.generateAllCodeSnippets("^[a-z]+$", "gi");
+  assert.ok(all.javascript);
+  assert.ok(all.python);
+  assert.ok(all.go);
+  assert.ok(all.rust);
+  assert.ok(all.java);
+});
+
+test("analyzeReDoS accurately identifies nested quantifier complexity as O(2^n) Critical", () => {
+  const redosPatterns = ["(a+)+$", "([0-9]+)+", "(\\d+)+", "((a|a?)+)+"];
+  for (const pat of redosPatterns) {
+    const analysis = RegexEngine.analyzeReDoS(pat);
+    assert.equal(analysis.isUnsafe, true);
+    assert.equal(analysis.severity, "critical");
+    assert.equal(analysis.complexity, "O(2ⁿ) - Exponential");
+    assert.equal(analysis.score, 100);
+    assert.ok(analysis.recommendations.length > 0);
+    assert.ok(analysis.attackPayload.includes("a"));
+  }
+});
+
+test("analyzeReDoS accurately identifies overlapping alternation repetitions", () => {
+  const overlapping = ["(a|aa)+$", "(a|a)+$", "(a|a?)+$"];
+  for (const pat of overlapping) {
+    const analysis = RegexEngine.analyzeReDoS(pat);
+    assert.equal(analysis.isUnsafe, true);
+    assert.equal(analysis.severity, "critical");
+    assert.equal(analysis.complexity, "O(2ⁿ) - Exponential");
+    assert.ok(analysis.score >= 90);
+    assert.ok(analysis.recommendations.length > 0);
+  }
+});
+
+test("analyzeReDoS flags adjacent unbounded quantifiers as O(n^2) Moderate", () => {
+  const adjacent = [".*.*", "\\d+\\d+", "\\w+\\w+"];
+  for (const pat of adjacent) {
+    const analysis = RegexEngine.analyzeReDoS(pat);
+    assert.equal(analysis.isUnsafe, true);
+    assert.equal(analysis.severity, "moderate");
+    assert.equal(analysis.complexity, "O(n²) - Polynomial");
+    assert.equal(analysis.score, 70);
+  }
+});
+
+test("analyzeReDoS recognizes safe patterns with linear O(n) complexity", () => {
+  const safe = [
+    "^[a-zA-Z0-9_-]+$",
+    "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b",
+    "https?://[^\\s]+",
+    "^\\d{4}-\\d{2}-\\d{2}$",
+  ];
+  for (const pat of safe) {
+    const analysis = RegexEngine.analyzeReDoS(pat);
+    assert.equal(analysis.isSafe, true);
+    assert.equal(analysis.isUnsafe, false);
+    assert.equal(analysis.severity, "safe");
+    assert.equal(analysis.complexity, "O(n) - Linear");
+    assert.ok(analysis.score <= 15);
+  }
+});
