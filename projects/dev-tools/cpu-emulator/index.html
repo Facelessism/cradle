@@ -6,7 +6,7 @@
     <title>Core8 - 8-Bit Virtual Machine CPU Emulator</title>
     <meta
       name="description"
-      content="Interactive 8-bit CPU emulator demonstrating register state, instruction cycles, and memory execution."
+      content="Interactive 8-bit CPU emulator with step-by-step assembly debugger, memory hex viewer, and disassembler."
     />
     <link
       rel="canonical"
@@ -19,7 +19,7 @@
     />
     <meta
       property="og:description"
-      content="Interactive 8-bit CPU emulator demonstrating register state, instruction cycles, and memory execution."
+      content="Interactive 8-bit CPU emulator with step-by-step assembly debugger, memory hex viewer, and disassembler."
     />
     <meta
       property="og:url"
@@ -52,51 +52,61 @@
 
       <main class="ide-panel">
         <header class="panel-header">
-          <h2>Assembly Editor</h2>
-          <div class="preset-controls">
-            <select
-              id="preset-selector"
-              data-cradle-select
-              style="
-                padding: 4px 8px;
-                border-radius: 4px;
-                background: var(--bg-card);
-                color: var(--text-main);
-                border: 1px solid var(--border-color);
-                font-size: 0.8rem;
-                color-scheme: dark;
-              "
-            >
-              <option
-                value="default"
-                disabled
-                selected
-                style="background: #0f172a; color: #e2e8f0"
+          <div class="header-left">
+            <h2>Assembly Editor & Debugger</h2>
+            <div class="preset-controls">
+              <label for="preset-selector" class="sr-only">Assembly code examples</label>
+              <select
+                id="preset-selector"
+                data-cradle-select
+                aria-label="Select assembly code preset"
+                style="
+                  padding: 4px 8px;
+                  border-radius: 4px;
+                  background: var(--bg-card, #14161f);
+                  color: var(--text-main, #f1f2f6);
+                  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+                  font-size: 0.8rem;
+                  color-scheme: dark;
+                "
               >
-                Examples
-              </option>
-              <option
-                value="counter"
-                style="background: #0f172a; color: #e2e8f0"
-              >
-                Counter
-              </option>
-              <option
-                value="fibonacci"
-                style="background: #0f172a; color: #e2e8f0"
-              >
-                Fibonacci
-              </option>
-              <option
-                value="memcpy"
-                style="background: #0f172a; color: #e2e8f0"
-              >
-                Memory Copy
-              </option>
-              <option value="cond" style="background: #0f172a; color: #e2e8f0">
-                Conditional Logic
-              </option>
-            </select>
+                <option
+                  value="default"
+                  disabled
+                  selected
+                  style="background: #0f172a; color: #e2e8f0"
+                >
+                  Presets
+                </option>
+                <option
+                  value="counter"
+                  style="background: #0f172a; color: #e2e8f0"
+                >
+                  Counter
+                </option>
+                <option
+                  value="fibonacci"
+                  style="background: #0f172a; color: #e2e8f0"
+                >
+                  Fibonacci
+                </option>
+                <option
+                  value="memcpy"
+                  style="background: #0f172a; color: #e2e8f0"
+                >
+                  Memory Copy
+                </option>
+                <option value="cond" style="background: #0f172a; color: #e2e8f0">
+                  Conditional Logic
+                </option>
+                <option value="call_subroutine" style="background: #0f172a; color: #e2e8f0">
+                  Subroutine & Stack (CALL/RET)
+                </option>
+                <option value="flag_demo" style="background: #0f172a; color: #e2e8f0">
+                  Flag Indicators (Z/C/N/V)
+                </option>
+              </select>
+            </div>
           </div>
           <div class="execution-controls">
             <label
@@ -105,22 +115,57 @@
                 display: flex;
                 align-items: center;
                 gap: 5px;
-                margin-right: 15px;
-                color: var(--text-light);
-                font-size: 0.8rem;
+                margin-right: 8px;
+                color: var(--text-light, #f1f2f6);
+                font-size: 0.78rem;
                 cursor: pointer;
               "
             >
-              <input type="checkbox" id="chk-animate" checked />
-              Animate Data Flow
+              <input type="checkbox" id="chk-animate" checked aria-label="Toggle data flow animation" />
+              Animate
             </label>
             <button
               id="btn-assemble"
               data-cradle-btn
               data-variant="primary"
               data-size="sm"
+              title="Compile assembly code into machine code (Ctrl+Enter)"
+              aria-label="Compile assembly into machine code"
             >
-              compile
+              Compile
+            </button>
+            <button
+              id="btn-step-into"
+              data-cradle-btn
+              data-variant="secondary"
+              data-size="sm"
+              disabled
+              title="Step Into next instruction (F11)"
+              aria-label="Step Into next instruction"
+            >
+              Step Into
+            </button>
+            <button
+              id="btn-step-over"
+              data-cradle-btn
+              data-variant="secondary"
+              data-size="sm"
+              disabled
+              title="Step Over next instruction (F10)"
+              aria-label="Step Over next instruction"
+            >
+              Step Over
+            </button>
+            <button
+              id="btn-step-out"
+              data-cradle-btn
+              data-variant="secondary"
+              data-size="sm"
+              disabled
+              title="Step Out of current subroutine (Shift+F11)"
+              aria-label="Step Out of subroutine"
+            >
+              Step Out
             </button>
             <button
               id="btn-step"
@@ -128,8 +173,10 @@
               data-variant="secondary"
               data-size="sm"
               disabled
+              title="Step one pipeline clock cycle"
+              aria-label="Step one pipeline clock cycle"
             >
-              Step
+              Cycle
             </button>
             <button
               id="btn-run"
@@ -137,14 +184,18 @@
               data-variant="success"
               data-size="sm"
               disabled
+              title="Run or pause continuous execution (F5)"
+              aria-label="Run or pause execution"
             >
-              ▶Run Machine
+              ▶ Run Machine
             </button>
             <button
               id="btn-reset"
               data-cradle-btn
               data-variant="danger"
               data-size="sm"
+              title="Reset registers and clear memory"
+              aria-label="Reset CPU and clear memory"
             >
               Reset
             </button>
@@ -152,23 +203,32 @@
         </header>
 
         <div class="editor-area">
-          <textarea
-            id="assembly-input"
-            spellcheck="false"
-            autocomplete="off"
-            placeholder="; Write 8-bit Assembly code here...&#10;MOV A, 5       ; Load 5 into Register A&#10;MOV B, 3       ; Load 3 into Register B&#10;ADD A, B       ; Add B to A (A = A + B)&#10;HALT           ; Terminate execution loop"
-          ></textarea>
+          <div class="editor-wrapper">
+            <div
+              id="editor-gutter"
+              class="editor-gutter"
+              role="region"
+              aria-label="Assembly line numbers and breakpoint toggles"
+            ></div>
+            <textarea
+              id="assembly-input"
+              spellcheck="false"
+              autocomplete="off"
+              aria-label="8-bit Assembly source code editor"
+              placeholder="; Write 8-bit Assembly code here...&#10;MOV A, 5       ; Load 5 into Register A&#10;MOV B, 3       ; Load 3 into Register B&#10;ADD A, B       ; Add B to A (A = A + B)&#10;HALT           ; Terminate execution loop"
+            ></textarea>
+          </div>
         </div>
 
         <footer class="console-log">
-          <div class="console-title">Compiler Output Logs</div>
+          <div class="console-title">Debugger & Compiler Output Logs</div>
           <div
             id="console-output"
             role="log"
             aria-live="polite"
-            aria-label="Compiler output logs"
+            aria-label="Compiler and debugger output logs"
           >
-            System idle. Awaiting compilation pass...
+            System idle. Click 'Compile' or select a preset to begin debugging.
           </div>
         </footer>
       </main>
@@ -201,38 +261,159 @@
         </section>
 
         <section class="hardware-section">
-          <h2>CPU Registers</h2>
+          <h2>CPU Registers & Flags</h2>
           <div class="registers-grid">
             <div class="register-card">
-              <span class="reg-label">Reg A (Accumulator)</span
-              ><span class="reg-val" id="reg-a">00</span>
+              <span class="reg-label">Reg A (Accumulator)</span>
+              <span class="reg-val" id="reg-a">00</span>
             </div>
             <div class="register-card">
-              <span class="reg-label">Reg B</span
-              ><span class="reg-val" id="reg-b">00</span>
+              <span class="reg-label">Reg B</span>
+              <span class="reg-val" id="reg-b">00</span>
             </div>
             <div class="register-card">
-              <span class="reg-label">Reg C</span
-              ><span class="reg-val" id="reg-c">00</span>
+              <span class="reg-label">Reg C</span>
+              <span class="reg-val" id="reg-c">00</span>
             </div>
             <div class="register-card">
-              <span class="reg-label">Reg D</span
-              ><span class="reg-val" id="reg-d">00</span>
+              <span class="reg-label">Reg D</span>
+              <span class="reg-val" id="reg-d">00</span>
             </div>
             <div class="register-card highlighted">
-              <span class="reg-label">Program Counter (PC)</span
-              ><span class="reg-val" id="reg-pc">00</span>
+              <span class="reg-label">Program Counter (PC)</span>
+              <span class="reg-val" id="reg-pc">0x00</span>
             </div>
-            <div class="register-card">
-              <span class="reg-label">Status Flags (Z | C)</span
-              ><span class="reg-val" id="reg-flags">Z:0 C:0</span>
+            <div class="register-card highlighted-sp">
+              <span class="reg-label">Stack Pointer (SP)</span>
+              <span class="reg-val" id="reg-sp">0x0F</span>
+            </div>
+            <div class="register-card flags-card">
+              <span class="reg-label">Status Flags</span>
+              <span class="reg-val sr-only" id="reg-flags">Z:1 C:0 N:0 V:0</span>
+              <div class="flags-badges" role="region" aria-label="Live CPU Flags">
+                <div class="flag-pill active" id="flag-badge-z" title="Zero Flag (Z): Set when ALU result is zero">
+                  <span class="flag-key">Z</span>
+                  <span class="flag-bit" id="flag-bit-z">1</span>
+                </div>
+                <div class="flag-pill" id="flag-badge-c" title="Carry Flag (C): Set on unsigned overflow or borrow">
+                  <span class="flag-key">C</span>
+                  <span class="flag-bit" id="flag-bit-c">0</span>
+                </div>
+                <div class="flag-pill" id="flag-badge-n" title="Negative Flag (N): Set when MSB (bit 7) is 1">
+                  <span class="flag-key">N</span>
+                  <span class="flag-bit" id="flag-bit-n">0</span>
+                </div>
+                <div class="flag-pill" id="flag-badge-v" title="Overflow Flag (V): Set on signed two's-complement overflow">
+                  <span class="flag-key">V</span>
+                  <span class="flag-bit" id="flag-bit-v">0</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        <section class="hardware-section">
-          <h2>Virtual System RAM Array</h2>
-          <div class="ram-grid" id="ram-matrix"></div>
+        <section class="hardware-section memory-suite-section">
+          <div class="section-header-tabs">
+            <h2>Memory & Disassembler</h2>
+            <div class="tab-controls" role="tablist" aria-label="Memory inspection views">
+              <button
+                id="tab-btn-hex"
+                class="view-tab-btn active"
+                role="tab"
+                aria-selected="true"
+                aria-controls="view-hex"
+                aria-label="Hex Memory Viewer"
+              >
+                Hex Dump
+              </button>
+              <button
+                id="tab-btn-disasm"
+                class="view-tab-btn"
+                role="tab"
+                aria-selected="false"
+                aria-controls="view-disasm"
+                aria-label="Disassembler View"
+              >
+                Disassembler
+              </button>
+              <button
+                id="tab-btn-ram"
+                class="view-tab-btn"
+                role="tab"
+                aria-selected="false"
+                aria-controls="view-ram"
+                aria-label="RAM Grid View"
+              >
+                RAM Grid
+              </button>
+            </div>
+          </div>
+
+          <!-- Hex Memory View Panel -->
+          <div id="view-hex" class="memory-panel-view active" role="tabpanel" aria-labelledby="tab-btn-hex">
+            <div class="hex-viewer-toolbar">
+              <div class="hex-legend">
+                <span class="legend-badge pc-legend">● PC</span>
+                <span class="legend-badge sp-legend">● SP</span>
+                <span class="legend-hint">Click byte to edit</span>
+              </div>
+              <div class="hex-tools">
+                <button
+                  id="btn-hex-clear"
+                  class="btn-tool-sm"
+                  title="Zero out all RAM bytes"
+                  aria-label="Zero out RAM memory"
+                >
+                  Zero RAM
+                </button>
+              </div>
+            </div>
+            <div class="hex-scroll-area">
+              <table class="hex-dump-table" aria-label="Memory hex dump table with ASCII decoding">
+                <thead>
+                  <tr>
+                    <th scope="col" class="col-offset">Offset</th>
+                    <th scope="col">00</th>
+                    <th scope="col">01</th>
+                    <th scope="col">02</th>
+                    <th scope="col">03</th>
+                    <th scope="col">04</th>
+                    <th scope="col">05</th>
+                    <th scope="col">06</th>
+                    <th scope="col">07</th>
+                    <th scope="col" class="col-ascii">ASCII</th>
+                  </tr>
+                </thead>
+                <tbody id="hex-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Disassembler View Panel -->
+          <div id="view-disasm" class="memory-panel-view" role="tabpanel" aria-labelledby="tab-btn-disasm" hidden>
+            <div class="disasm-toolbar">
+              <span class="disasm-legend">Click ● to toggle breakpoint</span>
+              <button
+                id="btn-disasm-copy"
+                class="btn-tool-sm"
+                title="Copy disassembled instructions into editor"
+                aria-label="Copy disassembled code to editor"
+              >
+                Copy to Editor
+              </button>
+            </div>
+            <div
+              class="disasm-scroll-area"
+              id="disasm-scroll-list"
+              role="region"
+              aria-label="Disassembled machine code instructions"
+            ></div>
+          </div>
+
+          <!-- RAM Matrix View Panel -->
+          <div id="view-ram" class="memory-panel-view" role="tabpanel" aria-labelledby="tab-btn-ram" hidden>
+            <div class="ram-grid" id="ram-matrix"></div>
+          </div>
         </section>
       </aside>
     </div>
