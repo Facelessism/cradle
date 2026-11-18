@@ -485,6 +485,117 @@ main:has(.results-section:not(.hidden)) .about-section {
   box-shadow: 0 0 18px var(--accent-glow);
 }
 
+.btn-scrub {
+  color: #022c22;
+  background: linear-gradient(135deg, #34d399, #059669);
+  font-weight: 700;
+}
+
+.btn-scrub:hover {
+  background: linear-gradient(135deg, #6ee7b7, #10b981);
+  box-shadow: 0 0 18px rgba(52, 211, 153, 0.35);
+}
+
+.status-banner {
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.7rem;
+  border-radius: 8px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+}
+
+.status-banner.error {
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(248, 113, 113, 0.12);
+  color: var(--danger);
+}
+
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.gps-card {
+  min-width: 0;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.gps-coords-badge {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.72rem;
+  font-family: monospace;
+  color: var(--accent);
+  background: rgba(56, 189, 248, 0.08);
+  border-bottom: 1px solid var(--border);
+}
+
+.btn-copy-coords {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 0.62rem;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-copy-coords:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.map-viewport {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  background: #080d17;
+  overflow: hidden;
+}
+
+.osm-map-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.radar-map-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+}
+
+.map-actions {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.55rem 0.8rem;
+  border-top: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.btn-sm {
+  font-size: 0.65rem;
+  padding: 0.35rem 0.6rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
 /* =========================================================
    CONTENT GRID
 ========================================================= */

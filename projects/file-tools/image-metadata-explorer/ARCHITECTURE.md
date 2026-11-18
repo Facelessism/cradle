@@ -1,33 +1,22 @@
-# Image Metadata Explorer Architecture
+# Image Metadata Explorer & Privacy Scrubber Architecture
 
 ## Overview
 
-Image Metadata Explorer is a browser-based tool that reads basic metadata stored inside image files.
+Image Metadata Explorer is a browser-based forensic and privacy utility that performs deep binary inspection of EXIF, IPTC-NAA, and XMP metadata payloads stored inside image files (JPEG, PNG, and WebP). It extracts camera shooting telemetry (shutter speed, ISO, aperture, focal length, 35mm equivalent), lens specifications, device serial numbers, creator and copyright notices, and embedded GPS coordinates. It renders an interactive GPS geolocation map preview and provides a one-click binary "Scrub Metadata" privacy tool that completely sanitizes all personal, device, and geolocation markers before saving a clean copy.
 
-The application does not upload images to a server. The selected image is read directly by JavaScript in the browser using the File API and `ArrayBuffer`.
-
-The application mainly performs these steps:
-
-1. User selects or drops an image.
-2. The image is loaded for preview and its basic file information is collected.
-3. The metadata engine reads the raw binary image data.
-4. The engine searches for the EXIF section inside JPEG files.
-5. The EXIF section is interpreted using the TIFF structure.
-6. Individual EXIF tags are identified and converted into readable values.
-7. GPS coordinates and other special values are converted into normal formats.
-8. Only the metadata needed by the application is kept.
-9. The processed metadata is sent to the UI.
-10. The user can export the final metadata as JSON.
+The application operates 100% locally in the browser with zero server uploads, leveraging the File API, `ArrayBuffer`, and `DataView` for high-performance, private binary parsing.
 
 ---
 
 ## Purpose & Goals
 
-- Read EXIF metadata from image files entirely in the browser using the File API
-- Keep images private by processing them locally — nothing is uploaded to a server
-- Parse the TIFF structure stored inside the JPEG EXIF segment
-- Convert raw tag values into readable labels (exposure, f-number, GPS, orientation)
-- Let users export the detected metadata as a JSON file
+- Perform deep binary parsing of EXIF, IPTC-NAA, and XMP payloads directly in the browser without server communication.
+- Extract comprehensive camera telemetry: exposure time, f-number, ISO, focal length, exposure program, exposure bias, metering mode, and white balance.
+- Retrieve hardware identification: body serial numbers, lens make, lens model, and lens serial numbers.
+- Parse photojournalism and asset management tags: IPTC/XMP headlines, creators, credits, copyrights, captions, keywords, and city/country locations.
+- Provide interactive GPS mapping: coordinate extraction with decimal conversion, radar compass visualizer, and direct OpenStreetMap / Google Maps integration.
+- Deliver an instant, one-click binary Privacy Scrubber that strips EXIF, GPS, IPTC, and XMP tags from JPEG, PNG, and WebP files without lossy re-compression.
+- Maintain a clean separation between pure binary processing (`metadataEngine.js`) and UI management (`script.js`).
 
 ---
 
@@ -35,82 +24,140 @@ The application mainly performs these steps:
 
 ```text
 image-metadata-explorer/
-├── ARCHITECTURE.md    # This file — project documentation
-├── index.html         # Entry point and UI shell (upload, preview, results)
-├── metadataEngine.js  # Pure EXIF/TIFF binary parser with UMD exports
-├── script.js          # DOM controller — file input, drag & drop, rendering
-└── style.css          # All visual styling and responsive layout
+├── ARCHITECTURE.md    # Architecture and technical documentation
+├── index.html         # Page layout, preview card, GPS map, and metadata panels
+├── metadataEngine.js  # Pure EXIF, IPTC, XMP binary parser and binary scrubber with UMD exports
+├── script.js          # Controller: file reading, map rendering, scrubber dispatch, and JSON export
+├── style.css          # Dark theme design system, GPS radar map, and responsive layouts
+└── thumbnail.svg      # Gallery visual preview
 ```
+
+- **tests/image-metadata-explorer.test.js**: Dedicated unit test suite covering EXIF tag extraction, IPTC parsing, XMP extraction, GPS conversions, error classification, and binary metadata scrubbing.
 
 ---
 
 ## System / Project Architecture Overview
 
-The project follows a simple separation of concerns:
+```mermaid
+graph TD
+    A[User Image File] --> B[FileReader / ArrayBuffer]
+    B --> C[detectFormat]
+    C -->|JPEG| D[scanJpegSegments]
+    C -->|PNG| E[parsePNG]
+    C -->|WebP| F[parseWebP]
+    D --> G[parseTIFF EXIF / GPS]
+    D --> H[parseIPTC APP13 8BIM]
+    D --> I[parseXMP APP1 XML]
+    E --> J[eXIf Chunk + iTXt XMP]
+    F --> K[EXIF Chunk + XMP Chunk]
+    G & H & I & J & K --> L[normalizeMetadata]
+    L --> M[DOM Results Controller]
+    M --> N[GPS Geolocation Map Preview]
+    M --> O[Metadata Groups Display]
+    M --> P[Export JSON]
+    A --> Q[One-Click Privacy Scrubber]
+    Q --> R[scrubMetadata Binary Sanitizer]
+    R --> S[Sanitized Image Download]
+```
 
-- **metadataEngine.js** owns all binary parsing — it reads the raw file bytes, finds the EXIF segment, walks the TIFF IFD chain, and normalises the values. It has no DOM dependency.
-- **script.js** handles everything user-facing: file selection, drag & drop, image preview, rendering the results, and the JSON export.
-- **style.css** owns all presentation, and **index.html** provides the structure and loads the scripts in dependency order.
-
-There is no build step — the browser loads the files directly.
+The system strictly decouples binary parsing and serialization from DOM manipulation:
+1. `metadataEngine.js` owns all raw byte processing:
+   - Evaluates file headers and magic bytes (`JPEG`, `PNG`, `WebP`).
+   - Scans JPEG APP markers (`APP1` EXIF/XMP, `APP2` ICC, `APP13` IPTC, `COM`).
+   - Walks TIFF IFDs (IFD0, ExifSubIFD, GPSSubIFD) to extract shutter speeds, ISO, apertures, and serial numbers.
+   - Decodes Photoshop 8BIM datasets for IPTC-NAA tags (headline, byline, keywords, credit, copyright).
+   - Extracts Dublin Core and Photoshop properties from XMP XML packets.
+   - Converts GPS degrees/minutes/seconds (DMS) to signed decimal degrees.
+   - Provides `scrubMetadata` to excise metadata markers directly from binary buffers.
+2. `script.js` coordinates the user interface:
+   - Validates file sizes (up to 5 MB) and MIME types.
+   - Loads image previews and calculates natural dimensions.
+   - Renders the interactive GPS map preview and radar compass canvas.
+   - Manages the one-click "Scrub Metadata" pipeline and JSON export.
 
 ---
 
 ## Component Breakdown
 
-| File                | Responsibility                                                               |
-| ------------------- | ---------------------------------------------------------------------------- |
-| `index.html`        | Page shell: hero, upload card, image preview, metadata groups, export button |
-| `metadataEngine.js` | EXIF/TIFF parsing, value formatting, GPS conversion, metadata normalisation  |
-| `script.js`         | File input, drag & drop, preview loading, results rendering, JSON export     |
-| `style.css`         | Dark theme, card layout, metadata grid, responsive design                    |
+| File                | Responsibility                                                                                                                                           |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html`        | Structure: hero, upload card, preview pane, GPS map card, deep inspector panels, copy buttons, and action toolbar.                                     |
+| `metadataEngine.js` | Core binary parsing: EXIF/TIFF, IPTC-NAA, XMP, ICC profiles, GPS conversion, error classification, and binary metadata scrubbing.                      |
+| `script.js`         | UI controller: file validation, drag-and-drop, image preview, radar map drawing, one-click scrubber trigger, and JSON export.                          |
+| `style.css`         | Dark theme styling, GPS radar canvas, map iframe viewport, privacy scrubber button, responsive layout (breakpoints at 950px, 700px, 520px, and 380px). |
 
 ---
 
 ## Data Flow / Execution Flow
 
+### 1. Metadata Inspection Flow
 ```text
+User uploads/drops an image (JPEG, PNG, WebP)
+↓
+script.js validates size and format → reads bytes via ArrayBuffer
+↓
+metadataEngine.parse(file) runs:
+  - detectFormat identifies file signature
+  - scanJpegSegments (or PNG/WebP chunk parsers) extract EXIF, IPTC, and XMP payloads
+  - parseTIFF decodes camera settings, lens model, serial numbers, and GPS coordinates
+  - parseIPTC decodes 8BIM record 2 datasets (headline, creator, copyright, keywords)
+  - parseXMP decodes RDF XML tags (creator tool, dates, ratings)
+  - normalizeMetadata unifies exposure, f-number, focal length, and GPS into readable formats
+↓
+script.js populates deep inspector panels and renders the GPS Geolocation Map card
+```
 
-User selects or drops an image
+### 2. Privacy Scrubber Flow
+```text
+User clicks "🧹 Scrub Metadata"
 ↓
-<input type="file"> event fires in script.js
+script.js passes the raw ArrayBuffer to metadataEngine.scrubMetadata(buffer)
 ↓
-file.arrayBuffer() reads the raw bytes (metadataEngine.js)
+scrubMetadata inspects format:
+  - JPEG: drops APP1-APP14 (EXIF, XMP, IPTC, ICC) and COM markers; preserves SOF, DHT, DQT, and raw scan data
+  - PNG: drops eXIf, tEXt, iTXt, and zTXt chunks; preserves IHDR, IDAT, PLTE, and rendering chunks
+  - WebP: drops EXIF and XMP chunks; clears metadata flags in the VP8X header and adjusts RIFF length
 ↓
-findExifSegment() locates the APP1/EXIF marker inside the JPEG
-↓
-parseTIFF() interprets the TIFF header and IFD entries
-↓
-normalizeMetadata() formats values (exposure, f-number, GPS, orientation)
-↓
-renderMetadata() updates the DOM and shows the preview
-↓
-User clicks Export JSON → a .json file downloads
-
+Browser downloads sanitized image (${fileName}-sanitized.${ext}) with zero metadata and identical image quality
 ```
 
 ---
 
 ## Key Features
 
-- Drag & drop or file-picker upload of JPEG, PNG, and WebP images
-- Camera info: make, model, lens model, and editing software
-- Exposure details: exposure time, f-number, ISO, and focal length
-- GPS coordinates converted from degrees/minutes/seconds to decimal degrees
-- Orientation and date-taken fields mapped to readable values
-- JSON export of all detected metadata, named after the original image
+- **Deep Binary EXIF Parsing**:
+  - Camera telemetry: make, model, body serial number, lens make, lens model, lens serial number, software/firmware.
+  - Optical settings: shutter speed, aperture, ISO, focal length, 35mm equivalent, exposure program, exposure bias, metering mode, and white balance.
+- **IPTC-NAA Metadata Extraction**:
+  - Photojournalism metadata: headline, title, creator/byline, credit, copyright notice, source, caption, keywords, city, province/state, and country.
+- **XMP Extensible Metadata Parsing**:
+  - Extracts Dublin Core titles and creators, Photoshop properties, XMP creation dates, and creator tools.
+- **Interactive GPS Geolocation Map Preview**:
+  - Converts raw DMS coordinate rationales into decimal degrees.
+  - Renders an interactive OpenStreetMap iframe alongside an offline vector radar compass canvas.
+  - Direct external navigation shortcuts for OpenStreetMap and Google Maps.
+  - One-click "Copy Coordinates" button.
+- **One-Click Privacy Scrubber**:
+  - Completely sanitizes sensitive device telemetry, GPS coordinates, personal credits, and software signatures.
+  - Pure binary manipulation avoids lossy re-encoding artifacts and preserves original image resolution.
+- **Multi-Format Support**:
+  - Full support for JPEG, PNG, and WebP images.
+- **Zero Server Uploads**:
+  - Entire analysis and scrubbing pipeline executes in-browser for complete user privacy.
 
 ---
 
 ## Technologies Used
 
-| Technology                              | Purpose                               |
-| --------------------------------------- | ------------------------------------- |
-| HTML5                                   | Page structure and semantic markup    |
-| CSS3 (Grid, Flexbox, Custom Properties) | Layout, dark theme, responsive design |
-| Vanilla JavaScript (ES6+, File API)     | File handling and DOM updates         |
-| ArrayBuffer / DataView                  | Reading raw binary image bytes        |
-| Blob / URL API                          | Image preview and JSON download       |
+| Technology                              | Purpose                                                                |
+| --------------------------------------- | ---------------------------------------------------------------------- |
+| HTML5                                   | Page structure, semantic markup, and file inputs.                      |
+| CSS3 (Grid, Flexbox, Custom Properties) | Responsive layout, dark theme design tokens, and map styling.          |
+| Vanilla JavaScript (ES6+)               | File API, ArrayBuffer, and DataView binary manipulation.               |
+| ArrayBuffer & DataView                  | Binary TIFF, IPTC, and XMP marker parsing and chunk serialization.     |
+| Canvas API (2D)                         | Rendering vector radar compass fallback and coordinate crosshairs.     |
+| Blob & URL APIs                         | Client-side file preview, JSON export, and sanitized image downloads.  |
+| Node.js `node:test`                     | Headless unit testing for binary parsing, GPS math, and scrubbing.     |
 
 ---
 
@@ -118,87 +165,88 @@ User clicks Export JSON → a .json file downloads
 
 ### `metadataEngine.js`
 
-- `parse(file)` — main entry: reads the buffer, finds the EXIF segment, returns normalised metadata
-- `readFileBuffer(file)` — reads file input asynchronously using standard FileReader (with `file.arrayBuffer()` fallback), safely handling permission failures, aborts, and unreadable/corrupted files
-- `classifyReadError(err)` — maps DOMExceptions and stream errors (`NotReadableError`, `SecurityError`, `NotFoundError`, `AbortError`) to structured `FileReadError` instances
-- `FileReadError` — custom error class exposing structured error codes (`PERMISSION_DENIED`, `SECURITY_ERROR`, `FILE_NOT_FOUND`, `READ_ABORTED`, `UNREADABLE_FILE`, `UNSUPPORTED_FORMAT`, `EMPTY_FILE`, `INVALID_INPUT`)
-- `detectFormat(view)` — identifies image formats by magic bytes (JPEG, PNG, WebP) and recognizes unsupported formats (GIF, BMP, TIFF) to provide actionable format errors
-- `findExifSegment(view)` — scans JPEG markers for the APP1 "Exif\0\0" segment
-- `parseTIFF(view, tiffStart)` — reads byte order, magic number, and follows the IFD chain (including EXIF and GPS sub-IFDs)
-- `readIFD(view, offset, littleEndian, tagMap)` — walks IFD entries and decodes known tags
-- `readValue(view, type, count, ...)` — decodes TIFF value types (ASCII, short, long, rational, etc.)
-- `gpsToDecimal(coordinates, reference)` — converts DMS coordinates to signed decimal degrees
-- `normalizeMetadata(raw)` — formats exposure time, f-number, focal length, GPS, orientation, and date
-- `formatFileSize(bytes)` — human-readable file size string
+- `parse(file)` — top-level entry: reads buffer, detects format, parses segments, and returns normalized metadata.
+- `scanJpegSegments(view)` — locates EXIF, XMP, IPTC, and ICC APP markers in JPEG files.
+- `parseTIFF(view, tiffStart)` — traverses TIFF IFD structures, decoding camera, exposure, serial, and GPS tags.
+- `parseIPTC(view, start, length)` — parses Photoshop 8BIM datasets for IPTC-NAA photojournalism metadata.
+- `parseXMP(xmpString)` — extracts Dublin Core, Photoshop, and creative tags from RDF XML packets.
+- `scrubMetadata(buffer)` — binary sanitizer that removes metadata segments from JPEG, PNG, and WebP buffers.
+- `gpsToDecimal(coordinates, reference)` — converts degrees, minutes, and seconds to decimal degrees.
+- `normalizeMetadata(raw)` — formats exposure time, aperture, focal length, GPS, orientation, and text fields.
+- `getMetadataGroups(metadata)` — groups metadata entries into categorized sections for UI display.
+- `readFileBuffer(file)` & `classifyReadError(err)` — error-resilient file reading with structured error codes.
 
 ### `script.js`
 
-- `processImage(file)` — orchestrates preview loading and metadata parsing
-- `loadImagePreview(file)` — creates an object URL and reads the image's natural dimensions
-- `renderMetadata(metadata)` — writes each value into its metadata group and updates the field count
-- `showError()` / `hideError()` — validation and error display
-- Drag & drop handlers on the upload card, plus the "Choose Another" reset flow
-- Export handler that builds a JSON blob and triggers a download
+- `processImage(file)` — orchestrates image preview loading and metadata extraction.
+- `renderMetadata(metadata)` — populates camera, optics, GPS, IPTC, and XMP UI fields.
+- `renderGPSMap(latitude, longitude)` — configures the map preview, iframe, radar canvas, and map navigation links.
+- `handleScrubMetadata()` — triggers binary metadata scrubbing and downloads the sanitized file.
+- `drawRadarMap(lat, lon)` — renders an animated vector radar compass on an HTML5 canvas.
 
 ### `style.css`
 
-- CSS custom properties under `:root` — the dark palette and accent colours
-- `.upload-card`, `.preview-card`, `.metadata-card` — card layout system
-- `main:has(.results-section:not(.hidden))` — hides hero/about once results are shown
-- `.metadata-group` / `.metadata-grid` / `.metadata-item` — results layout
-- Responsive breakpoints at 950px, 700px, 520px, and 380px
+- Theme variables (`--bg`, `--accent`, `--card`, `--success`, `--danger`).
+- Layout grids for image preview, GPS map card, and deep inspector groups.
+- Styling for `.btn-scrub`, `.status-banner`, `.gps-card`, `.map-viewport`, and `.radar-map-canvas`.
 
 ---
 
 ## Design Decisions
 
-- **Engine Modules vs. Inline Logic Rationale**: EXIF parsing, binary ArrayBuffer TIFF parsing, GPS conversion, and data normalization are isolated in `metadataEngine.js` with UMD exports. This separates core binary parsing from DOM manipulation, allowing `metadataEngine.js` to be unit-tested headlessly via `node --test` while `script.js` manages drag-and-drop file uploads, image previews, and UI rendering.
-- **File-Reading & Error Classification Rationale**: Reading local files via the browser File API can fail due to permission revocation (`NotReadableError`), browser security policies (`SecurityError`), unreadable or corrupted storage streams, aborted operations, or unsupported image formats. Rather than allowing uncaught exceptions or generic failures, the application standardizes all reading errors through `FileReadError` with actionable messages and surfaces them into the UI with `role="alert"` so the user can easily recover.
+- **Pure Binary Parsing & Scrubbing Rationale**: Parsing and scrubbing operate directly on `ArrayBuffer` and `DataView` rather than canvas image re-encoding. This ensures:
+  1. No loss of original JPEG/WebP compression quality or generational loss.
+  2. Complete headless testability in Node.js without browser or DOM dependencies.
+  3. Support for deep metadata tags (e.g. IPTC keywords, lens serials) that HTML canvas APIs silently discard.
+- **Offline Radar Map Fallback**: If external map tiles are unavailable (e.g. offline use or sandboxed environments), a vector radar compass visualizer renders on an HTML5 canvas, showing coordinate rings, crosshairs, and cardinal directions.
+- **Robust Error Classification**: All file-read and permission errors are mapped to structured `FileReadError` instances with actionable codes (`PERMISSION_DENIED`, `SECURITY_ERROR`, `UNSUPPORTED_FORMAT`, `EMPTY_FILE`).
 
 ---
 
 ## Dependencies
 
-None. This project uses only native browser APIs — no external libraries or CDNs are required.
+None. The project uses only native web standards and ECMAScript.
 
 ---
 
 ## Future Improvements
 
-- Add map view for GPS coordinates
-- Support XMP/IPTC metadata in addition to EXIF
-- Allow copying individual metadata fields to the clipboard
-- Add a "strip metadata" tool to remove EXIF data before sharing
+- Support batch image scrubbing for folders of photos.
+- Add support for HEIC/HEIF image formats via pure WebAssembly.
+- Support custom copyright and watermark injection during scrubbing.
 
 ---
 
 ## Known Limitations
 
-- EXIF parsing targets JPEG files; PNG and WebP images rarely carry EXIF and mostly fall through to the empty state
-- Only a curated set of tags is displayed, not the full EXIF standard
-- The orientation value is read and labelled, but the preview image is not rotated to match
-- MakerNote, thumbnail, and multi-IFD data are not parsed
+- Supported formats are JPEG, PNG, and WebP (standard web formats). RAW and HEIC formats require transcoding.
+- Preview images are scaled to fit the viewport; original file resolution is preserved for all exports and scrubbing operations.
 
 ---
 
 ## Development Notes
 
-- Open `index.html` through a local server (e.g. `python3 -m http.server 8000`); the File API also works on `file://` for most browsers
-- Run engine tests headlessly in Node: `node --test tests/image-metadata-explorer.test.js`
-- `metadataEngine.js` is a standalone UMD module: `const engine = require('./metadataEngine.js')`
-- No build step is required. Edit any file and refresh the browser.
+- Open `index.html` through a local HTTP server:
+  ```bash
+  python -m http.server 8000
+  ```
+- Run unit tests:
+  ```bash
+  node --test tests/image-metadata-explorer.test.js
+  ```
 
 ---
 
 ## License & Attribution
 
 - **Project License:** MIT
-- **Third-Party Assets:** None — the project uses only system fonts and no external assets.
+- **Third-Party Assets:** None.
 
 ---
 
 ## References
 
-- [EXIF — Wikipedia](https://en.wikipedia.org/wiki/Exif)
-- [TIFF — Wikipedia](https://en.wikipedia.org/wiki/TIFF)
-- [MDN Web Docs — File API](https://developer.mozilla.org/en-US/docs/Web/API/File_API)
+- [EXIF 2.32 Specification — CIPA](https://www.cipa.jp/std/documents/e/DC-008-Translation-2019-E.pdf)
+- [IPTC-NAA Information Interchange Model (IIM)](https://www.iptc.org/std/IIM/4.2/specification/IIMV4.2.pdf)
+- [Adobe XMP Specification](https://www.adobe.com/devnet/xmp.html)
+- [RFC 1951: DEFLATE Compressed Data Format](https://datatracker.ietf.org/doc/html/rfc1951)

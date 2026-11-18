@@ -12,6 +12,9 @@ const {
   classifyReadError,
   FileReadError,
   detectFormat,
+  parseIPTC,
+  parseXMP,
+  scrubMetadata,
 } = require("../projects/file-tools/image-metadata-explorer/metadataEngine");
 
 /* -----------------------------
@@ -656,4 +659,163 @@ test("parse rejects TIFF format with descriptive UNSUPPORTED_FORMAT error", asyn
       err.code === "UNSUPPORTED_FORMAT" &&
       err.message.includes("TIFF")
   );
+});
+
+/* -----------------------------
+   Deep EXIF, IPTC, XMP & Scrubber Tests
+----------------------------- */
+
+test("normalizeMetadata handles advanced hardware and optics telemetry", () => {
+  const metadata = normalizeMetadata({
+    bodySerialNumber: "BODY-987654321",
+    lensMake: "Sony",
+    lensModel: "FE 24-70mm F2.8 GM II",
+    lensSerialNumber: "LENS-12345678",
+    focalLengthIn35mm: 24,
+    exposureProgram: 3, // Aperture priority
+    exposureBias: -0.7,
+    meteringMode: 5, // Pattern
+    whiteBalance: 0, // Auto
+  });
+
+  assert.strictEqual(metadata.bodySerialNumber, "BODY-987654321");
+  assert.strictEqual(metadata.lensMake, "Sony");
+  assert.strictEqual(metadata.lensModel, "FE 24-70mm F2.8 GM II");
+  assert.strictEqual(metadata.lensSerialNumber, "LENS-12345678");
+  assert.strictEqual(metadata.focalLengthIn35mm, "24 mm (35mm eq)");
+  assert.strictEqual(metadata.exposureProgram, "Aperture priority");
+  assert.strictEqual(metadata.exposureBias, "-0.7 EV");
+  assert.strictEqual(metadata.meteringMode, "Pattern");
+  assert.strictEqual(metadata.whiteBalance, "Auto");
+});
+
+test("parseXMP extracts Dublin Core and Photoshop metadata", () => {
+  const sampleXmp = `
+    <x:xmpmeta xmlns:x="adobe:ns:meta/">
+      <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+        <rdf:Description xmlns:dc="http://purl.org/dc/elements/1.1/"
+                         xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/"
+                         xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+                         xmlns:aux="http://ns.adobe.com/exif/1.0/aux/">
+          <dc:title><rdf:Alt><rdf:li xml:lang="x-default">Alpine Sunrise</rdf:li></rdf:Alt></dc:title>
+          <dc:creator><rdf:Seq><rdf:li>Jane Doe</rdf:li></rdf:Seq></dc:creator>
+          <dc:description><rdf:Alt><rdf:li xml:lang="x-default">First light hitting the summit.</rdf:li></rdf:Alt></dc:description>
+          <dc:rights><rdf:Alt><rdf:li xml:lang="x-default">© 2026 Jane Doe</rdf:li></rdf:Alt></dc:rights>
+          <dc:subject><rdf:Bag><rdf:li>mountain</rdf:li><rdf:li>sunrise</rdf:li><rdf:li>landscape</rdf:li></rdf:Bag></dc:subject>
+          <photoshop:Headline>Spectacular Peak</photoshop:Headline>
+          <photoshop:Credit>Alpine Press</photoshop:Credit>
+          <photoshop:City>Zermatt</photoshop:City>
+          <photoshop:Country>Switzerland</photoshop:Country>
+          <xmp:CreateDate>2026-08-01T06:15:30</xmp:CreateDate>
+          <xmp:CreatorTool>Adobe Lightroom Classic</xmp:CreatorTool>
+          <aux:LensModel>24-70mm F2.8</aux:LensModel>
+          <aux:LensSerialNumber>LENS-999</aux:LensSerialNumber>
+          <aux:SerialNumber>CAM-777</aux:SerialNumber>
+        </rdf:Description>
+      </rdf:RDF>
+    </x:xmpmeta>
+  `;
+
+  const parsed = parseXMP(sampleXmp);
+  assert.strictEqual(parsed.title, "Alpine Sunrise");
+  assert.strictEqual(parsed.creator, "Jane Doe");
+  assert.strictEqual(parsed.caption, "First light hitting the summit.");
+  assert.strictEqual(parsed.copyright, "© 2026 Jane Doe");
+  assert.strictEqual(parsed.keywords, "mountain, sunrise, landscape");
+  assert.strictEqual(parsed.headline, "Spectacular Peak");
+  assert.strictEqual(parsed.credit, "Alpine Press");
+  assert.strictEqual(parsed.city, "Zermatt");
+  assert.strictEqual(parsed.country, "Switzerland");
+  assert.strictEqual(parsed.xmpCreateDate, "2026-08-01T06:15:30");
+  assert.strictEqual(parsed.creatorTool, "Adobe Lightroom Classic");
+  assert.strictEqual(parsed.lensModel, "24-70mm F2.8");
+  assert.strictEqual(parsed.lensSerialNumber, "LENS-999");
+  assert.strictEqual(parsed.bodySerialNumber, "CAM-777");
+});
+
+test("parseIPTC decodes Photoshop 8BIM IPTC record 2 datasets", () => {
+  // Construct a minimal 8BIM IPTC block
+  // 8BIM header: 0x38 0x42 0x49 0x4d, ID 0x0404, empty name (0x00 0x00), 4 bytes size
+  const iptcData = [];
+  function addIptcTag(record, dataset, str) {
+    const bytes = Buffer.from(str, "utf8");
+    iptcData.push(0x1c, record, dataset, (bytes.length >> 8) & 0xff, bytes.length & 0xff);
+    for (const b of bytes) iptcData.push(b);
+  }
+
+  addIptcTag(2, 5, "Photo Headline");
+  addIptcTag(2, 80, "John Photographer");
+  addIptcTag(2, 90, "San Francisco");
+  addIptcTag(2, 101, "USA");
+  addIptcTag(2, 25, "urban");
+  addIptcTag(2, 25, "golden-gate");
+
+  const dataLen = iptcData.length;
+  const bimBlock = [
+    0x38, 0x42, 0x49, 0x4d, // '8BIM'
+    0x04, 0x04,             // IPTC-NAA ID
+    0x00, 0x00,             // empty Pascal name + padding
+    (dataLen >> 24) & 0xff,
+    (dataLen >> 16) & 0xff,
+    (dataLen >> 8) & 0xff,
+    dataLen & 0xff,
+    ...iptcData,
+  ];
+  if (dataLen % 2 !== 0) bimBlock.push(0x00); // Pad to even
+
+  const view = new DataView(new Uint8Array(bimBlock).buffer);
+  const parsed = parseIPTC(view, 0, bimBlock.length);
+
+  assert.strictEqual(parsed.title, "Photo Headline");
+  assert.strictEqual(parsed.creator, "John Photographer");
+  assert.strictEqual(parsed.city, "San Francisco");
+  assert.strictEqual(parsed.country, "USA");
+  assert.strictEqual(parsed.keywords, "urban, golden-gate");
+});
+
+test("scrubMetadata strips all EXIF and metadata markers from JPEG", async () => {
+  const jpegWithExif = createFakeJpeg([
+    { tag: 0x010f, type: 2, value: "Nikon" },
+    { tag: 0x0110, type: 2, value: "D850" },
+  ]);
+
+  // Verify EXIF is present initially
+  const initialMeta = await parse(createMockFile(jpegWithExif, "test.jpg", "image/jpeg"));
+  assert.strictEqual(initialMeta.make, "Nikon");
+  assert.strictEqual(initialMeta.model, "D850");
+
+  // Scrub the binary buffer
+  const scrubbedBuffer = scrubMetadata(jpegWithExif);
+  assert.ok(scrubbedBuffer.byteLength < jpegWithExif.length, "Scrubbed JPEG should be smaller");
+
+  // Re-parse scrubbed buffer: EXIF should be completely gone
+  const scrubbedMeta = await parse(createMockFile(Buffer.from(scrubbedBuffer), "clean.jpg", "image/jpeg"));
+  assert.strictEqual(scrubbedMeta.make, undefined);
+  assert.strictEqual(scrubbedMeta.model, undefined);
+});
+
+test("scrubMetadata strips eXIf and tEXt chunks from PNG", async () => {
+  const pngWithExif = createFakePng([
+    { tag: 0x010f, type: 2, value: "Canon" },
+  ]);
+
+  const initialMeta = await parse(createMockFile(pngWithExif, "test.png", "image/png"));
+  assert.strictEqual(initialMeta.make, "Canon");
+
+  const scrubbedBuffer = scrubMetadata(pngWithExif);
+  const scrubbedMeta = await parse(createMockFile(Buffer.from(scrubbedBuffer), "clean.png", "image/png"));
+  assert.strictEqual(scrubbedMeta.make, undefined);
+});
+
+test("scrubMetadata strips EXIF chunks and clears VP8X flags from WebP", async () => {
+  const webpWithExif = createFakeWebP([
+    { tag: 0x010f, type: 2, value: "Sony" },
+  ]);
+
+  const initialMeta = await parse(createMockFile(webpWithExif, "test.webp", "image/webp"));
+  assert.strictEqual(initialMeta.make, "Sony");
+
+  const scrubbedBuffer = scrubMetadata(webpWithExif);
+  const scrubbedMeta = await parse(createMockFile(Buffer.from(scrubbedBuffer), "clean.webp", "image/webp"));
+  assert.strictEqual(scrubbedMeta.make, undefined);
 });

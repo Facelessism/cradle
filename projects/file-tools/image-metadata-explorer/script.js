@@ -1,10 +1,11 @@
-// --- IMAGE METADATA VIEWER CONTROLLER ---
+// --- IMAGE METADATA VIEWER & PRIVACY SCRUBBER CONTROLLER ---
 
 const imageInput = document.getElementById("imageInput");
 const uploadCard = document.getElementById("uploadCard");
 
 const resultsSection = document.getElementById("resultsSection");
 const errorMessage = document.getElementById("errorMessage");
+const statusBanner = document.getElementById("statusBanner");
 
 const imagePreview = document.getElementById("imagePreview");
 const fileName = document.getElementById("fileName");
@@ -17,6 +18,16 @@ const emptyMetadata = document.getElementById("emptyMetadata");
 
 const newImageBtn = document.getElementById("newImageBtn");
 const exportBtn = document.getElementById("exportBtn");
+const scrubBtn = document.getElementById("scrubBtn");
+
+// GPS Map Elements
+const gpsMapCard = document.getElementById("gpsMapCard");
+const gpsCoordinatesBadge = document.getElementById("gpsCoordinatesBadge");
+const osmMapIframe = document.getElementById("osmMapIframe");
+const radarMapCanvas = document.getElementById("radarMapCanvas");
+const osmLink = document.getElementById("osmLink");
+const gmapsLink = document.getElementById("gmapsLink");
+const copyCoordsBtn = document.getElementById("copyCoordsBtn");
 
 let currentFile = null;
 let currentMetadata = null;
@@ -79,6 +90,19 @@ function hideError() {
   errorMessage.style.display = "none";
 }
 
+function showStatus(message, isError = false) {
+  if (!statusBanner) return;
+  statusBanner.textContent = message;
+  statusBanner.className = `status-banner ${isError ? "error" : ""}`;
+  statusBanner.classList.remove("hidden");
+
+  setTimeout(() => {
+    if (statusBanner) {
+      statusBanner.classList.add("hidden");
+    }
+  }, 5000);
+}
+
 function validateImageFile(file) {
   if (!file) {
     return {
@@ -86,15 +110,6 @@ function validateImageFile(file) {
       message: "Please select an image file.",
     };
   }
-
-  console.log(
-    "Selected file:",
-    file.name,
-    "Size:",
-    file.size,
-    "Bytes",
-    formatFileSize(file.size)
-  );
 
   if (file.size === 0) {
     return {
@@ -124,56 +139,199 @@ function validateImageFile(file) {
 }
 
 /* --------------------------------
-   Metadata UI
+   Metadata UI Rendering
 -------------------------------- */
 
 const METADATA_FIELDS = [
   "cameraMake",
   "cameraModel",
-  "dateTaken",
-  "orientation",
-  "iso",
+  "bodySerialNumber",
+  "lensModel",
+  "lensSerialNumber",
+  "software",
   "exposureTime",
   "fNumber",
+  "iso",
   "focalLength",
+  "focalLengthIn35mm",
+  "exposureProgram",
+  "exposureBias",
+  "meteringMode",
+  "whiteBalance",
   "latitude",
   "longitude",
+  "altitude",
+  "gpsCoordinates",
+  "iptcTitle",
+  "iptcCreator",
+  "iptcCredit",
+  "iptcCopyright",
+  "iptcLocation",
+  "iptcKeywords",
+  "dateTaken",
+  "dateDigitized",
+  "xmpCreateDate",
+  "creatorTool",
+  "colorSpace",
+  "orientation",
 ];
 
 function setMetadataValue(id, value) {
   const element = document.getElementById(id);
-
   if (element) {
     element.textContent = formatValue(value);
   }
 }
 
+function renderGPSMap(latitude, longitude) {
+  if (!gpsMapCard) return;
+
+  if (latitude === undefined || longitude === undefined || latitude === null || longitude === null) {
+    gpsMapCard.classList.add("hidden");
+    return;
+  }
+
+  gpsMapCard.classList.remove("hidden");
+
+  const latNum = Number(latitude);
+  const lonNum = Number(longitude);
+  const coordsStr = `📍 ${latNum.toFixed(6)}°, ${lonNum.toFixed(6)}°`;
+
+  if (gpsCoordinatesBadge) {
+    gpsCoordinatesBadge.textContent = coordsStr;
+  }
+
+  if (osmLink) {
+    osmLink.href = `https://www.openstreetmap.org/?mlat=${latNum}&mlon=${lonNum}#map=16/${latNum}/${lonNum}`;
+  }
+
+  if (gmapsLink) {
+    gmapsLink.href = `https://www.google.com/maps/search/?api=1&query=${latNum},${lonNum}`;
+  }
+
+  if (osmMapIframe) {
+    const delta = 0.008;
+    const bbox = `${(lonNum - delta).toFixed(5)}%2C${(latNum - delta).toFixed(5)}%2C${(lonNum + delta).toFixed(5)}%2C${(latNum + delta).toFixed(5)}`;
+    osmMapIframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${latNum}%2C${lonNum}`;
+  }
+
+  drawRadarMap(latNum, lonNum);
+}
+
+function drawRadarMap(lat, lon) {
+  if (!radarMapCanvas) return;
+  const ctx = radarMapCanvas.getContext("2d");
+  if (!ctx) return;
+
+  const w = radarMapCanvas.width;
+  const h = radarMapCanvas.height;
+  const cx = w / 2;
+  const cy = h / 2;
+
+  ctx.fillStyle = "#080d17";
+  ctx.fillRect(0, 0, w, h);
+
+  // Radar grid rings
+  ctx.strokeStyle = "rgba(56, 189, 248, 0.18)";
+  ctx.lineWidth = 1;
+
+  for (let r = 30; r <= 100; r += 25) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Crosshairs
+  ctx.beginPath();
+  ctx.moveTo(cx - 110, cy);
+  ctx.lineTo(cx + 110, cy);
+  ctx.moveTo(cx, cy - 110);
+  ctx.lineTo(cx, cy + 110);
+  ctx.stroke();
+
+  // Cardinal labels
+  ctx.fillStyle = "rgba(148, 163, 184, 0.6)";
+  ctx.font = "10px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("N", cx, cy - 115);
+  ctx.fillText("S", cx, cy + 125);
+  ctx.fillText("W", cx - 120, cy + 4);
+  ctx.fillText("E", cx + 120, cy + 4);
+
+  // Pin marker
+  ctx.fillStyle = "#f87171";
+  ctx.beginPath();
+  ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(248, 113, 113, 0.5)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Coordinate text overlay
+  ctx.fillStyle = "#38bdf8";
+  ctx.font = "11px monospace";
+  ctx.textAlign = "center";
+  ctx.fillText(`${lat.toFixed(6)}, ${lon.toFixed(6)}`, cx, cy + 90);
+}
+
 function renderMetadata(metadata) {
   const data = metadata || {};
 
+  // Camera & Hardware
   setMetadataValue("cameraMake", data.make);
   setMetadataValue("cameraModel", data.model);
+  setMetadataValue("bodySerialNumber", data.bodySerialNumber);
+  setMetadataValue("lensModel", data.lensModel);
+  setMetadataValue("lensSerialNumber", data.lensSerialNumber);
+  setMetadataValue("software", data.software);
 
-  setMetadataValue("dateTaken", data.dateTaken);
-  setMetadataValue("orientation", data.orientation);
-
-  setMetadataValue("iso", data.iso);
+  // Exposure & Optics
   setMetadataValue("exposureTime", data.exposureTime);
   setMetadataValue("fNumber", data.fNumber);
+  setMetadataValue("iso", data.iso);
   setMetadataValue("focalLength", data.focalLength);
+  setMetadataValue("focalLengthIn35mm", data.focalLengthIn35mm);
+  setMetadataValue("exposureProgram", data.exposureProgram);
+  setMetadataValue("exposureBias", data.exposureBias);
+  setMetadataValue("meteringMode", data.meteringMode);
+  setMetadataValue("whiteBalance", data.whiteBalance);
 
+  // Location & GPS
   setMetadataValue("latitude", data.latitude);
   setMetadataValue("longitude", data.longitude);
+  setMetadataValue("altitude", data.altitude);
+  setMetadataValue("gpsCoordinates", data.gpsCoordinates);
+
+  // IPTC & Rights
+  setMetadataValue("iptcTitle", data.title || data.headline);
+  setMetadataValue("iptcCreator", data.creator || data.artist);
+  setMetadataValue("iptcCredit", data.credit);
+  setMetadataValue("iptcCopyright", data.copyright);
+
+  const locParts = [data.city, data.provinceOrState, data.country].filter(Boolean);
+  setMetadataValue("iptcLocation", locParts.length > 0 ? locParts.join(", ") : null);
+  setMetadataValue("iptcKeywords", data.keywords);
+
+  // XMP & Dates
+  setMetadataValue("dateTaken", data.dateTaken);
+  setMetadataValue("dateDigitized", data.dateDigitized);
+  setMetadataValue("xmpCreateDate", data.xmpCreateDate);
+  setMetadataValue("creatorTool", data.creatorTool);
+
+  // Image & Color
+  setMetadataValue("colorSpace", data.colorSpace);
+  setMetadataValue("orientation", data.orientation);
+
+  // Render GPS Map preview if coordinates are available
+  renderGPSMap(data.latitude, data.longitude);
 
   const count = METADATA_FIELDS.filter(id => {
     const element = document.getElementById(id);
-
-    if (!element) {
-      return false;
-    }
-
+    if (!element) return false;
     const value = element.textContent;
-
     return value && value !== "—";
   }).length;
 
@@ -204,7 +362,7 @@ function loadImagePreview(file) {
 
     try {
       currentObjectUrl = URL.createObjectURL(file);
-    } catch (err) {
+    } catch {
       reject(new Error("Unable to create preview URL for the image file."));
       return;
     }
@@ -271,38 +429,12 @@ async function processImage(file) {
     return;
   }
 
-  // Nothing below this line runs for an oversized file.
-
   currentFile = file;
 
   try {
-    if (fileName) {
-      fileName.textContent = file.name;
-    }
-
-    if (fileSize) {
-      fileSize.textContent = formatFileSize(file.size);
-    }
-
-    if (fileType) {
-      fileType.textContent = file.type || "Unknown";
-    }
-
-    if (typeof file.slice === "function") {
-      const slice = file.slice(0, 32);
-      const buffer = await slice.arrayBuffer();
-      const view = new DataView(buffer);
-      const detected =
-        globalThis.ImageMetadataEngine &&
-        typeof globalThis.ImageMetadataEngine.detectFormat === "function"
-          ? globalThis.ImageMetadataEngine.detectFormat(view)
-          : null;
-      if (!detected) {
-        throw new Error(
-          "Unsupported image format or invalid signature. Only JPEG, PNG, and WebP are supported."
-        );
-      }
-    }
+    if (fileName) fileName.textContent = file.name;
+    if (fileSize) fileSize.textContent = formatFileSize(file.size);
+    if (fileType) fileType.textContent = file.type || "Unknown";
 
     const imageInfo = await loadImagePreview(file);
 
@@ -358,85 +490,105 @@ async function processImage(file) {
 }
 
 /* --------------------------------
-   File Input
+   Privacy Scrubber (One-Click)
+-------------------------------- */
+
+async function handleScrubMetadata() {
+  if (!currentFile) {
+    showError("Please load an image before scrubbing metadata.");
+    return;
+  }
+
+  try {
+    if (
+      !globalThis.ImageMetadataEngine ||
+      typeof globalThis.ImageMetadataEngine.scrubMetadata !== "function"
+    ) {
+      throw new Error("Metadata scrubbing engine is unavailable.");
+    }
+
+    const buffer = await currentFile.arrayBuffer();
+    const cleanBuffer = globalThis.ImageMetadataEngine.scrubMetadata(buffer);
+
+    const mime = currentFile.type || "image/jpeg";
+    const cleanBlob = new Blob([cleanBuffer], { type: mime });
+
+    // Download the scrubbed image
+    const url = URL.createObjectURL(cleanBlob);
+    const link = document.createElement("a");
+
+    const baseName =
+      currentFile.name
+        ?.replace(/\.[^/.]+$/, "")
+        .replace(/[^a-z0-9_-]/gi, "-") || "sanitized-image";
+
+    const extMatch = currentFile.name.match(/\.([a-z0-9]+)$/i);
+    const ext = extMatch ? extMatch[1].toLowerCase() : "jpg";
+
+    link.href = url;
+    link.download = `${baseName}-sanitized.${ext}`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+
+    showStatus(
+      `✓ Privacy Protected: Removed all EXIF, GPS, camera serials, and IPTC/XMP tags (${formatFileSize(currentFile.size)} → ${formatFileSize(cleanBlob.size)}).`
+    );
+  } catch (err) {
+    console.error("Metadata scrub error:", err);
+    showError(`Failed to scrub image metadata: ${err.message}`);
+  }
+}
+
+/* --------------------------------
+   Copy Coordinates
+-------------------------------- */
+
+if (copyCoordsBtn) {
+  copyCoordsBtn.addEventListener("click", async () => {
+    if (!currentMetadata || currentMetadata.latitude === undefined || currentMetadata.longitude === undefined) {
+      return;
+    }
+
+    const coordsText = `${currentMetadata.latitude}, ${currentMetadata.longitude}`;
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(coordsText);
+        copyCoordsBtn.textContent = "✓ Copied!";
+        setTimeout(() => {
+          if (copyCoordsBtn) copyCoordsBtn.textContent = "📋 Copy Coords";
+        }, 1500);
+      }
+    } catch {
+      // Fallback
+    }
+  });
+}
+
+/* --------------------------------
+   File Input & Drag/Drop
 -------------------------------- */
 
 if (imageInput) {
   imageInput.addEventListener("change", event => {
     const input = event.target;
     const file = input.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    console.log("IMAGE UPLOAD ATTEMPT:", {
-      name: file.name,
-      size: file.size,
-      sizeMB: (file.size / (1024 * 1024)).toFixed(2),
-      type: file.type,
-    });
+    if (!file) return;
 
     const validation = validateImageFile(file);
-
-    // ALWAYS clear the input.
     input.value = "";
 
-    // STOP immediately if invalid.
     if (!validation.valid) {
-      console.warn("IMAGE REJECTED:", validation.message);
-
-      currentFile = null;
-      currentMetadata = null;
-
-      if (currentObjectUrl) {
-        URL.revokeObjectURL(currentObjectUrl);
-        currentObjectUrl = null;
-      }
-
-      if (imagePreview) {
-        imagePreview.removeAttribute("src");
-        imagePreview.removeAttribute("srcset");
-      }
-
-      if (resultsSection) {
-        resultsSection.classList.add("hidden");
-      }
-
-      if (uploadCard) {
-        uploadCard.classList.remove("hidden");
-      }
-
-      if (dimensions) {
-        dimensions.textContent = "—";
-      }
-
-      if (fileName) {
-        fileName.textContent = "—";
-      }
-
-      if (fileSize) {
-        fileSize.textContent = "—";
-      }
-
-      if (fileType) {
-        fileType.textContent = "—";
-      }
-
       showError(validation.message);
-
       return;
     }
-
-    console.log("IMAGE ACCEPTED:", file.name);
 
     processImage(file);
   });
 }
-
-/* --------------------------------
-   Drag & Drop
--------------------------------- */
 
 if (uploadCard) {
   uploadCard.addEventListener("dragover", event => {
@@ -455,24 +607,10 @@ if (uploadCard) {
     uploadCard.classList.remove("drag-over");
 
     const file = event.dataTransfer?.files?.[0];
-
     if (!file) return;
 
     const validation = validateImageFile(file);
-
     if (!validation.valid) {
-      currentFile = null;
-      currentMetadata = null;
-
-      if (currentObjectUrl) {
-        URL.revokeObjectURL(currentObjectUrl);
-        currentObjectUrl = null;
-      }
-
-      if (imagePreview) {
-        imagePreview.removeAttribute("src");
-      }
-
       showError(validation.message);
       return;
     }
@@ -482,7 +620,7 @@ if (uploadCard) {
 }
 
 /* --------------------------------
-   Choose Another Image
+   Toolbar Actions
 -------------------------------- */
 
 if (newImageBtn) {
@@ -510,9 +648,9 @@ if (newImageBtn) {
   });
 }
 
-/* --------------------------------
-   Export Metadata
--------------------------------- */
+if (scrubBtn) {
+  scrubBtn.addEventListener("click", handleScrubMetadata);
+}
 
 if (exportBtn) {
   exportBtn.addEventListener("click", () => {
@@ -523,13 +661,8 @@ if (exportBtn) {
 
     try {
       const json = JSON.stringify(currentMetadata, null, 2);
-
-      const blob = new Blob([json], {
-        type: "application/json",
-      });
-
+      const blob = new Blob([json], { type: "application/json" });
       const url = URL.createObjectURL(blob);
-
       const link = document.createElement("a");
 
       const baseName =
@@ -541,15 +674,12 @@ if (exportBtn) {
       link.download = `${baseName}-metadata.json`;
 
       document.body.appendChild(link);
-
       link.click();
-
       link.remove();
 
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Metadata export error:", error);
-
       showError("Unable to export metadata.");
     }
   });
@@ -564,4 +694,3 @@ window.addEventListener("beforeunload", () => {
     URL.revokeObjectURL(currentObjectUrl);
   }
 });
-
