@@ -269,6 +269,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function startGame() {
+    if (isRunning) return;
+
     getAudioContext();
     if (gameState.isGameOver) {
       resetGame();
@@ -277,6 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
     isRunning = true;
     gameState.isPaused = false;
     startBtn.hidden = true;
+    startBtn.disabled = true;
     pauseBtn.hidden = false;
     gameOverModal.hidden = true;
     lastTickTime = performance.now();
@@ -288,6 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
     isRunning = false;
     gameState.isPaused = true;
     startBtn.hidden = false;
+    startBtn.disabled = false;
     startBtn.textContent = "▶ Resume";
     pauseBtn.hidden = true;
     cancelAnimationFrame(gameLoopId);
@@ -307,6 +311,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     startBtn.hidden = false;
+    startBtn.disabled = false;
     startBtn.textContent = "▶ Start";
     pauseBtn.hidden = true;
     gameOverModal.hidden = true;
@@ -325,6 +330,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     startBtn.hidden = false;
+    startBtn.disabled = false;
     startBtn.textContent = "↻ Play Again";
     pauseBtn.hidden = true;
 
