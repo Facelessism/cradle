@@ -6,7 +6,7 @@
     <title>Knowledge Graph | Cradle</title>
     <meta
       name="description"
-      content="Write markdown with [[wikilinks]] and explore a local-first, force-directed knowledge graph backed by IndexedDB."
+      content="Write markdown with Obsidian-compatible [[wikilinks]], #hashtags, Louvain community clustering & local vault import/export."
     />
     <link
       rel="canonical"
@@ -16,7 +16,7 @@
     <meta property="og:title" content="Knowledge Graph | Cradle" />
     <meta
       property="og:description"
-      content="Write markdown with [[wikilinks]] and explore a local-first, force-directed knowledge graph backed by IndexedDB."
+      content="Write markdown with Obsidian-compatible [[wikilinks]], #hashtags, Louvain community clustering & local vault import/export."
     />
     <meta
       property="og:url"
@@ -35,12 +35,12 @@
       <header class="header">
         <h1>Local-First Knowledge Graph</h1>
         <p class="subtitle">
-          Write markdown with [[wikilinks]] and visualize connections in
-          real-time.
+          Obsidian-compatible [[wikilinks]], #hashtags, Louvain community
+          clustering &amp; local vault import/export.
         </p>
       </header>
 
-      <div class="workspace">
+      <div class="workspace" id="workspace">
         <section class="editor-pane">
           <div class="pane-header">
             <input
@@ -48,35 +48,160 @@
               id="note-title"
               placeholder="Note Title..."
               class="title-input"
+              aria-label="Note Title"
             />
             <div class="pane-actions">
-              <button id="btn-save" class="btn btn-primary">Save</button>
-              <button id="btn-delete" class="btn btn-danger">Delete</button>
+              <button id="btn-save" class="btn btn-primary" aria-label="Save Note">
+                Save
+              </button>
+              <button id="btn-delete" class="btn btn-danger" aria-label="Delete Note">
+                Delete
+              </button>
+              <button
+                id="btn-export-note"
+                class="btn btn-small"
+                aria-label="Export current note as Markdown"
+                title="Export current note as Markdown file"
+              >
+                Export .md
+              </button>
             </div>
           </div>
           <textarea
             id="note-content"
-            placeholder="Write your notes here... Use [[WikiLinks]] to connect ideas."
+            placeholder="Write your notes here... Use [[WikiLinks]] or [[Target|Alias]] to connect ideas, #tags to categorize, or YAML frontmatter."
+            aria-label="Note Content"
           ></textarea>
-          <div id="note-list" class="note-list"></div>
+
+          <!-- Note Inspector: Backlinks, Outgoing Links, Tags & Cluster -->
+          <div id="note-inspector" class="note-inspector">
+            <div class="inspector-section">
+              <div class="inspector-header">
+                <span class="inspector-title">Backlinks (Linked References)</span>
+                <span id="backlinks-count" class="badge">0</span>
+              </div>
+              <div id="backlinks-list" class="link-chips">
+                <span class="empty-hint">No incoming backlinks</span>
+              </div>
+            </div>
+
+            <div class="inspector-section">
+              <div class="inspector-header">
+                <span class="inspector-title">Outgoing Links</span>
+                <span id="outlinks-count" class="badge">0</span>
+              </div>
+              <div id="outlinks-list" class="link-chips">
+                <span class="empty-hint">No outgoing links</span>
+              </div>
+            </div>
+
+            <div class="inspector-section">
+              <div class="inspector-header">
+                <span class="inspector-title">Tags &amp; Community</span>
+                <span id="cluster-badge" class="badge badge-cluster" style="display: none;">Cluster</span>
+              </div>
+              <div id="tags-list" class="tag-chips">
+                <span class="empty-hint">No tags</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vault Notes List & Import/Export Controls -->
+          <div class="note-list-container">
+            <div class="list-header">
+              <span>Vault Notes</span>
+              <div class="vault-actions">
+                <button
+                  id="btn-import-vault"
+                  class="btn btn-small"
+                  aria-label="Import Markdown Vault Files"
+                  title="Import .md files"
+                >
+                  Import .md
+                </button>
+                <input
+                  type="file"
+                  id="vault-file-input"
+                  multiple
+                  accept=".md,.markdown"
+                  style="display: none;"
+                  aria-label="Upload Markdown Files"
+                />
+                <button
+                  id="btn-export-vault"
+                  class="btn btn-small"
+                  aria-label="Export Vault as Zip Archive"
+                  title="Export all notes as Obsidian vault ZIP archive"
+                >
+                  Export Vault (.zip)
+                </button>
+              </div>
+            </div>
+            <div id="note-list" class="note-list"></div>
+          </div>
         </section>
 
         <section class="graph-pane">
-          <div class="pane-header">
-            <span>Graph Visualization</span>
-            <span class="graph-hint"
-              >Double-click / Right-click node to pin</span
-            >
-            <button id="btn-reset-zoom" class="btn btn-small">
-              Reset View
-            </button>
+          <div class="pane-header graph-header">
+            <div class="search-box">
+              <input
+                type="search"
+                id="graph-search"
+                placeholder="Search notes, content, #tags..."
+                class="search-input"
+                aria-label="Search knowledge graph"
+              />
+              <span id="search-count" class="search-count" aria-live="polite"></span>
+            </div>
+            <div class="graph-controls">
+              <button
+                id="btn-cluster-toggle"
+                class="btn btn-small btn-cluster active"
+                aria-label="Toggle Community Detection Cluster Coloring"
+                title="Color nodes by Louvain community clusters"
+              >
+                Clusters: ON
+              </button>
+              <button
+                id="btn-reset-zoom"
+                class="btn btn-small"
+                aria-label="Reset View Zoom and Pan"
+              >
+                Reset View
+              </button>
+            </div>
           </div>
-          <div class="canvas-wrapper">
+          <div class="canvas-wrapper" id="canvas-wrapper">
             <canvas id="graph-canvas"></canvas>
+            <div id="drop-overlay" class="drop-overlay" style="display: none;">
+              <div class="drop-message">
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                <p>Drop Markdown (.md) vault files here</p>
+                <span class="drop-subtext">YAML frontmatter and wikilinks will be preserved</span>
+              </div>
+            </div>
+          </div>
+          <div class="graph-footer">
+            <span class="graph-hint">Double-click or Right-click node to pin &bull; Click node to focus camera</span>
           </div>
         </section>
       </div>
     </main>
+    <script type="module" src="layout.js"></script>
     <script type="module" src="parser.js"></script>
     <script type="module" src="storage.js"></script>
     <script type="module" src="graph-engine.js"></script>
