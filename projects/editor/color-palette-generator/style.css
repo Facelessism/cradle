@@ -118,13 +118,43 @@ body {
 /* Controls Row */
 .controls-row {
   display: grid;
-  grid-template-columns: 1fr 1.5fr;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
-  align-items: start;
+  align-items: stretch;
 }
 
 .control-card {
   margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Color Space Engine */
+.engine-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-engine {
+  flex: 1;
+  min-width: 120px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.btn-engine.active {
+  background: var(--accent);
+  color: var(--bg-primary);
+  border-color: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.engine-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-top: 0.75rem;
 }
 
 /* Color Picker */
@@ -300,6 +330,16 @@ input[type="color"]::-webkit-color-swatch {
   margin-bottom: 0.2rem;
 }
 
+.swatch-oklch {
+  font-family: "Fira Code", monospace;
+  font-size: 0.7rem;
+  color: var(--accent);
+  margin-bottom: 0.2rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .swatch-rgb {
   font-size: 0.7rem;
   color: var(--text-muted);
@@ -383,6 +423,198 @@ input[type="color"]::-webkit-color-swatch {
   flex-wrap: wrap;
 }
 
+/* ------------------------------------------------------------------ */
+/*  N x N WCAG Contrast Matrix Section                                */
+/* ------------------------------------------------------------------ */
+
+.matrix-card {
+  overflow: hidden;
+}
+
+.matrix-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.matrix-summary {
+  display: flex;
+  align-items: center;
+}
+
+.matrix-count-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.85rem;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
+.matrix-count-badge strong {
+  margin-right: 0.25rem;
+  color: #fff;
+}
+
+.matrix-scroll-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  margin-bottom: 1rem;
+}
+
+.contrast-matrix-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 4px;
+  min-width: 620px;
+  font-size: 0.85rem;
+}
+
+.contrast-matrix-table th,
+.contrast-matrix-table td {
+  box-sizing: border-box;
+}
+
+.matrix-th-corner {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.75rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.matrix-label-bg {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.matrix-label-fg {
+  color: #a78bfa;
+  font-weight: 700;
+}
+
+.matrix-th-col,
+.matrix-th-row {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.matrix-header-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  vertical-align: middle;
+  margin-right: 0.35rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.matrix-header-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+.matrix-header-hex {
+  display: block;
+  font-family: "Fira Code", monospace;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.matrix-cell {
+  padding: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, outline 0.12s ease;
+  user-select: none;
+}
+
+.matrix-cell:hover,
+.matrix-cell:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  outline: 2px solid var(--accent);
+  z-index: 2;
+}
+
+.matrix-cell.active-pair {
+  outline: 3px solid #38bdf8;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.6);
+  transform: scale(1.03);
+  z-index: 3;
+}
+
+.matrix-cell-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.6rem 0.4rem;
+  border-radius: 8px;
+  min-height: 56px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.15s ease;
+}
+
+.matrix-cell-self .matrix-cell-inner {
+  opacity: 0.5;
+  filter: grayscale(0.5);
+}
+
+.matrix-cell-ratio {
+  font-family: "Fira Code", monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* WCAG Badges */
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.badge-aaa {
+  background: rgba(16, 185, 129, 0.28);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.6);
+  text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.badge-aa {
+  background: rgba(6, 182, 212, 0.28);
+  color: #38bdf8;
+  border: 1px solid rgba(6, 182, 212, 0.6);
+  text-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+}
+
+.badge-large {
+  background: rgba(245, 158, 11, 0.28);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.6);
+}
+
 .badge-pass {
   display: inline-block;
   padding: 0.2rem 0.6rem;
@@ -395,14 +627,31 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 .badge-fail {
-  display: inline-block;
-  padding: 0.2rem 0.6rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.25);
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.matrix-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  padding: 0.5rem 0.25rem 0;
+}
+
+.matrix-legend .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.matrix-legend .legend-hint {
+  margin-left: auto;
+  font-style: italic;
+  color: var(--accent);
 }
 
 .contrast-preview {

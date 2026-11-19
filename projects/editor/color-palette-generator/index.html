@@ -71,12 +71,14 @@
                   value="38bdf8"
                   maxlength="6"
                   placeholder="hex"
+                  aria-label="Base hex color code"
                 />
               </div>
               <button
                 class="btn btn-random"
                 id="randomBtn"
                 title="Random color"
+                aria-label="Generate random base color"
               >
                 🎲
               </button>
@@ -86,25 +88,50 @@
           <div class="card control-card">
             <h2>🔁 Harmony Mode</h2>
             <div class="harmony-buttons">
-              <button class="btn btn-harmony active" data-mode="complementary">
+              <button class="btn btn-harmony active" data-mode="complementary" aria-label="Complementary harmony mode">
                 Complementary
               </button>
-              <button class="btn btn-harmony" data-mode="analogous">
+              <button class="btn btn-harmony" data-mode="analogous" aria-label="Analogous harmony mode">
                 Analogous
               </button>
-              <button class="btn btn-harmony" data-mode="triadic">
+              <button class="btn btn-harmony" data-mode="triadic" aria-label="Triadic harmony mode">
                 Triadic
               </button>
-              <button class="btn btn-harmony" data-mode="split-complementary">
+              <button class="btn btn-harmony" data-mode="split-complementary" aria-label="Split-complementary harmony mode">
                 Split-Comp
               </button>
-              <button class="btn btn-harmony" data-mode="tetradic">
+              <button class="btn btn-harmony" data-mode="tetradic" aria-label="Tetradic harmony mode">
                 Tetradic
               </button>
-              <button class="btn btn-harmony" data-mode="monochromatic">
+              <button class="btn btn-harmony" data-mode="monochromatic" aria-label="Monochromatic harmony mode">
                 Mono
               </button>
             </div>
+          </div>
+
+          <div class="card control-card engine-card">
+            <h2>🔬 Color Space Engine</h2>
+            <div class="engine-buttons" role="group" aria-label="Color space calculation engine">
+              <button
+                class="btn btn-engine active"
+                data-engine="oklch"
+                aria-pressed="true"
+                aria-label="OKLCH Perceptual color harmony engine"
+              >
+                ✨ OKLCH Perceptual
+              </button>
+              <button
+                class="btn btn-engine"
+                data-engine="hsl"
+                aria-pressed="false"
+                aria-label="Standard HSL color engine"
+              >
+                Standard HSL
+              </button>
+            </div>
+            <p class="engine-desc">
+              OKLCH ensures uniform perceptual lightness &amp; chroma across all hues.
+            </p>
           </div>
         </section>
 
@@ -130,16 +157,49 @@
           </div>
         </section>
 
+        <!-- N x N WCAG Contrast Matrix -->
+        <section class="contrast-matrix-section">
+          <div class="card matrix-card">
+            <div class="matrix-header">
+              <div>
+                <h2>📊 N×N WCAG 2.1 Contrast Matrix</h2>
+                <p class="section-desc">
+                  Pairwise contrast matrix analyzing every background and foreground combination in your active palette.
+                </p>
+              </div>
+              <div class="matrix-summary" id="matrixSummary">
+                <!-- Dynamically populated badge -->
+              </div>
+            </div>
+            <div class="matrix-scroll-wrap">
+              <table
+                class="contrast-matrix-table"
+                id="contrastMatrixTable"
+                aria-label="Pairwise WCAG Contrast Matrix"
+              >
+                <!-- Dynamic table populated by JS -->
+              </table>
+            </div>
+            <div class="matrix-legend">
+              <span class="legend-item"><span class="badge badge-aaa">AAA</span> &ge; 7.0:1 (Enhanced)</span>
+              <span class="legend-item"><span class="badge badge-aa">AA</span> &ge; 4.5:1 (Normal Text)</span>
+              <span class="legend-item"><span class="badge badge-large">AA Large</span> &ge; 3.0:1 (Large/Bold Text)</span>
+              <span class="legend-item"><span class="badge badge-fail">Fail</span> &lt; 3.0:1</span>
+              <span class="legend-hint">💡 Click or press Enter on any cell to load the pair into the live preview</span>
+            </div>
+          </div>
+        </section>
+
         <!-- Contrast Checker -->
         <section class="contrast-section">
           <div class="card contrast-card">
-            <h2>♿ WCAG Contrast Checker</h2>
+            <h2>♿ WCAG Contrast Checker &amp; Live Preview</h2>
             <p class="section-desc">
-              Check any generated color against a foreground or background.
+              Test any custom or matrix-selected color pair with live accessibility badges and rendered preview.
             </p>
             <div class="contrast-controls">
               <div class="contrast-pick">
-                <label>Background</label>
+                <label for="contrastBg">Background</label>
                 <input
                   type="color"
                   id="contrastBg"
@@ -148,7 +208,7 @@
                 />
               </div>
               <div class="contrast-pick">
-                <label>Foreground</label>
+                <label for="contrastFg">Foreground</label>
                 <input
                   type="color"
                   id="contrastFg"
@@ -156,7 +216,7 @@
                   aria-label="Contrast foreground color"
                 />
               </div>
-              <button class="btn btn-action" id="useFromPalette">
+              <button class="btn btn-action" id="useFromPalette" aria-label="Load first two palette colors into contrast checker">
                 Use from palette
               </button>
             </div>
@@ -169,7 +229,7 @@
               <!-- Contrast ratio & pass/fail badges -->
             </div>
             <div class="contrast-preview" id="contrastPreview">
-              <span>Sample Text</span>
+              <span>Sample Text — Perceptual Harmony &amp; Accessibility</span>
             </div>
           </div>
         </section>
@@ -179,18 +239,25 @@
           <div class="card export-card">
             <h2>📦 Export Palette</h2>
             <div class="export-tabs">
-              <button class="btn btn-tab active" data-format="css">
+              <button class="btn btn-tab active" data-format="css" aria-label="Export as CSS Custom Properties">
                 CSS Vars
               </button>
-              <button class="btn btn-tab" data-format="tailwind">
+              <button class="btn btn-tab" data-format="tailwind" aria-label="Export as Tailwind CSS Theme Config">
                 Tailwind
               </button>
-              <button class="btn btn-tab" data-format="json">JSON</button>
-              <button class="btn btn-tab" data-format="scss">SCSS</button>
+              <button class="btn btn-tab" data-format="figma" aria-label="Export as Figma Design Tokens JSON">
+                Figma Tokens
+              </button>
+              <button class="btn btn-tab" data-format="json" aria-label="Export as JSON">
+                JSON
+              </button>
+              <button class="btn btn-tab" data-format="scss" aria-label="Export as SCSS Variables">
+                SCSS
+              </button>
             </div>
             <div class="export-code-wrap">
               <pre class="export-code" id="exportCode"></pre>
-              <button class="btn btn-copy" id="copyExport">📋 Copy</button>
+              <button class="btn btn-copy" id="copyExport" aria-label="Copy export code to clipboard">📋 Copy</button>
             </div>
           </div>
         </section>

@@ -6,9 +6,20 @@ const {
   rgbToHex,
   rgbToHsl,
   hslToRgb,
+  srgbToLinear,
+  linearToSrgb,
+  rgbToOklch,
+  oklchToRgb,
+  hexToOklch,
+  oklchToHex,
+  formatOklch,
+  luminance,
   contrastRatio,
   randomHex,
   generatePalette,
+  generateOklchPalette,
+  generateHslPalette,
+  computeContrastMatrix,
   resolveSwatchHex,
   formatExport,
 } = require("../projects/editor/color-palette-generator/script.js");
@@ -164,4 +175,166 @@ test("formatExport supports css, tailwind, json, and scss formats", () => {
   const scss = formatExport(testPalette, "scss");
   assert.match(scss, /\$color-1: #111111;/);
   assert.match(scss, /\$palette: \(/);
+});
+
+test("OKLCH Color Math: hexToOklch and oklchToHex roundtrip cleanly", () => {
+  const testColors = ["#ffffff", "#000000", "#38bdf8", "#ef4444", "#10b981", "#8b5cf6"];
+
+  testColors.forEach(hex => {
+    const oklch = hexToOklch(hex);
+    assert.ok(oklch.l >= 0 && oklch.l <= 1, `Lightness should be in [0, 1] for ${hex}`);
+    assert.ok(oklch.c >= 0, `Chroma should be >= 0 for ${hex}`);
+    assert.ok(oklch.h >= 0 && oklch.h < 360, `Hue should be in [0, 360) for ${hex}`);
+
+    const recoveredHex = oklchToHex(oklch.l, oklch.c, oklch.h).toLowerCase();
+    const originalRgb = hexToRgb(hex);
+    const recoveredRgb = hexToRgb(recoveredHex);
+
+    // Channels should match within rounding tolerance (<= 2 delta)
+    assert.ok(
+      Math.abs(originalRgb.r - recoveredRgb.r) <= 2,
+      `Red channel roundtrip tolerance for ${hex}: ${originalRgb.r} vs ${recoveredRgb.r}`
+    );
+    assert.ok(
+      Math.abs(originalRgb.g - recoveredRgb.g) <= 2,
+      `Green channel roundtrip tolerance for ${hex}: ${originalRgb.g} vs ${recoveredRgb.g}`
+    );
+    assert.ok(
+      Math.abs(originalRgb.b - recoveredRgb.b) <= 2,
+      `Blue channel roundtrip tolerance for ${hex}: ${originalRgb.b} vs ${recoveredRgb.b}`
+    );
+  });
+
+  // Boundary condition tests
+  const whiteOklch = hexToOklch("#ffffff");
+  assert.equal(Number(whiteOklch.l.toFixed(2)), 1.0);
+  assert.ok(whiteOklch.c < 0.001);
+
+  const blackOklch = hexToOklch("#000000");
+  assert.equal(Number(blackOklch.l.toFixed(2)), 0.0);
+  assert.ok(blackOklch.c < 0.001);
+});
+
+test("formatOklch formats valid CSS oklch functional notation", () => {
+  const oklchStr = formatOklch(0.762, 0.124, 228.5);
+  assert.equal(oklchStr, "oklch(76.2% 0.124 228.5)");
+});
+
+test("generateOklchPalette generates 5 valid hex colors across all presets", () => {
+  const modes = [
+    "analogous",
+    "monochromatic",
+    "triadic",
+    "tetradic",
+    "split-complementary",
+    "complementary",
+  ];
+  const hexRegex = /^#[0-9a-fA-F]{6}$/;
+
+  modes.forEach(mode => {
+    const palette = generateOklchPalette("#38bdf8", mode);
+    assert.equal(palette.length, 5, `OKLCH mode ${mode} must generate 5 colors`);
+    palette.forEach((color, idx) => {
+      assert.match(
+        color,
+        hexRegex,
+        `OKLCH mode ${mode} swatch ${idx} should be valid 6-digit hex: ${color}`
+      );
+    });
+  });
+});
+
+test("OKLCH Analogous harmony preserves uniform perceived lightness", () => {
+  const baseHex = "#38bdf8";
+  const palette = generateOklchPalette(baseHex, "analogous");
+  const baseOklch = hexToOklch(baseHex);
+
+  // In OKLCH Analogous, hue varies while perceived lightness L remains uniform
+  palette.forEach((color, idx) => {
+    const oklch = hexToOklch(color);
+    const lightnessDelta = Math.abs(oklch.l - baseOklch.l);
+    assert.ok(
+      lightnessDelta < 0.05,
+      `Swatch ${idx} (${color}) lightness delta (${lightnessDelta.toFixed(3)}) should be < 0.05 from base (${baseOklch.l.toFixed(3)})`
+    );
+  });
+});
+
+test("computeContrastMatrix returns valid N x N matrix with WCAG classifications", () => {
+  const palette = ["#000000", "#ffffff", "#38bdf8", "#1e293b", "#f59e0b"];
+  const matrixResult = computeContrastMatrix(palette);
+
+  assert.equal(matrixResult.colors.length, 5);
+  assert.equal(matrixResult.matrix.length, 5);
+  assert.equal(matrixResult.totalPairs, 20); // 5 * 5 - 5 diagonal
+  assert.ok(matrixResult.readableCount >= 0);
+
+  for (let i = 0; i < 5; i++) {
+    assert.equal(matrixResult.matrix[i].length, 5);
+    for (let j = 0; j < 5; j++) {
+      const cell = matrixResult.matrix[i][j];
+      assert.equal(cell.bg, palette[i]);
+      assert.equal(cell.fg, palette[j]);
+      assert.equal(cell.bgIndex, i);
+      assert.equal(cell.fgIndex, j);
+
+      if (i === j) {
+        assert.equal(cell.isSelf, true);
+        assert.equal(cell.ratio, 1.0);
+        assert.equal(cell.status, "Fail");
+      } else {
+        assert.equal(cell.isSelf, false);
+        assert.ok(cell.ratio >= 1.0 && cell.ratio <= 21.0);
+
+        // Reciprocal symmetry with transposed cell
+        const transposed = matrixResult.matrix[j][i];
+        assert.equal(cell.ratio, transposed.ratio);
+        assert.equal(cell.status, transposed.status);
+
+        // WCAG status matches threshold
+        if (cell.ratio >= 7.0) {
+          assert.equal(cell.status, "AAA");
+          assert.equal(cell.aaa, true);
+          assert.equal(cell.aa, true);
+        } else if (cell.ratio >= 4.5) {
+          assert.equal(cell.status, "AA");
+          assert.equal(cell.aa, true);
+          assert.equal(cell.aaa, false);
+        } else if (cell.ratio >= 3.0) {
+          assert.equal(cell.status, "AA Large");
+          assert.equal(cell.aaLarge, true);
+          assert.equal(cell.aa, false);
+        } else {
+          assert.equal(cell.status, "Fail");
+          assert.equal(cell.aaLarge, false);
+        }
+      }
+    }
+  }
+
+  // Black vs White pairing in matrix must be AAA 21:1
+  const blackVsWhite = matrixResult.matrix[0][1];
+  assert.equal(blackVsWhite.ratio, 21.0);
+  assert.equal(blackVsWhite.status, "AAA");
+});
+
+test("formatExport supports Figma Design Tokens JSON and OKLCH CSS vars", () => {
+  const testPalette = ["#38bdf8", "#0f172a", "#f8fafc", "#10b981", "#ef4444"];
+
+  // Figma Design Tokens
+  const figmaJson = formatExport(testPalette, "figma");
+  const parsedFigma = JSON.parse(figmaJson);
+  assert.ok(parsedFigma.color);
+  assert.ok(parsedFigma.color.palette);
+  assert.equal(parsedFigma.color.palette["color-1"].$value, "#38BDF8");
+  assert.equal(parsedFigma.color.palette["color-1"].$type, "color");
+  assert.match(parsedFigma.color.palette["color-1"].$description, /OKLCH/);
+  assert.equal(parsedFigma.color.palette["color-5"].$value, "#EF4444");
+
+  // CSS variables includes both hex and oklch
+  const css = formatExport(testPalette, "css");
+  assert.match(css, /--color-1: #38bdf8;/);
+  assert.match(css, /--color-1-oklch: oklch\(/);
+  assert.match(css, /--color-5: #ef4444;/);
+  assert.match(css, /--color-5-oklch: oklch\(/);
 });
