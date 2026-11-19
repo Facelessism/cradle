@@ -83,7 +83,7 @@
           <h2 class="card-title">
             <i class="fa-solid fa-gears"></i> Algorithm
           </h2>
-          <div class="op-grid">
+          <div class="op-grid algo-grid">
             <button
               type="button"
               class="op-btn active"
@@ -103,29 +103,61 @@
             <button
               type="button"
               class="op-btn"
-              data-algo="mst"
-              title="Minimum Spanning Tree (Prim's)"
+              data-algo="dijkstra"
+              title="Dijkstra's Shortest Path"
             >
-              <i class="fa-solid fa-tree"></i> MST
+              <i class="fa-solid fa-location-arrow"></i> Dijkstra
             </button>
             <button
               type="button"
               class="op-btn"
-              data-algo="dijkstra"
-              title="Dijkstra's Shortest Path"
+              data-algo="mst"
+              title="Prim's Minimum Spanning Tree"
             >
-              <i class="fa-solid fa-location-arrow"></i> Shortest Path
+              <i class="fa-solid fa-tree"></i> Prim MST
             </button>
+            <button
+              type="button"
+              class="op-btn"
+              data-algo="kruskal"
+              title="Kruskal's Minimum Spanning Tree (Disjoint Set Union)"
+            >
+              <i class="fa-solid fa-network-wired"></i> Kruskal MST
+            </button>
+            <button
+              type="button"
+              class="op-btn"
+              data-algo="topo"
+              title="Kahn's Topological Sorting (DAG)"
+            >
+              <i class="fa-solid fa-arrow-down-1-9"></i> Topo Sort
+            </button>
+            <button
+              type="button"
+              class="op-btn"
+              data-algo="scc"
+              title="Tarjan's Strongly Connected Components (SCC)"
+            >
+              <i class="fa-solid fa-draw-polygon"></i> Tarjan SCC
+            </button>
+          </div>
+
+          <div class="graph-type-toggle">
+            <label class="toggle-switch-label" for="toggle-directed">
+              <input type="checkbox" id="toggle-directed" />
+              <span class="toggle-slider"></span>
+              <span class="toggle-text"><i class="fa-solid fa-arrow-right-long"></i> Directed Graph</span>
+            </label>
           </div>
         </section>
 
         <!-- Node selection -->
-        <section class="card">
+        <section class="card" id="node-selection-card">
           <h2 class="card-title">
             <i class="fa-solid fa-circle-dot"></i> Nodes
           </h2>
           <div class="form-row">
-            <div class="form-group half">
+            <div class="form-group half" id="start-node-group">
               <label for="start-node">Start</label>
               <select id="start-node" class="select-input"></select>
             </div>
@@ -163,6 +195,14 @@
             </button>
             <button type="button" id="btn-clear" class="btn btn-outline">
               <i class="fa-solid fa-trash-can"></i> Clear All
+            </button>
+          </div>
+          <div class="btn-grid io-buttons-row">
+            <button type="button" id="btn-import-open" class="btn btn-secondary">
+              <i class="fa-solid fa-file-import"></i> Import...
+            </button>
+            <button type="button" id="btn-export-open" class="btn btn-secondary">
+              <i class="fa-solid fa-file-export"></i> Export...
             </button>
           </div>
         </section>
@@ -291,8 +331,93 @@
             </div>
           </div>
         </div>
+
+        <!-- Open/Closed Frontier Table Inspection View -->
+        <div class="card frontier-card" id="frontier-panel" aria-label="Frontier and State Inspection">
+          <div class="frontier-header">
+            <h3 class="card-title text-accent">
+              <i class="fa-solid fa-table-list"></i> Frontier & State Inspection
+            </h3>
+            <span class="frontier-badge-indicator" id="frontier-summary-badge">Algorithm Ready</span>
+          </div>
+
+          <div class="frontier-sets-row">
+            <div class="frontier-set-box open-set">
+              <div class="set-title"><i class="fa-solid fa-door-open"></i> Open Set / Frontier:</div>
+              <div class="set-tokens" id="frontier-open-tokens"><span class="token-empty">(empty)</span></div>
+            </div>
+            <div class="frontier-set-box closed-set">
+              <div class="set-title"><i class="fa-solid fa-circle-check"></i> Closed Set / Settled:</div>
+              <div class="set-tokens" id="frontier-closed-tokens"><span class="token-empty">(empty)</span></div>
+            </div>
+          </div>
+
+          <div class="frontier-table-wrapper" id="frontier-table-wrapper">
+            <table class="frontier-table" id="frontier-table">
+              <thead>
+                <tr id="frontier-table-head">
+                  <th>Node</th>
+                  <th>Status</th>
+                  <th>Values / Telemetry</th>
+                </tr>
+              </thead>
+              <tbody id="frontier-table-body">
+                <tr>
+                  <td colspan="3" class="table-empty">Play or step through an algorithm to inspect live node and frontier states.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
     </main>
+
+    <!-- ===================== IMPORT / EXPORT MODAL ===================== -->
+    <div id="io-modal" class="modal-backdrop" hidden>
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="io-modal-title">
+        <div class="modal-header">
+          <h2 id="io-modal-title" class="modal-title">
+            <i class="fa-solid fa-arrow-right-arrow-left"></i> Import / Export Graph
+          </h2>
+          <button type="button" id="btn-io-close" class="btn-close" aria-label="Close dialog">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="format-tabs" role="tablist">
+            <button type="button" class="format-tab active" data-format="matrix" role="tab" aria-selected="true">
+              <i class="fa-solid fa-border-all"></i> Adjacency Matrix
+            </button>
+            <button type="button" class="format-tab" data-format="edgelist" role="tab" aria-selected="false">
+              <i class="fa-solid fa-list-ol"></i> Edge List
+            </button>
+            <button type="button" class="format-tab" data-format="json" role="tab" aria-selected="false">
+              <i class="fa-solid fa-code"></i> JSON
+            </button>
+          </div>
+          <div class="io-editor-wrapper">
+            <label for="io-textarea" class="visually-hidden">Graph format code</label>
+            <textarea id="io-textarea" class="io-textarea font-mono" rows="12" spellcheck="false" placeholder="Graph data format..."></textarea>
+          </div>
+          <div id="io-feedback" class="io-feedback" hidden></div>
+        </div>
+        <div class="modal-footer">
+          <div class="modal-footer-left">
+            <button type="button" id="btn-io-copy" class="btn btn-secondary">
+              <i class="fa-solid fa-copy"></i> Copy to Clipboard
+            </button>
+            <button type="button" id="btn-io-download" class="btn btn-outline">
+              <i class="fa-solid fa-download"></i> Download File
+            </button>
+          </div>
+          <div class="modal-footer-right">
+            <button type="button" id="btn-io-apply" class="btn btn-accent">
+              <i class="fa-solid fa-check"></i> Import & Apply Graph
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <footer class="app-footer">
       <p>Built with 💖 in Cradle Math Showcase</p>
