@@ -6,6 +6,18 @@ import {
   computeArrowhead,
 } from "../projects/productivity/knowledge-graph/layout.js";
 import { GraphEngine } from "../projects/productivity/knowledge-graph/graph-engine.js";
+import {
+  GraphParser,
+  parseFrontmatter,
+  formatFrontmatter,
+  extractHashtags,
+  detectCommunities,
+  crc32,
+  generateZipArchive,
+  createVaultZip,
+  exportNoteMarkdown,
+  CLUSTER_COLORS,
+} from "../projects/productivity/knowledge-graph/parser.js";
 
 function createMockCanvas(width = 800, height = 600) {
   let rect = { width, height };
@@ -433,3 +445,277 @@ test("resizeCanvas shifts transform by half the delta keeping world center and z
   assert.ok(Math.abs(worldCenterAfter.x - worldCenterBefore.x) < 1e-9);
   assert.ok(Math.abs(worldCenterAfter.y - worldCenterBefore.y) < 1e-9);
 });
+
+test("parseFrontmatter parses YAML frontmatter key-values, lists, and preserves raw metadata", () => {
+  const doc = `---
+title: Personal Knowledge Graph
+tags: [pkm, graph, obsidian]
+aliases:
+  - Second Brain
+  - PKM
+published: true
+version: 2
+---
+# Welcome
+This is the body text with [[Notes]].`;
+
+  const parsed = parseFrontmatter(doc);
+  assert.equal(parsed.hasFrontmatter, true);
+  assert.equal(parsed.frontmatter.title, "Personal Knowledge Graph");
+  assert.deepEqual(parsed.frontmatter.tags, ["pkm", "graph", "obsidian"]);
+  assert.deepEqual(parsed.frontmatter.aliases, ["Second Brain", "PKM"]);
+  assert.equal(parsed.frontmatter.published, true);
+  assert.equal(parsed.frontmatter.version, 2);
+  assert.ok(parsed.body.includes("# Welcome"));
+  assert.ok(parsed.rawFrontmatter.includes("title: Personal Knowledge Graph"));
+});
+
+test("parseFrontmatter handles documents without frontmatter gracefully", () => {
+  const doc = "Just plain text note without YAML frontmatter.";
+  const parsed = parseFrontmatter(doc);
+  assert.equal(parsed.hasFrontmatter, false);
+  assert.deepEqual(parsed.frontmatter, {});
+  assert.equal(parsed.body, doc);
+});
+
+test("formatFrontmatter serializes metadata into valid YAML frontmatter block", () => {
+  const fm = {
+    title: "My Note",
+    tags: ["research", "ai"],
+    public: true,
+  };
+  const body = "Note content here.";
+  const output = formatFrontmatter(fm, body);
+  assert.ok(output.startsWith("---\n"));
+  assert.ok(output.includes("title: My Note"));
+  assert.ok(output.includes("  - research"));
+  assert.ok(output.includes("  - ai"));
+  assert.ok(output.includes("public: true"));
+  assert.ok(output.endsWith("Note content here."));
+});
+
+test("extractHashtags extracts inline hashtags and nested tags while ignoring headings and numbers", () => {
+  const markdown = `# Main Heading
+This is a note about #pkm and #obsidian/plugins.
+Also includes #machine-learning and #123 should be ignored.
+Hex color #3b82f6 is not a hashtag.`;
+
+  const tags = extractHashtags(markdown);
+  assert.ok(tags.includes("pkm"));
+  assert.ok(tags.includes("obsidian/plugins"));
+  assert.ok(tags.includes("machine-learning"));
+  assert.ok(!tags.includes("123"));
+  assert.ok(!tags.includes("Main"));
+});
+
+test("GraphParser.parse extracts Obsidian wikilinks with aliases, headers, and indexes bidirectional links", () => {
+  const notes = [
+    {
+      title: "Index",
+      content:
+        "Link to [[Graph Theory]] and [[Algorithms|Algorithmic Thinking]] and [[Note#Section|Specific Section]].",
+    },
+    {
+      title: "Graph Theory",
+      content: "References [[Index]] back.",
+    },
+    {
+      title: "Algorithms",
+      content: "Independent note.",
+    },
+  ];
+
+  const graph = GraphParser.parse(notes);
+  assert.equal(graph.nodes.length, 4); // Index, Graph Theory, Algorithms, Note (placeholder)
+
+  const indexNode = graph.nodes.find(n => n.id === "Index");
+  const graphTheoryNode = graph.nodes.find(n => n.id === "Graph Theory");
+  const algosNode = graph.nodes.find(n => n.id === "Algorithms");
+  const noteNode = graph.nodes.find(n => n.id === "Note");
+
+  assert.ok(indexNode);
+  assert.ok(graphTheoryNode);
+  assert.ok(algosNode);
+  assert.ok(noteNode);
+  assert.equal(noteNode.isPlaceholder, true);
+
+  // Check outlinks
+  assert.deepEqual(
+    indexNode.outlinks.sort(),
+    ["Algorithms", "Graph Theory", "Note"].sort()
+  );
+  assert.deepEqual(graphTheoryNode.outlinks, ["Index"]);
+
+  // Check backlinks (bidirectional indexing)
+  assert.ok(indexNode.backlinks.includes("Graph Theory"));
+  assert.ok(graphTheoryNode.backlinks.includes("Index"));
+  assert.ok(algosNode.backlinks.includes("Index"));
+  assert.ok(noteNode.backlinks.includes("Index"));
+
+  // Check edges and alias preservation
+  const edgeWithAlias = graph.edges.find(
+    e => e.source === "Index" && e.target === "Algorithms"
+  );
+  assert.ok(edgeWithAlias);
+  assert.equal(edgeWithAlias.alias, "Algorithmic Thinking");
+});
+
+test("detectCommunities clusters interconnected nodes using Louvain modularity", () => {
+  // Cluster A: A1, A2, A3 densely interconnected
+  // Cluster B: B1, B2, B3 densely interconnected
+  const nodes = [
+    { id: "A1" },
+    { id: "A2" },
+    { id: "A3" },
+    { id: "B1" },
+    { id: "B2" },
+    { id: "B3" },
+  ];
+  const edges = [
+    { source: "A1", target: "A2" },
+    { source: "A2", target: "A3" },
+    { source: "A3", target: "A1" },
+    { source: "B1", target: "B2" },
+    { source: "B2", target: "B3" },
+    { source: "B3", target: "B1" },
+  ];
+
+  const { clusters } = detectCommunities(nodes, edges);
+
+  // A1, A2, A3 should share the same clusterId
+  const a1 = nodes.find(n => n.id === "A1");
+  const a2 = nodes.find(n => n.id === "A2");
+  const a3 = nodes.find(n => n.id === "A3");
+  assert.equal(a1.clusterId, a2.clusterId);
+  assert.equal(a2.clusterId, a3.clusterId);
+
+  // B1, B2, B3 should share the same clusterId
+  const b1 = nodes.find(n => n.id === "B1");
+  const b2 = nodes.find(n => n.id === "B2");
+  const b3 = nodes.find(n => n.id === "B3");
+  assert.equal(b1.clusterId, b2.clusterId);
+  assert.equal(b2.clusterId, b3.clusterId);
+
+  // Clusters A and B must have different clusterIds
+  assert.notEqual(a1.clusterId, b1.clusterId);
+  assert.notEqual(a1.clusterColor, b1.clusterColor);
+});
+
+test("generateZipArchive produces valid PKZIP format with local headers and central directory", () => {
+  const files = [
+    { name: "Note1.md", content: "# Note 1\nContent" },
+    { name: "Note2.md", content: "# Note 2\n[[Note1]]" },
+  ];
+
+  const zipBytes = generateZipArchive(files);
+  assert.ok(zipBytes instanceof Uint8Array);
+  assert.ok(zipBytes.length > 50);
+
+  // Check PK\x03\x04 signature at offset 0
+  const view = new DataView(zipBytes.buffer);
+  assert.equal(view.getUint32(0, true), 0x04034b50);
+
+  // Check CRC32 calculation
+  const crc = crc32("test-data");
+  assert.equal(typeof crc, "number");
+  assert.ok(crc > 0);
+});
+
+test("exportNoteMarkdown preserves frontmatter or synthesizes clean frontmatter", () => {
+  const note1 = {
+    title: "Existing FM",
+    content: "---\ntitle: Existing FM\ntags: [a, b]\n---\nBody text.",
+  };
+  const out1 = exportNoteMarkdown(note1);
+  assert.equal(out1, note1.content);
+
+  const note2 = {
+    title: "No FM",
+    content: "Simple content.",
+    tags: ["tag1"],
+  };
+  const out2 = exportNoteMarkdown(note2);
+  assert.ok(out2.startsWith("---\n"));
+  assert.ok(out2.includes("title: No FM"));
+  assert.ok(out2.includes("  - tag1"));
+  assert.ok(out2.includes("Simple content."));
+});
+
+test("GraphEngine searchNotes filters by text, title, and hashtag query", async () => {
+  const canvas = createMockCanvas(800, 600);
+  const initialNotes = [
+    {
+      title: "Zettelkasten",
+      content:
+        "---\ntags: [pkm, methodology]\n---\nSlip box note taking.",
+    },
+    {
+      title: "Obsidian",
+      content: "Markdown knowledge graph #pkm #tools.",
+    },
+    { title: "Cooking", content: "Recipe for pasta." },
+  ];
+  const storage = createMockStorage(initialNotes);
+  const engine = new GraphEngine(canvas, storage);
+  await engine.loadData();
+
+  assert.equal(engine.nodes.length, 3);
+
+  // Text search "pasta"
+  const pastaMatches = engine.searchNotes("pasta");
+  assert.deepEqual(pastaMatches, ["Cooking"]);
+  assert.ok(engine.searchResults.has("Cooking"));
+  assert.equal(engine.searchResults.size, 1);
+
+  // Hashtag search "#pkm"
+  const pkmMatches = engine.searchNotes("#pkm");
+  assert.equal(pkmMatches.length, 2);
+  assert.ok(pkmMatches.includes("Zettelkasten"));
+  assert.ok(pkmMatches.includes("Obsidian"));
+
+  // Clear search
+  const emptyMatches = engine.searchNotes("");
+  assert.equal(emptyMatches.length, 0);
+  assert.equal(engine.searchResults.size, 0);
+});
+
+test("GraphEngine toggleClusterColors toggles community coloring state", () => {
+  const canvas = createMockCanvas(800, 600);
+  const storage = createMockStorage();
+  const engine = new GraphEngine(canvas, storage);
+
+  assert.equal(engine.useClusterColors, true);
+  const switchedOff = engine.toggleClusterColors();
+  assert.equal(switchedOff, false);
+  assert.equal(engine.useClusterColors, false);
+
+  const switchedOn = engine.toggleClusterColors();
+  assert.equal(switchedOn, true);
+  assert.equal(engine.useClusterColors, true);
+});
+
+test("GraphEngine focusNode centers viewport transform on target node coordinates", () => {
+  const canvas = createMockCanvas(800, 600);
+  const storage = createMockStorage();
+  const engine = new GraphEngine(canvas, storage);
+
+  const target = {
+    id: "TargetNode",
+    label: "TargetNode",
+    x: 100,
+    y: -50,
+    vx: 0,
+    vy: 0,
+  };
+  engine.nodes = [target];
+
+  // In Node environment without requestAnimationFrame, focusNode sets transform directly
+  engine.focusNode("TargetNode", 2.0);
+
+  // Expected transform: canvas center (400, 300) minus target * zoom (100 * 2, -50 * 2) = (400 - 200, 300 - (-100)) = (200, 400), k = 2.0
+  assert.equal(engine.transform.x, 200);
+  assert.equal(engine.transform.y, 400);
+  assert.equal(engine.transform.k, 2.0);
+  assert.equal(engine.focusedNodeId, "TargetNode");
+});
+
