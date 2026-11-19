@@ -205,9 +205,40 @@ input[type="color"] {
   font-family: monospace;
 }
 
+.gradient-controls-wrap {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.elevation-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: var(--radius-sm);
+  color: #10b981;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.elevation-badge i {
+  font-size: 1rem;
+}
+
+.logo-size-group {
+  margin-top: 0.75rem;
+}
+
 .btn-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
   gap: 0.75rem;
 }
 
@@ -234,6 +265,17 @@ input[type="color"] {
 
 .btn-primary:hover:not(:disabled) {
   background-color: var(--accent-hover);
+}
+
+.btn-secondary {
+  background-color: rgba(99, 102, 241, 0.12);
+  color: var(--accent-color);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--accent-color);
+  color: #ffffff;
 }
 
 .btn-outline {

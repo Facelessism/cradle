@@ -141,3 +141,121 @@ test("validateLogoSignature validates logo magic bytes", async () => {
   const invalidCheck = await QREngine.validateLogoSignature(invalid);
   assert.equal(invalidCheck.valid, false);
 });
+
+test("buildConfigPayload supports custom dot geometry and corner styles", () => {
+  // Test squircle modules (extra-rounded) and classy curves
+  const payload1 = QREngine.buildConfigPayload({
+    text: "https://cradle.dev/test",
+    dotStyle: "extra-rounded",
+    cornerSquareStyle: "extra-rounded",
+    cornerDotStyle: "dot",
+  });
+  assert.equal(payload1.dotsOptions.type, "extra-rounded");
+  assert.equal(payload1.cornersSquareOptions.type, "extra-rounded");
+  assert.equal(payload1.cornersDotOptions.type, "dot");
+
+  // Test diamond geometry: maps to dots in QRCodeStyling for polygon post-processing
+  const payload2 = QREngine.buildConfigPayload({
+    text: "https://cradle.dev/diamonds",
+    dotStyle: "diamond",
+  });
+  assert.equal(payload2.dotsOptions.type, "dots");
+
+  // Test classy curves
+  const payload3 = QREngine.buildConfigPayload({
+    text: "https://cradle.dev/classy",
+    dotStyle: "classy",
+  });
+  assert.equal(payload3.dotsOptions.type, "classy");
+});
+
+test("Automatic Reed-Solomon elevation: logo presence forces errorLevel to H", () => {
+  const payloadWithLogo = QREngine.buildConfigPayload({
+    text: "https://cradle.dev",
+    errorLevel: "L", // User selected Low (7%)
+    logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  });
+
+  // Must automatically elevate to H (up to 30% damage recovery) to protect center occlusion
+  assert.equal(
+    payloadWithLogo.qrOptions.errorCorrectionLevel,
+    "H",
+    "Logo embedding must automatically elevate error correction level to Level H (30%)"
+  );
+});
+
+test("buildConfigPayload configures linear and radial gradient fills", () => {
+  // Linear gradient with 45° rotation
+  const linearPayload = QREngine.buildConfigPayload({
+    text: "https://cradle.dev/gradient",
+    gradientEnabled: true,
+    gradientType: "linear",
+    gradientColor1: "#10B981",
+    gradientColor2: "#3B82F6",
+    gradientRotation: 45,
+  });
+
+  assert.ok(linearPayload.dotsOptions.gradient);
+  assert.equal(linearPayload.dotsOptions.gradient.type, "linear");
+  assert.equal(
+    linearPayload.dotsOptions.gradient.rotation.toFixed(4),
+    ((45 * Math.PI) / 180).toFixed(4)
+  );
+  assert.equal(linearPayload.dotsOptions.gradient.colorStops[0].color, "#10B981");
+  assert.equal(linearPayload.dotsOptions.gradient.colorStops[1].color, "#3B82F6");
+
+  // Radial gradient
+  const radialPayload = QREngine.buildConfigPayload({
+    text: "https://cradle.dev/radial",
+    gradientEnabled: true,
+    gradientType: "radial",
+    gradientColor1: "#F59E0B",
+    gradientColor2: "#EF4444",
+  });
+  assert.equal(radialPayload.dotsOptions.gradient.type, "radial");
+});
+
+test("getDownloadFilename supports vector EPS extension", () => {
+  assert.equal(QREngine.getDownloadFilename("my-qr", "eps"), "my-qr.eps");
+  assert.equal(QREngine.getDownloadFilename("vector-code.eps", "eps"), "vector-code.eps");
+  assert.equal(QREngine.getDownloadFilename("", "eps"), "qr-code.eps");
+});
+
+test("applyDiamondGeometry transforms circular SVG dots into vector polygons", () => {
+  const sampleSvg = '<svg viewBox="0 0 100 100"><circle cx="20" cy="30" r="5" fill="#2B2D42"/></svg>';
+  const resultSvg = QREngine.applyDiamondGeometry(sampleSvg);
+
+  assert.ok(resultSvg.includes("<polygon"), "Must convert circle into polygon");
+  // Center (20, 30), radius 5 => Top (20, 25), Right (25, 30), Bottom (20, 35), Left (15, 30)
+  assert.ok(resultSvg.includes("20.000,25.000"));
+  assert.ok(resultSvg.includes("25.000,30.000"));
+  assert.ok(resultSvg.includes("20.000,35.000"));
+  assert.ok(resultSvg.includes("15.000,30.000"));
+  assert.ok(resultSvg.includes('fill="#2B2D42"'));
+});
+
+test("svgToEps generates valid Encapsulated PostScript (EPSF-3.0) with drawing commands", () => {
+  const svg = `
+    <svg viewBox="0 0 300 300" width="300" height="300">
+      <rect x="0" y="0" width="300" height="300" fill="#FFFFFF"/>
+      <rect x="20" y="20" width="10" height="10" fill="#2B2D42"/>
+      <circle cx="50" cy="50" r="5" fill="#6366F1"/>
+      <polygon points="10,10 20,10 20,20 10,20" fill="#10B981"/>
+      <path d="M 5 5 L 15 5 L 15 15 Z" fill="#EF4444"/>
+    </svg>
+  `;
+
+  const eps = QREngine.svgToEps(svg);
+
+  assert.ok(eps.startsWith("%!PS-Adobe-3.0 EPSF-3.0"), "Must start with EPS header");
+  assert.ok(eps.includes("%%BoundingBox: 0 0 300 300"));
+  assert.ok(eps.includes("0 300.000 translate"));
+  assert.ok(eps.includes("1 -1 scale"));
+  assert.ok(eps.includes("rectfill"));
+  assert.ok(eps.includes("arc fill"));
+  assert.ok(eps.includes("moveto"));
+  assert.ok(eps.includes("lineto"));
+  assert.ok(eps.includes("closepath fill"));
+  assert.ok(eps.includes("showpage"));
+  assert.ok(eps.includes("%%EOF"));
+});

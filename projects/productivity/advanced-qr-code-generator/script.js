@@ -13,20 +13,36 @@ const el = {
   themeToggle: getElement("theme-toggle"),
   themeIcon: getElement("theme-icon"),
   textInput: getElement("qr-text"),
+  fillType: getElement("fill-type"),
   fgColor: getElement("fg-color"),
   fgColorText: getElement("fg-color-text"),
   bgColor: getElement("bg-color"),
   bgColorText: getElement("bg-color-text"),
+  gradientControlsWrap: getElement("gradient-controls-wrap"),
+  gradientColor1: getElement("gradient-color-1"),
+  gradientColor1Text: getElement("gradient-color-1-text"),
+  gradientColor2: getElement("gradient-color-2"),
+  gradientColor2Text: getElement("gradient-color-2-text"),
+  gradientRotation: getElement("gradient-rotation"),
+  gradientRotationValue: getElement("gradient-rotation-value"),
+  dotStyle: getElement("dot-style"),
+  cornerSquareStyle: getElement("corner-square-style"),
+  cornerDotStyle: getElement("corner-dot-style"),
   size: getElement("qr-size"),
   sizeValue: getElement("size-value"),
   margin: getElement("qr-margin"),
   marginValue: getElement("margin-value"),
   errorLevel: getElement("error-level"),
+  errorElevationBadge: getElement("error-elevation-badge"),
   logoUpload: getElement("logo-upload"),
   uploadText: getElement("upload-text"),
+  logoSize: getElement("logo-size"),
+  logoSizeValue: getElement("logo-size-value"),
   removeLogoBtn: getElement("remove-logo-btn"),
+  exportResolution: getElement("export-resolution"),
   downloadPngBtn: getElement("download-png-btn"),
   downloadSvgBtn: getElement("download-svg-btn"),
+  downloadEpsBtn: getElement("download-eps-btn"),
   copyImageBtn: getElement("copy-image-btn"),
   resetBtn: getElement("reset-btn"),
   qrContainer: getElement("qr-code-container"),
@@ -42,10 +58,22 @@ const DEFAULTS = Object.freeze({
   size: 300,
   margin: 10,
   errorLevel: "M",
+  dotStyle: "rounded",
+  cornerSquareStyle: "extra-rounded",
+  cornerDotStyle: "dot",
+  gradientEnabled: false,
+  gradientType: "linear",
+  gradientColor1: "#2B2D42",
+  gradientColor2: "#6366F1",
+  gradientRotation: 0,
   logo: null,
+  logoSize: 0.3,
+  logoMargin: 6,
+  exportResolution: 4000,
 });
 
 let state = { ...DEFAULTS };
+let previousUserErrorLevel = "M";
 let qrCode = null; // QRCodeStyling instance
 let debounceTimer = null;
 
@@ -133,9 +161,10 @@ function showToast(message, type = "info") {
 
 /** Enable/disable export buttons based on whether a QR exists */
 function toggleExportButtons(enabled) {
-  el.downloadPngBtn.disabled = !enabled;
-  el.downloadSvgBtn.disabled = !enabled;
-  el.copyImageBtn.disabled = !enabled;
+  if (el.downloadPngBtn) el.downloadPngBtn.disabled = !enabled;
+  if (el.downloadSvgBtn) el.downloadSvgBtn.disabled = !enabled;
+  if (el.downloadEpsBtn) el.downloadEpsBtn.disabled = !enabled;
+  if (el.copyImageBtn) el.copyImageBtn.disabled = !enabled;
 }
 
 /** Ripple effect for buttons */
@@ -167,33 +196,33 @@ function buildQrOptions() {
     return QREngine.buildConfigPayload(state);
   }
   return {
-    width: qrState.size,
-    height: qrState.size,
-    data: qrState.text,
-    margin: qrState.margin,
+    width: state.size,
+    height: state.size,
+    data: state.text,
+    margin: state.margin,
     qrOptions: {
-      errorCorrectionLevel: qrState.errorLevel,
+      errorCorrectionLevel: state.logo ? "H" : state.errorLevel,
     },
     dotsOptions: {
-      color: qrState.fgColor,
-      type: "rounded",
+      color: state.fgColor,
+      type: state.dotStyle === "diamond" ? "dots" : state.dotStyle,
     },
     cornersSquareOptions: {
-      color: qrState.fgColor,
-      type: "extra-rounded",
+      color: state.fgColor,
+      type: state.cornerSquareStyle,
     },
     cornersDotOptions: {
-      color: qrState.fgColor,
-      type: "dot",
+      color: state.fgColor,
+      type: state.cornerDotStyle,
     },
     backgroundOptions: {
-      color: qrState.bgColor,
+      color: state.bgColor,
     },
-    image: qrState.logo || undefined,
+    image: state.logo || undefined,
     imageOptions: {
       crossOrigin: "anonymous",
-      margin: 6,
-      imageSize: 0.4,
+      margin: state.logoMargin || 6,
+      imageSize: state.logoSize || 0.3,
     },
   };
 }
@@ -219,6 +248,7 @@ function generateQRCode() {
 
   try {
     const options = buildQrOptions();
+    options.type = "svg"; // Vector SVG preview
 
     // Hide empty state completely once QR generation starts
     el.emptyState.hidden = true;
@@ -230,6 +260,25 @@ function generateQRCode() {
       qrCode.append(el.qrContainer);
     } else {
       qrCode.update(options);
+    }
+
+    // Apply diamond geometry post-processing if diamond dots requested
+    if (state.dotStyle === "diamond") {
+      setTimeout(() => {
+        const svgEl = el.qrContainer
+          ? el.qrContainer.querySelector("svg")
+          : null;
+        if (
+          svgEl &&
+          typeof QREngine !== "undefined" &&
+          typeof QREngine.applyDiamondGeometry === "function"
+        ) {
+          const raw = svgEl.outerHTML;
+          if (!raw.includes("<polygon")) {
+            el.qrContainer.innerHTML = QREngine.applyDiamondGeometry(raw);
+          }
+        }
+      }, 50);
     }
 
     el.qrContainer.hidden = false;
@@ -257,10 +306,23 @@ addListener(el.textInput, "input", e => {
   debouncedGenerate();
 });
 
+/** Fill type selector (Solid / Linear Gradient / Radial Gradient) */
+addListener(el.fillType, "change", e => {
+  const val = e.target.value;
+  state.gradientEnabled = val !== "solid";
+  if (state.gradientEnabled) {
+    state.gradientType = val;
+    if (el.gradientControlsWrap) el.gradientControlsWrap.hidden = false;
+  } else {
+    if (el.gradientControlsWrap) el.gradientControlsWrap.hidden = true;
+  }
+  debouncedGenerate();
+});
+
 /** Foreground color — swatch + text field sync */
 addListener(el.fgColor, "input", e => {
   state.fgColor = e.target.value;
-  el.fgColorText.value = e.target.value.toUpperCase();
+  if (el.fgColorText) el.fgColorText.value = e.target.value.toUpperCase();
   debouncedGenerate();
 });
 
@@ -268,7 +330,7 @@ addListener(el.fgColorText, "input", e => {
   const value = e.target.value;
   if (isValidHex(value)) {
     state.fgColor = value;
-    el.fgColor.value = value;
+    if (el.fgColor) el.fgColor.value = value;
     debouncedGenerate();
   }
 });
@@ -276,7 +338,7 @@ addListener(el.fgColorText, "input", e => {
 /** Background color — swatch + text field sync */
 addListener(el.bgColor, "input", e => {
   state.bgColor = e.target.value;
-  el.bgColorText.value = e.target.value.toUpperCase();
+  if (el.bgColorText) el.bgColorText.value = e.target.value.toUpperCase();
   debouncedGenerate();
 });
 
@@ -284,32 +346,107 @@ addListener(el.bgColorText, "input", e => {
   const value = e.target.value;
   if (isValidHex(value)) {
     state.bgColor = value;
-    el.bgColor.value = value;
+    if (el.bgColor) el.bgColor.value = value;
     debouncedGenerate();
   }
+});
+
+/** Gradient Color 1 */
+addListener(el.gradientColor1, "input", e => {
+  state.gradientColor1 = e.target.value;
+  if (el.gradientColor1Text)
+    el.gradientColor1Text.value = e.target.value.toUpperCase();
+  debouncedGenerate();
+});
+
+addListener(el.gradientColor1Text, "input", e => {
+  const val = e.target.value;
+  if (isValidHex(val)) {
+    state.gradientColor1 = val;
+    if (el.gradientColor1) el.gradientColor1.value = val;
+    debouncedGenerate();
+  }
+});
+
+/** Gradient Color 2 */
+addListener(el.gradientColor2, "input", e => {
+  state.gradientColor2 = e.target.value;
+  if (el.gradientColor2Text)
+    el.gradientColor2Text.value = e.target.value.toUpperCase();
+  debouncedGenerate();
+});
+
+addListener(el.gradientColor2Text, "input", e => {
+  const val = e.target.value;
+  if (isValidHex(val)) {
+    state.gradientColor2 = val;
+    if (el.gradientColor2) el.gradientColor2.value = val;
+    debouncedGenerate();
+  }
+});
+
+/** Gradient Rotation */
+addListener(el.gradientRotation, "input", e => {
+  state.gradientRotation = parseInt(e.target.value, 10);
+  if (el.gradientRotationValue)
+    el.gradientRotationValue.textContent = `${state.gradientRotation}°`;
+  debouncedGenerate();
+});
+
+/** Dot Style Selector */
+addListener(el.dotStyle, "change", e => {
+  state.dotStyle = e.target.value;
+  debouncedGenerate();
+});
+
+/** Corner Square Style Selector */
+addListener(el.cornerSquareStyle, "change", e => {
+  state.cornerSquareStyle = e.target.value;
+  debouncedGenerate();
+});
+
+/** Corner Dot Style Selector */
+addListener(el.cornerDotStyle, "change", e => {
+  state.cornerDotStyle = e.target.value;
+  debouncedGenerate();
 });
 
 /** Size slider */
 addListener(el.size, "input", e => {
   state.size = parseInt(e.target.value, 10);
-  el.sizeValue.textContent = `${state.size}px`;
+  if (el.sizeValue) el.sizeValue.textContent = `${state.size}px`;
   debouncedGenerate();
 });
 
 /** Margin slider */
 addListener(el.margin, "input", e => {
   state.margin = parseInt(e.target.value, 10);
-  el.marginValue.textContent = `${state.margin}px`;
+  if (el.marginValue) el.marginValue.textContent = `${state.margin}px`;
   debouncedGenerate();
 });
 
 /** Error correction level */
 addListener(el.errorLevel, "change", e => {
   state.errorLevel = e.target.value;
+  if (!state.logo) {
+    previousUserErrorLevel = e.target.value;
+  } else if (e.target.value !== "H") {
+    showToast(
+      "Note: Center logo requires Level H (30%) for maximum damage recovery.",
+      "info"
+    );
+  }
   debouncedGenerate();
 });
 
-/** Logo upload */
+/** Logo scale slider */
+addListener(el.logoSize, "input", e => {
+  state.logoSize = parseInt(e.target.value, 10) / 100;
+  if (el.logoSizeValue) el.logoSizeValue.textContent = `${e.target.value}%`;
+  debouncedGenerate();
+});
+
+/** Logo upload with automatic Reed-Solomon Level H elevation */
 addListener(el.logoUpload, "change", async e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -320,14 +457,20 @@ addListener(el.logoUpload, "change", async e => {
     return;
   }
 
-  const validator = typeof QREngine !== "undefined" && typeof QREngine.validateLogoSignature === "function"
-    ? QREngine.validateLogoSignature
-    : validateLogoSignature;
+  const validator =
+    typeof QREngine !== "undefined" &&
+    typeof QREngine.validateLogoSignature === "function"
+      ? QREngine.validateLogoSignature
+      : validateLogoSignature;
 
   if (typeof validator === "function") {
     const sigCheck = await validator(file);
     if (!sigCheck.valid) {
-      showToast(sigCheck.error || "File signature does not match a supported image format.", "error");
+      showToast(
+        sigCheck.error ||
+          "File signature does not match a supported image format.",
+        "error"
+      );
       el.logoUpload.value = "";
       return;
     }
@@ -336,10 +479,19 @@ addListener(el.logoUpload, "change", async e => {
   const reader = new FileReader();
   reader.onload = event => {
     state.logo = event.target.result;
-    el.uploadText.textContent = file.name;
-    el.removeLogoBtn.disabled = false;
+    // Automatic Reed-Solomon error correction elevation to Level H (up to 30% damage recovery)
+    previousUserErrorLevel = state.errorLevel;
+    state.errorLevel = "H";
+    if (el.errorLevel) el.errorLevel.value = "H";
+    if (el.errorElevationBadge) el.errorElevationBadge.hidden = false;
+
+    if (el.uploadText) el.uploadText.textContent = file.name;
+    if (el.removeLogoBtn) el.removeLogoBtn.disabled = false;
     generateQRCode();
-    showToast("Logo added to your QR code!", "success");
+    showToast(
+      "Logo embedded! Auto-elevated error correction to Level H (30% recovery).",
+      "success"
+    );
   };
   reader.onerror = () => {
     showToast("Failed to read the logo file.", "error");
@@ -347,14 +499,20 @@ addListener(el.logoUpload, "change", async e => {
   reader.readAsDataURL(file);
 });
 
-/** Remove logo */
+/** Remove logo & restore previous error correction */
 addListener(el.removeLogoBtn, "click", () => {
   state.logo = null;
-  el.logoUpload.value = "";
-  el.uploadText.textContent = "Click to upload logo";
-  el.removeLogoBtn.disabled = true;
+  if (el.logoUpload) el.logoUpload.value = "";
+  if (el.uploadText) el.uploadText.textContent = "Click to upload logo";
+  if (el.removeLogoBtn) el.removeLogoBtn.disabled = true;
+
+  // Restore previous user error level
+  state.errorLevel = previousUserErrorLevel || "M";
+  if (el.errorLevel) el.errorLevel.value = state.errorLevel;
+  if (el.errorElevationBadge) el.errorElevationBadge.hidden = true;
+
   generateQRCode();
-  showToast("Logo removed.", "info");
+  showToast("Logo removed; error correction restored.", "info");
 });
 
 /* ---------------------- DOWNLOAD HELPERS ---------------------- */
@@ -393,12 +551,19 @@ function triggerDownloadFile(blobOrUrl, filename) {
   return true;
 }
 
-/** Render SVG element to a Blob of requested raster format */
-function renderSvgToBlob(svgEl, size, extension = "png") {
+/** Render SVG element or string to a Blob of requested raster format at specified resolution */
+function renderSvgToBlob(svgElOrSource, size = 4000, extension = "png") {
   return new Promise((resolve, reject) => {
     try {
-      const serializer = new XMLSerializer();
-      let source = serializer.serializeToString(svgEl);
+      let source = "";
+      if (typeof svgElOrSource === "string") {
+        source = svgElOrSource;
+      } else if (svgElOrSource && typeof svgElOrSource.outerHTML === "string") {
+        source = svgElOrSource.outerHTML;
+      } else if (svgElOrSource) {
+        const serializer = new XMLSerializer();
+        source = serializer.serializeToString(svgElOrSource);
+      }
       if (!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
         source = source.replace(
           /^<svg/,
@@ -416,10 +581,12 @@ function renderSvgToBlob(svgEl, size, extension = "png") {
           canvas.width = size;
           canvas.height = size;
           const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0);
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(img, 0, 0, size, size);
           URL.revokeObjectURL(url);
           if (typeof canvas.toBlob === "function") {
-            canvas.toBlob(blob => resolve(blob), `image/${extension}`);
+            canvas.toBlob(blob => resolve(blob), `image/${extension}`, 1.0);
           } else {
             resolve(null);
           }
@@ -439,7 +606,7 @@ function renderSvgToBlob(svgEl, size, extension = "png") {
   });
 }
 
-/** Main download handler for PNG/SVG with explicit filename and extension */
+/** Main download handler for PNG (High-DPI up to 4000x4000), SVG, and EPS */
 async function downloadQR(extension = "png") {
   if (!qrCode || !state.text.trim()) return;
 
@@ -452,65 +619,69 @@ async function downloadQR(extension = "png") {
   try {
     let blob = null;
 
-    // 1. Prefer obtaining the raw Blob directly from qrCode instance if available
-    if (typeof qrCode.getRawData === "function") {
+    // Retrieve SVG markup from DOM container or library
+    let svgSource = "";
+    const svgEl = el.qrContainer ? el.qrContainer.querySelector("svg") : null;
+    if (svgEl) {
+      const serializer = new XMLSerializer();
+      svgSource = serializer.serializeToString(svgEl);
+    } else if (typeof qrCode.getRawData === "function") {
       try {
-        blob = await qrCode.getRawData(extension);
-      } catch (e) {
-        console.warn(
-          "qrCode.getRawData failed, falling back to DOM extraction:",
-          e
-        );
+        const rawSvgBlob = await qrCode.getRawData("svg");
+        if (rawSvgBlob) {
+          svgSource = await rawSvgBlob.text();
+        }
+      } catch (err) {
+        console.warn("getRawData SVG extraction failed:", err);
       }
     }
 
-    // 2. If getRawData didn't return a blob, build blob from the rendered DOM container
-    if (!blob) {
-      if (extension === "svg") {
-        const svgEl = el.qrContainer
-          ? el.qrContainer.querySelector("svg")
-          : null;
-        if (svgEl) {
-          const serializer = new XMLSerializer();
-          let source = serializer.serializeToString(svgEl);
-          if (
-            !source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)
-          ) {
-            source = source.replace(
-              /^<svg/,
-              '<svg xmlns="http://www.w3.org/2000/svg"'
-            );
-          }
-          blob = new Blob(
-            ['<?xml version="1.0" standalone="no"?>\r\n' + source],
-            { type: "image/svg+xml;charset=utf-8" }
-          );
-        }
+    if (!svgSource.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+      svgSource = svgSource.replace(
+        /^<svg/,
+        '<svg xmlns="http://www.w3.org/2000/svg"'
+      );
+    }
+
+    if (
+      state.dotStyle === "diamond" &&
+      typeof QREngine !== "undefined" &&
+      typeof QREngine.applyDiamondGeometry === "function"
+    ) {
+      svgSource = QREngine.applyDiamondGeometry(svgSource);
+    }
+
+    // 1. Vector EPS Export
+    if (extension === "eps") {
+      if (
+        typeof QREngine !== "undefined" &&
+        typeof QREngine.svgToEps === "function"
+      ) {
+        const epsContent = QREngine.svgToEps(svgSource);
+        blob = new Blob([epsContent], { type: "application/postscript" });
       } else {
-        const canvas = el.qrContainer
-          ? el.qrContainer.querySelector("canvas")
-          : null;
-        if (canvas && typeof canvas.toBlob === "function") {
-          blob = await new Promise(resolve =>
-            canvas.toBlob(resolve, `image/${extension}`)
-          );
-        } else if (canvas && typeof canvas.toDataURL === "function") {
-          const dataUrl = canvas.toDataURL(`image/${extension}`);
-          triggerDownloadFile(dataUrl, filename);
-          showToast(
-            `${extension.toUpperCase()} downloaded successfully!`,
-            "success"
-          );
-          return;
-        } else {
-          const svgEl = el.qrContainer
-            ? el.qrContainer.querySelector("svg")
-            : null;
-          if (svgEl) {
-            blob = await renderSvgToBlob(svgEl, state.size, extension);
-          }
-        }
+        throw new Error("EPS export engine unavailable.");
       }
+    }
+
+    // 2. Vector SVG Export
+    else if (extension === "svg") {
+      blob = new Blob(
+        ['<?xml version="1.0" standalone="no"?>\r\n' + svgSource],
+        { type: "image/svg+xml;charset=utf-8" }
+      );
+    }
+
+    // 3. High-DPI Raster PNG Export (up to 4000x4000 px)
+    else {
+      let targetResolution = state.size;
+      if (el.exportResolution) {
+        const resVal = el.exportResolution.value;
+        if (resVal === "4000") targetResolution = 4000;
+        else if (resVal === "2000") targetResolution = 2000;
+        else if (resVal === "1000") targetResolution = 1000;
+      }
+      blob = await renderSvgToBlob(svgSource, targetResolution, "png");
     }
 
     if (blob) {
@@ -520,7 +691,6 @@ async function downloadQR(extension = "png") {
         "success"
       );
     } else {
-      // Fallback to library download if neither blob extraction succeeded
       await qrCode.download({ name: "qr-code", extension });
       showToast(
         `${extension.toUpperCase()} downloaded successfully!`,
@@ -541,6 +711,11 @@ addListener(el.downloadPngBtn, "click", async () => {
 /** Download SVG */
 addListener(el.downloadSvgBtn, "click", async () => {
   await downloadQR("svg");
+});
+
+/** Download EPS */
+addListener(el.downloadEpsBtn, "click", async () => {
+  await downloadQR("eps");
 });
 
 /** Copy or share QR image */
@@ -617,20 +792,39 @@ addListener(el.copyImageBtn, "click", async () => {
 /** Reset everything to defaults */
 addListener(el.resetBtn, "click", () => {
   state = { ...DEFAULTS };
+  previousUserErrorLevel = "M";
 
-  el.textInput.value = "";
-  el.fgColor.value = DEFAULTS.fgColor;
-  el.fgColorText.value = DEFAULTS.fgColor;
-  el.bgColor.value = DEFAULTS.bgColor;
-  el.bgColorText.value = DEFAULTS.bgColor;
-  el.size.value = DEFAULTS.size;
-  el.sizeValue.textContent = `${DEFAULTS.size}px`;
-  el.margin.value = DEFAULTS.margin;
-  el.marginValue.textContent = `${DEFAULTS.margin}px`;
-  el.errorLevel.value = DEFAULTS.errorLevel;
-  el.logoUpload.value = "";
-  el.uploadText.textContent = "Click to upload logo";
-  el.removeLogoBtn.disabled = true;
+  if (el.textInput) el.textInput.value = "";
+  if (el.fillType) el.fillType.value = "solid";
+  if (el.fgColor) el.fgColor.value = DEFAULTS.fgColor;
+  if (el.fgColorText) el.fgColorText.value = DEFAULTS.fgColor;
+  if (el.bgColor) el.bgColor.value = DEFAULTS.bgColor;
+  if (el.bgColorText) el.bgColorText.value = DEFAULTS.bgColor;
+  if (el.gradientControlsWrap) el.gradientControlsWrap.hidden = true;
+  if (el.gradientColor1) el.gradientColor1.value = DEFAULTS.gradientColor1;
+  if (el.gradientColor1Text)
+    el.gradientColor1Text.value = DEFAULTS.gradientColor1;
+  if (el.gradientColor2) el.gradientColor2.value = DEFAULTS.gradientColor2;
+  if (el.gradientColor2Text)
+    el.gradientColor2Text.value = DEFAULTS.gradientColor2;
+  if (el.gradientRotation) el.gradientRotation.value = "0";
+  if (el.gradientRotationValue) el.gradientRotationValue.textContent = "0°";
+  if (el.dotStyle) el.dotStyle.value = DEFAULTS.dotStyle;
+  if (el.cornerSquareStyle)
+    el.cornerSquareStyle.value = DEFAULTS.cornerSquareStyle;
+  if (el.cornerDotStyle) el.cornerDotStyle.value = DEFAULTS.cornerDotStyle;
+  if (el.size) el.size.value = DEFAULTS.size;
+  if (el.sizeValue) el.sizeValue.textContent = `${DEFAULTS.size}px`;
+  if (el.margin) el.margin.value = DEFAULTS.margin;
+  if (el.marginValue) el.marginValue.textContent = `${DEFAULTS.margin}px`;
+  if (el.errorLevel) el.errorLevel.value = DEFAULTS.errorLevel;
+  if (el.errorElevationBadge) el.errorElevationBadge.hidden = true;
+  if (el.logoUpload) el.logoUpload.value = "";
+  if (el.uploadText) el.uploadText.textContent = "Click to upload logo";
+  if (el.logoSize) el.logoSize.value = "30";
+  if (el.logoSizeValue) el.logoSizeValue.textContent = "30%";
+  if (el.removeLogoBtn) el.removeLogoBtn.disabled = true;
+  if (el.exportResolution) el.exportResolution.value = "4000";
 
   qrCode = null;
   showEmptyState();

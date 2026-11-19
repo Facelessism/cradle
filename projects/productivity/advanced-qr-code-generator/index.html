@@ -98,8 +98,17 @@
 
         <!-- Color Customization -->
         <div class="card">
-          <h2 class="card-title"><i class="fa-solid fa-palette"></i> Colors</h2>
-          <div class="form-row">
+          <h2 class="card-title"><i class="fa-solid fa-palette"></i> Colors &amp; Gradients</h2>
+          <div class="form-group">
+            <label for="fill-type">Module Fill Type</label>
+            <select id="fill-type" class="select-input" aria-label="Module fill type">
+              <option value="solid" selected>Solid Color</option>
+              <option value="linear">Linear Gradient</option>
+              <option value="radial">Radial Gradient</option>
+            </select>
+          </div>
+
+          <div class="form-row" id="solid-color-row">
             <div class="form-group half">
               <label for="fg-color">Foreground</label>
               <div class="color-input-wrap">
@@ -139,6 +148,105 @@
                   aria-label="Background color hex value"
                 />
               </div>
+            </div>
+          </div>
+
+          <!-- Gradient Controls (Visible when Linear/Radial Gradient is selected) -->
+          <div id="gradient-controls-wrap" class="gradient-controls-wrap" hidden>
+            <div class="form-row">
+              <div class="form-group half">
+                <label for="gradient-color-1">Gradient Start</label>
+                <div class="color-input-wrap">
+                  <input
+                    type="color"
+                    id="gradient-color-1"
+                    value="#2B2D42"
+                    aria-label="Gradient start color"
+                  />
+                  <input
+                    type="text"
+                    id="gradient-color-1-text"
+                    class="color-text"
+                    value="#2B2D42"
+                    placeholder="#2B2D42"
+                    maxlength="7"
+                    aria-label="Gradient start color hex value"
+                  />
+                </div>
+              </div>
+              <div class="form-group half">
+                <label for="gradient-color-2">Gradient End</label>
+                <div class="color-input-wrap">
+                  <input
+                    type="color"
+                    id="gradient-color-2"
+                    value="#6366F1"
+                    aria-label="Gradient end color"
+                  />
+                  <input
+                    type="text"
+                    id="gradient-color-2-text"
+                    class="color-text"
+                    value="#6366F1"
+                    placeholder="#6366F1"
+                    maxlength="7"
+                    aria-label="Gradient end color hex value"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="form-group" id="gradient-rotation-group">
+              <label for="gradient-rotation">
+                Gradient Angle <span class="value-badge" id="gradient-rotation-value">0°</span>
+              </label>
+              <input
+                type="range"
+                id="gradient-rotation"
+                min="0"
+                max="360"
+                step="5"
+                value="0"
+                aria-label="Gradient angle in degrees"
+                title="Gradient angle: 0°"
+                aria-valuemin="0"
+                aria-valuemax="360"
+                aria-valuenow="0"
+                aria-valuetext="0°"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Module & Corner Geometry -->
+        <div class="card">
+          <h2 class="card-title"><i class="fa-solid fa-shapes"></i> Module &amp; Corner Geometry</h2>
+          <div class="form-group">
+            <label for="dot-style">Dot Geometry Style</label>
+            <select id="dot-style" class="select-input" aria-label="Dot geometry style">
+              <option value="rounded" selected>Rounded Dots</option>
+              <option value="dots">Circular Dots</option>
+              <option value="extra-rounded">Connected Squircle Modules</option>
+              <option value="diamond">Diamonds</option>
+              <option value="classy">Classy Curves</option>
+              <option value="classy-rounded">Classy Rounded Curves</option>
+              <option value="square">Classic Squares</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="corner-square-style">Corner Eye Outer Shape</label>
+              <select id="corner-square-style" class="select-input" aria-label="Corner eye outer shape">
+                <option value="extra-rounded" selected>Squircle Corner</option>
+                <option value="dot">Circular Corner</option>
+                <option value="square">Classic Square</option>
+              </select>
+            </div>
+            <div class="form-group half">
+              <label for="corner-dot-style">Corner Eye Inner Dot</label>
+              <select id="corner-dot-style" class="select-input" aria-label="Corner eye inner dot shape">
+                <option value="dot" selected>Circular Dot</option>
+                <option value="square">Square Dot</option>
+              </select>
             </div>
           </div>
         </div>
@@ -200,17 +308,21 @@
               class="select-input"
               aria-label="Error correction level"
             >
-              <option value="L">Low (L) — 7%</option>
-              <option value="M" selected>Medium (M) — 15%</option>
-              <option value="Q">Quartile (Q) — 25%</option>
-              <option value="H">High (H) — 30%</option>
+              <option value="L">Low (L) — 7% recovery</option>
+              <option value="M" selected>Medium (M) — 15% recovery</option>
+              <option value="Q">Quartile (Q) — 25% recovery</option>
+              <option value="H">High (H) — 30% recovery (Max Robustness)</option>
             </select>
+          </div>
+          <div id="error-elevation-badge" class="elevation-badge" hidden>
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>Auto-elevated to <strong>Level H (30%)</strong> for logo damage recovery</span>
           </div>
         </div>
 
         <!-- Logo Upload -->
         <div class="card">
-          <h2 class="card-title"><i class="fa-solid fa-image"></i> Logo</h2>
+          <h2 class="card-title"><i class="fa-solid fa-image"></i> Center Logo Embedding</h2>
           <div class="form-group">
             <label for="logo-upload" class="upload-label" tabindex="0">
               <i class="fa-solid fa-cloud-arrow-up"></i>
@@ -223,11 +335,31 @@
               accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml"
               aria-label="Upload logo image"
             />
+            <div class="form-group logo-size-group" id="logo-size-group">
+              <label for="logo-size">
+                Logo Scale <span class="value-badge" id="logo-size-value">30%</span>
+              </label>
+              <input
+                type="range"
+                id="logo-size"
+                min="15"
+                max="35"
+                step="1"
+                value="30"
+                aria-label="Center logo scale percentage"
+                title="Logo scale: 30%"
+                aria-valuemin="15"
+                aria-valuemax="35"
+                aria-valuenow="30"
+                aria-valuetext="30%"
+              />
+            </div>
             <button
               type="button"
               id="remove-logo-btn"
               class="btn btn-outline btn-small"
               disabled
+              aria-label="Remove uploaded logo"
             >
               <i class="fa-solid fa-trash"></i> Remove Logo
             </button>
@@ -237,14 +369,24 @@
         <!-- Action Buttons -->
         <div class="card action-card">
           <h2 class="card-title">
-            <i class="fa-solid fa-download"></i> Export
+            <i class="fa-solid fa-download"></i> Multi-Format Export
           </h2>
+          <div class="form-group">
+            <label for="export-resolution">Export Resolution (PNG)</label>
+            <select id="export-resolution" class="select-input" aria-label="Export resolution for raster images">
+              <option value="4000" selected>4000 × 4000 px (300 DPI Print Master)</option>
+              <option value="2000">2000 × 2000 px (Ultra HD)</option>
+              <option value="1000">1000 × 1000 px (HD Web)</option>
+              <option value="preview">Preview Size (Current Display)</option>
+            </select>
+          </div>
           <div class="btn-grid">
             <button
               type="button"
               id="download-png-btn"
               class="btn btn-primary"
               disabled
+              aria-label="Download high-resolution PNG image"
             >
               <i class="fa-solid fa-file-image"></i> Download PNG
             </button>
@@ -253,18 +395,29 @@
               id="download-svg-btn"
               class="btn btn-primary"
               disabled
+              aria-label="Download vector SVG file"
             >
               <i class="fa-solid fa-file-code"></i> Download SVG
+            </button>
+            <button
+              type="button"
+              id="download-eps-btn"
+              class="btn btn-primary"
+              disabled
+              aria-label="Download print-ready Encapsulated PostScript EPS file"
+            >
+              <i class="fa-solid fa-file-lines"></i> Download EPS
             </button>
             <button
               type="button"
               id="copy-image-btn"
               class="btn btn-secondary"
               disabled
+              aria-label="Copy QR image to clipboard"
             >
               <i class="fa-solid fa-copy"></i> Copy QR Image
             </button>
-            <button type="button" id="reset-btn" class="btn btn-outline">
+            <button type="button" id="reset-btn" class="btn btn-outline" aria-label="Reset all settings to defaults">
               <i class="fa-solid fa-rotate-left"></i> Reset All
             </button>
           </div>
