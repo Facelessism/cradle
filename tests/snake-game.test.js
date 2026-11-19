@@ -1,7 +1,26 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const SnakeEngine = require("../projects/games/snake-game/snakeEngine.js");
+
+test("Issue #1196 - canvas text resolves CSS colors instead of using var() strings", () => {
+  const scriptPath = path.resolve(
+    __dirname,
+    "../projects/games/snake-game/script.js"
+  );
+  const source = fs.readFileSync(scriptPath, "utf8");
+
+  assert.match(source, /getComputedStyle\(document\.documentElement\)/);
+  assert.match(source, /resolveCSSColor\("--text-muted", "#94a3b8"\)/);
+  assert.match(source, /resolveCSSColor\("--text-main", "#f8fafc"\)/);
+  assert.doesNotMatch(source, /ctx\.fillStyle\s*=\s*"var\(/);
+  assert.match(
+    source,
+    /document\.documentElement\.addEventListener\("cradle:themechange", render\)/
+  );
+});
 
 test("createInitialState initializes standard snake game state", () => {
   const state = SnakeEngine.createInitialState();
