@@ -6,16 +6,20 @@ This document describes the architecture and structure of the **Graph Theory Exp
 
 ## Overview
 
-Graph Theory Explorer is an interactive graph visualization tool for learning traversal and pathfinding algorithms. Users can add nodes, connect weighted edges, generate a random graph, and step through BFS, DFS, Prim's Minimum Spanning Tree, and Dijkstra's shortest path.
+Graph Theory Explorer is an interactive graph visualization and algorithm simulation laboratory designed for computer science students, competitive programmers, and software engineers. The platform enables users to build, edit, and explore graphs interactively with support for both undirected and directed edges.
+
+The algorithmic execution engine supports **Dijkstra's Shortest Path**, **Prim's and Kruskal's Minimum Spanning Tree (MST)**, **Kahn's Topological Sorting**, and **Tarjan's Strongly Connected Components (SCC)**, paired with animated step-by-step playback controls (play, pause, step forward/backward, speed slider), an open/closed frontier table inspection view, and standard import/export formats (Adjacency Matrix, Edge List, JSON).
 
 ---
 
 ## Purpose & Goals
 
-- Teach BFS, DFS, Prim's Minimum Spanning Tree, and Dijkstra's shortest path through visual playback
-- Let users build and edit their own graphs interactively with weighted edges
-- Keep the algorithm layer pure and DOM-free so it can be unit-tested in Node
-- Provide step-by-step playback with human-readable explanations for each algorithm step
+- Teach graph traversal, shortest paths, spanning trees, DAG ordering, and connectivity through interactive visualization.
+- Implement competitive programming algorithms: Dijkstra, Prim's MST, Kruskal's MST (with Disjoint Set Union), Kahn's Topological Sort, and Tarjan's SCC.
+- Provide step-by-step playback with forward/backward stepping, pause/resume, and speed control.
+- Offer an Open/Closed frontier and state inspection view that reveals internal data structures (queues, call stacks, disjoint sets, in-degrees, and low-link numbers).
+- Provide robust import and export capabilities across Adjacency Matrix (CSV), Edge List, and JSON formats.
+- Keep the algorithm engine completely pure and DOM-free for headless unit testing in Node.js.
 
 ---
 
@@ -24,10 +28,10 @@ Graph Theory Explorer is an interactive graph visualization tool for learning tr
 ```text
 projects/math/graph-theory-explorer/
 +-- ARCHITECTURE.md    # Architecture documentation and implementation notes
-+-- graphLogic.js      # Pure graph algorithms used by the UI and Node tests
-+-- index.html         # App shell, controls panel, canvas workspace, and result panels
-+-- script.js          # DOM controller, graph editing, rendering, and animation stepper
-+-- style.css          # Responsive layout, graph canvas styles, cards, and theme styling
++-- graphLogic.js      # Pure algorithm execution engine, DSU, and serialization utilities
++-- index.html         # App shell, control sidebar, SVG workspace, frontier table, and IO modal
++-- script.js          # App controller, graph editing, SVG rendering, animation player, and modal UI
++-- style.css          # Responsive design, theme tokens, frontier cards, markers, and modal styles
 +-- thumbnail.svg      # Project thumbnail graphic
 ```
 
@@ -37,162 +41,196 @@ projects/math/graph-theory-explorer/
 
 ```mermaid
 graph TD
-    A[index.html - Interface Shell] --> B[script.js - App Controller]
+    A[index.html - App Shell & Modals] --> B[script.js - App Controller]
     B --> C[graphLogic.js - Pure Algorithm Engine]
-    C --> D[Algorithm Step Results]
+    C --> D[Step-by-Step Execution Sequence]
     D --> B
-    B --> E[SVG Graph Renderer]
-    B --> F[Explanation and Result Panels]
-    B --> G[Stepper Controls]
+    B --> E[SVG Graph Renderer with Markers]
+    B --> F[Explanation & Result Panels]
+    B --> G[Open/Closed Frontier & State Table]
+    B --> H[Player Toolbar Controls]
+    B --> I[Import/Export Serialization Engine]
+    I --> C
 ```
 
 ---
 
 ## Component Breakdown
 
-| File            | Role                                                                                                                                    |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `index.html`    | Defines the control panel, algorithm buttons, node selectors, SVG canvas, explanation area, and result panel.                           |
-| `style.css`     | Handles visual design, responsive layout, graph canvas styling, cards, controls, and theme presentation.                                |
-| `script.js`     | Manages DOM state, user interactions, node/edge editing, random graph creation, algorithm selection, rendering, and animation playback. |
-| `graphLogic.js` | Contains testable graph algorithms with no DOM dependency: adjacency building, BFS, DFS, Prim's MST, and Dijkstra.                      |
+| File            | Role                                                                                                                                                              |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html`    | Declares algorithm selectors, node pickers, directed toggle, SVG canvas workspace, frontier inspection table, stepper player, and import/export modal.         |
+| `style.css`     | Handles responsive layout, SVG node/edge highlighting, directed arrow markers, open/closed frontier chips, state telemetry table, and modal dialog presentation. |
+| `script.js`     | Controller managing in-memory graph state, SVG rendering, click/drag editing, animation stepper, live frontier table updates, and import/export flows.           |
+| `graphLogic.js` | Pure algorithm engine implementing DSU, BFS, DFS, Prim's, Kruskal's, Dijkstra, Kahn's Topo Sort, Tarjan's SCC, and matrix/edge-list/JSON converters.           |
 
 ---
 
 ## Data Flow / Execution Flow
 
 ```text
-User edits graph or selects an algorithm
+User creates/edits graph, selects algorithm, or imports data
         |
         v
-script.js updates in-memory nodes and edges
+script.js updates in-memory nodes, edges, and directed state
         |
         v
-graphLogic.js computes algorithm steps/results
+graphLogic.js computes structured step sequence with open/closed telemetry
         |
         v
-script.js stores the step sequence for playback
+script.js stores step timeline for forward/backward playback
         |
         v
-SVG canvas, explanation text, and result panel update per step
+Player engine renders SVG graph, updates explanation text,
+and renders live Open/Closed frontier chips and state table
 ```
 
 ---
 
 ## State Model
 
-The project keeps graph state in browser memory:
+The client maintains graph state in browser memory:
 
-```text
-nodes: [{ id, x, y }]
-edges: [{ from, to, weight }]
-selectedAlgorithm: "bfs" | "dfs" | "mst" | "dijkstra"
-currentMode: "add-node" | "add-edge"
-steps: algorithm visualization timeline
-currentStepIndex: active step in the timeline
+```javascript
+nodes: [{ id: "A", x: 450, y: 280 }]
+edges: [{ from: "A", to: "B", weight: 4 }]
+directed: false // boolean: undirected vs. directed graph
+algorithm: "bfs" | "dfs" | "dijkstra" | "mst" | "kruskal" | "topo" | "scc"
+mode: "add-node" | "add-edge"
+steps: [...] // array of step objects
+stepIndex: active playback step (-1 to steps.length - 1)
+playing: boolean
+speed: 300ms to 2500ms per step
 ```
 
-`graphLogic.js` works with a pure algorithm shape:
-
-```text
-nodes: [{ id }]
-edges: [{ from, to, weight }]
-```
-
-This separation keeps the algorithm layer independent from canvas coordinates and DOM rendering.
+`graphLogic.js` operates purely on the minimal mathematical graph model:
+- `nodes`: `[{ id: string }]`
+- `edges`: `[{ from: string, to: string, weight?: number }]`
 
 ---
 
 ## Algorithm Layer
 
-`graphLogic.js` exposes:
+`graphLogic.js` provides:
 
-- `buildAdjacency(nodes, edges)` for creating an undirected weighted adjacency map.
-- `bfs(nodes, edges, startId)` for breadth-first traversal steps.
-- `dfs(nodes, edges, startId)` for depth-first traversal steps.
-- `primMST(nodes, edges, startId)` for minimum spanning tree steps and total weight.
-- `dijkstra(nodes, edges, startId, endId)` for shortest-path distances, path output, and relaxation steps.
+1. **`buildAdjacency(nodes, edges, directed)`** — Generates adjacency lists supporting both directed and undirected graphs.
+2. **`bfs(nodes, edges, startId, directed)`** — Breadth-first traversal with active queue and visited tracking.
+3. **`dfs(nodes, edges, startId, maxDepth, directed)`** — Depth-first traversal with call-stack depth limits.
+4. **`primMST(nodes, edges, startId)`** — Prim's greedy cut-crossing edge selection for minimum spanning trees.
+5. **`kruskalMST(nodes, edges)`** — Kruskal's algorithm using Disjoint Set Union (DSU with union by rank and path compression) to sort edges and reject cycle-forming connections.
+6. **`dijkstra(nodes, edges, startId, endId, directed)`** — Shortest-path distance relaxation and predecessor back-tracing.
+7. **`kahnTopologicalSort(nodes, edges)`** — DAG topological ordering via in-degree calculation, zero in-degree queue extraction, and cycle detection.
+8. **`tarjanSCC(nodes, edges)`** — Strongly Connected Components decomposition using DFS discovery (`disc`) and low-link (`low`) numbers with stack tracking.
 
-The functions return structured step objects such as `visit`, `frontier-edge`, `tree-edge`, `settle`, and `relax`, which the UI uses to highlight graph elements during playback.
+Every algorithm returns structured step entries containing:
+- `type`: `visit`, `frontier-edge`, `tree-edge`, `reject-edge`, `settle`, `relax`, `enqueue`, `scc-found`, or `info`.
+- `description`: Detailed explanation of the operation performed.
+- `openSet`: Elements currently in the active frontier (queue, priority candidates, call stack, or disjoint sets).
+- `closedSet`: Elements currently settled, visited, or finalized into components.
+- `stateTable`: Live telemetry mappings (distances, in-degrees, or discovery/low-link pairs).
+
+---
+
+## Open / Closed Frontier Table Inspection
+
+The Frontier Inspection card renders:
+- **Open Set / Frontier**: Real-time chips displaying pending queue items, candidate edges, or active DFS stack nodes.
+- **Closed Set / Settled**: Visual badges representing finalized nodes, tree edges, or closed components.
+- **Node Telemetry Table**:
+  - *Dijkstra*: Node ID, Status (Settled / Current / Frontier / Unvisited), Shortest Distance from source.
+  - *Topological Sort*: Node ID, Status (Ordered / In Queue / Pending), In-Degree count.
+  - *Tarjan's SCC*: Node ID, Status (In SCC / On Stack / Visiting / Unvisited), `disc` and `low` metrics.
+  - *MST & Traversals*: Node/Edge ID, Status (Visited / Frontier / Pending), Telemetry details.
+
+---
+
+## Import / Export Specifications
+
+The application includes an integrated dialog supporting three standardized formats:
+1. **Adjacency Matrix (CSV)**:
+   - Header with comma-separated node IDs.
+   - Row-by-row cell weights (0 for non-adjacent pairs).
+2. **Edge List**:
+   - Lines formatted as `from to [weight]`.
+   - Optional `# Isolated nodes: ...` comments.
+3. **JSON Schema (v2.0)**:
+   ```json
+   {
+     "version": "2.0",
+     "directed": false,
+     "nodes": [{ "id": "A", "x": 450, "y": 280 }],
+     "edges": [{ "from": "A", "to": "B", "weight": 4 }]
+   }
+   ```
+Features include one-click clipboard copying, downloadable file exports, and validation feedback.
 
 ---
 
 ## Rendering Strategy
 
-The SVG canvas is redrawn from the current `nodes`, `edges`, and active algorithm step. `script.js` applies visual classes and labels to communicate visited nodes, active edges, tree edges, settled nodes, and relaxed paths.
-
-Playback controls use the generated step list to move forward, backward, restart, or automatically play through the visualization at the selected speed.
+- **SVG Canvas Workspace**: Nodes and edges are native SVG elements (`<circle>`, `<line>`, `<text>`).
+- **Directed Graph Arrowheads**: SVG `<marker id="arrow-marker">` elements attach to directed edges. Directed edges are mathematically shortened by the node radius (20px) so arrowheads cleanly meet circle perimeters.
+- **Visual Classes**: Edge classes (`.frontier-edge`, `.tree-edge`, `.path-edge`, `.reject-edge`) and node classes (`.visited`, `.current`, `.on-path`) provide real-time animation cues.
 
 ---
 
 ## Testing Notes
 
-The graph algorithms are isolated in `graphLogic.js`, allowing Node tests to import and validate the algorithm behavior without requiring a browser DOM or SVG canvas.
+All algorithm logic in `graphLogic.js` is isolated and exported via CommonJS and `window.GraphLogic`. Headless unit tests in `tests/graph-theory-explorer-logic.test.js` validate:
+- BFS & DFS traversals
+- Prim's and Kruskal's MST weight correctness and cycle rejection
+- Dijkstra shortest path accuracy and unreachable node handling
+- Kahn's topological ordering and cycle detection
+- Tarjan's Strongly Connected Component decomposition
+- Round-trip fidelity for Adjacency Matrix, Edge List, and JSON serialization
 
 ---
 
 ## Key Features
 
-- Add nodes and weighted edges directly on an SVG canvas, with drag-to-move repositioning
-- Random graph generator (6 nodes in a ring plus chords) and "Clear All" for quick experiments
-- Four algorithms: BFS, DFS, Prim's MST, and Dijkstra's shortest path
-- Step-by-step playback with previous/next/play/restart controls and adjustable speed
-- Per-step explanation text plus final results (MST weight, distance table, shortest path)
-- Node highlighting for visited/current/settled/on-path states and edge classes for frontier/tree/path
-- Dark/light theme toggle
+- **7 Core Graph Algorithms**: BFS, DFS, Dijkstra, Prim's MST, Kruskal's MST, Kahn's Topological Sort, and Tarjan's SCC.
+- **Undirected & Directed Graph Modes**: Seamless toggle with arrowhead markers.
+- **Interactive Step-by-Step Playback**: Play, pause, step forward, step backward, restart, and speed slider.
+- **Frontier & State Inspector**: Open/closed set chips and node telemetry table.
+- **3 Import/Export Formats**: Adjacency Matrix, Edge List, and JSON with clipboard copy and file downloads.
+- **Drag-to-Move Nodes & Click-to-Connect Edges**: Interactive SVG canvas manipulation.
+- **Random Graph Generator & Clear All**: Quick generation of ring-and-chord graphs.
+- **Light & Dark Theme**: Cradle design token compliance.
 
 ---
 
 ## Technologies Used
 
-| Technology                                          | Purpose                                      |
-| --------------------------------------------------- | -------------------------------------------- |
-| HTML5                                               | Page shell, controls panel, SVG workspace    |
-| CSS3 (Grid, Flexbox, Custom Properties)             | Layout, canvas styling, cards, theme         |
-| Vanilla JavaScript (ES6+)                           | Graph editing, rendering, animation playback |
-| SVG                                                 | Graph rendering and state-based highlighting |
-| Font Awesome 6.5.1 (CDN)                            | UI icons                                     |
-| Google Fonts (Space Grotesk, Inter, JetBrains Mono) | Typography                                   |
-| Cradle tokens.css                                   | Shared design tokens                         |
+| Technology                                          | Purpose                                           |
+| --------------------------------------------------- | ------------------------------------------------- |
+| HTML5                                               | Semantic layout, canvas workspace, modal dialogs  |
+| CSS3 (Flexbox, Grid, Custom Properties)             | Responsive styling, frontier tables, themes       |
+| Vanilla JavaScript (ES6+)                           | Graph state management, playback animation        |
+| SVG & SVG Markers                                   | Scalable node/edge rendering and arrow markers    |
+| Font Awesome 6.5.1 (CDN)                            | User interface icons                              |
+| Cradle tokens.css & BackToHome.js                   | Shared design system and navigation               |
 
 ---
 
 ## File Responsibilities
 
-### `graphLogic.js`
-
-- `buildAdjacency(nodes, edges)` — undirected weighted adjacency map from the pure graph shape
-- `bfs(nodes, edges, startId)` — breadth-first traversal as `visit`/`frontier-edge` steps
-- `dfs(nodes, edges, startId)` — depth-first traversal as `visit`/`frontier-edge` steps
-- `primMST(nodes, edges, startId)` — MST `tree-edge` steps, edge list, and total weight
-- `dijkstra(nodes, edges, startId, endId)` — `settle`/`relax` steps, distances map, and shortest path
-
-### `script.js`
-
-- `state` — in-memory nodes, edges, edit mode, algorithm, and playback state
-- `addNode(x, y)` / `addEdge(fromId, toId)` — graph editing from canvas clicks (edge weight via prompt)
-- `render()` — clears and redraws the SVG from nodes, edges, and the current step
-- `computeSteps()` — calls the selected algorithm and stores the step timeline
-- `goToStep(index)` / `startPlaying()` / `stopPlaying()` / `resetPlayback()` — playback engine
-- `describeStep(step)` / `updateResultPanel()` — human-readable per-step explanations and final results
-- Theme toggle and speed slider handlers
-
-### `style.css`
-
-- Cradle design tokens with `--theme-accent` overrides
-- `.op-grid` / `.op-btn.active` — algorithm and edit-mode selectors
-- `.graph-canvas` node/edge state classes (`.visited`, `.current`, `.on-path`, `.tree-edge`, `.path-edge`)
-- `.player-toolbar` / `.step-progress-*` — visual stepper UI
-- Responsive breakpoint at 960px
+| File                 | Responsibility                                                                                                   |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `index.html`         | App structure, algorithm options, directed toggle, player toolbar, frontier inspection view, and IO modal.       |
+| `style.css`          | Styling for graph nodes, edges, directed markers, frontier cards, telemetry tables, and import/export modal.      |
+| `script.js`          | App controller, canvas editing, SVG rendering, animation stepping, frontier table updates, and IO modal wiring. |
+| `graphLogic.js`      | Pure algorithms (BFS, DFS, Prim, Kruskal, Dijkstra, Kahn, Tarjan) and serialization utilities.                  |
+| `thumbnail.svg`      | Preview graphic for the project catalog.                                                                         |
+| `ARCHITECTURE.md`    | Architecture specification and design documentation.                                                             |
 
 ---
 
 ## Design Decisions
 
-- **Pure algorithm engine separated from DOM** — `graphLogic.js` has no DOM dependency and exposes its API for both the browser and Node, so the algorithms can be verified headlessly.
-- **Step-based results instead of final-only** — every algorithm returns an ordered array of step objects, letting the UI replay the computation rather than just showing the outcome.
-- **SVG instead of Canvas** — nodes and edges are SVG elements, which makes per-element clicks, dragging, and class-based highlighting straightforward.
-- **In-memory state model** — graph data lives in browser memory only (no persistence), and `graphLogic.js` consumes a simplified shape (`{id}` nodes, `{from, to, weight}` edges) independent of canvas coordinates.
+- **Pure Functional Algorithm Engine**: Keeping `graphLogic.js` free of DOM references enables comprehensive headless unit testing.
+- **Precomputed Timeline of Steps**: Generating an immutable sequence of steps upfront simplifies forward/backward stepping without complex state rollbacks.
+- **Dynamic Frontier Schema**: The frontier table dynamically alters columns based on algorithm semantics (distances for Dijkstra, in-degrees for Kahn, low-links for Tarjan, cuts for Prim/Kruskal).
+- **Geometric Edge Shortening**: Shortening directed SVG lines by node radii ensures arrowheads never render behind node circles.
 
 ---
 
@@ -205,34 +243,31 @@ The graph algorithms are isolated in `graphLogic.js`, allowing Node tests to imp
 | Cradle tokens.css                      | —       | Local stylesheet | Shared design tokens   |
 | Cradle BackToHome.js                   | —       | Local script     | Home navigation button |
 
-No build step, package manager, or npm dependency.
-
 ---
 
 ## Future Improvements
 
-- Add node and edge deletion directly from the canvas
-- Support directed graphs and additional algorithms (e.g. A*, Floyd-Warshall)
-- Persist graphs to localStorage
-- Add touch/swipe support for mobile devices
+- Add A* search with Euclidean coordinate heuristics.
+- Add Floyd-Warshall all-pairs shortest paths visualizer.
+- Add graph coloring algorithms (Welsh-Powell).
 
 ---
 
 ## Known Limitations
 
-- Undirected graphs only — every edge is treated as two-way
-- Individual nodes and edges cannot be deleted; only "Clear All" resets the graph
-- Edge weights are entered through a browser `prompt()` dialog
-- The random graph always generates 6 nodes in a ring plus 2 random chords
+- Large graphs with more than 50 nodes may crowd the SVG canvas without pan-and-zoom controls.
+- Edge weights are entered via dialog prompts.
 
 ---
 
 ## Development Notes
 
-- Open `index.html` through a local server (e.g. `python3 -m http.server 8000`) so the shared Cradle assets (tokens.css, BackToHome.js) load correctly
-- Run algorithm tests in Node: `node --test tests/graph-theory-explorer-logic.test.js`
-- `graphLogic.js` is a standalone UMD module: `const { bfs } = require('./graphLogic.js')`
-- No build step is required. Edit any file and refresh the browser.
+- Serve the directory over a local HTTP server for Cradle asset resolution.
+- Run validation scripts:
+  - `node scripts/validate-no-dynamic-eval.js`
+  - `node scripts/validate-accessible-labels.js`
+  - `node scripts/validate-mini-projects.js`
+  - `node scripts/validate-architecture-docs.js`
 
 ---
 
@@ -240,14 +275,15 @@ No build step, package manager, or npm dependency.
 
 - **Project License:** MIT
 - **Third-Party Assets:**
-  - 'Space Grotesk', 'Inter', and 'JetBrains Mono' fonts by [Google Fonts](https://fonts.google.com) (OFL License)
-  - Font Awesome 6.5.1 icons by [Fonticons, Inc.](https://fontawesome.com) (CC BY 4.0)
+  - Font Awesome 6.5.1 (CC BY 4.0)
+  - Google Fonts (OFL License)
 
 ---
 
 ## References
 
-- [Breadth-first search — Wikipedia](https://en.wikipedia.org/wiki/Breadth-first_search)
-- [Depth-first search — Wikipedia](https://en.wikipedia.org/wiki/Depth-first_search)
+- [Kruskal's algorithm — Wikipedia](https://en.wikipedia.org/wiki/Kruskal%27s_algorithm)
 - [Prim's algorithm — Wikipedia](https://en.wikipedia.org/wiki/Prim%27s_algorithm)
 - [Dijkstra's algorithm — Wikipedia](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm)
+- [Topological sorting (Kahn's algorithm) — Wikipedia](https://en.wikipedia.org/wiki/Topological_sorting)
+- [Tarjan's strongly connected components algorithm — Wikipedia](https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm)

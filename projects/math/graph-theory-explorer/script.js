@@ -1,7 +1,7 @@
 /**
  * script.js — Graph Theory Explorer
- * DOM wiring: graph editing (click/drag), algorithm selection, and the
- * play/step/reset animation loop. All algorithm logic lives in graphLogic.js.
+ * DOM wiring: graph editing (click/drag), algorithm selection, directed toggle,
+ * animated playback engine, frontier & state inspection table, and import/export suite.
  */
 
 (function () {
@@ -11,9 +11,10 @@
   // ----- State -----
   let nodes = []; // { id, x, y }
   let edges = []; // { from, to, weight }
+  let directed = false; // Undirected vs Directed graph
   let mode = "add-node"; // "add-node" | "add-edge"
-  let algorithm = "bfs"; // "bfs" | "dfs" | "mst" | "dijkstra"
-  let edgeFirstNode = null; // holds the first click when in add-edge mode
+  let algorithm = "bfs"; // "bfs" | "dfs" | "mst" | "kruskal" | "dijkstra" | "topo" | "scc"
+  let edgeFirstNode = null;
   let nextNodeCharCode = 65; // 'A'
 
   // Animation state
@@ -21,12 +22,19 @@
   let stepIndex = -1;
   let playing = false;
   let playTimer = null;
-  let finalResult = null; // extra info from the algorithm (distances, mstEdges, etc.)
+  let finalResult = null;
+
+  // Import / Export state
+  let activeIoFormat = "matrix"; // "matrix" | "edgelist" | "json"
 
   // ----- DOM refs -----
   const startSelect = document.getElementById("start-node");
   const endSelect = document.getElementById("end-node");
+  const startGroup = document.getElementById("start-node-group");
   const endGroup = document.getElementById("end-node-group");
+  const nodeSelectionCard = document.getElementById("node-selection-card");
+  const toggleDirected = document.getElementById("toggle-directed");
+
   const explanationText = document.getElementById("explanation-text");
   const resultPanel = document.getElementById("result-panel");
   const canvasHint = document.getElementById("canvas-hint");
@@ -41,6 +49,26 @@
   const stepCounter = document.getElementById("step-counter");
   const stepProgressFill = document.getElementById("step-progress-fill");
 
+  // Frontier elements
+  const frontierSummaryBadge = document.getElementById("frontier-summary-badge");
+  const frontierOpenTokens = document.getElementById("frontier-open-tokens");
+  const frontierClosedTokens = document.getElementById("frontier-closed-tokens");
+  const frontierTableHead = document.getElementById("frontier-table-head");
+  const frontierTableBody = document.getElementById("frontier-table-body");
+
+  // IO Modal elements
+  const ioModal = document.getElementById("io-modal");
+  const ioModalTitle = document.getElementById("io-modal-title");
+  const ioTextarea = document.getElementById("io-textarea");
+  const ioFeedback = document.getElementById("io-feedback");
+  const btnImportOpen = document.getElementById("btn-import-open");
+  const btnExportOpen = document.getElementById("btn-export-open");
+  const btnIoClose = document.getElementById("btn-io-close");
+  const btnIoCopy = document.getElementById("btn-io-copy");
+  const btnIoDownload = document.getElementById("btn-io-download");
+  const btnIoApply = document.getElementById("btn-io-apply");
+  const formatTabs = document.querySelectorAll(".format-tab");
+
   // ===================== GRAPH EDITING =====================
 
   function nextNodeId() {
@@ -52,8 +80,9 @@
   function addNode(x, y) {
     const id = nextNodeId();
     nodes.push({ id, x, y });
-    render();
     refreshNodeSelectors();
+    resetPlayback();
+    render();
   }
 
   function addEdge(fromId, toId) {
@@ -61,19 +90,22 @@
     const exists = edges.some(
       e =>
         (e.from === fromId && e.to === toId) ||
-        (e.from === toId && e.to === fromId)
+        (!directed && e.from === toId && e.to === fromId)
     );
     if (exists) return;
+
     const weightInput = window.prompt(
       `Weight for edge ${fromId} → ${toId}:`,
       "1"
     );
+    if (weightInput === null) return;
     const weight = Number(weightInput);
     edges.push({
       from: fromId,
       to: toId,
       weight: Number.isFinite(weight) && weight > 0 ? weight : 1,
     });
+    resetPlayback();
     render();
   }
 
@@ -87,7 +119,6 @@
   }
 
   canvas?.addEventListener("click", evt => {
-    // Ignore clicks that landed on a node (handled separately) or during playback.
     if (
       playing ||
       evt.target?.closest(".node-circle") ||
@@ -117,7 +148,7 @@
   let draggingNode = null;
 
   function onNodePointerDown(nodeId, evt) {
-    if (mode !== "add-node") return; // only drag in "add-node" mode to keep edge clicks simple
+    if (mode !== "add-node") return;
     draggingNode = nodeId;
     evt.stopPropagation();
   }
@@ -139,29 +170,52 @@
 
   // ===================== RENDERING =====================
 
-  function clearSvg() {
-    if (!canvas) return;
-    while (canvas.firstChild) canvas.removeChild(canvas.firstChild);
+  function ensureMarkerDefs() {
+    let defs = canvas.querySelector("defs");
+    if (!defs) {
+      defs = document.createElementNS(SVG_NS, "defs");
+      canvas.appendChild(defs);
+    }
+    defs.innerHTML = `
+      <marker id="arrow-marker" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b" />
+      </marker>
+      <marker id="arrow-marker-tree" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#10b981" />
+      </marker>
+      <marker id="arrow-marker-path" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef4444" />
+      </marker>
+      <marker id="arrow-marker-frontier" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b" />
+      </marker>
+    `;
   }
 
   function edgeClass(from, to) {
     if (!steps.length || stepIndex < 0) return "";
     const seen = steps.slice(0, stepIndex + 1);
+
     for (const step of seen) {
       if (!step.edge) continue;
-      const matches =
-        (step.edge.from === from && step.edge.to === to) ||
-        (step.edge.from === to && step.edge.to === from);
+      const matches = directed
+        ? step.edge.from === from && step.edge.to === to
+        : (step.edge.from === from && step.edge.to === to) ||
+          (step.edge.from === to && step.edge.to === from);
       if (!matches) continue;
       if (step.type === "tree-edge") return "tree-edge";
       if (step.type === "frontier-edge") return "frontier-edge";
+      if (step.type === "reject-edge") return "reject-edge";
     }
+
     if (finalResult && finalResult.path && finalResult.path.length) {
       for (let i = 0; i < finalResult.path.length - 1; i++) {
         const a = finalResult.path[i];
         const b = finalResult.path[i + 1];
-        if ((a === from && b === to) || (a === to && b === from))
-          return "path-edge";
+        const matches = directed
+          ? a === from && b === to
+          : (a === from && b === to) || (a === to && b === from);
+        if (matches) return "path-edge";
       }
     }
     return "";
@@ -171,7 +225,9 @@
     if (!steps.length || stepIndex < 0) return "";
     const seen = steps.slice(0, stepIndex + 1);
     const isVisited = seen.some(
-      s => (s.type === "visit" || s.type === "settle") && s.node === nodeId
+      s =>
+        (s.type === "visit" || s.type === "settle" || s.type === "scc-found") &&
+        (s.node === nodeId || (s.component && s.component.includes(nodeId)))
     );
     const isCurrent =
       steps[stepIndex] &&
@@ -187,22 +243,44 @@
   }
 
   function render() {
-    clearSvg();
+    if (!canvas) return;
+    while (canvas.firstChild) canvas.removeChild(canvas.firstChild);
+    ensureMarkerDefs();
 
-    // Edges first, so nodes draw on top.
+    // Edges
     for (const edge of edges) {
       const from = nodes.find(n => n.id === edge.from);
       const to = nodes.find(n => n.id === edge.to);
       if (!from || !to) continue;
 
+      let x1 = from.x;
+      let y1 = from.y;
+      let x2 = to.x;
+      let y2 = to.y;
+
+      if (directed) {
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const len = Math.hypot(dx, dy);
+        if (len > 35) {
+          const ux = dx / len;
+          const uy = dy / len;
+          x1 = from.x + ux * 20;
+          y1 = from.y + uy * 20;
+          x2 = to.x - ux * 23;
+        }
+      }
+
       const line = document.createElementNS(SVG_NS, "line");
-      line.setAttribute("x1", from.x);
-      line.setAttribute("y1", from.y);
-      line.setAttribute("x2", to.x);
-      line.setAttribute("y2", to.y);
+      line.setAttribute("x1", x1);
+      line.setAttribute("y1", y1);
+      line.setAttribute("x2", x2);
+      line.setAttribute("y2", y2);
+
+      const cls = edgeClass(edge.from, edge.to);
       line.setAttribute(
         "class",
-        `edge-line ${edgeClass(edge.from, edge.to)}`.trim()
+        `edge-line ${cls} ${directed ? "directed" : ""}`.trim()
       );
       canvas.appendChild(line);
 
@@ -212,11 +290,11 @@
       label.setAttribute("x", midX);
       label.setAttribute("y", midY - 6);
       label.setAttribute("class", "edge-weight");
-      label.textContent = edge.weight;
+      label.textContent = edge.weight ?? 1;
       canvas.appendChild(label);
     }
 
-    // Nodes.
+    // Nodes
     for (const node of nodes) {
       const circle = document.createElementNS(SVG_NS, "circle");
       circle.setAttribute("cx", node.x);
@@ -241,7 +319,28 @@
     }
   }
 
-  // ===================== ALGORITHM SELECTION =====================
+  // ===================== ALGORITHM & CONTROLS =====================
+
+  function updateAlgoControls() {
+    if (algorithm === "dijkstra") {
+      if (nodeSelectionCard) nodeSelectionCard.style.display = "block";
+      if (startGroup) startGroup.style.display = "flex";
+      if (endGroup) endGroup.style.display = "flex";
+    } else if (algorithm === "bfs" || algorithm === "dfs" || algorithm === "mst") {
+      if (nodeSelectionCard) nodeSelectionCard.style.display = "block";
+      if (startGroup) startGroup.style.display = "flex";
+      if (endGroup) endGroup.style.display = "none";
+    } else {
+      // Kruskal, Topo, SCC do not require start/end selection
+      if (nodeSelectionCard) nodeSelectionCard.style.display = "none";
+    }
+
+    // Auto-toggle directed mode if Kahn's or Tarjan's is selected
+    if (algorithm === "topo" || algorithm === "scc") {
+      directed = true;
+      if (toggleDirected) toggleDirected.checked = true;
+    }
+  }
 
   document.querySelectorAll(".op-btn[data-algo]").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -250,8 +349,9 @@
         .forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       algorithm = btn.dataset.algo;
-      endGroup.style.display = algorithm === "dijkstra" ? "flex" : "none";
+      updateAlgoControls();
       resetPlayback();
+      render();
     });
   });
 
@@ -263,18 +363,28 @@
       btn.classList.add("active");
       mode = btn.dataset.mode;
       edgeFirstNode = null;
-      canvasHint.textContent =
-        mode === "add-node"
-          ? "Click empty space to add a node"
-          : "Click two nodes to connect them";
+      if (canvasHint) {
+        canvasHint.textContent =
+          mode === "add-node"
+            ? "Click empty space to add a node"
+            : "Click two nodes to connect them";
+      }
     });
   });
 
+  toggleDirected?.addEventListener("change", e => {
+    directed = e.target.checked;
+    resetPlayback();
+    render();
+  });
+
   function refreshNodeSelectors() {
+    if (!startSelect || !endSelect) return;
     const currentStart = startSelect.value;
     const currentEnd = endSelect.value;
     startSelect.innerHTML = "";
     endSelect.innerHTML = "";
+
     for (const node of nodes) {
       const opt1 = document.createElement("option");
       opt1.value = node.id;
@@ -311,7 +421,6 @@
       const angle = (2 * Math.PI * i) / count - Math.PI / 2;
       addNode(cx + radius * Math.cos(angle), cy + radius * Math.sin(angle));
     }
-    // A handful of random weighted edges, connecting the ring plus a couple chords.
     const ids = nodes.map(n => n.id);
     for (let i = 0; i < ids.length; i++) {
       edges.push({
@@ -323,12 +432,13 @@
     for (let i = 0; i < 2; i++) {
       const a = ids[Math.floor(Math.random() * ids.length)];
       const b = ids[Math.floor(Math.random() * ids.length)];
-      if (a !== b)
+      if (a !== b) {
         edges.push({
           from: a,
           to: b,
           weight: 1 + Math.floor(Math.random() * 9),
         });
+      }
     }
     refreshNodeSelectors();
     resetPlayback();
@@ -346,67 +456,281 @@
     render();
   });
 
-  // ===================== PLAYBACK =====================
+  // ===================== PLAYBACK & STEP COMPUTATION =====================
 
   function computeSteps() {
-    const startId = startSelect.value;
-    const endId = endSelect.value;
+    const startId = startSelect ? startSelect.value : (nodes[0] && nodes[0].id);
+    const endId = endSelect ? endSelect.value : null;
     finalResult = null;
 
-    if (!startId || nodes.length === 0) return [];
+    if (nodes.length === 0) return [];
 
-    if (algorithm === "bfs") return bfs(nodes, edges, startId);
-    if (algorithm === "dfs") return dfs(nodes, edges, startId);
+    const logic =
+      typeof window !== "undefined" && window.GraphLogic
+        ? window.GraphLogic
+        : {
+            bfs,
+            dfs,
+            primMST,
+            kruskalMST,
+            dijkstra,
+            kahnTopologicalSort,
+            tarjanSCC,
+          };
+
+    if (algorithm === "bfs") {
+      if (!startId) return [];
+      return logic.bfs(nodes, edges, startId, directed);
+    }
+    if (algorithm === "dfs") {
+      if (!startId) return [];
+      return logic.dfs(nodes, edges, startId, 1000, directed);
+    }
     if (algorithm === "mst") {
-      const result = primMST(nodes, edges, startId);
-      finalResult = result;
-      return result.steps;
+      if (!startId) return [];
+      const res = logic.primMST(nodes, edges, startId);
+      finalResult = res;
+      return res.steps;
+    }
+    if (algorithm === "kruskal") {
+      const res = logic.kruskalMST(nodes, edges);
+      finalResult = res;
+      return res.steps;
     }
     if (algorithm === "dijkstra") {
-      const result = dijkstra(nodes, edges, startId, endId);
-      finalResult = result;
-      return result.steps;
+      if (!startId) return [];
+      const res = logic.dijkstra(nodes, edges, startId, endId, directed);
+      finalResult = res;
+      return res.steps;
+    }
+    if (algorithm === "topo") {
+      const res = logic.kahnTopologicalSort(nodes, edges);
+      finalResult = res;
+      return res.steps;
+    }
+    if (algorithm === "scc") {
+      const res = logic.tarjanSCC(nodes, edges);
+      finalResult = res;
+      return res.steps;
     }
     return [];
   }
 
   function describeStep(step) {
-    if (!step) return "Ready.";
+    if (!step) return "Ready to start.";
+    if (step.description) return step.description;
     if (step.type === "visit") return `Visiting node ${step.node}.`;
-    if (step.type === "settle") return `Node ${step.node} distance finalized.`;
+    if (step.type === "settle") return `Node ${step.node} finalized.`;
     if (step.type === "frontier-edge")
-      return `Traveling edge ${step.edge.from} → ${step.edge.to}.`;
+      return `Traversing edge ${step.edge.from} → ${step.edge.to}.`;
     if (step.type === "tree-edge")
-      return `Adding edge ${step.edge.from} → ${step.edge.to} (weight ${step.edge.weight}) to the tree.`;
+      return `Adding tree edge ${step.edge.from} — ${step.edge.to} (wt ${step.edge.weight}).`;
+    if (step.type === "reject-edge")
+      return `Edge ${step.edge.from} — ${step.edge.to} rejected: cycle detected.`;
     if (step.type === "relax")
-      return `Found a shorter path via edge ${step.edge.from} → ${step.edge.to}.`;
-    return "";
+      return `Relaxed edge ${step.edge.from} → ${step.edge.to}.`;
+    return "Executing step.";
   }
 
   function updateResultPanel() {
+    if (!resultPanel) return;
     if (stepIndex < steps.length - 1 || !finalResult) return;
+
     if (algorithm === "mst") {
-      resultPanel.textContent = `MST total weight: ${finalResult.totalWeight}\nEdges: ${finalResult.mstEdges
-        .map(e => `${e.from}-${e.to} (${e.weight})`)
+      resultPanel.textContent = `Prim's MST Total Weight: ${finalResult.totalWeight}\nTree Edges: ${finalResult.mstEdges
+        .map(e => `${e.from}—${e.to} (wt ${e.weight})`)
         .join(", ")}`;
+    } else if (algorithm === "kruskal") {
+      resultPanel.textContent = `Kruskal's MST Total Weight: ${finalResult.totalWeight}\nSpanning: ${finalResult.isSpanning ? "Yes (V - 1 edges)" : "No (Disconnected Graph)"}\nTree Edges: ${finalResult.mstEdges
+        .map(e => `${e.from}—${e.to} (wt ${e.weight})`)
+        .join(", ")}\nRejected Cycle Edges: ${finalResult.rejectedEdgesCount}`;
     } else if (algorithm === "dijkstra") {
       const lines = Object.entries(finalResult.distances).map(
         ([id, d]) => `${id}: ${d === Infinity ? "unreachable" : d}`
       );
       const pathLine = finalResult.path.length
-        ? `Shortest path: ${finalResult.path.join(" → ")}`
-        : "No path to the selected end node.";
+        ? `Shortest Path: ${finalResult.path.join(" → ")}`
+        : "No path exists between start and end nodes.";
       resultPanel.textContent = `${pathLine}\n\nDistances from start:\n${lines.join("\n")}`;
+    } else if (algorithm === "topo") {
+      const topoLine = finalResult.isDAG
+        ? `Topological Sort Order: ${finalResult.order.join(" → ")}`
+        : `Cycle Detected! Graph is NOT a DAG.\nPartial Order: ${finalResult.order.join(" → ")}`;
+      resultPanel.textContent = `${topoLine}\n\nFinal In-Degrees: ${JSON.stringify(finalResult.inDegrees)}`;
+    } else if (algorithm === "scc") {
+      const sccLines = finalResult.components
+        .map((c, i) => `Component ${i + 1}: [${c.join(", ")}]`)
+        .join("\n");
+      resultPanel.textContent = `Tarjan's SCC Analysis: Found ${finalResult.sccCount} Strongly Connected Component(s):\n${sccLines}`;
+    }
+  }
+
+  // ===================== FRONTIER & STATE TABLE =====================
+
+  function updateFrontierUI(step) {
+    if (!frontierSummaryBadge || !frontierOpenTokens || !frontierClosedTokens)
+      return;
+
+    if (!step) {
+      frontierSummaryBadge.textContent = "Awaiting Execution";
+      frontierOpenTokens.innerHTML = '<span class="token-empty">(empty)</span>';
+      frontierClosedTokens.innerHTML = '<span class="token-empty">(empty)</span>';
+      if (frontierTableBody) {
+        frontierTableBody.innerHTML = `<tr><td colspan="3" class="table-empty">Play or step through an algorithm to inspect live node and frontier states.</td></tr>`;
+      }
+      return;
+    }
+
+    frontierSummaryBadge.textContent = `Step ${stepIndex + 1} / ${steps.length} (${step.type})`;
+
+    // Open set tokens
+    if (Array.isArray(step.openSet) && step.openSet.length > 0) {
+      frontierOpenTokens.innerHTML = step.openSet
+        .map(item => `<span class="set-chip chip-open">${item}</span>`)
+        .join("");
+    } else {
+      frontierOpenTokens.innerHTML = '<span class="token-empty">(empty)</span>';
+    }
+
+    // Closed set tokens
+    if (Array.isArray(step.closedSet) && step.closedSet.length > 0) {
+      frontierClosedTokens.innerHTML = step.closedSet
+        .map(item => `<span class="set-chip chip-closed">${item}</span>`)
+        .join("");
+    } else {
+      frontierClosedTokens.innerHTML = '<span class="token-empty">(empty)</span>';
+    }
+
+    // Dynamic State Table
+    if (!frontierTableHead || !frontierTableBody) return;
+
+    if (algorithm === "dijkstra") {
+      frontierTableHead.innerHTML = `
+        <tr><th>Node</th><th>Status</th><th>Shortest Dist (dB)</th></tr>
+      `;
+      const dists = step.stateTable || (finalResult && finalResult.distances) || {};
+      const closed = new Set(step.closedSet || []);
+      const rows = nodes
+        .slice()
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map(n => {
+          const isSettled = closed.has(n.id);
+          const isCurr = step.node === n.id;
+          const d = dists[n.id] !== undefined ? dists[n.id] : Infinity;
+          const status = isSettled
+            ? '<span class="table-status-badge status-settled">Settled</span>'
+            : isCurr
+              ? '<span class="table-status-badge status-current">Current</span>'
+              : d !== Infinity
+                ? '<span class="table-status-badge status-open">Frontier</span>'
+                : '<span class="table-status-badge status-unvisited">Unvisited</span>';
+          return `<tr class="${isCurr ? "active-row" : ""}">
+            <td><strong>${n.id}</strong></td>
+            <td>${status}</td>
+            <td>${d === Infinity ? "∞" : d}</td>
+          </tr>`;
+        });
+      frontierTableBody.innerHTML = rows.join("");
+    } else if (algorithm === "topo") {
+      frontierTableHead.innerHTML = `
+        <tr><th>Node</th><th>Status</th><th>In-Degree</th></tr>
+      `;
+      const degs = step.stateTable || (finalResult && finalResult.inDegrees) || {};
+      const closed = new Set(step.closedSet || []);
+      const open = new Set(step.openSet || []);
+      const rows = nodes
+        .slice()
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map(n => {
+          const inOrder = closed.has(n.id);
+          const inQ = open.has(n.id);
+          const isCurr = step.node === n.id;
+          const status = inOrder
+            ? '<span class="table-status-badge status-settled">Ordered</span>'
+            : inQ
+              ? '<span class="table-status-badge status-open">Queue (deg 0)</span>'
+              : '<span class="table-status-badge status-unvisited">Pending</span>';
+          return `<tr class="${isCurr ? "active-row" : ""}">
+            <td><strong>${n.id}</strong></td>
+            <td>${status}</td>
+            <td>${degs[n.id] ?? 0}</td>
+          </tr>`;
+        });
+      frontierTableBody.innerHTML = rows.join("");
+    } else if (algorithm === "scc") {
+      frontierTableHead.innerHTML = `
+        <tr><th>Node</th><th>Status</th><th>Disc / Low Values</th></tr>
+      `;
+      const disc = (step.stateTable && step.stateTable.disc) || {};
+      const low = (step.stateTable && step.stateTable.low) || {};
+      const stack = new Set(step.openSet || []);
+      const finalized = new Set(step.closedSet || []);
+      const rows = nodes
+        .slice()
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map(n => {
+          const isFinal = finalized.has(n.id);
+          const onSt = stack.has(n.id);
+          const isCurr = step.node === n.id;
+          const status = isFinal
+            ? '<span class="table-status-badge status-settled">In SCC</span>'
+            : onSt
+              ? '<span class="table-status-badge status-open">On Stack</span>'
+              : disc[n.id]
+                ? '<span class="table-status-badge status-current">Visiting</span>'
+                : '<span class="table-status-badge status-unvisited">Unvisited</span>';
+          const metrics =
+            disc[n.id] !== undefined
+              ? `disc: ${disc[n.id]} | low: ${low[n.id]}`
+              : "—";
+          return `<tr class="${isCurr ? "active-row" : ""}">
+            <td><strong>${n.id}</strong></td>
+            <td>${status}</td>
+            <td>${metrics}</td>
+          </tr>`;
+        });
+      frontierTableBody.innerHTML = rows.join("");
+    } else {
+      frontierTableHead.innerHTML = `
+        <tr><th>Node</th><th>Status</th><th>Telemetry</th></tr>
+      `;
+      const closed = new Set(step.closedSet || []);
+      const open = new Set(step.openSet || []);
+      const rows = nodes
+        .slice()
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map(n => {
+          const isVisited = closed.has(n.id);
+          const isFrontier = open.has(n.id);
+          const isCurr = step.node === n.id;
+          const status = isVisited
+            ? '<span class="table-status-badge status-settled">Visited</span>'
+            : isFrontier
+              ? '<span class="table-status-badge status-open">Frontier</span>'
+              : '<span class="table-status-badge status-unvisited">Unvisited</span>';
+          return `<tr class="${isCurr ? "active-row" : ""}">
+            <td><strong>${n.id}</strong></td>
+            <td>${status}</td>
+            <td>${isCurr ? "Active focus" : isVisited ? "Processed" : "Pending"}</td>
+          </tr>`;
+        });
+      frontierTableBody.innerHTML = rows.join("");
     }
   }
 
   function updatePlaybackUI() {
-    stepCounter.textContent = `Step ${Math.max(stepIndex + 1, 0)} / ${steps.length}`;
+    if (stepCounter)
+      stepCounter.textContent = `Step ${Math.max(stepIndex + 1, 0)} / ${steps.length}`;
     const pct = steps.length ? ((stepIndex + 1) / steps.length) * 100 : 0;
-    stepProgressFill.style.width = `${pct}%`;
-    btnPrev.disabled = stepIndex <= 0;
-    btnNext.disabled = steps.length === 0 || stepIndex >= steps.length - 1;
-    explanationText.textContent = describeStep(steps[stepIndex]);
+    if (stepProgressFill) stepProgressFill.style.width = `${pct}%`;
+    if (btnPrev) btnPrev.disabled = stepIndex <= 0;
+    if (btnNext)
+      btnNext.disabled = steps.length === 0 || stepIndex >= steps.length - 1;
+
+    const currentStep = steps[stepIndex] || null;
+    if (explanationText) explanationText.textContent = describeStep(currentStep);
+
+    updateFrontierUI(currentStep);
     render();
     updateResultPanel();
   }
@@ -419,8 +743,10 @@
 
   function stopPlaying() {
     playing = false;
-    playIcon.classList.remove("fa-pause");
-    playIcon.classList.add("fa-play");
+    if (playIcon) {
+      playIcon.classList.remove("fa-pause");
+      playIcon.classList.add("fa-play");
+    }
     if (playTimer) clearInterval(playTimer);
     playTimer = null;
   }
@@ -429,8 +755,10 @@
     if (steps.length === 0) steps = computeSteps();
     if (steps.length === 0) return;
     playing = true;
-    playIcon.classList.remove("fa-play");
-    playIcon.classList.add("fa-pause");
+    if (playIcon) {
+      playIcon.classList.remove("fa-play");
+      playIcon.classList.add("fa-pause");
+    }
     playTimer = setInterval(() => {
       if (stepIndex >= steps.length - 1) {
         stopPlaying();
@@ -471,11 +799,177 @@
   btnResetPlay?.addEventListener("click", () => resetPlayback());
 
   speedSlider?.addEventListener("input", () => {
-    if (speedDisplay && speedSlider)
+    if (speedDisplay && speedSlider) {
       speedDisplay.textContent = `${(Number(speedSlider.value) / 1000).toFixed(1)}s / step`;
+      speedSlider.setAttribute("aria-valuenow", speedSlider.value);
+      speedSlider.setAttribute("aria-valuetext", speedDisplay.textContent);
+    }
     if (playing) {
       stopPlaying();
       startPlaying();
+    }
+  });
+
+  // ===================== IMPORT / EXPORT MODAL =====================
+
+  function serializeGraph(format) {
+    const logic =
+      typeof window !== "undefined" && window.GraphLogic
+        ? window.GraphLogic
+        : {
+            exportAdjacencyMatrix,
+            exportEdgeList,
+            exportJSON,
+          };
+
+    if (format === "matrix") {
+      return logic.exportAdjacencyMatrix(nodes, edges, directed);
+    }
+    if (format === "edgelist") {
+      return logic.exportEdgeList(nodes, edges, directed);
+    }
+    if (format === "json") {
+      return logic.exportJSON(nodes, edges, { directed });
+    }
+    return "";
+  }
+
+  function setIoFeedback(msg, type = "success") {
+    if (!ioFeedback) return;
+    ioFeedback.textContent = msg;
+    ioFeedback.className = `io-feedback ${type}`;
+    ioFeedback.hidden = false;
+  }
+
+  function openIoModal(modeType) {
+    if (!ioModal) return;
+    ioModal.hidden = false;
+    ioFeedback.hidden = true;
+    if (ioModalTitle) {
+      ioModalTitle.innerHTML =
+        modeType === "export"
+          ? '<i class="fa-solid fa-file-export"></i> Export Graph'
+          : '<i class="fa-solid fa-file-import"></i> Import Graph';
+    }
+    if (btnIoApply) {
+      btnIoApply.style.display = modeType === "import" ? "inline-flex" : "none";
+    }
+
+    if (ioTextarea) {
+      ioTextarea.value = serializeGraph(activeIoFormat);
+    }
+  }
+
+  function closeIoModal() {
+    if (ioModal) ioModal.hidden = true;
+  }
+
+  btnExportOpen?.addEventListener("click", () => openIoModal("export"));
+  btnImportOpen?.addEventListener("click", () => openIoModal("import"));
+  btnIoClose?.addEventListener("click", closeIoModal);
+
+  ioModal?.addEventListener("click", e => {
+    if (e.target === ioModal) closeIoModal();
+  });
+
+  formatTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      formatTabs.forEach(t => {
+        t.classList.remove("active");
+        t.setAttribute("aria-selected", "false");
+      });
+      tab.classList.add("active");
+      tab.setAttribute("aria-selected", "true");
+      activeIoFormat = tab.dataset.format;
+      if (ioTextarea) {
+        ioTextarea.value = serializeGraph(activeIoFormat);
+      }
+      ioFeedback.hidden = true;
+    });
+  });
+
+  btnIoCopy?.addEventListener("click", async () => {
+    if (!ioTextarea) return;
+    try {
+      await navigator.clipboard.writeText(ioTextarea.value);
+      setIoFeedback("✓ Graph data copied to clipboard!", "success");
+    } catch (err) {
+      ioTextarea.select();
+      document.execCommand("copy");
+      setIoFeedback("✓ Graph data copied to clipboard!", "success");
+    }
+  });
+
+  btnIoDownload?.addEventListener("click", () => {
+    if (!ioTextarea) return;
+    const ext = activeIoFormat === "json" ? "json" : "txt";
+    const blob = new Blob([ioTextarea.value], {
+      type: "text/plain;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `graph-${activeIoFormat}-${Date.now()}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setIoFeedback(`✓ Downloaded graph-${activeIoFormat}.${ext}`, "success");
+  });
+
+  btnIoApply?.addEventListener("click", () => {
+    if (!ioTextarea) return;
+    const text = ioTextarea.value.trim();
+    if (!text) {
+      setIoFeedback("Please enter graph data before importing.", "error");
+      return;
+    }
+
+    try {
+      const logic =
+        typeof window !== "undefined" && window.GraphLogic
+          ? window.GraphLogic
+          : {
+              importAdjacencyMatrix,
+              importEdgeList,
+              importJSON,
+            };
+
+      let imported;
+      if (activeIoFormat === "json") {
+        imported = logic.importJSON(text);
+      } else if (activeIoFormat === "matrix") {
+        imported = logic.importAdjacencyMatrix(text);
+      } else {
+        imported = logic.importEdgeList(text);
+      }
+
+      if (!imported || !Array.isArray(imported.nodes)) {
+        throw new Error("Parsed data does not contain a valid node list.");
+      }
+
+      nodes = imported.nodes;
+      edges = imported.edges;
+      if (imported.directed !== undefined) {
+        directed = imported.directed;
+        if (toggleDirected) toggleDirected.checked = directed;
+      }
+
+      // Update nextNodeCharCode
+      const charCodes = nodes.map(n => n.id.charCodeAt(0)).filter(c => !isNaN(c));
+      nextNodeCharCode = charCodes.length ? Math.max(...charCodes) + 1 : 65;
+
+      refreshNodeSelectors();
+      resetPlayback();
+      render();
+
+      setIoFeedback(
+        `✓ Successfully imported ${nodes.length} nodes and ${edges.length} edges!`,
+        "success"
+      );
+      setTimeout(closeIoModal, 750);
+    } catch (err) {
+      setIoFeedback(`Import error: ${err.message}`, "error");
     }
   });
 
@@ -492,6 +986,7 @@
   });
 
   // ===================== INIT =====================
-  if (endGroup) endGroup.style.display = "none"; // only relevant for Dijkstra
+  updateAlgoControls();
   render();
+  updatePlaybackUI();
 })();
