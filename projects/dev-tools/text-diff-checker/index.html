@@ -6,12 +6,7 @@
     <title>Text Difference Checker</title>
     <meta
       name="description"
-      content="Text Difference Checker is a lightweight, dependency-free browser tool for comparing two blocks of text. It provides a side-by-side view of the original and mod..."
-    />
-
-    <meta
-      name="description"
-      content="Side-by-side text comparison tool highlighting insertions, deletions, and line changes."
+      content="Side-by-side text diff checker featuring synchronized split view, Myers character-level highlighting, ignore rules, and Git unified patch export."
     />
     <link
       rel="canonical"
@@ -21,7 +16,7 @@
     <meta property="og:title" content="Text Difference Checker" />
     <meta
       property="og:description"
-      content="Side-by-side text comparison tool highlighting insertions, deletions, and line changes."
+      content="Side-by-side text diff checker featuring synchronized split view, Myers character-level highlighting, ignore rules, and Git unified patch export."
     />
     <meta
       property="og:url"
@@ -35,44 +30,120 @@
       <header class="app-header">
         <h1>Text Difference Checker</h1>
         <p>
-          Compare two blocks of text and see additions, removals and
-          modifications, side by side.
+          Compare two blocks of text with synchronized side-by-side review, Myers character-level diffs, and Git unified patch export.
         </p>
       </header>
 
       <section class="controls">
-        <div class="mode-toggle" role="tablist" aria-label="Diff mode">
-          <button
-            id="lineModeBtn"
-            class="mode-btn active"
-            data-mode="line"
-            role="tab"
-            aria-selected="true"
-          >
-            Line Mode
-          </button>
-          <button
-            id="wordModeBtn"
-            class="mode-btn"
-            data-mode="word"
-            role="tab"
-            aria-selected="false"
-          >
-            Word Mode
-          </button>
+        <div class="controls-left">
+          <div class="mode-toggle" role="tablist" aria-label="Diff granularity mode">
+            <button
+              id="lineModeBtn"
+              class="mode-btn"
+              data-mode="line"
+              role="tab"
+              aria-selected="false"
+              aria-label="Line Diff Mode"
+            >
+              Line
+            </button>
+            <button
+              id="wordModeBtn"
+              class="mode-btn"
+              data-mode="word"
+              role="tab"
+              aria-selected="false"
+              aria-label="Word Diff Mode"
+            >
+              Word
+            </button>
+            <button
+              id="charModeBtn"
+              class="mode-btn active"
+              data-mode="char"
+              role="tab"
+              aria-selected="true"
+              aria-label="Character Diff Mode"
+            >
+              Character
+            </button>
+          </div>
+
+          <div class="mode-toggle view-toggle" role="tablist" aria-label="Diff view layout">
+            <button
+              id="splitViewBtn"
+              class="mode-btn active"
+              data-view="split"
+              role="tab"
+              aria-selected="true"
+              aria-label="Side-by-Side Split View"
+            >
+              Split View
+            </button>
+            <button
+              id="unifiedViewBtn"
+              class="mode-btn"
+              data-view="unified"
+              role="tab"
+              aria-selected="false"
+              aria-label="Unified Inline View"
+            >
+              Unified View
+            </button>
+          </div>
         </div>
 
         <div class="action-buttons">
-          <button id="compareBtn" class="btn btn-primary">Compare</button>
+          <button id="compareBtn" class="btn btn-primary" aria-label="Compare text inputs">Compare</button>
           <button
             id="swapBtn"
             class="btn btn-secondary"
-            title="Swap original and modified text"
+            title="Swap original and modified text (Ctrl+Shift+S)"
+            aria-label="Swap original and modified text"
           >
-            ? Swap
+            ⇄ Swap
           </button>
-          <button id="clearBtn" class="btn btn-secondary">Clear</button>
+          <button id="clearBtn" class="btn btn-secondary" aria-label="Clear both input areas">Clear</button>
+          <button
+            id="copyPatchBtn"
+            class="btn btn-tool"
+            title="Copy Git Unified Diff patch to clipboard"
+            aria-label="Copy Git Unified Diff patch"
+            disabled
+          >
+            📋 Copy .patch
+          </button>
+          <button
+            id="downloadPatchBtn"
+            class="btn btn-tool"
+            title="Download Git Unified Diff as .patch file"
+            aria-label="Download Git Unified Diff patch file"
+            disabled
+          >
+            💾 Export .patch
+          </button>
         </div>
+      </section>
+
+      <!-- Configurable Ignore Rules Toolbar -->
+      <section class="options-toolbar" aria-label="Comparison ignore rules and options">
+        <span class="options-label">Rules:</span>
+        <label class="option-check" title="Ignore leading, trailing, and repeated whitespace differences">
+          <input type="checkbox" id="chkIgnoreWhitespace" aria-label="Ignore whitespace differences" />
+          <span>Ignore Whitespace</span>
+        </label>
+        <label class="option-check" title="Perform case-insensitive text comparison">
+          <input type="checkbox" id="chkIgnoreCase" aria-label="Ignore text case differences" />
+          <span>Ignore Case</span>
+        </label>
+        <label class="option-check" title="Strip carriage returns (\r\n vs \n) and trailing line-end spaces">
+          <input type="checkbox" id="chkTrimEndings" checked aria-label="Trim line endings and carriage returns" />
+          <span>Trim Line Endings</span>
+        </label>
+        <label class="option-check" title="Collapse long sections of unchanged lines into expandable blocks">
+          <input type="checkbox" id="chkCollapseContext" checked aria-label="Collapse unchanged context lines" />
+          <span>Collapse Context</span>
+        </label>
       </section>
 
       <section class="input-grid">
@@ -81,6 +152,7 @@
           <textarea
             id="originalText"
             spellcheck="false"
+            aria-label="Original text input"
             placeholder="Paste the original text here..."
           ></textarea>
         </div>
@@ -89,6 +161,7 @@
           <textarea
             id="modifiedText"
             spellcheck="false"
+            aria-label="Modified text input"
             placeholder="Paste the modified text here..."
           ></textarea>
         </div>
@@ -102,17 +175,27 @@
         <span class="stat stat-mod"
           ><span id="statMod">0</span> modified lines</span
         >
+        <span class="stat stat-hunks"
+          ><span id="statHunks">0</span> hunks</span
+        >
       </section>
 
+      <!-- Synchronized Side-by-Side Split View Output -->
       <section id="diffOutput" class="diff-output" hidden>
         <div class="diff-column">
           <div class="diff-column-header">Original</div>
-          <div id="leftPane" class="diff-pane"></div>
+          <div id="leftPane" class="diff-pane" tabindex="0" aria-label="Original text diff pane"></div>
         </div>
         <div class="diff-column">
           <div class="diff-column-header">Modified</div>
-          <div id="rightPane" class="diff-pane"></div>
+          <div id="rightPane" class="diff-pane" tabindex="0" aria-label="Modified text diff pane"></div>
         </div>
+      </section>
+
+      <!-- Unified Inline Diff Output -->
+      <section id="unifiedDiffOutput" class="unified-diff-output" hidden>
+        <div class="unified-column-header">Unified Git Diff View</div>
+        <div id="unifiedPane" class="unified-pane" tabindex="0" aria-label="Unified Git diff view pane"></div>
       </section>
 
       <p id="emptyState" class="empty-state">
