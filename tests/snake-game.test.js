@@ -63,6 +63,121 @@ test("createInitialState rejects non-positive initialLength", () => {
     /initialLength must be a positive integer/
   );
 });
+
+test("Issue #1195 - validateBoardDimensions accepts defaults and valid custom boards", () => {
+  assert.deepEqual(SnakeEngine.validateBoardDimensions(), {
+    gridSize: 20,
+    initialLength: 3,
+  });
+  assert.deepEqual(SnakeEngine.validateBoardDimensions(3, 3), {
+    gridSize: 3,
+    initialLength: 3,
+  });
+  assert.deepEqual(SnakeEngine.validateBoardDimensions(120, 5), {
+    gridSize: 120,
+    initialLength: 5,
+  });
+  assert.deepEqual(
+    SnakeEngine.validateBoardDimensions(
+      SnakeEngine.MAX_GRID_SIZE,
+      SnakeEngine.MAX_GRID_SIZE
+    ),
+    {
+      gridSize: SnakeEngine.MAX_GRID_SIZE,
+      initialLength: SnakeEngine.MAX_GRID_SIZE,
+    }
+  );
+});
+
+test("Issue #1195 - validateBoardDimensions rejects out-of-range grid sizes", () => {
+  for (const gridSize of [
+    SnakeEngine.MIN_GRID_SIZE - 1,
+    SnakeEngine.MAX_GRID_SIZE + 1,
+  ]) {
+    assert.throws(
+      () => SnakeEngine.validateBoardDimensions(gridSize, 1),
+      RangeError
+    );
+  }
+});
+
+test("Issue #1195 - validateBoardDimensions rejects invalid numeric values", () => {
+  for (const gridSize of [0, -1, 3.5, NaN, Infinity, -Infinity]) {
+    assert.throws(() => SnakeEngine.validateBoardDimensions(gridSize, 1));
+  }
+  for (const initialLength of [0, -1, 2.5, NaN, Infinity, -Infinity]) {
+    assert.throws(() => SnakeEngine.validateBoardDimensions(20, initialLength));
+  }
+});
+
+test("Issue #1195 - validateBoardDimensions rejects strings and unsupported types", () => {
+  for (const gridSize of ["", " ", "20", "20abc", true, false, null, [], {}]) {
+    assert.throws(() => SnakeEngine.validateBoardDimensions(gridSize, 1));
+  }
+  for (const initialLength of [
+    "",
+    " ",
+    "3",
+    "3abc",
+    true,
+    false,
+    null,
+    [],
+    {},
+  ]) {
+    assert.throws(() => SnakeEngine.validateBoardDimensions(20, initialLength));
+  }
+});
+
+test("Issue #1195 - one invalid dimension rejects the whole configuration", () => {
+  assert.throws(
+    () => SnakeEngine.createInitialState({ gridSize: 20, initialLength: 21 }),
+    /initialLength cannot be greater than gridSize/
+  );
+  assert.throws(
+    () =>
+      SnakeEngine.createInitialState({
+        gridSize: 20,
+        initialLength: "3",
+      }),
+    TypeError
+  );
+  assert.throws(
+    () => SnakeEngine.createInitialState({ gridSize: "20", initialLength: 3 }),
+    TypeError
+  );
+  assert.throws(
+    () =>
+      SnakeEngine.validateBoardDimensions(
+        SnakeEngine.MAX_GRID_SIZE,
+        SnakeEngine.MAX_GRID_SIZE + 1
+      ),
+    /initialLength cannot be greater than gridSize/
+  );
+});
+
+test("Issue #1195 - invalid initialization does not alter a previously valid state", () => {
+  const valid = SnakeEngine.createInitialState({ gridSize: 20 });
+  assert.throws(() =>
+    SnakeEngine.createInitialState({ gridSize: 0, initialLength: 3 })
+  );
+  assert.equal(valid.gridSize, 20);
+  assert.equal(valid.snake.length, 3);
+});
+
+test("Issue #1195 - valid custom initialization is playable and keeps snake in bounds", () => {
+  for (const gridSize of [3, 4, 20, 120, SnakeEngine.MAX_GRID_SIZE]) {
+    const initialLength = gridSize <= 4 ? 3 : 5;
+    const state = SnakeEngine.createInitialState({ gridSize, initialLength });
+
+    assert.equal(state.gridSize, gridSize);
+    assert.equal(state.snake.length, initialLength);
+    assert.ok(state.food);
+    state.snake.forEach(segment => {
+      assert.equal(SnakeEngine.checkWallCollision(segment, gridSize), false);
+    });
+  }
+});
 test("isValidDirectionChange prevents 180-degree suicidal reversal", () => {
   const { UP, DOWN, LEFT, RIGHT } = SnakeEngine.DIRECTIONS;
 
