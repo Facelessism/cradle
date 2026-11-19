@@ -12,10 +12,13 @@ const state = {
   learningRate: 0.01,
   activationName: "relu",
   batchSize: 16,
+  regularization: 0,
   speed: 50,
   training: false,
   epoch: 0,
   lossHistory: [],
+  accHistory: [],
+  layerGradients: [],
   data: [],
   customData: [],
   net: null,
@@ -23,6 +26,17 @@ const state = {
   animId: null,
   showData: true,
   showWeights: true,
+  showContour: true,
+  backpropPulse: 0,
+};
+
+// ── ARCHITECTURE PRESETS ─────────────────────────────────────
+const ARCHITECTURE_PRESETS = {
+  default: [6, 4],
+  shallow: [2],
+  deep: [4, 4, 4, 4],
+  pyramid: [10, 6, 3],
+  wide: [12, 8],
 };
 
 // ── DOM REFS ─────────────────────────────────────────────────
@@ -40,7 +54,8 @@ function initNetwork() {
   state.net = new NeuralNetwork(
     layers,
     state.activationName,
-    state.learningRate
+    state.learningRate,
+    state.regularization
   );
 
   if (state.worker) {
@@ -50,6 +65,7 @@ function initNetwork() {
         layers,
         activationName: state.activationName,
         lr: state.learningRate,
+        regularization: state.regularization,
         weights: state.net.weights,
         biases: state.net.biases,
       },
@@ -58,7 +74,10 @@ function initNetwork() {
 
   state.epoch = 0;
   state.lossHistory = [];
+  state.accHistory = [];
+  state.layerGradients = new Array(layers.length - 1).fill(0);
   updateStats(0, "—", "—");
+  updateArchitectureSummary();
 }
 
 function initData() {
@@ -83,27 +102,144 @@ function initData() {
 }
 
 function updateStats(epoch, loss, acc) {
-  $("epochCount").textContent = epoch;
-  $("lossValue").textContent =
-    typeof loss === "number" ? loss.toFixed(4) : loss;
-  $("accuracyValue").textContent =
-    typeof acc === "number" ? (acc * 100).toFixed(1) + "%" : acc;
+  const epochEl = $("epochCount");
+  const lossEl = $("lossValue");
+  const accEl = $("accuracyValue");
+  const chartLossEl = $("chartLossVal");
+  const chartAccEl = $("chartAccVal");
+  const gradientEl = $("gradientValue");
+
+  if (epochEl) epochEl.textContent = epoch;
+  if (lossEl) {
+    lossEl.textContent = typeof loss === "number" ? loss.toFixed(4) : loss;
+  }
+  if (accEl) {
+    accEl.textContent =
+      typeof acc === "number" ? (acc * 100).toFixed(1) + "%" : acc;
+  }
+  if (chartLossEl) {
+    chartLossEl.textContent =
+      typeof loss === "number" ? loss.toFixed(4) : loss;
+  }
+  if (chartAccEl) {
+    chartAccEl.textContent =
+      typeof acc === "number" ? (acc * 100).toFixed(1) + "%" : acc;
+  }
+
+  // Vanishing Gradient Diagnostics
+  if (gradientEl) {
+    if (state.layerGradients && state.layerGradients.length > 0) {
+      const g0 = state.layerGradients[0];
+      if (g0 < 1e-4 && state.hiddenLayers.length >= 3) {
+        gradientEl.textContent = "Vanishing (Weak)";
+        gradientEl.style.color = "var(--danger)";
+        const diagGrad = $("diagGradientVal");
+        if (diagGrad) {
+          diagGrad.textContent =
+            "⚠️ Vanishing Gradients: Early layer gradients near zero! Try ReLU/LeakyReLU.";
+          diagGrad.style.color = "var(--danger)";
+        }
+      } else if (g0 > 5) {
+        gradientEl.textContent = "Exploding";
+        gradientEl.style.color = "var(--danger)";
+      } else {
+        gradientEl.textContent = "Optimal";
+        gradientEl.style.color = "var(--success)";
+        const diagGrad = $("diagGradientVal");
+        if (diagGrad) {
+          diagGrad.textContent = "Flow: Normal (Healthy backpropagation)";
+          diagGrad.style.color = "var(--accent-primary)";
+        }
+      }
+    } else {
+      gradientEl.textContent = "Optimal";
+      gradientEl.style.color = "var(--success)";
+    }
+  }
+
+  // Model Capacity & Overfitting/Underfitting Dynamics
+  const diagCap = $("diagCapacityVal");
+  if (diagCap) {
+    const totalParams = computeTotalParameters([
+      2,
+      ...state.hiddenLayers,
+      1,
+    ]);
+    if (
+      typeof acc === "number" &&
+      acc > 0.98 &&
+      state.noise >= 15 &&
+      totalParams > 50
+    ) {
+      diagCap.textContent =
+        "Overfitting Dynamics: Network boundary fitting noise points";
+      diagCap.style.color = "var(--warning)";
+    } else if (
+      epoch > 80 &&
+      typeof acc === "number" &&
+      acc < 0.7 &&
+      (state.dataset === "spiral" || state.dataset === "xor") &&
+      totalParams < 20
+    ) {
+      diagCap.textContent =
+        "Underfitting Dynamics: Linear boundary cannot separate non-linear pattern";
+      diagCap.style.color = "var(--warning)";
+    } else {
+      diagCap.textContent =
+        totalParams > 50
+          ? "High Capacity (Expressive)"
+          : totalParams < 20
+            ? "Low Capacity (Shallow)"
+            : "Balanced Capacity";
+      diagCap.style.color = "var(--accent-primary)";
+    }
+  }
+
+  // Activation & Non-Linearity Description
+  const diagAct = $("diagActivationVal");
+  if (diagAct) {
+    const nameMap = {
+      relu: "ReLU (Piecewise-linear, robust gradients)",
+      sigmoid: "Sigmoid (Smooth, vulnerable to vanishing gradients)",
+      tanh: "Tanh (Zero-centered, smooth S-curve)",
+      leaky_relu: "Leaky ReLU (No dead neurons for negative inputs)",
+    };
+    diagAct.textContent = nameMap[state.activationName] || state.activationName;
+  }
+}
+
+function updateArchitectureSummary() {
+  const summaryEl = $("architectureSummary");
+  const badgeEl = $("paramCountBadge");
+  const layers = [2, ...state.hiddenLayers, 1];
+  const totalParams = computeTotalParameters(layers);
+
+  if (summaryEl) {
+    summaryEl.textContent = `Topology: ${layers.join(" → ")}`;
+  }
+  if (badgeEl) {
+    badgeEl.textContent = `${totalParams} params`;
+  }
 }
 
 // ── EXPORT STATUS HELPERS ────────────────────────────────────
 function showExportError(message) {
-  $("exportStatusMessage").textContent = message;
-  $("exportStatus").style.display = "flex";
+  const statusEl = $("exportStatus");
+  const msgEl = $("exportStatusMessage");
+  if (msgEl) msgEl.textContent = message;
+  if (statusEl) statusEl.style.display = "flex";
 }
 
 function hideExportError() {
-  $("exportStatus").style.display = "none";
+  const statusEl = $("exportStatus");
+  if (statusEl) statusEl.style.display = "none";
 }
 
-// ── RENDERING: DECISION BOUNDARY ─────────────────────────────
+// ── RENDERING: 2D DECISION BOUNDARY CONTOUR HEATMAP ───────────
 function drawBoundary() {
   const c = boundaryCanvas;
   const ctx = bCtx;
+  if (!c || !ctx) return;
   const w = c.width;
   const h = c.height;
   const res = 3;
@@ -116,10 +252,31 @@ function drawBoundary() {
         const y = (py / h) * 2 - 1;
         const pred = state.net.predict([x, y]);
 
-        const r = Math.floor(30 + pred * 180);
-        const g = Math.floor(40 + (1 - Math.abs(pred - 0.5) * 2) * 30);
-        const b = Math.floor(30 + (1 - pred) * 180);
-        const a = 180;
+        let r, g, b, a;
+        const diff = pred - 0.5;
+        const absDiff = Math.abs(diff);
+
+        // Highlight Decision Boundary Isoline (|pred - 0.5| < 0.035)
+        if (state.showContour && absDiff < 0.035) {
+          r = 255;
+          g = 255;
+          b = 255;
+          a = 255;
+        } else if (diff < 0) {
+          // Class 0: Cool Cyan/Deep Navy
+          const intensity = Math.min(1, absDiff * 2);
+          r = Math.floor(15 + (1 - intensity) * 35);
+          g = Math.floor(60 + intensity * 125);
+          b = Math.floor(110 + intensity * 145);
+          a = 230;
+        } else {
+          // Class 1: Warm Crimson/Rose
+          const intensity = Math.min(1, diff * 2);
+          r = Math.floor(110 + intensity * 135);
+          g = Math.floor(40 + (1 - intensity) * 30);
+          b = Math.floor(45 + (1 - intensity) * 30);
+          a = 230;
+        }
 
         for (let dy = 0; dy < res && py + dy < h; dy++) {
           for (let dx = 0; dx < res && px + dx < w; dx++) {
@@ -135,25 +292,44 @@ function drawBoundary() {
     ctx.putImageData(imgData, 0, 0);
   }
 
-  if (state.showData && state.data.length) {
+  // Draw Data Points with Classification Accents
+  if (state.showData && state.data && state.data.length) {
     state.data.forEach(([x, y, label]) => {
       const px = ((x + 1) / 2) * w;
       const py = ((y + 1) / 2) * h;
+
+      let isMisclassified = false;
+      if (state.net) {
+        const pred = state.net.predict([x, y]);
+        const predictedClass = pred >= 0.5 ? 1 : 0;
+        isMisclassified = predictedClass !== label;
+      }
+
+      // Misclassified point warning halo
+      if (isMisclassified) {
+        ctx.beginPath();
+        ctx.arc(px, py, 6, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255, 183, 77, 0.9)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
       ctx.beginPath();
-      ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+      ctx.arc(px, py, 3.8, 0, Math.PI * 2);
       ctx.fillStyle = label === 1 ? "#ef5350" : "#4fc3f7";
       ctx.fill();
-      ctx.strokeStyle = "rgba(255,255,255,0.6)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
       ctx.lineWidth = 1;
       ctx.stroke();
     });
   }
 }
 
-// ── RENDERING: NETWORK GRAPH ─────────────────────────────────
+// ── RENDERING: NETWORK GRAPH & BACKPROP PULSE ─────────────────
 function drawNetwork() {
   const c = networkCanvas;
   const ctx = nCtx;
+  if (!c || !ctx) return;
   const w = c.width;
   const h = c.height;
   ctx.clearRect(0, 0, w, h);
@@ -162,14 +338,14 @@ function drawNetwork() {
   const layers = state.net.layers;
   const numLayers = layers.length;
   const padX = 60;
-  const padY = 30;
+  const padY = 32;
   const layerSpacing = (w - padX * 2) / (numLayers - 1);
 
   const positions = [];
   for (let l = 0; l < numLayers; l++) {
     const n = layers[l];
     const x = padX + l * layerSpacing;
-    const neuronSpacing = Math.min(40, (h - padY * 2) / (n + 1));
+    const neuronSpacing = Math.min(36, (h - padY * 2) / (n + 1));
     const startY = h / 2 - ((n - 1) * neuronSpacing) / 2;
     const layerPos = [];
     for (let i = 0; i < n; i++) {
@@ -178,45 +354,67 @@ function drawNetwork() {
     positions.push(layerPos);
   }
 
+  // Draw Synaptic Connections with Weight Magnitude & Backprop Glow
   if (state.showWeights) {
     for (let l = 0; l < state.net.weights.length; l++) {
       const wt = state.net.weights[l];
+      const gradMag =
+        state.layerGradients && state.layerGradients[l]
+          ? Math.min(1, state.layerGradients[l] * 2)
+          : 0;
+
       for (let j = 0; j < wt.length; j++) {
         for (let k = 0; k < wt[j].length; k++) {
           const v = wt[j][k];
           const absV = Math.min(Math.abs(v), 3) / 3;
           const from = positions[l][k];
           const to = positions[l + 1][j];
+
           ctx.beginPath();
           ctx.moveTo(from.x, from.y);
           ctx.lineTo(to.x, to.y);
-          ctx.strokeStyle =
-            v > 0
-              ? `rgba(79,195,247,${0.1 + absV * 0.7})`
-              : `rgba(239,83,80,${0.1 + absV * 0.7})`;
-          ctx.lineWidth = 0.5 + absV * 2.5;
+
+          if (state.training && gradMag > 0.1) {
+            // Backprop pulse effect along connections
+            const pulse =
+              (Math.sin(state.backpropPulse + l * 0.8) + 1) * 0.5;
+            ctx.strokeStyle =
+              v > 0
+                ? `rgba(79, 195, 247, ${0.15 + absV * 0.6 + pulse * 0.25})`
+                : `rgba(239, 83, 80, ${0.15 + absV * 0.6 + pulse * 0.25})`;
+            ctx.lineWidth = 0.5 + absV * 2.5 + pulse * 1.2;
+          } else {
+            ctx.strokeStyle =
+              v > 0
+                ? `rgba(79, 195, 247, ${0.12 + absV * 0.7})`
+                : `rgba(239, 83, 80, ${0.12 + absV * 0.7})`;
+            ctx.lineWidth = 0.5 + absV * 2.5;
+          }
+
           ctx.stroke();
         }
       }
     }
   }
 
+  // Layer Labels & Neuron Nodes
   const labels = [
-    "Input",
-    ...state.hiddenLayers.map((_, i) => `Hidden ${i + 1}`),
-    "Output",
+    `Input (${layers[0]})`,
+    ...state.hiddenLayers.map((n, i) => `H${i + 1} (${n})`),
+    `Output (${layers[numLayers - 1]})`,
   ];
+
   for (let l = 0; l < numLayers; l++) {
-    ctx.fillStyle = "rgba(139,157,195,0.7)";
-    ctx.font = "500 10px Inter, sans-serif";
+    ctx.fillStyle = "rgba(139, 157, 195, 0.85)";
+    ctx.font = "600 10px Inter, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(labels[l], positions[l][0].x, padY - 10);
+    ctx.fillText(labels[l], positions[l][0].x, padY - 12);
 
     for (let i = 0; i < layers[l]; i++) {
       const { x, y } = positions[l][i];
       const grad = ctx.createRadialGradient(x, y, 0, x, y, 16);
-      grad.addColorStop(0, "rgba(79,195,247,0.15)");
-      grad.addColorStop(1, "rgba(79,195,247,0)");
+      grad.addColorStop(0, "rgba(79, 195, 247, 0.18)");
+      grad.addColorStop(1, "rgba(79, 195, 247, 0)");
       ctx.fillStyle = grad;
       ctx.fillRect(x - 16, y - 16, 32, 32);
 
@@ -231,80 +429,140 @@ function drawNetwork() {
       ctx.stroke();
     }
   }
+
+  if (state.training) {
+    state.backpropPulse = (state.backpropPulse + 0.15) % (Math.PI * 2);
+  }
 }
 
-// ── RENDERING: LOSS CHART ────────────────────────────────────
+// ── RENDERING: REAL-TIME DUAL LOSS & ACCURACY CURVES ──────────
 function drawLossChart() {
   const c = lossCanvas;
   const ctx = lCtx;
+  if (!c || !ctx) return;
   const w = c.width;
   const h = c.height;
   ctx.clearRect(0, 0, w, h);
 
   const hist = state.lossHistory;
+  const accHist = state.accHistory;
+
   if (hist.length < 2) {
-    ctx.fillStyle = "rgba(139,157,195,0.3)";
+    ctx.fillStyle = "rgba(139, 157, 195, 0.4)";
     ctx.font = "12px Inter, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("Training loss will appear here...", w / 2, h / 2);
+    ctx.fillText(
+      "Training loss and accuracy curves will appear here...",
+      w / 2,
+      h / 2
+    );
     return;
   }
 
-  const pad = { top: 15, right: 20, bottom: 25, left: 50 };
+  const pad = { top: 20, right: 55, bottom: 25, left: 55 };
   const plotW = w - pad.left - pad.right;
   const plotH = h - pad.top - pad.bottom;
   const maxLoss = Math.max(...hist, 0.01);
   const minLoss = 0;
 
-  ctx.strokeStyle = "rgba(42,53,80,0.5)";
+  // Gridlines and Left Axis (Loss) Ticks
+  ctx.strokeStyle = "rgba(42, 53, 80, 0.5)";
   ctx.lineWidth = 1;
+
   for (let i = 0; i <= 4; i++) {
     const y = pad.top + (plotH / 4) * i;
     ctx.beginPath();
     ctx.moveTo(pad.left, y);
     ctx.lineTo(w - pad.right, y);
     ctx.stroke();
-    ctx.fillStyle = "rgba(139,157,195,0.5)";
+
+    // Left Y-axis (Loss)
+    ctx.fillStyle = "#f59e0b";
     ctx.font = "10px JetBrains Mono, monospace";
     ctx.textAlign = "right";
-    ctx.fillText((maxLoss - (maxLoss / 4) * i).toFixed(3), pad.left - 6, y + 3);
+    const lossTick = (maxLoss - (maxLoss / 4) * i).toFixed(3);
+    ctx.fillText(lossTick, pad.left - 6, y + 3);
+
+    // Right Y-axis (Accuracy %)
+    ctx.fillStyle = "#10b981";
+    ctx.textAlign = "left";
+    const accTick = `${Math.round(100 - i * 25)}%`;
+    ctx.fillText(accTick, w - pad.right + 6, y + 3);
   }
 
-  const gradient = ctx.createLinearGradient(
+  // 1. Plot Loss Curve (Amber)
+  const lossGradient = ctx.createLinearGradient(
     pad.left,
     pad.top,
     pad.left,
     pad.top + plotH
   );
-  gradient.addColorStop(0, "rgba(255,183,77,0.3)");
-  gradient.addColorStop(1, "rgba(255,183,77,0)");
+  lossGradient.addColorStop(0, "rgba(245, 158, 11, 0.22)");
+  lossGradient.addColorStop(1, "rgba(245, 158, 11, 0)");
 
   ctx.beginPath();
   ctx.moveTo(pad.left, pad.top + plotH);
   for (let i = 0; i < hist.length; i++) {
     const x = pad.left + (i / (hist.length - 1)) * plotW;
-    const y = pad.top + (1 - (hist[i] - minLoss) / (maxLoss - minLoss)) * plotH;
+    const y =
+      pad.top + (1 - (hist[i] - minLoss) / (maxLoss - minLoss)) * plotH;
     ctx.lineTo(x, y);
   }
   ctx.lineTo(pad.left + plotW, pad.top + plotH);
   ctx.closePath();
-  ctx.fillStyle = gradient;
+  ctx.fillStyle = lossGradient;
   ctx.fill();
 
   ctx.beginPath();
   for (let i = 0; i < hist.length; i++) {
     const x = pad.left + (i / (hist.length - 1)) * plotW;
-    const y = pad.top + (1 - (hist[i] - minLoss) / (maxLoss - minLoss)) * plotH;
+    const y =
+      pad.top + (1 - (hist[i] - minLoss) / (maxLoss - minLoss)) * plotH;
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   }
-  ctx.strokeStyle = "#ffb74d";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#f59e0b";
+  ctx.lineWidth = 2.2;
   ctx.stroke();
 
-  ctx.fillStyle = "rgba(139,157,195,0.5)";
+  // 2. Plot Accuracy Curve (Emerald)
+  if (accHist.length >= 2) {
+    const accGradient = ctx.createLinearGradient(
+      pad.left,
+      pad.top,
+      pad.left,
+      pad.top + plotH
+    );
+    accGradient.addColorStop(0, "rgba(16, 185, 129, 0.18)");
+    accGradient.addColorStop(1, "rgba(16, 185, 129, 0)");
+
+    ctx.beginPath();
+    ctx.moveTo(pad.left, pad.top + plotH);
+    for (let i = 0; i < accHist.length; i++) {
+      const x = pad.left + (i / (accHist.length - 1)) * plotW;
+      const y = pad.top + (1 - accHist[i]) * plotH;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(pad.left + plotW, pad.top + plotH);
+    ctx.closePath();
+    ctx.fillStyle = accGradient;
+    ctx.fill();
+
+    ctx.beginPath();
+    for (let i = 0; i < accHist.length; i++) {
+      const x = pad.left + (i / (accHist.length - 1)) * plotW;
+      const y = pad.top + (1 - accHist[i]) * plotH;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = "#10b981";
+    ctx.lineWidth = 2.2;
+    ctx.stroke();
+  }
+
+  // Bottom Center Label: Epochs
+  ctx.fillStyle = "rgba(139, 157, 195, 0.6)";
   ctx.font = "10px Inter, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("Epoch", w / 2, h - 4);
+  ctx.fillText("Epochs", w / 2, h - 4);
 }
 
 function renderAll() {
@@ -314,19 +572,17 @@ function renderAll() {
 }
 
 // ── ARIA LIVE REGION HELPER ──────────────────────────────────
-/**
- * Announces a training status message to screen readers via
- * the #training-status live region without disrupting sighted users.
- */
 function announceTrainingStatus(message) {
   const el = document.getElementById("training-status");
   if (!el) return;
-  // Clear first so re-announcing the same text still triggers the reader.
   el.textContent = "";
-  // Small timeout lets the DOM settle before the new announcement.
-  window.setTimeout(() => {
+  if (typeof window !== "undefined" && typeof window.setTimeout === "function") {
+    window.setTimeout(() => {
+      el.textContent = message;
+    }, 50);
+  } else {
     el.textContent = message;
-  }, 50);
+  }
 }
 
 function trainStep() {
@@ -344,15 +600,8 @@ function trainStep() {
       batchSize: state.batchSize,
     },
   });
-
-  // Note: renderAll() and requestAnimationFrame are now handled
-  // in the worker's response handler to prevent overlapping requests.
 }
 
-/**
- * Compatibility path for browsers without Web Worker support. Runs a
- * capped number of epochs per frame so the page stays responsive.
- */
 function trainStepOnMainThread() {
   if (!state.net || state.data.length === 0) {
     pauseTraining();
@@ -372,6 +621,7 @@ function trainStepOnMainThread() {
     const result = state.net.train(inputs, targets, state.batchSize);
     lastLoss = result.loss;
     lastAccuracy = result.accuracy;
+    state.layerGradients = result.layerGradients || [];
     state.epoch += 1;
   }
 
@@ -380,7 +630,11 @@ function trainStepOnMainThread() {
     state.epoch % Math.max(1, Math.floor(state.speed / 5)) === 0
   ) {
     state.lossHistory.push(lastLoss);
-    if (state.lossHistory.length > 500) state.lossHistory.shift();
+    state.accHistory.push(lastAccuracy);
+    if (state.lossHistory.length > 500) {
+      state.lossHistory.shift();
+      state.accHistory.shift();
+    }
   }
 
   updateStats(state.epoch, lastLoss, lastAccuracy);
@@ -398,7 +652,9 @@ function startTraining() {
   state.training = true;
   $("btnTrain").disabled = true;
   $("btnPause").disabled = false;
-  document.body.classList.add("training-active");
+  if (document.body && document.body.classList) {
+    document.body.classList.add("training-active");
+  }
   hideExportError();
 
   announceTrainingStatus(
@@ -409,41 +665,15 @@ function startTraining() {
   trainStep();
 }
 
-function _unusedStartBlock() {
-  /* removed duplicate
-  );
-  trainStep();
-
-  if (nnWorkerRetryCount < MAX_NN_WORKER_RETRIES) {
-    const delay = Math.min(
-      NN_WORKER_INITIAL_DELAY * Math.pow(2, nnWorkerRetryCount),
-      4000
-    );
-    nnWorkerRetryCount++;
-    if (nnWorkerRetryTimer) clearTimeout(nnWorkerRetryTimer);
-    nnWorkerRetryTimer = setTimeout(() => {
-      nnWorkerRetryTimer = null;
-      if (state.training && !state.worker) {
-        state.worker = createTrainingWorker();
-        if (state.worker) {
-          setupEvents();
-          syncWorkerState();
-        }
-      }
-    }, delay);
-  }
-}
-
-*/
-}
-
 function pauseTraining() {
   state.training = false;
   if (state.animId) cancelAnimationFrame(state.animId);
   $("btnTrain").disabled = false;
   $("btnPause").disabled = true;
   $("btnTrain").innerHTML = '<i class="fas fa-play"></i> Resume';
-  document.body.classList.remove("training-active");
+  if (document.body && document.body.classList) {
+    document.body.classList.remove("training-active");
+  }
   announceTrainingStatus(`Training paused at epoch ${state.epoch}.`);
 }
 
@@ -457,29 +687,94 @@ function resetAll() {
   announceTrainingStatus("Training reset.");
 }
 
+// ── DYNAMIC LAYER UI & PRESETS ────────────────────────────────
 function renderLayerUI() {
   const container = $("layerNeurons");
+  const countNumEl = $("layerCountNum");
+  if (!container) return;
+
   container.innerHTML = "";
+  if (countNumEl) countNumEl.textContent = state.hiddenLayers.length;
+
   state.hiddenLayers.forEach((n, i) => {
     const row = document.createElement("div");
     row.className = "layer-row";
     row.innerHTML = `
-      <span class="layer-label">Layer ${i + 1}</span>
-      <input type="range" min="1" max="12" value="${n}" data-layer="${i}">
+      <span class="layer-label">Hidden ${i + 1}</span>
+      <button type="button" class="btn-layer-step btn-step-down" title="Decrease neurons" aria-label="Decrease neurons in hidden layer ${i + 1}">-</button>
+      <input type="range" min="1" max="16" value="${n}" data-layer="${i}" aria-label="Neurons count for hidden layer ${i + 1}">
+      <button type="button" class="btn-layer-step btn-step-up" title="Increase neurons" aria-label="Increase neurons in hidden layer ${i + 1}">+</button>
       <span class="neuron-count">${n}</span>
+      <button type="button" class="btn-layer-delete" title="Delete layer ${i + 1}" aria-label="Delete hidden layer ${i + 1}">
+        <i aria-hidden="true" class="fas fa-trash-alt"></i>
+      </button>
     `;
+
     const inputEl = row.querySelector("input");
+    const countEl = row.querySelector(".neuron-count");
+    const btnDown = row.querySelector(".btn-step-down");
+    const btnUp = row.querySelector(".btn-step-up");
+    const btnDel = row.querySelector(".btn-layer-delete");
+
     if (inputEl) {
       inputEl.addEventListener("input", e => {
         const val = parseInt(e.target.value);
         state.hiddenLayers[i] = val;
-        const countEl = row.querySelector(".neuron-count");
         if (countEl) countEl.textContent = val;
+        updateArchitectureSummary();
         resetAll();
       });
     }
+
+    if (btnDown && inputEl) {
+      btnDown.addEventListener("click", () => {
+        if (state.hiddenLayers[i] > 1) {
+          state.hiddenLayers[i]--;
+          inputEl.value = state.hiddenLayers[i];
+          if (countEl) countEl.textContent = state.hiddenLayers[i];
+          updateArchitectureSummary();
+          resetAll();
+        }
+      });
+    }
+
+    if (btnUp && inputEl) {
+      btnUp.addEventListener("click", () => {
+        if (state.hiddenLayers[i] < 16) {
+          state.hiddenLayers[i]++;
+          inputEl.value = state.hiddenLayers[i];
+          if (countEl) countEl.textContent = state.hiddenLayers[i];
+          updateArchitectureSummary();
+          resetAll();
+        }
+      });
+    }
+
+    if (btnDel) {
+      btnDel.addEventListener("click", () => {
+        if (state.hiddenLayers.length > 1) {
+          state.hiddenLayers.splice(i, 1);
+          renderLayerUI();
+          resetAll();
+        }
+      });
+    }
+
     container.appendChild(row);
   });
+
+  updateArchitectureSummary();
+}
+
+function applyPreset(presetKey) {
+  if (ARCHITECTURE_PRESETS[presetKey]) {
+    state.hiddenLayers = [...ARCHITECTURE_PRESETS[presetKey]];
+    document.querySelectorAll(".preset-chip").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.preset === presetKey);
+    });
+    renderLayerUI();
+    resetAll();
+  }
 }
 
 function createTrainingWorker() {
@@ -506,6 +801,7 @@ function syncWorkerState() {
       layers,
       activationName: state.activationName,
       lr: state.learningRate,
+      regularization: state.regularization,
       weights: state.net ? state.net.weights : undefined,
       biases: state.net ? state.net.biases : undefined,
     },
@@ -581,18 +877,14 @@ function setupEvents() {
 
       switch (type) {
         case "NETWORK_INITED":
-          console.log("Worker: Network initialized");
           break;
 
-        case "DATA_INITED": {
-          const count =
-            payload && Number.isFinite(payload.count) ? payload.count : 0;
-          console.log(`Worker: Data initialized with ${count} points`);
+        case "DATA_INITED":
           break;
-        }
 
         case "TRAIN_STEP_COMPLETE": {
-          const { loss, accuracy, epochs, weights, biases } = payload;
+          const { loss, accuracy, epochs, weights, biases, layerGradients } =
+            payload;
 
           state.epoch += epochs;
           if (
@@ -600,7 +892,15 @@ function setupEvents() {
             state.epoch % Math.max(1, Math.floor(state.speed / 5)) === 0
           ) {
             state.lossHistory.push(loss);
-            if (state.lossHistory.length > 500) state.lossHistory.shift();
+            state.accHistory.push(accuracy);
+            if (state.lossHistory.length > 500) {
+              state.lossHistory.shift();
+              state.accHistory.shift();
+            }
+          }
+
+          if (Array.isArray(layerGradients)) {
+            state.layerGradients = layerGradients;
           }
 
           updateStats(state.epoch, loss, accuracy);
@@ -610,12 +910,12 @@ function setupEvents() {
             state.net.weights = weights;
             state.net.biases = biases;
           } else {
-            // Reconstruct NeuralNetwork object to keep .predict() and .layers available
             const layers = [2, ...state.hiddenLayers, 1];
             state.net = new NeuralNetwork(
               layers,
               state.activationName,
-              state.learningRate
+              state.learningRate,
+              state.regularization
             );
             state.net.weights = weights;
             state.net.biases = biases;
@@ -636,6 +936,7 @@ function setupEvents() {
       "Web Workers are unavailable. Training will run on the main thread at a reduced rate."
     );
   }
+
   $("btnTrain").addEventListener("click", startTraining);
   $("btnPause").addEventListener("click", pauseTraining);
   $("btnReset").addEventListener("click", resetAll);
@@ -647,7 +948,7 @@ function setupEvents() {
 
   // Layer add/remove handlers
   $("btnAddLayer").addEventListener("click", () => {
-    if (state.hiddenLayers.length < 4) {
+    if (state.hiddenLayers.length < 6) {
       state.hiddenLayers.push(4);
       renderLayerUI();
       resetAll();
@@ -660,6 +961,13 @@ function setupEvents() {
       renderLayerUI();
       resetAll();
     }
+  });
+
+  // Preset architecture buttons
+  document.querySelectorAll(".preset-chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      applyPreset(btn.dataset.preset);
+    });
   });
 
   $("learningRate").addEventListener("change", e => {
@@ -682,10 +990,32 @@ function setupEvents() {
     state.batchSize = parseInt(e.target.value);
   });
 
+  const regSelect = $("regularization");
+  if (regSelect) {
+    regSelect.addEventListener("change", e => {
+      state.regularization = parseFloat(e.target.value);
+      if (state.worker) {
+        state.worker.postMessage({
+          type: "UPDATE_PARAMS",
+          payload: { regularization: state.regularization },
+        });
+      }
+      if (state.net) state.net.regularization = state.regularization;
+    });
+  }
+
   $("showDataToggle").addEventListener("change", e => {
     state.showData = e.target.checked;
     drawBoundary();
   });
+
+  const contourToggle = $("showContourToggle");
+  if (contourToggle) {
+    contourToggle.addEventListener("change", e => {
+      state.showContour = e.target.checked;
+      drawBoundary();
+    });
+  }
 
   $("showWeightsToggle").addEventListener("change", e => {
     state.showWeights = e.target.checked;
@@ -759,7 +1089,6 @@ function setupEvents() {
           throw new Error("CSV file is empty.");
         }
 
-        // Skip header row if it contains non-numeric first value
         const startIdx = isNaN(parseFloat(rows[0].split(",")[0])) ? 1 : 0;
         const data = [];
 
@@ -856,7 +1185,7 @@ function predict(input) {
 }
 
 // Example usage:
-// console.log(predict([0.5, -0.3]));  // returns probability
+// console.log(predict([0.5, -0.3]));  // returns probability in [0, 1]
 `;
 
     downloadFile(code, "neural-network-model.js", "application/javascript");
@@ -926,7 +1255,7 @@ def predict(inputs):
 
 
 # Example usage:
-# print(predict([0.5, -0.3]))  # returns probability
+# print(predict([0.5, -0.3]))  # returns probability in [0, 1]
 `;
 
     downloadFile(code, "neural_network_model.py", "text/x-python");
@@ -934,6 +1263,7 @@ def predict(inputs):
 
   // ── DOWNLOAD HELPER ──────────────────────────────────────────
   function downloadFile(content, filename, mimeType) {
+    if (typeof document === "undefined" || typeof URL === "undefined") return;
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

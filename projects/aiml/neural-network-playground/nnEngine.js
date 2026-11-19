@@ -103,14 +103,28 @@ function normalizeDataset(pts) {
   ]);
 }
 
+/**
+ * Computes total trainable parameters (weights + biases) for a given layer architecture.
+ */
+function computeTotalParameters(layers) {
+  if (!Array.isArray(layers) || layers.length < 2) return 0;
+  let total = 0;
+  for (let i = 0; i < layers.length - 1; i++) {
+    total += layers[i] * layers[i + 1] + layers[i + 1];
+  }
+  return total;
+}
+
 class NeuralNetwork {
-  constructor(layers, activationName = "relu", lr = 0.01) {
+  constructor(layers, activationName = "relu", lr = 0.01, regularization = 0) {
     this.layers = layers;
     this.activationName = activationName;
     this.activation = Activations[activationName] || Activations.relu;
     this.lr = lr;
+    this.regularization = regularization; // L2 weight decay factor
     this.weights = [];
     this.biases = [];
+    this.layerGradients = [];
     this.initWeights();
   }
 
@@ -132,6 +146,7 @@ class NeuralNetwork {
       this.weights.push(w);
       this.biases.push(new Array(fanOut).fill(0));
     }
+    this.layerGradients = new Array(this.layers.length - 1).fill(0);
   }
 
   forward(input) {
@@ -171,6 +186,9 @@ class NeuralNetwork {
     }
     const bs = batchSize > 0 ? batchSize : inputs.length;
 
+    const layerGradSums = new Array(this.weights.length).fill(0);
+    const layerGradCounts = new Array(this.weights.length).fill(0);
+
     for (let bStart = 0; bStart < indices.length; bStart += bs) {
       const bEnd = Math.min(bStart + bs, indices.length);
       const dW = this.weights.map(w =>
@@ -206,6 +224,16 @@ class NeuralNetwork {
           deltas.unshift(newDelta);
         }
 
+        // Track gradient magnitude per layer for vanishing gradient diagnostics
+        for (let l = 0; l < deltas.length; l++) {
+          let mag = 0;
+          for (let j = 0; j < deltas[l].length; j++) {
+            mag += Math.abs(deltas[l][j]);
+          }
+          layerGradSums[l] += mag;
+          layerGradCounts[l] += deltas[l].length;
+        }
+
         for (let l = 0; l < this.weights.length; l++) {
           for (let j = 0; j < this.weights[l].length; j++) {
             for (let k = 0; k < this.weights[l][j].length; k++) {
@@ -219,16 +247,23 @@ class NeuralNetwork {
       for (let l = 0; l < this.weights.length; l++) {
         for (let j = 0; j < this.weights[l].length; j++) {
           for (let k = 0; k < this.weights[l][j].length; k++) {
-            this.weights[l][j][k] -= (this.lr * dW[l][j][k]) / batchLen;
+            const regTerm = this.regularization * this.weights[l][j][k];
+            this.weights[l][j][k] -=
+              this.lr * (dW[l][j][k] / batchLen + regTerm);
           }
           this.biases[l][j] -= (this.lr * dB[l][j]) / batchLen;
         }
       }
     }
 
+    this.layerGradients = layerGradSums.map((sum, i) =>
+      layerGradCounts[i] > 0 ? sum / layerGradCounts[i] : 0
+    );
+
     return {
       loss: totalLoss / inputs.length,
       accuracy: correct / inputs.length,
+      layerGradients: this.layerGradients,
     };
   }
 }
@@ -238,6 +273,7 @@ if (typeof module !== "undefined" && module.exports) {
     Activations,
     generateDataset,
     normalizeDataset,
+    computeTotalParameters,
     NeuralNetwork,
   };
 }

@@ -6,12 +6,7 @@
     <title>Neural Network Playground</title>
     <meta
       name="description"
-      content="The Neural Network Playground is an interactive visual Deep Learning simulation environment built with Vanilla HTML5 Canvas and ES6 Modular JavaScript. It visua..."
-    />
-
-    <meta
-      name="description"
-      content="Interactive neural network visualizer with live backpropagation, decision boundary heatmaps, and configurable architectures."
+      content="Interactive neural network visualizer with custom multi-layer perceptron architecture builder, live backpropagation, decision boundary heatmaps, and real-time loss and accuracy curves."
     />
     <link
       rel="canonical"
@@ -21,7 +16,7 @@
     <meta property="og:title" content="Neural Network Playground" />
     <meta
       property="og:description"
-      content="Interactive neural network visualizer with live backpropagation, decision boundary heatmaps, and configurable architectures."
+      content="Interactive neural network visualizer with custom multi-layer perceptron architecture builder, live backpropagation, decision boundary heatmaps, and real-time loss and accuracy curves."
     />
     <meta
       property="og:url"
@@ -60,6 +55,10 @@
           <span class="accuracy-label">Accuracy</span>
           <span id="accuracyValue" class="accuracy-value">—</span>
         </div>
+        <div class="gradient-display">
+          <span class="gradient-label">Gradient Flow</span>
+          <span id="gradientValue" class="gradient-value">Optimal</span>
+        </div>
       </div>
     </header>
 
@@ -92,7 +91,7 @@
             </button>
           </div>
           <div class="speed-control">
-            <label>Speed</label>
+            <label for="speedSlider">Speed</label>
             <input
               type="range"
               id="speedSlider"
@@ -250,7 +249,7 @@
             </div>
           </div>
           <div class="form-row">
-            <label>Noise</label>
+            <label for="noiseSlider">Noise</label>
             <input
               type="range"
               id="noiseSlider"
@@ -267,7 +266,7 @@
             <span id="noiseLabel">15%</span>
           </div>
           <div class="form-row">
-            <label>Points</label>
+            <label for="pointsSlider">Points</label>
             <input
               type="range"
               id="pointsSlider"
@@ -289,15 +288,68 @@
           </button>
         </section>
 
-        <!-- Network Architecture -->
+        <!-- Dynamic Multi-Layer Perceptron (MLP) Architecture -->
         <section class="control-group">
-          <h2 class="control-title">
-            <i aria-hidden="true" class="fas fa-project-diagram"></i>
-            Architecture
-          </h2>
+          <div class="section-title-wrap">
+            <h2 class="control-title">
+              <i aria-hidden="true" class="fas fa-project-diagram"></i>
+              MLP Architecture
+            </h2>
+            <span id="paramCountBadge" class="badge-params" title="Trainable weights + biases">
+              51 params
+            </span>
+          </div>
+
+          <!-- Architecture Presets -->
+          <div class="presets-row">
+            <span class="presets-label">Presets:</span>
+            <div class="preset-chips">
+              <button
+                type="button"
+                class="preset-chip active"
+                data-preset="default"
+                title="Balanced default: 2 hidden layers [6, 4]"
+              >
+                Default
+              </button>
+              <button
+                type="button"
+                class="preset-chip"
+                data-preset="shallow"
+                title="Linear/Shallow single layer: [2]"
+              >
+                Shallow
+              </button>
+              <button
+                type="button"
+                class="preset-chip"
+                data-preset="deep"
+                title="Deep 4-layer network: [4, 4, 4, 4]"
+              >
+                Deep
+              </button>
+              <button
+                type="button"
+                class="preset-chip"
+                data-preset="pyramid"
+                title="Pyramid funnel network: [10, 6, 3]"
+              >
+                Pyramid
+              </button>
+              <button
+                type="button"
+                class="preset-chip"
+                data-preset="wide"
+                title="Wide 2-layer network: [12, 8]"
+              >
+                Wide
+              </button>
+            </div>
+          </div>
+
           <div class="layer-config" id="layerConfig">
             <div class="layer-header">
-              <span>Hidden Layers</span>
+              <span>Hidden Layers (<span id="layerCountNum">2</span>/6)</span>
               <div class="layer-add-remove">
                 <button
                   id="btnRemoveLayer"
@@ -318,7 +370,10 @@
               </div>
             </div>
             <div id="layerNeurons" class="layer-neurons-list">
-              <!-- Dynamically populated -->
+              <!-- Dynamically populated layer controls -->
+            </div>
+            <div class="architecture-summary" id="architectureSummary">
+              Topology: 2 &rarr; 6 &rarr; 4 &rarr; 1
             </div>
           </div>
         </section>
@@ -329,8 +384,9 @@
             <i aria-hidden="true" class="fas fa-sliders-h"></i> Hyperparameters
           </h2>
           <div class="form-row">
-            <label>Learning Rate</label>
-            <select id="learningRate">
+            <label for="learningRate">Learning Rate</label>
+            <select id="learningRate" aria-label="Learning Rate">
+              <option value="0.0001">0.0001</option>
               <option value="0.001">0.001</option>
               <option value="0.003">0.003</option>
               <option value="0.01" selected>0.01</option>
@@ -341,21 +397,31 @@
             </select>
           </div>
           <div class="form-row">
-            <label>Activation</label>
-            <select id="activation">
-              <option value="relu" selected>ReLU</option>
-              <option value="sigmoid">Sigmoid</option>
-              <option value="tanh">Tanh</option>
-              <option value="leaky_relu">Leaky ReLU</option>
+            <label for="activation">Activation Function</label>
+            <select id="activation" aria-label="Activation Function">
+              <option value="relu" selected>ReLU (Rectified Linear)</option>
+              <option value="sigmoid">Sigmoid (Logistic)</option>
+              <option value="tanh">Tanh (Hyperbolic Tangent)</option>
+              <option value="leaky_relu">Leaky ReLU (&alpha;=0.01)</option>
             </select>
           </div>
           <div class="form-row">
-            <label>Batch Size</label>
-            <select id="batchSize">
+            <label for="batchSize">Batch Size</label>
+            <select id="batchSize" aria-label="Mini-Batch Size">
               <option value="0">Full Batch</option>
               <option value="8">8</option>
               <option value="16" selected>16</option>
               <option value="32">32</option>
+              <option value="64">64</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="regularization">L2 Regularization (&lambda;)</label>
+            <select id="regularization" aria-label="L2 Regularization Weight Decay">
+              <option value="0" selected>None (0)</option>
+              <option value="0.0001">0.0001 (Light)</option>
+              <option value="0.001">0.001 (Medium)</option>
+              <option value="0.01">0.01 (Strong)</option>
             </select>
           </div>
         </section>
@@ -397,31 +463,41 @@
       <!-- Visualization Area -->
       <div class="viz-area">
         <div class="viz-row">
-          <!-- Decision Boundary -->
+          <!-- Decision Boundary Heatmap -->
           <div class="viz-card" id="boundaryCard">
             <div class="viz-card-header">
               <h2>
                 <i aria-hidden="true" class="fas fa-border-all"></i> Decision
-                Boundary
+                Boundary Heatmap
               </h2>
               <div class="viz-card-actions">
                 <label class="toggle-label">
+                  <input type="checkbox" id="showContourToggle" checked />
+                  <span>Boundary Contour</span>
+                </label>
+                <label class="toggle-label">
                   <input type="checkbox" id="showDataToggle" checked />
-                  <span>Show Data</span>
+                  <span>Data Points</span>
                 </label>
               </div>
             </div>
             <div class="canvas-wrap">
               <canvas id="boundaryCanvas" width="400" height="400"></canvas>
             </div>
+            <!-- Heatmap Gradient Legend -->
+            <div class="heatmap-legend" aria-hidden="true">
+              <span class="legend-text">Class 0 (p &rarr; 0)</span>
+              <div class="legend-bar"></div>
+              <span class="legend-text">Class 1 (p &rarr; 1)</span>
+            </div>
           </div>
 
-          <!-- Network Graph -->
+          <!-- Network Architecture & Backprop Pulse Graph -->
           <div class="viz-card" id="networkCard">
             <div class="viz-card-header">
               <h2>
                 <i aria-hidden="true" class="fas fa-project-diagram"></i>
-                Network Architecture
+                Network &amp; Backpropagation Graph
               </h2>
               <div class="viz-card-actions">
                 <label class="toggle-label">
@@ -433,18 +509,56 @@
             <div class="canvas-wrap">
               <canvas id="networkCanvas" width="500" height="400"></canvas>
             </div>
+            <div class="network-legend" aria-hidden="true">
+              <span class="net-item"><span class="dot dot-pos"></span> Positive Weight</span>
+              <span class="net-item"><span class="dot dot-neg"></span> Negative Weight</span>
+              <span class="net-item"><span class="dot dot-pulse"></span> Backpropagation Flow</span>
+            </div>
           </div>
         </div>
 
-        <!-- Loss Chart -->
+        <!-- Real-Time Training Loss & Accuracy Curves -->
         <div class="viz-card viz-card-wide" id="lossCard">
           <div class="viz-card-header">
             <h2>
-              <i aria-hidden="true" class="fas fa-chart-line"></i> Training Loss
+              <i aria-hidden="true" class="fas fa-chart-line"></i> Real-Time Training Curves (Loss &amp; Accuracy)
             </h2>
+            <div class="chart-dual-legend">
+              <span class="legend-badge legend-loss">
+                <span class="dot-loss"></span> Loss: <strong id="chartLossVal">—</strong>
+              </span>
+              <span class="legend-badge legend-acc">
+                <span class="dot-acc"></span> Accuracy: <strong id="chartAccVal">—</strong>
+              </span>
+            </div>
           </div>
           <div class="canvas-wrap canvas-wrap-short">
-            <canvas id="lossCanvas" width="900" height="180"></canvas>
+            <canvas id="lossCanvas" width="900" height="190"></canvas>
+          </div>
+        </div>
+
+        <!-- Neural Mechanics Educational Diagnostics Banner -->
+        <div class="diagnostics-card" id="diagnosticsCard">
+          <div class="diagnostics-header">
+            <i aria-hidden="true" class="fas fa-lightbulb"></i>
+            <h3>Neural Mechanics &amp; Training Dynamics</h3>
+          </div>
+          <div class="diagnostics-grid">
+            <div class="diagnostic-box" id="boxGradients">
+              <span class="diag-label">Vanishing Gradient Status</span>
+              <span class="diag-val" id="diagGradientVal">Flow: Optimal (Gradients active)</span>
+              <span class="diag-hint">Monitors error propagation through hidden layers.</span>
+            </div>
+            <div class="diagnostic-box" id="boxCapacity">
+              <span class="diag-label">Model Capacity &amp; Fit</span>
+              <span class="diag-val" id="diagCapacityVal">Balanced</span>
+              <span class="diag-hint">Assesses overfitting/underfitting dynamics.</span>
+            </div>
+            <div class="diagnostic-box" id="boxActivation">
+              <span class="diag-label">Non-Linearity &amp; Curvature</span>
+              <span class="diag-val" id="diagActivationVal">ReLU Activation</span>
+              <span class="diag-hint">Shapes decision boundary contours to separate data.</span>
+            </div>
           </div>
         </div>
       </div>
@@ -461,16 +575,15 @@
 
     <!-- Footer -->
     <footer class="app-footer">
-      <span
-        >Neural Network Playground — Built with vanilla JavaScript &amp;
-        Canvas</span
-      >
+      <span>
+        Neural Network Playground &mdash; Built with vanilla JavaScript, HTML5 Canvas &amp; Web Workers
+      </span>
     </footer>
     <script
       src="../../../src/components/ui/BackToHome/BackToHome.js"
       defer
     ></script>
     <script src="nnEngine.js"></script>
-    <script src="script.js?v=1.0.2"></script>
+    <script src="script.js?v=1.1.0"></script>
   </body>
 </html>
