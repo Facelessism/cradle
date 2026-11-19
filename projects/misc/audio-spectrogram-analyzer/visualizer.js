@@ -4,6 +4,8 @@ import {
   getFrequencyTicks,
   getDecibelTicks,
   formatFrequency,
+  frequencyToNote,
+  byteToDecibels,
 } from "./scale.js";
 
 /**
@@ -26,7 +28,9 @@ export function isOffscreenCanvasSupported() {
 /**
  * Spectrogram Visualizer
  * Renders a scrolling time-frequency heatmap with calibrated Frequency Y-axis
- * ticks (Linear / Logarithmic), scrolling Time markers, and a dynamic dBFS colorbar.
+ * ticks (Linear / Logarithmic / Mel), scrolling Time markers, real-time fundamental
+ * frequency (F0) harmonic peak tracking, interactive hover cursor inspection,
+ * and a dynamic dBFS colorbar.
  *
  * Automatically delegates pixel processing and frame composition to a dedicated
  * Web Worker via canvas.transferControlToOffscreen(), completely unblocking the
@@ -47,11 +51,26 @@ export class SpectrogramVisualizer {
     this.colormap = this.generateMagmaColormap();
 
     // Scale & calibration options
+    this.scaleMode = "linear";
     this.isLogarithmic = false;
     this.sliceWidth = 2; // Pixels per frequency column
     this.timeMarkers = []; // Active scrolling time markers [{ x, time }]
     this.lastMarkerTime = 0;
     this.smoothedPeakDb = -100;
+
+    // Pitch detection & harmonic tracking
+    this.latestPitch = null;
+    this.onPitchUpdate = null;
+    this.onHoverUpdate = null;
+
+    // Cached audio metrics for hover cursor inspection
+    this.lastFrequencyData = null;
+    this.lastSampleRate = 44100;
+    this.lastMinDb = -100;
+    this.lastMaxDb = -30;
+
+    // Hover state
+    this.hover = { active: false };
 
     // Layout margins around the central spectrogram heatmap
     this.layout = {
@@ -90,6 +109,7 @@ export class SpectrogramVisualizer {
             width: this.canvas.width || 800,
             height: this.canvas.height || 400,
             isLogarithmic: this.isLogarithmic,
+            scaleMode: this.scaleMode,
             layout: this.layout,
             sliceWidth: this.sliceWidth,
           },
@@ -127,6 +147,9 @@ export class SpectrogramVisualizer {
       window.addEventListener("resize", this.boundResize);
     }
 
+    // Bind interactive cursor hover events on the canvas
+    this.setupHoverListeners();
+
     // Render initial static calibrated axes
     this.renderStatic();
   }
@@ -150,6 +173,108 @@ export class SpectrogramVisualizer {
       plotWidth,
       plotHeight,
     };
+  }
+
+  setupHoverListeners() {
+    if (!this.canvas || typeof this.canvas.addEventListener !== "function") return;
+
+    this.boundPointerMove = this.onPointerMove.bind(this);
+    this.boundPointerLeave = this.onPointerLeave.bind(this);
+
+    this.canvas.addEventListener("pointermove", this.boundPointerMove);
+    this.canvas.addEventListener("pointerleave", this.boundPointerLeave);
+  }
+
+  onPointerMove(e) {
+    if (!this.canvas) return;
+    const rect = this.canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+
+    const canvasX = (e.clientX - rect.left) * scaleX;
+    const canvasY = (e.clientY - rect.top) * scaleY;
+
+    const { plotX, plotY, plotWidth, plotHeight } = this.getPlotDimensions();
+
+    if (
+      canvasX >= plotX &&
+      canvasX <= plotX + plotWidth &&
+      canvasY >= plotY &&
+      canvasY <= plotY + plotHeight
+    ) {
+      const nyquist = (this.lastSampleRate || 44100) / 2;
+      const freq = yToFrequency(
+        canvasY - plotY,
+        nyquist,
+        plotHeight,
+        this.scaleMode
+      );
+
+      let dB = this.lastMinDb || -100;
+      if (this.lastFrequencyData && this.lastFrequencyData.length > 0) {
+        const binCount = this.lastFrequencyData.length;
+        const binIndex = Math.min(
+          binCount - 1,
+          Math.max(0, Math.floor((freq / nyquist) * binCount))
+        );
+        const byteVal = this.lastFrequencyData[binIndex];
+        dB = byteToDecibels(byteVal, this.lastMinDb, this.lastMaxDb);
+      }
+
+      const noteInfo = frequencyToNote(freq);
+
+      this.hover = {
+        active: true,
+        x: canvasX,
+        y: canvasY,
+        clientX: e.clientX,
+        clientY: e.clientY,
+        freq: Math.round(freq * 10) / 10,
+        dB: Math.round(dB * 10) / 10,
+        noteInfo,
+      };
+
+      if (this.isWorkerMode && this.worker) {
+        this.worker.postMessage({
+          type: "setHover",
+          hover: {
+            active: true,
+            x: canvasX,
+            y: canvasY,
+            freq: this.hover.freq,
+            dB: this.hover.dB,
+            noteInfo,
+          },
+        });
+      }
+
+      if (typeof this.onHoverUpdate === "function") {
+        this.onHoverUpdate(this.hover);
+      }
+    } else {
+      this.clearHover();
+    }
+  }
+
+  clearHover() {
+    if (this.hover && this.hover.active) {
+      this.hover = { active: false };
+      if (this.isWorkerMode && this.worker) {
+        this.worker.postMessage({
+          type: "setHover",
+          hover: { active: false },
+        });
+      }
+      if (typeof this.onHoverUpdate === "function") {
+        this.onHoverUpdate({ active: false });
+      }
+    }
+  }
+
+  onPointerLeave() {
+    this.clearHover();
   }
 
   resizeCanvas() {
@@ -193,14 +318,21 @@ export class SpectrogramVisualizer {
   }
 
   setScale(scale) {
-    const isLog = scale === "logarithmic" || scale === "log" || scale === true;
-    if (this.isLogarithmic !== isLog) {
-      this.isLogarithmic = isLog;
+    const mode =
+      scale === "mel" || scale === "Mel"
+        ? "mel"
+        : scale === "logarithmic" || scale === "log" || scale === true
+          ? "logarithmic"
+          : "linear";
+
+    if (this.scaleMode !== mode) {
+      this.scaleMode = mode;
+      this.isLogarithmic = mode === "logarithmic";
 
       if (this.isWorkerMode && this.worker) {
         this.worker.postMessage({
           type: "setScale",
-          scale: isLog ? "logarithmic" : "linear",
+          scale: mode,
         });
         return;
       }
@@ -281,6 +413,14 @@ export class SpectrogramVisualizer {
     if (this.boundResize && typeof window !== "undefined") {
       window.removeEventListener("resize", this.boundResize);
     }
+    if (this.canvas) {
+      if (this.boundPointerMove) {
+        this.canvas.removeEventListener("pointermove", this.boundPointerMove);
+      }
+      if (this.boundPointerLeave) {
+        this.canvas.removeEventListener("pointerleave", this.boundPointerLeave);
+      }
+    }
 
     if (this.isWorkerMode && this.worker) {
       this.worker.postMessage({ type: "destroy" });
@@ -341,6 +481,14 @@ export class SpectrogramVisualizer {
       plotWidth,
       plotHeight
     );
+    this.drawCrosshairAndPitch(
+      this.ctx,
+      nyquist,
+      plotX,
+      plotY,
+      plotWidth,
+      plotHeight
+    );
   }
 
   drawFrequencyAxis(ctx, nyquist, plotX, plotY, plotWidth, plotHeight) {
@@ -356,19 +504,26 @@ export class SpectrogramVisualizer {
     ctx.lineTo(plotX, plotY + plotHeight);
     ctx.stroke();
 
+    const scaleLabel =
+      this.scaleMode === "mel"
+        ? "Mel"
+        : this.scaleMode === "logarithmic"
+          ? "Log"
+          : "Hz";
+
     ctx.fillStyle = "#9ca3af";
     ctx.textAlign = "left";
     ctx.fillText(
-      `Freq (${this.isLogarithmic ? "Log" : "Hz"})`,
+      `Freq (${scaleLabel})`,
       plotX - this.layout.marginLeft + 6,
       plotY - 8
     );
 
-    const ticks = getFrequencyTicks(nyquist, this.isLogarithmic);
+    const ticks = getFrequencyTicks(nyquist, this.scaleMode);
     for (const tick of ticks) {
       const y =
         plotY +
-        frequencyToY(tick.freq, nyquist, plotHeight, this.isLogarithmic);
+        frequencyToY(tick.freq, nyquist, plotHeight, this.scaleMode);
 
       ctx.strokeStyle = "#6b7280";
       ctx.beginPath();
@@ -543,6 +698,112 @@ export class SpectrogramVisualizer {
     ctx.restore();
   }
 
+  drawCrosshairAndPitch(ctx, nyquist, plotX, plotY, plotWidth, plotHeight) {
+    if (!ctx) return;
+
+    // 1. Draw Fundamental Frequency (F0) & Harmonics tracking line
+    if (this.latestPitch && this.latestPitch.freq > 0) {
+      const f0 = this.latestPitch.freq;
+      const yF0 =
+        plotY + frequencyToY(f0, nyquist, plotHeight, this.scaleMode);
+
+      if (yF0 >= plotY && yF0 <= plotY + plotHeight) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(34, 197, 94, 0.85)";
+        ctx.lineWidth = 1.5;
+        if (typeof ctx.setLineDash === "function") {
+          ctx.setLineDash([4, 2]);
+        }
+        ctx.beginPath();
+        ctx.moveTo(plotX, yF0);
+        ctx.lineTo(plotX + plotWidth, yF0);
+        ctx.stroke();
+        if (typeof ctx.setLineDash === "function") {
+          ctx.setLineDash([]);
+        }
+
+        ctx.fillStyle = "rgba(34, 197, 94, 0.95)";
+        ctx.font = "bold 9px system-ui, sans-serif";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(`F₀ ${Math.round(f0)} Hz`, plotX + plotWidth - 4, yF0 - 2);
+        ctx.restore();
+      }
+
+      // Draw 2nd and 3rd harmonics
+      for (let k = 2; k <= 3; k++) {
+        const harmFreq = f0 * k;
+        if (harmFreq <= nyquist) {
+          const yHarm =
+            plotY + frequencyToY(harmFreq, nyquist, plotHeight, this.scaleMode);
+          if (yHarm >= plotY && yHarm <= plotY + plotHeight) {
+            ctx.save();
+            ctx.strokeStyle = "rgba(234, 179, 8, 0.45)";
+            ctx.lineWidth = 1;
+            if (typeof ctx.setLineDash === "function") {
+              ctx.setLineDash([2, 4]);
+            }
+            ctx.beginPath();
+            ctx.moveTo(plotX, yHarm);
+            ctx.lineTo(plotX + plotWidth, yHarm);
+            ctx.stroke();
+            if (typeof ctx.setLineDash === "function") {
+              ctx.setLineDash([]);
+            }
+
+            ctx.fillStyle = "rgba(234, 179, 8, 0.75)";
+            ctx.font = "8px system-ui, sans-serif";
+            ctx.textAlign = "right";
+            ctx.textBaseline = "bottom";
+            ctx.fillText(
+              `${k}× (${Math.round(harmFreq)} Hz)`,
+              plotX + plotWidth - 4,
+              yHarm - 2
+            );
+            ctx.restore();
+          }
+        }
+      }
+    }
+
+    // 2. Draw Interactive Hover Cursor & Crosshair
+    if (this.hover && this.hover.active) {
+      const { x, y } = this.hover;
+      ctx.save();
+
+      ctx.strokeStyle = "rgba(56, 189, 248, 0.75)";
+      ctx.lineWidth = 1;
+      if (typeof ctx.setLineDash === "function") {
+        ctx.setLineDash([3, 3]);
+      }
+
+      // Horizontal crosshair
+      ctx.beginPath();
+      ctx.moveTo(plotX, y);
+      ctx.lineTo(plotX + plotWidth, y);
+      ctx.stroke();
+
+      // Vertical crosshair
+      ctx.beginPath();
+      ctx.moveTo(x, plotY);
+      ctx.lineTo(x, plotY + plotHeight);
+      ctx.stroke();
+
+      if (typeof ctx.setLineDash === "function") {
+        ctx.setLineDash([]);
+      }
+
+      // Crosshair center ring
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+  }
+
   draw(audioProcessor) {
     if (!this.isRunning) return;
 
@@ -568,10 +829,25 @@ export class SpectrogramVisualizer {
         ? audioProcessor.getPeakDecibels()
         : minDb;
 
+    // Cache latest audio data for hover cursor queries
+    this.lastFrequencyData = data;
+    this.lastSampleRate = sampleRate;
+    this.lastMinDb = minDb;
+    this.lastMaxDb = maxDb;
+
+    // Detect pitch in real time
+    const pitchResult =
+      audioProcessor && typeof audioProcessor.detectPitch === "function"
+        ? audioProcessor.detectPitch()
+        : null;
+    this.latestPitch = pitchResult;
+
+    if (typeof this.onPitchUpdate === "function") {
+      this.onPitchUpdate(pitchResult);
+    }
+
     // ── Dedicated Web Worker Offscreen Rendering Path ─────────────────────
     if (this.isWorkerMode && this.worker) {
-      // Transfer an ArrayBuffer copy so audioProcessor's internal array is preserved
-      // while achieving zero-copy message transfer across threads.
       const bufferCopy = new Uint8Array(data).buffer;
 
       this.worker.postMessage(
@@ -582,6 +858,7 @@ export class SpectrogramVisualizer {
           minDb,
           maxDb,
           peakDb: currentPeakDb,
+          pitch: pitchResult ? pitchResult.freq : null,
           timestamp: now,
         },
         [bufferCopy]
@@ -617,7 +894,7 @@ export class SpectrogramVisualizer {
       const binCount = data.length;
 
       for (let y = 0; y < plotHeight; y++) {
-        const freq = yToFrequency(y, nyquist, plotHeight, this.isLogarithmic);
+        const freq = yToFrequency(y, nyquist, plotHeight, this.scaleMode);
         const binIndex = Math.min(
           binCount - 1,
           Math.max(0, Math.floor((freq / nyquist) * binCount))
@@ -666,6 +943,15 @@ export class SpectrogramVisualizer {
         minDb,
         maxDb,
         this.smoothedPeakDb,
+        plotX,
+        plotY,
+        plotWidth,
+        plotHeight
+      );
+
+      this.drawCrosshairAndPitch(
+        this.ctx,
+        nyquist,
         plotX,
         plotY,
         plotWidth,

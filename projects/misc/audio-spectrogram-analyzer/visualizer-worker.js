@@ -14,12 +14,14 @@ import {
   getFrequencyTicks,
   getDecibelTicks,
   formatFrequency,
+  frequencyToNote,
+  byteToDecibels,
 } from "./scale.js";
 
 /**
  * Offscreen Spectrogram Renderer
  * Manages offscreen waterfall heatmap buffers, calibrated axes overlays,
- * and dBFS colorbar rendering in worker scope.
+ * harmonic peak tracking, interactive hover crosshairs, and dBFS colorbar in worker scope.
  */
 export class SpectrogramWorkerRenderer {
   constructor({
@@ -27,6 +29,7 @@ export class SpectrogramWorkerRenderer {
     width = 800,
     height = 400,
     isLogarithmic = false,
+    scaleMode = null,
     layout = null,
     sliceWidth = 2,
   } = {}) {
@@ -38,11 +41,18 @@ export class SpectrogramWorkerRenderer {
 
     this.width = width;
     this.height = height;
-    this.isLogarithmic = isLogarithmic;
+    this.scaleMode = scaleMode
+      ? scaleMode
+      : isLogarithmic
+        ? "logarithmic"
+        : "linear";
+    this.isLogarithmic = this.scaleMode === "logarithmic";
     this.sliceWidth = sliceWidth;
     this.timeMarkers = [];
     this.lastMarkerTime = 0;
     this.smoothedPeakDb = -100;
+    this.latestPitch = null;
+    this.hover = { active: false };
 
     this.layout = layout || {
       marginTop: 22,
@@ -136,9 +146,17 @@ export class SpectrogramWorkerRenderer {
   }
 
   setScale(scale) {
-    const isLog = scale === "logarithmic" || scale === "log" || scale === true;
-    if (this.isLogarithmic !== isLog) {
-      this.isLogarithmic = isLog;
+    const mode =
+      scale === "mel" || scale === "Mel"
+        ? "mel"
+        : scale === "logarithmic" || scale === "log" || scale === true
+          ? "logarithmic"
+          : "linear";
+
+    if (this.scaleMode !== mode) {
+      this.scaleMode = mode;
+      this.isLogarithmic = mode === "logarithmic";
+
       if (this.spectrogramCtx && this.spectrogramCanvas) {
         this.spectrogramCtx.fillStyle = "#000004";
         this.spectrogramCtx.fillRect(
@@ -231,6 +249,14 @@ export class SpectrogramWorkerRenderer {
       plotWidth,
       plotHeight
     );
+    this.drawCrosshairAndPitch(
+      this.ctx,
+      nyquist,
+      plotX,
+      plotY,
+      plotWidth,
+      plotHeight
+    );
   }
 
   drawFrequencyAxis(ctx, nyquist, plotX, plotY, plotWidth, plotHeight) {
@@ -246,19 +272,26 @@ export class SpectrogramWorkerRenderer {
     ctx.lineTo(plotX, plotY + plotHeight);
     ctx.stroke();
 
+    const scaleLabel =
+      this.scaleMode === "mel"
+        ? "Mel"
+        : this.scaleMode === "logarithmic"
+          ? "Log"
+          : "Hz";
+
     ctx.fillStyle = "#9ca3af";
     ctx.textAlign = "left";
     ctx.fillText(
-      `Freq (${this.isLogarithmic ? "Log" : "Hz"})`,
+      `Freq (${scaleLabel})`,
       plotX - this.layout.marginLeft + 6,
       plotY - 8
     );
 
-    const ticks = getFrequencyTicks(nyquist, this.isLogarithmic);
+    const ticks = getFrequencyTicks(nyquist, this.scaleMode);
     for (const tick of ticks) {
       const y =
         plotY +
-        frequencyToY(tick.freq, nyquist, plotHeight, this.isLogarithmic);
+        frequencyToY(tick.freq, nyquist, plotHeight, this.scaleMode);
 
       ctx.strokeStyle = "#6b7280";
       ctx.beginPath();
@@ -433,12 +466,119 @@ export class SpectrogramWorkerRenderer {
     ctx.restore();
   }
 
+  drawCrosshairAndPitch(ctx, nyquist, plotX, plotY, plotWidth, plotHeight) {
+    if (!ctx) return;
+
+    // 1. Draw Fundamental Frequency (F0) & Harmonics tracking line
+    if (this.latestPitch && this.latestPitch > 0) {
+      const f0 = this.latestPitch;
+      const yF0 =
+        plotY + frequencyToY(f0, nyquist, plotHeight, this.scaleMode);
+
+      if (yF0 >= plotY && yF0 <= plotY + plotHeight) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(34, 197, 94, 0.85)";
+        ctx.lineWidth = 1.5;
+        if (typeof ctx.setLineDash === "function") {
+          ctx.setLineDash([4, 2]);
+        }
+        ctx.beginPath();
+        ctx.moveTo(plotX, yF0);
+        ctx.lineTo(plotX + plotWidth, yF0);
+        ctx.stroke();
+        if (typeof ctx.setLineDash === "function") {
+          ctx.setLineDash([]);
+        }
+
+        ctx.fillStyle = "rgba(34, 197, 94, 0.95)";
+        ctx.font = "bold 9px system-ui, sans-serif";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(`F₀ ${Math.round(f0)} Hz`, plotX + plotWidth - 4, yF0 - 2);
+        ctx.restore();
+      }
+
+      // Draw 2nd and 3rd harmonics
+      for (let k = 2; k <= 3; k++) {
+        const harmFreq = f0 * k;
+        if (harmFreq <= nyquist) {
+          const yHarm =
+            plotY + frequencyToY(harmFreq, nyquist, plotHeight, this.scaleMode);
+          if (yHarm >= plotY && yHarm <= plotY + plotHeight) {
+            ctx.save();
+            ctx.strokeStyle = "rgba(234, 179, 8, 0.45)";
+            ctx.lineWidth = 1;
+            if (typeof ctx.setLineDash === "function") {
+              ctx.setLineDash([2, 4]);
+            }
+            ctx.beginPath();
+            ctx.moveTo(plotX, yHarm);
+            ctx.lineTo(plotX + plotWidth, yHarm);
+            ctx.stroke();
+            if (typeof ctx.setLineDash === "function") {
+              ctx.setLineDash([]);
+            }
+
+            ctx.fillStyle = "rgba(234, 179, 8, 0.75)";
+            ctx.font = "8px system-ui, sans-serif";
+            ctx.textAlign = "right";
+            ctx.textBaseline = "bottom";
+            ctx.fillText(
+              `${k}× (${Math.round(harmFreq)} Hz)`,
+              plotX + plotWidth - 4,
+              yHarm - 2
+            );
+            ctx.restore();
+          }
+        }
+      }
+    }
+
+    // 2. Draw Interactive Hover Cursor & Crosshair
+    if (this.hover && this.hover.active) {
+      const { x, y } = this.hover;
+      ctx.save();
+
+      ctx.strokeStyle = "rgba(56, 189, 248, 0.75)";
+      ctx.lineWidth = 1;
+      if (typeof ctx.setLineDash === "function") {
+        ctx.setLineDash([3, 3]);
+      }
+
+      // Horizontal crosshair
+      ctx.beginPath();
+      ctx.moveTo(plotX, y);
+      ctx.lineTo(plotX + plotWidth, y);
+      ctx.stroke();
+
+      // Vertical crosshair
+      ctx.beginPath();
+      ctx.moveTo(x, plotY);
+      ctx.lineTo(x, plotY + plotHeight);
+      ctx.stroke();
+
+      if (typeof ctx.setLineDash === "function") {
+        ctx.setLineDash([]);
+      }
+
+      // Crosshair center ring
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+  }
+
   renderFrame({
     data: dataBuffer,
     sampleRate = 44100,
     minDb = -100,
     maxDb = -30,
     peakDb = -100,
+    pitch = null,
     timestamp = 0,
   } = {}) {
     const data = dataBuffer ? new Uint8Array(dataBuffer) : new Uint8Array(0);
@@ -446,6 +586,8 @@ export class SpectrogramWorkerRenderer {
       timestamp ||
       (typeof performance !== "undefined" ? performance.now() : Date.now());
     const nyquist = sampleRate / 2;
+
+    this.latestPitch = pitch || null;
 
     if (peakDb > this.smoothedPeakDb) {
       this.smoothedPeakDb = peakDb;
@@ -467,7 +609,7 @@ export class SpectrogramWorkerRenderer {
       const binCount = data.length;
 
       for (let y = 0; y < plotHeight; y++) {
-        const freq = yToFrequency(y, nyquist, plotHeight, this.isLogarithmic);
+        const freq = yToFrequency(y, nyquist, plotHeight, this.scaleMode);
         const binIndex = Math.min(
           binCount - 1,
           Math.max(0, Math.floor((freq / nyquist) * binCount))
@@ -492,7 +634,7 @@ export class SpectrogramWorkerRenderer {
       }
     }
 
-    // 2. Composite onto transferred display canvas
+    // 2. Composite onto OffscreenCanvas with calibrated overlays
     if (this.ctx) {
       this.ctx.fillStyle = "#0a0d14";
       this.ctx.fillRect(0, 0, width, height);
@@ -517,6 +659,15 @@ export class SpectrogramWorkerRenderer {
         minDb,
         maxDb,
         this.smoothedPeakDb,
+        plotX,
+        plotY,
+        plotWidth,
+        plotHeight
+      );
+
+      this.drawCrosshairAndPitch(
+        this.ctx,
+        nyquist,
         plotX,
         plotY,
         plotWidth,
@@ -554,6 +705,7 @@ if (
           width: msg.width,
           height: msg.height,
           isLogarithmic: msg.isLogarithmic,
+          scaleMode: msg.scaleMode,
           layout: msg.layout,
           sliceWidth: msg.sliceWidth,
         });
@@ -565,6 +717,13 @@ if (
 
       case "setScale":
         if (renderer) renderer.setScale(msg.scale);
+        break;
+
+      case "setHover":
+        if (renderer) {
+          renderer.hover = msg.hover || { active: false };
+          if (!renderer.isRunning) renderer.renderStatic();
+        }
         break;
 
       case "frame":

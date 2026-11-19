@@ -183,3 +183,233 @@ canvas {
 .box.high {
   background: var(--color-high);
 }
+
+/* Chromatic Pitch & Tuner HUD */
+.tuner-panel {
+  display: flex;
+  gap: 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  align-items: stretch;
+}
+
+@media (max-width: 680px) {
+  .tuner-panel {
+    flex-direction: column;
+  }
+}
+
+.tuner-note-card {
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+}
+
+.tuner-note-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.tuner-note {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.tuner-note.in-tune {
+  color: #10b981;
+}
+
+.tuner-freq {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.tuner-meter-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.75rem 1.25rem;
+}
+
+.tuner-meter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.flat-badge {
+  color: #3b82f6;
+}
+
+.sharp-badge {
+  color: #f97316;
+}
+
+.tuner-cents-text {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tuner-cents-text.in-tune {
+  color: #10b981;
+}
+
+.tuner-meter-track {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  margin-bottom: 0.65rem;
+}
+
+.tuner-intune-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 45%;
+  width: 10%;
+  background: rgba(16, 185, 129, 0.2);
+  border-left: 1px dashed rgba(16, 185, 129, 0.5);
+  border-right: 1px dashed rgba(16, 185, 129, 0.5);
+}
+
+.tuner-center-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  background: #10b981;
+  transform: translateX(-50%);
+}
+
+.tuner-needle {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 4px;
+  background: #ef4444;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  transition: left 0.08s ease-out, background 0.15s ease;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
+}
+
+.tuner-needle.in-tune {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+}
+
+.tuner-harmonics-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.harmonics-title {
+  font-weight: 600;
+}
+
+.harmonics-chips {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.harmonics-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-family: ui-monospace, monospace;
+}
+
+.harmonics-chip strong {
+  color: var(--accent-primary);
+}
+
+.chip-idle {
+  font-style: italic;
+  font-size: 0.75rem;
+}
+
+/* Interactive Spectrogram Hover Tooltip */
+.spectrogram-tooltip {
+  position: absolute;
+  top: 10px;
+  left: 70px;
+  display: flex;
+  gap: 1rem;
+  padding: 0.4rem 0.8rem;
+  background: rgba(10, 13, 20, 0.88);
+  color: #f9fafb;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.tooltip-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.tooltip-label {
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+.tooltip-val {
+  font-family: ui-monospace, monospace;
+  font-weight: 600;
+}
+
+#tooltip-freq {
+  color: #38bdf8;
+}
+
+#tooltip-db {
+  color: #fbbf24;
+}
+
+#tooltip-pitch {
+  color: #34d399;
+}

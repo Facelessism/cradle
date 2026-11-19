@@ -8,6 +8,10 @@ import {
   decibelsToByte,
   getDecibelTicks,
   formatFrequency,
+  hzToMel,
+  melToHz,
+  frequencyToNote,
+  detectPitchYIN,
 } from "../projects/misc/audio-spectrogram-analyzer/scale.js";
 import { AudioProcessor } from "../projects/misc/audio-spectrogram-analyzer/audio-processor.js";
 import {
@@ -390,4 +394,184 @@ test("SpectrogramWorkerRenderer manages offscreen rendering pipeline", () => {
   renderer.destroy();
   assert.equal(renderer.canvas, null);
   assert.equal(renderer.ctx, null);
+});
+
+test("hzToMel and melToHz convert between physical Hz and perceptual Mel scale", () => {
+  assert.equal(hzToMel(0), 0);
+  assert.equal(melToHz(0), 0);
+
+  // 1000 Hz ~ 1000 Mel
+  const mel1k = hzToMel(1000);
+  assert.ok(
+    Math.abs(mel1k - 1000) < 1,
+    `1 kHz should map to ~1000 Mel: got ${mel1k}`
+  );
+
+  // Invertibility across audio spectrum
+  const testFreqs = [20, 100, 440, 1000, 3000, 5000, 10000, 20000];
+  for (const f of testFreqs) {
+    const mel = hzToMel(f);
+    const recoveredF = melToHz(mel);
+    assert.ok(
+      Math.abs(recoveredF - f) < 1e-4,
+      `Failed Mel invertibility for ${f} Hz: got ${recoveredF}`
+    );
+  }
+});
+
+test("frequencyToY and yToFrequency operate accurately in Mel scale mode", () => {
+  const nyquist = 20000;
+  const height = 400;
+
+  // 0 Hz at the bottom
+  assert.equal(frequencyToY(0, nyquist, height, "mel"), 400);
+
+  // Nyquist at the top
+  assert.equal(frequencyToY(nyquist, nyquist, height, "mel"), 0);
+
+  // Invertibility test
+  const testFrequencies = [0, 50, 100, 440, 1000, 2500, 5000, 10000, 20000];
+  for (const f of testFrequencies) {
+    const y = frequencyToY(f, nyquist, height, "mel");
+    const recoveredF = yToFrequency(y, nyquist, height, "mel");
+    assert.ok(
+      Math.abs(recoveredF - f) < 1e-4,
+      `Failed Mel scale invertibility for ${f} Hz: got ${recoveredF}`
+    );
+  }
+});
+
+test("getFrequencyTicks returns calibrated frequency ticks for Mel scale", () => {
+  const melTicks = getFrequencyTicks(22050, "mel");
+  assert.ok(melTicks.length > 0);
+  const melFreqs = melTicks.map(t => t.freq);
+  assert.ok(melFreqs.includes(100));
+  assert.ok(melFreqs.includes(1000));
+  assert.ok(melFreqs.includes(5000));
+  assert.ok(melFreqs.includes(10000));
+  assert.ok(melFreqs.includes(20000));
+});
+
+test("frequencyToNote correctly maps Hz to chromatic notes and cent deviations", () => {
+  // A4 = 440 Hz
+  const a4 = frequencyToNote(440);
+  assert.equal(a4.note, "A4");
+  assert.equal(a4.noteName, "A");
+  assert.equal(a4.octave, 4);
+  assert.equal(a4.midi, 69);
+  assert.equal(a4.cents, 0);
+  assert.equal(a4.inTune, true);
+
+  // C5 = ~523.25 Hz
+  const c5 = frequencyToNote(523.25);
+  assert.equal(c5.note, "C5");
+  assert.equal(c5.noteName, "C");
+  assert.equal(c5.octave, 5);
+  assert.equal(c5.midi, 72);
+  assert.ok(Math.abs(c5.cents) < 1);
+  assert.equal(c5.inTune, true);
+
+  // Slightly sharp A4 (445 Hz)
+  const a4Sharp = frequencyToNote(445);
+  assert.equal(a4Sharp.note, "A4");
+  assert.ok(
+    a4Sharp.cents > 0,
+    `Expected positive cents for sharp note: got ${a4Sharp.cents}`
+  );
+
+  // Slightly flat A4 (435 Hz)
+  const a4Flat = frequencyToNote(435);
+  assert.equal(a4Flat.note, "A4");
+  assert.ok(
+    a4Flat.cents < 0,
+    `Expected negative cents for flat note: got ${a4Flat.cents}`
+  );
+
+  // Invalid frequencies return null
+  assert.equal(frequencyToNote(0), null);
+  assert.equal(frequencyToNote(-100), null);
+  assert.equal(frequencyToNote(NaN), null);
+});
+
+test("detectPitchYIN detects fundamental frequency from time-domain sine wave", () => {
+  const sampleRate = 44100;
+  const targetFreq = 440; // A4
+  const numSamples = 2048;
+  const buffer = new Float32Array(numSamples);
+
+  // Generate pure 440 Hz sine wave
+  for (let i = 0; i < numSamples; i++) {
+    buffer[i] = 0.8 * Math.sin((2 * Math.PI * targetFreq * i) / sampleRate);
+  }
+
+  const pitchResult = detectPitchYIN(buffer, sampleRate);
+  assert.ok(pitchResult !== null, "Pitch detection should find F0");
+  assert.ok(
+    Math.abs(pitchResult.freq - 440) < 2,
+    `Expected ~440 Hz: got ${pitchResult.freq} Hz`
+  );
+  assert.equal(pitchResult.noteInfo.note, "A4");
+  assert.ok(pitchResult.clarity > 0.85);
+
+  // Silence should return null
+  const silenceBuffer = new Float32Array(numSamples);
+  assert.equal(detectPitchYIN(silenceBuffer, sampleRate), null);
+});
+
+test("AudioProcessor getHarmonicPeaks calculates overtones and decibel amplitudes", () => {
+  const processor = new AudioProcessor();
+  processor.cachedFrequencyData = new Uint8Array(1024).fill(50);
+  const sampleRate = 44100;
+  const nyquist = sampleRate / 2;
+  const bin440 = Math.round((440 / nyquist) * 1024);
+  const bin880 = Math.round((880 / nyquist) * 1024);
+  processor.cachedFrequencyData[bin440] = 240;
+  processor.cachedFrequencyData[bin880] = 180;
+
+  const harmonics = processor.getHarmonicPeaks(440, 4);
+  assert.equal(harmonics.length, 4);
+  assert.equal(harmonics[0].harmonic, 1);
+  assert.equal(harmonics[0].freq, 440);
+  assert.equal(harmonics[1].harmonic, 2);
+  assert.equal(harmonics[1].freq, 880);
+});
+
+test("SpectrogramVisualizer and SpectrogramWorkerRenderer support Mel scale mode and hover", () => {
+  const mockCanvas = {
+    width: 800,
+    height: 400,
+    getContext: () => ({
+      fillRect: () => {},
+      drawImage: () => {},
+      beginPath: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      stroke: () => {},
+      strokeRect: () => {},
+      fillText: () => {},
+      createLinearGradient: () => ({ addColorStop: () => {} }),
+      setLineDash: () => {},
+      save: () => {},
+      restore: () => {},
+      arc: () => {},
+    }),
+  };
+
+  const visualizer = new SpectrogramVisualizer(mockCanvas);
+  visualizer.setScale("mel");
+  assert.equal(visualizer.scaleMode, "mel");
+  assert.equal(visualizer.isLogarithmic, false);
+
+  const renderer = new SpectrogramWorkerRenderer({
+    canvas: mockCanvas,
+    width: 800,
+    height: 400,
+    scaleMode: "mel",
+  });
+  assert.equal(renderer.scaleMode, "mel");
+  renderer.setScale("linear");
+  assert.equal(renderer.scaleMode, "linear");
+  renderer.setScale("mel");
+  assert.equal(renderer.scaleMode, "mel");
+  renderer.destroy();
 });
