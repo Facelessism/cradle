@@ -17,6 +17,122 @@ document.addEventListener("DOMContentLoaded", () => {
   const fftSelect = document.getElementById("fft-size");
   const scaleSelect = document.getElementById("scale-select");
 
+  // Tuner & Harmonic HUD elements
+  const tunerNote = document.getElementById("tuner-note");
+  const tunerFreq = document.getElementById("tuner-freq");
+  const tunerCentsText = document.getElementById("tuner-cents-text");
+  const tunerNeedle = document.getElementById("tuner-needle");
+  const tunerTrack = document.getElementById("tuner-meter-track");
+  const harmonicsChips = document.getElementById("harmonics-chips");
+
+  // Hover Tooltip elements
+  const tooltip = document.getElementById("spectrogram-tooltip");
+  const tooltipFreq = document.getElementById("tooltip-freq");
+  const tooltipDb = document.getElementById("tooltip-db");
+  const tooltipPitch = document.getElementById("tooltip-pitch");
+
+  // Wire real-time pitch detection & tuning meter callback
+  visualizer.onPitchUpdate = pitchResult => {
+    if (pitchResult && pitchResult.freq > 0 && pitchResult.noteInfo) {
+      const { note, exactFreq, cents, inTune } = pitchResult.noteInfo;
+      if (tunerNote) {
+        tunerNote.textContent = note;
+        tunerNote.classList.toggle("in-tune", inTune);
+      }
+      if (tunerFreq) {
+        tunerFreq.textContent = `F₀: ${pitchResult.freq} Hz (exact ${exactFreq} Hz)`;
+      }
+
+      const clampedCents = Math.max(-50, Math.min(50, cents));
+      const percent = 50 + (clampedCents / 50) * 50;
+
+      if (tunerNeedle) {
+        tunerNeedle.style.left = `${percent}%`;
+        tunerNeedle.classList.toggle("in-tune", inTune);
+      }
+      if (tunerTrack) {
+        tunerTrack.setAttribute("aria-valuenow", String(clampedCents));
+      }
+
+      if (tunerCentsText) {
+        const sign = cents > 0 ? "+" : "";
+        tunerCentsText.textContent = inTune
+          ? `${sign}${cents}¢ · In Tune!`
+          : cents < 0
+            ? `${cents}¢ · Flat`
+            : `+${cents}¢ · Sharp`;
+        tunerCentsText.classList.toggle("in-tune", inTune);
+      }
+
+      // Update harmonic peaks chips
+      if (harmonicsChips) {
+        const harmonics = audioProcessor.getHarmonicPeaks(
+          pitchResult.freq,
+          4
+        );
+        if (harmonics.length > 0) {
+          harmonicsChips.innerHTML = harmonics
+            .map(
+              h => `
+            <span class="harmonics-chip" title="Harmonic ${h.harmonic}: ${h.freq} Hz (${h.dB} dBFS)">
+              <strong>${h.harmonic === 1 ? "F₀" : `${h.harmonic}×`}</strong>
+              <span>${Math.round(h.freq)} Hz</span>
+              <span style="opacity:0.75">(${Math.round(h.dB)} dB)</span>
+            </span>
+          `
+            )
+            .join("");
+        }
+      }
+    } else {
+      if (tunerNote) {
+        tunerNote.textContent = "--";
+        tunerNote.classList.remove("in-tune");
+      }
+      if (tunerFreq) {
+        tunerFreq.textContent = "F₀: -- Hz";
+      }
+      if (tunerNeedle) {
+        tunerNeedle.style.left = "50%";
+        tunerNeedle.classList.remove("in-tune");
+      }
+      if (tunerTrack) {
+        tunerTrack.setAttribute("aria-valuenow", "0");
+      }
+      if (tunerCentsText) {
+        tunerCentsText.textContent = visualizer.isRunning
+          ? "Listening for pitch..."
+          : "Awaiting Audio Input...";
+        tunerCentsText.classList.remove("in-tune");
+      }
+      if (harmonicsChips) {
+        harmonicsChips.innerHTML =
+          '<span class="chip-idle">No harmonic peaks tracked</span>';
+      }
+    }
+  };
+
+  // Wire interactive spectrogram hover cursor tooltip
+  visualizer.onHoverUpdate = hover => {
+    if (!tooltip) return;
+
+    if (hover && hover.active) {
+      tooltip.hidden = false;
+      if (tooltipFreq) tooltipFreq.textContent = `${hover.freq} Hz`;
+      if (tooltipDb) tooltipDb.textContent = `${hover.dB} dBFS`;
+      if (tooltipPitch) {
+        if (hover.noteInfo) {
+          const sign = hover.noteInfo.cents > 0 ? "+" : "";
+          tooltipPitch.textContent = `${hover.noteInfo.note} (${sign}${hover.noteInfo.cents}¢)`;
+        } else {
+          tooltipPitch.textContent = "--";
+        }
+      }
+    } else {
+      tooltip.hidden = true;
+    }
+  };
+
   let mediaRecorder = null;
   let recordedChunks = [];
 

@@ -76,12 +76,46 @@
           <select id="scale-select" aria-label="Frequency Scale">
             <option value="linear" selected>Linear (Hz)</option>
             <option value="logarithmic">Logarithmic (Log)</option>
+            <option value="mel">Mel Scale (Mel)</option>
           </select>
+        </div>
+      </section>
+
+      <!-- Chromatic Pitch & Instrument Tuner HUD -->
+      <section class="tuner-panel" id="tuner-panel" aria-label="Chromatic Pitch and Tuner HUD">
+        <div class="tuner-note-card">
+          <div class="tuner-note-label">Musical Note</div>
+          <div class="tuner-note" id="tuner-note">--</div>
+          <div class="tuner-freq" id="tuner-freq">F₀: -- Hz</div>
+        </div>
+
+        <div class="tuner-meter-card">
+          <div class="tuner-meter-header">
+            <span class="flat-badge">♭ Flat (-50¢)</span>
+            <span class="tuner-cents-text" id="tuner-cents-text">Awaiting Audio Input...</span>
+            <span class="sharp-badge">(+50¢) Sharp ♯</span>
+          </div>
+          <div class="tuner-meter-track" id="tuner-meter-track" role="meter" aria-label="Tuning Cent Meter" aria-valuemin="-50" aria-valuemax="50" aria-valuenow="0">
+            <div class="tuner-intune-zone"></div>
+            <div class="tuner-center-mark"></div>
+            <div class="tuner-needle" id="tuner-needle" style="left: 50%;"></div>
+          </div>
+          <div class="tuner-harmonics-row">
+            <span class="harmonics-title">Harmonic Peaks:</span>
+            <div class="harmonics-chips" id="harmonics-chips">
+              <span class="chip-idle">No harmonic peaks tracked</span>
+            </div>
+          </div>
         </div>
       </section>
 
       <div class="canvas-container">
         <canvas id="spectrogram-canvas"></canvas>
+        <div id="spectrogram-tooltip" class="spectrogram-tooltip" hidden>
+          <div class="tooltip-item"><span class="tooltip-label">Freq:</span> <span id="tooltip-freq" class="tooltip-val">0 Hz</span></div>
+          <div class="tooltip-item"><span class="tooltip-label">Mag:</span> <span id="tooltip-db" class="tooltip-val">-100 dBFS</span></div>
+          <div class="tooltip-item"><span class="tooltip-label">Pitch:</span> <span id="tooltip-pitch" class="tooltip-val">--</span></div>
+        </div>
         <div id="error-banner" class="error-banner" hidden>
           Microphone access denied or unsupported. Please check browser
           permissions or use an audio file.

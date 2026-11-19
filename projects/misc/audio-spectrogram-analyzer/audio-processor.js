@@ -1,6 +1,13 @@
+import {
+  detectPitchYIN,
+  frequencyToNote,
+  byteToDecibels,
+} from "./scale.js";
+
 /**
  * Audio Processor
- * Manages Web Audio API context, AnalyserNode, and media stream routing.
+ * Manages Web Audio API context, AnalyserNode, media stream routing,
+ * and real-time autocorrelation / YIN pitch & harmonic peak analysis.
  */
 export class AudioProcessor {
   constructor() {
@@ -12,6 +19,7 @@ export class AudioProcessor {
     this.destination = null; // For recording
     this.objectUrl = null;
     this.cachedFrequencyData = null;
+    this.cachedTimeDomainData = null;
   }
 
   async init() {
@@ -234,6 +242,7 @@ export class AudioProcessor {
     if (this.analyser) {
       this.analyser.fftSize = parseInt(size, 10);
       this.cachedFrequencyData = null;
+      this.cachedTimeDomainData = null;
     }
   }
 
@@ -248,6 +257,69 @@ export class AudioProcessor {
     }
     this.analyser.getByteFrequencyData(this.cachedFrequencyData);
     return this.cachedFrequencyData;
+  }
+
+  getTimeDomainData() {
+    if (!this.analyser) return new Float32Array(0);
+    const fftSize = this.analyser.fftSize || 2048;
+    if (
+      !this.cachedTimeDomainData ||
+      this.cachedTimeDomainData.length !== fftSize
+    ) {
+      this.cachedTimeDomainData = new Float32Array(fftSize);
+    }
+
+    if (typeof this.analyser.getFloatTimeDomainData === "function") {
+      this.analyser.getFloatTimeDomainData(this.cachedTimeDomainData);
+    } else if (typeof this.analyser.getByteTimeDomainData === "function") {
+      const byteData = new Uint8Array(fftSize);
+      this.analyser.getByteTimeDomainData(byteData);
+      for (let i = 0; i < fftSize; i++) {
+        this.cachedTimeDomainData[i] = (byteData[i] - 128) / 128;
+      }
+    }
+    return this.cachedTimeDomainData;
+  }
+
+  detectPitch(options = {}) {
+    const timeData = this.getTimeDomainData();
+    if (!timeData || timeData.length === 0) return null;
+    return detectPitchYIN(timeData, this.getSampleRate(), options);
+  }
+
+  getHarmonicPeaks(f0, maxHarmonics = 6) {
+    if (!f0 || f0 <= 0) return [];
+    const nyquist = this.getSampleRate() / 2;
+    const freqData = this.getFrequencyData();
+    const binCount = freqData.length;
+    if (binCount === 0) return [];
+
+    const minDb = this.getMinDecibels();
+    const maxDb = this.getMaxDecibels();
+    const harmonics = [];
+
+    for (let k = 1; k <= maxHarmonics; k++) {
+      const harmonicFreq = f0 * k;
+      if (harmonicFreq > nyquist) break;
+
+      const binIndex = Math.min(
+        binCount - 1,
+        Math.max(0, Math.round((harmonicFreq / nyquist) * binCount))
+      );
+      const byteVal = freqData[binIndex];
+      const dB = byteToDecibels(byteVal, minDb, maxDb);
+      const noteInfo = frequencyToNote(harmonicFreq);
+
+      harmonics.push({
+        harmonic: k,
+        freq: Math.round(harmonicFreq * 10) / 10,
+        dB: Math.round(dB * 10) / 10,
+        byteVal,
+        noteInfo,
+      });
+    }
+
+    return harmonics;
   }
 
   getRecordingStream() {
@@ -319,6 +391,7 @@ export class AudioProcessor {
       this.analyser = null;
     }
     this.cachedFrequencyData = null;
+    this.cachedTimeDomainData = null;
   }
 
   async destroy() {
@@ -336,5 +409,6 @@ export class AudioProcessor {
     }
     this.destination = null;
     this.cachedFrequencyData = null;
+    this.cachedTimeDomainData = null;
   }
 }
