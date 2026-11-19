@@ -4,11 +4,11 @@
   "workers": [
     {
       "url": "projects/aiml/neural-network-playground/nnEngine.js",
-      "sha256": "7689d30e3daf1142dd6cf210ca6a4b0e8345c844cf4fbb1209a718a07a0ce54e"
+      "sha256": "20fddb86d03890a177e93afa111964e71e711ed7613c0bd31dce8562404b2ebf"
     },
     {
       "url": "projects/aiml/neural-network-playground/nnWorker.js",
-      "sha256": "d10db62f45fd40cd49228977d3904f69794c72d059ad972c626ab4b9e1496480"
+      "sha256": "574f00e13388ffb539a2839b2dbf3daf912eab6210b347e8fcc857db2b1b6ec6"
     },
     {
       "url": "projects/games/chess/ai-worker.js",

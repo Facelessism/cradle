@@ -10,8 +10,9 @@ self.onmessage = function (e) {
   const { type, payload } = e.data;
   switch (type) {
     case "INIT_NETWORK": {
-      const { layers, activationName, lr, weights, biases } = payload;
-      net = new NeuralNetwork(layers, activationName, lr);
+      const { layers, activationName, lr, weights, biases, regularization } =
+        payload;
+      net = new NeuralNetwork(layers, activationName, lr, regularization || 0);
       if (Array.isArray(weights) && Array.isArray(biases)) {
         net.weights = weights;
         net.biases = biases;
@@ -30,7 +31,6 @@ self.onmessage = function (e) {
       }
 
       // Split into inputs and targets
-      const inputs = dataset.map(d => [d[0], d[1]]);
       targets = dataset.map(d => d[2]);
 
       self.postMessage({
@@ -47,10 +47,12 @@ self.onmessage = function (e) {
       let totalEpochs = 0;
       let lastLoss = 0;
       let lastAcc = 0;
+      let lastGradients = [];
       for (let s = 0; s < speed; s++) {
         const result = net.train(inputs, targets, batchSize);
         lastLoss = result.loss;
         lastAcc = result.accuracy;
+        lastGradients = result.layerGradients || [];
         totalEpochs++;
       }
       self.postMessage({
@@ -61,6 +63,7 @@ self.onmessage = function (e) {
           epochs: totalEpochs,
           weights: net.weights,
           biases: net.biases,
+          layerGradients: lastGradients,
         },
       });
       break;
@@ -80,8 +83,13 @@ self.onmessage = function (e) {
       break;
     }
     case "UPDATE_PARAMS": {
-      if (net && payload.lr !== undefined) {
-        net.lr = payload.lr;
+      if (net) {
+        if (payload.lr !== undefined) {
+          net.lr = payload.lr;
+        }
+        if (payload.regularization !== undefined) {
+          net.regularization = payload.regularization;
+        }
       }
       break;
     }
