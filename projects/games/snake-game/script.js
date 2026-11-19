@@ -158,6 +158,13 @@ document.addEventListener("DOMContentLoaded", () => {
   let inputQueue = [];
 
   /* ── Drawing Helpers ── */
+  function resolveCSSColor(variableName, fallback) {
+    const value = getComputedStyle(document.documentElement)
+      .getPropertyValue(variableName)
+      .trim();
+    return value || fallback;
+  }
+
   // Rounded rectangle path with a plain-rect fallback for browsers without ctx.roundRect
   function roundRect(x, y, w, h, r) {
     if (typeof ctx.roundRect === "function") {
@@ -533,6 +540,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ctx.font = "bold 12px 'Outfit', sans-serif";
       ctx.textAlign = "right";
       ctx.textBaseline = "top";
+      ctx.fillStyle = resolveCSSColor("--text-main", "#f8fafc");
       ctx.fillText(`${style.symbol} ${style.label}`, canvas.width - 6, 10);
       ctx.restore();
     }
@@ -541,12 +549,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (gameState.isPaused && !gameState.isGameOver) {
       ctx.fillStyle = "rgba(9, 13, 22, 0.75)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = resolveCSSColor("--text-main", "#f8fafc");
       ctx.font = "bold 24px 'Outfit', sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("PAUSED", canvas.width / 2, canvas.height / 2);
       ctx.font = "14px 'Outfit', sans-serif";
-      ctx.fillStyle = "var(--text-muted, #94a3b8)";
+      ctx.fillStyle = resolveCSSColor("--text-muted", "#94a3b8");
       ctx.fillText(
         "Press Space or click Resume to continue",
         canvas.width / 2,
@@ -674,6 +682,9 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     { passive: false }
   );
+
+  document.documentElement.addEventListener("cradle:themechange", render);
+  document.documentElement.addEventListener("cradle:contrastchange", render);
 
   /* ── Initial Render ── */
   gameOverModal.hidden = true;
