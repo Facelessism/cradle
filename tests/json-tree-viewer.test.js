@@ -201,3 +201,88 @@ test("getAncestorPaths extracts parent hierarchy for automatic expansion", () =>
   ]);
 });
 
+test("validateJsonPath accepts valid expressions in real-time", () => {
+  const validQueries = [
+    "$",
+    "$.store.book",
+    "$.store.book[*].author",
+    "$..price",
+    "$.features[0]",
+    "$.features[-1].name",
+    "$.features[0:2]",
+    "$.features[0,1]",
+    "$.features[?(@.status == 'active')]",
+    "$.store.book[?(@.price < 10)]",
+    "$.store.book[?(@.category)]",
+    "$['store']['bicycle']",
+    "$.config.*",
+    "$..*",
+  ];
+
+  for (const q of validQueries) {
+    const res = JsonPathEngine.validateJsonPath(q);
+    assert.equal(res.isValid, true, `Expected "${q}" to be valid`);
+    assert.equal(res.error, null);
+    assert.equal(res.isBlank, false);
+    assert.ok(Array.isArray(res.segments));
+  }
+});
+
+test("validateJsonPath handles blank and whitespace queries cleanly", () => {
+  for (const blank of ["", "   ", "\t\n"]) {
+    const res = JsonPathEngine.validateJsonPath(blank);
+    assert.equal(res.isValid, true);
+    assert.equal(res.isBlank, true);
+    assert.equal(res.error, null);
+    assert.deepEqual(res.segments, []);
+  }
+});
+
+test("validateJsonPath catches malformed expressions with descriptive errors", () => {
+  const malformedCases = [
+    { query: "$.store.book[", pattern: /Unclosed bracket/i },
+    { query: "$.store.book[*.author", pattern: /Unclosed bracket/i },
+    { query: "$.store.book.", pattern: /trailing '\.'/i },
+    { query: "$.store.book..", pattern: /Unexpected end of expression after '\.\.'/i },
+    { query: "$.store.book[]", pattern: /Empty bracket/i },
+    { query: "$.store.book[?()]", pattern: /Empty filter expression/i },
+    { query: "$.features[?(@.price <)]", pattern: /Incomplete filter expression/i },
+    { query: "$.features[?(@.status ==)]", pattern: /Incomplete filter expression/i },
+    { query: "$.features@", pattern: /Unexpected token/i },
+    { query: "$.store...book", pattern: /Invalid recursive target/i },
+  ];
+
+  for (const { query, pattern } of malformedCases) {
+    const res = JsonPathEngine.validateJsonPath(query);
+    assert.equal(res.isValid, false, `Expected "${query}" to be invalid`);
+    assert.equal(res.isBlank, false);
+    assert.match(res.error, pattern);
+  }
+});
+
+test("evaluateJsonPath prevents invalid queries from executing against data or null", () => {
+  const invalidQuery = "$.store.book[?(@.price <)]";
+
+  // When data is null
+  const nullResult = JsonPathEngine.evaluateJsonPath(null, invalidQuery);
+  assert.equal(nullResult.isValid, false);
+  assert.match(nullResult.error, /Incomplete filter/i);
+  assert.equal(nullResult.count, 0);
+
+  // When data is populated
+  const dataResult = JsonPathEngine.evaluateJsonPath(SAMPLE_PAYLOAD, invalidQuery);
+  assert.equal(dataResult.isValid, false);
+  assert.match(dataResult.error, /Incomplete filter/i);
+  assert.equal(dataResult.count, 0);
+  assert.deepEqual(dataResult.matches, []);
+});
+
+test("findMatchingBracket handles brackets nested in quotes accurately", () => {
+  const queryWithBracketInQuote = "$['book[0]'].title";
+  const validation = JsonPathEngine.validateJsonPath(queryWithBracketInQuote);
+  assert.equal(validation.isValid, true);
+  assert.equal(validation.segments.length, 2);
+  assert.equal(validation.segments[0].type, "property");
+  assert.equal(validation.segments[0].name, "book[0]");
+});
+

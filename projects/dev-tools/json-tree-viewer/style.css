@@ -476,6 +476,11 @@
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.25);
 }
 
+.jsonpath-input.input-valid {
+  border-color: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+}
+
 .jsonpath-input.input-error {
   border-color: #ef4444;
   box-shadow: 0 0 8px rgba(239, 68, 68, 0.25);

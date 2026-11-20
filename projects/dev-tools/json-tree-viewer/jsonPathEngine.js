@@ -19,6 +19,49 @@
   const MAX_RECURSION_DEPTH = 100;
 
   /**
+   * Find the index of the matching closing bracket ']', ignoring brackets
+   * nested inside single or double quote string literals or deeper bracket levels.
+   */
+  function findMatchingBracket(str, startIdx) {
+    let depth = 0;
+    let inQuote = null;
+    let isEscaped = false;
+
+    for (let idx = startIdx; idx < str.length; idx++) {
+      const char = str[idx];
+
+      if (isEscaped) {
+        isEscaped = false;
+        continue;
+      }
+
+      if (char === "\\") {
+        isEscaped = true;
+        continue;
+      }
+
+      if (inQuote) {
+        if (char === inQuote) {
+          inQuote = null;
+        }
+      } else {
+        if (char === "'" || char === '"') {
+          inQuote = char;
+        } else if (char === "[") {
+          depth++;
+        } else if (char === "]") {
+          depth--;
+          if (depth === 0) {
+            return idx;
+          }
+        }
+      }
+    }
+
+    return -1;
+  }
+
+  /**
    * Tokenize / parse a single bracket content:
    * e.g. "0", "'prop'", '"prop"', "*", "0,1", "1:3", "?(@.price < 10)"
    */
@@ -218,7 +261,7 @@
           segments.push({ type: "recursive", target: { type: "wildcard" } });
           i++;
         } else if (rest[i] === "[") {
-          const closeIdx = rest.indexOf("]", i);
+          const closeIdx = findMatchingBracket(rest, i);
           if (closeIdx === -1) {
             throw new SyntaxError("Unclosed bracket in JSONPath expression");
           }
@@ -262,7 +305,7 @@
 
       // 3. Bracket expression [...]
       if (rest[i] === "[") {
-        const closeIdx = rest.indexOf("]", i);
+        const closeIdx = findMatchingBracket(rest, i);
         if (closeIdx === -1) {
           throw new SyntaxError("Unclosed bracket in JSONPath expression");
         }
@@ -278,6 +321,34 @@
     }
 
     return { isValid: true, error: null, segments, isBlank: false };
+  }
+
+  /**
+   * Validate a JSONPath expression syntax in real-time.
+   * Returns: { isValid: boolean, error: string | null, isBlank: boolean, segments: Array }
+   */
+  function validateJsonPath(query = "") {
+    const raw = String(query).trim();
+    if (!raw) {
+      return { isValid: true, error: null, isBlank: true, segments: [] };
+    }
+
+    try {
+      const parsed = parseJsonPath(raw);
+      return {
+        isValid: true,
+        error: null,
+        isBlank: false,
+        segments: parsed.segments,
+      };
+    } catch (err) {
+      return {
+        isValid: false,
+        error: err.message || "Invalid JSONPath syntax",
+        isBlank: false,
+        segments: [],
+      };
+    }
   }
 
   /**
@@ -312,24 +383,27 @@
    * Returns: { isValid: boolean, error: string | null, matches: [{ path, value }], count: number }
    */
   function evaluateJsonPath(data, query = "") {
+    const validation = validateJsonPath(query);
+    if (!validation.isValid) {
+      return {
+        isValid: false,
+        error: validation.error,
+        matches: [],
+        count: 0,
+      };
+    }
+
+    if (validation.isBlank) {
+      return { isValid: true, error: null, matches: [], count: 0, isBlank: true };
+    }
+
     if (data === undefined || data === null) {
       return { isValid: true, error: null, matches: [], count: 0 };
     }
 
-    let parsed;
-    try {
-      parsed = parseJsonPath(query);
-    } catch (err) {
-      return { isValid: false, error: err.message, matches: [], count: 0 };
-    }
-
-    if (parsed.isBlank) {
-      return { isValid: true, error: null, matches: [], count: 0, isBlank: true };
-    }
-
     let currentNodes = [{ path: "$", value: data }];
 
-    for (const seg of parsed.segments) {
+    for (const seg of validation.segments) {
       const nextNodes = [];
 
       if (seg.type === "property") {
@@ -540,6 +614,8 @@
   }
 
   return {
+    validateJsonPath,
+    findMatchingBracket,
     parseBracketContent,
     parseFilterExpression,
     parseJsonPath,
