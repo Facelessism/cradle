@@ -180,6 +180,9 @@
       <marker id="arrow-marker" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
         <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b" />
       </marker>
+      <marker id="arrow-marker-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#3b82f6" />
+      </marker>
       <marker id="arrow-marker-tree" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
         <path d="M 0 1 L 10 5 L 0 9 z" fill="#10b981" />
       </marker>
@@ -189,26 +192,44 @@
       <marker id="arrow-marker-frontier" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
         <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b" />
       </marker>
+      <marker id="arrow-marker-reject" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef4444" />
+      </marker>
     `;
   }
 
   function edgeClass(from, to) {
     if (!steps.length || stepIndex < 0) return "";
-    const seen = steps.slice(0, stepIndex + 1);
+    const currentStep = steps[stepIndex];
 
-    for (const step of seen) {
-      if (!step.edge) continue;
-      const matches = directed
-        ? step.edge.from === from && step.edge.to === to
-        : (step.edge.from === from && step.edge.to === to) ||
-          (step.edge.from === to && step.edge.to === from);
-      if (!matches) continue;
-      if (step.type === "tree-edge") return "tree-edge";
-      if (step.type === "frontier-edge") return "frontier-edge";
-      if (step.type === "reject-edge") return "reject-edge";
+    const isMatch = e =>
+      e &&
+      (directed
+        ? e.from === from && e.to === to
+        : (e.from === from && e.to === to) ||
+          (e.from === to && e.to === from));
+
+    // 1. Is this edge actively being explored in the current step?
+    if (currentStep && currentStep.edge && isMatch(currentStep.edge)) {
+      if (
+        currentStep.type === "reject-edge" ||
+        currentStep.type === "back-edge"
+      ) {
+        return "active-edge reject-edge";
+      }
+      if (currentStep.type === "tree-edge") {
+        return "active-edge tree-edge";
+      }
+      return "active-edge frontier-edge";
     }
 
-    if (finalResult && finalResult.path && finalResult.path.length) {
+    // 2. Final shortest path highlighting when algorithm is complete
+    if (
+      stepIndex === steps.length - 1 &&
+      finalResult &&
+      Array.isArray(finalResult.path) &&
+      finalResult.path.length
+    ) {
       for (let i = 0; i < finalResult.path.length - 1; i++) {
         const a = finalResult.path[i];
         const b = finalResult.path[i + 1];
@@ -218,27 +239,68 @@
         if (matches) return "path-edge";
       }
     }
+
+    // 3. Scan seen steps in reverse (newest to oldest) to find the latest confirmed state
+    const seen = steps.slice(0, stepIndex + 1);
+    for (let i = seen.length - 1; i >= 0; i--) {
+      const step = seen[i];
+      if (!step.edge || !isMatch(step.edge)) continue;
+
+      if (step.type === "tree-edge") return "tree-edge";
+      if (step.type === "reject-edge") return "reject-edge";
+      if (step.type === "frontier-edge" || step.type === "relax")
+        return "frontier-edge";
+      if (step.type === "back-edge") return "reject-edge";
+    }
+
     return "";
   }
 
   function nodeClass(nodeId) {
     if (!steps.length || stepIndex < 0) return "";
+    const currentStep = steps[stepIndex];
+    if (!currentStep) return "";
+
+    // 1. On final step, highlight nodes on the shortest path
+    const onPath =
+      finalResult &&
+      Array.isArray(finalResult.path) &&
+      finalResult.path.includes(nodeId);
+    if (stepIndex === steps.length - 1 && onPath) return "on-path";
+
+    // 2. Is this node the active focus of the current step?
+    const isCurrent =
+      currentStep.node === nodeId ||
+      (currentStep.edge && currentStep.edge.to === nodeId);
+    if (isCurrent) return "current";
+
+    // 3. Was this node visited / settled up to this step?
     const seen = steps.slice(0, stepIndex + 1);
     const isVisited = seen.some(
       s =>
-        (s.type === "visit" || s.type === "settle" || s.type === "scc-found") &&
+        (s.type === "visit" ||
+          s.type === "settle" ||
+          s.type === "scc-found") &&
         (s.node === nodeId || (s.component && s.component.includes(nodeId)))
     );
-    const isCurrent =
-      steps[stepIndex] &&
-      (steps[stepIndex].node === nodeId ||
-        (steps[stepIndex].edge && steps[stepIndex].edge.to === nodeId));
-    const onPath =
-      finalResult && finalResult.path && finalResult.path.includes(nodeId);
-
-    if (stepIndex === steps.length - 1 && onPath) return "on-path";
-    if (isCurrent) return "current";
     if (isVisited) return "visited";
+
+    // 4. Is this node currently in the open frontier (queue, stack, candidates)?
+    const isOpen =
+      Array.isArray(currentStep.openSet) &&
+      currentStep.openSet.some(item => {
+        if (typeof item === "string") {
+          return (
+            item === nodeId ||
+            item.startsWith(`${nodeId}:`) ||
+            item.startsWith(`${nodeId}-`) ||
+            item.includes(`-${nodeId}`)
+          );
+        }
+        return item === nodeId;
+      });
+    if (isOpen) return "frontier";
+
     return "";
   }
 
@@ -316,6 +378,40 @@
       label.setAttribute("class", "node-label");
       label.textContent = node.id;
       canvas.appendChild(label);
+
+      // Node telemetry badge during algorithm playback
+      let badgeText = "";
+      if (steps.length && stepIndex >= 0 && steps[stepIndex]) {
+        const curStep = steps[stepIndex];
+        if (algorithm === "dijkstra" && curStep.stateTable) {
+          const d = curStep.stateTable[node.id];
+          if (d !== undefined && d !== Infinity) {
+            badgeText = `d:${d}`;
+          }
+        } else if (algorithm === "topo" && curStep.stateTable) {
+          const inDeg = curStep.stateTable[node.id];
+          if (inDeg !== undefined) {
+            badgeText = `in:${inDeg}`;
+          }
+        } else if (algorithm === "scc" && curStep.stateTable) {
+          const disc =
+            curStep.stateTable.disc && curStep.stateTable.disc[node.id];
+          const low =
+            curStep.stateTable.low && curStep.stateTable.low[node.id];
+          if (disc !== undefined && low !== undefined) {
+            badgeText = `${disc}/${low}`;
+          }
+        }
+      }
+
+      if (badgeText) {
+        const badge = document.createElementNS(SVG_NS, "text");
+        badge.setAttribute("x", node.x);
+        badge.setAttribute("y", node.y + 26);
+        badge.setAttribute("class", "node-badge");
+        badge.textContent = badgeText;
+        canvas.appendChild(badge);
+      }
     }
   }
 
@@ -534,34 +630,129 @@
 
   function updateResultPanel() {
     if (!resultPanel) return;
-    if (stepIndex < steps.length - 1 || !finalResult) return;
+
+    if (!steps.length || stepIndex < 0) {
+      resultPanel.textContent = "Waiting to start...";
+      return;
+    }
+
+    const currentStep = steps[stepIndex];
+    const isFinal = stepIndex === steps.length - 1;
 
     if (algorithm === "mst") {
-      resultPanel.textContent = `Prim's MST Total Weight: ${finalResult.totalWeight}\nTree Edges: ${finalResult.mstEdges
-        .map(e => `${e.from}—${e.to} (wt ${e.weight})`)
-        .join(", ")}`;
+      const seenEdges = [];
+      let runningWeight = 0;
+      for (let i = 0; i <= stepIndex; i++) {
+        if (steps[i].type === "tree-edge" && steps[i].edge) {
+          seenEdges.push(steps[i].edge);
+          runningWeight += steps[i].edge.weight ?? 1;
+        }
+      }
+      const edgeListStr = seenEdges.length
+        ? seenEdges
+            .map(e => `${e.from}—${e.to} (wt ${e.weight})`)
+            .join(", ")
+        : "None yet";
+
+      if (isFinal && finalResult) {
+        resultPanel.textContent = `★ Prim's MST Complete!\nTotal Weight: ${finalResult.totalWeight}\nTree Edges (${finalResult.mstEdges.length}): ${finalResult.mstEdges
+          .map(e => `${e.from}—${e.to} (wt ${e.weight})`)
+          .join(", ")}`;
+      } else {
+        const candidates =
+          currentStep.openSet && currentStep.openSet.length
+            ? currentStep.openSet.join(", ")
+            : "—";
+        resultPanel.textContent = `[Step ${stepIndex + 1}/${steps.length}] Prim's MST in progress...\nRunning Weight: ${runningWeight}\nTree Edges so far (${seenEdges.length}): ${edgeListStr}\nCandidates evaluated: ${candidates}`;
+      }
     } else if (algorithm === "kruskal") {
-      resultPanel.textContent = `Kruskal's MST Total Weight: ${finalResult.totalWeight}\nSpanning: ${finalResult.isSpanning ? "Yes (V - 1 edges)" : "No (Disconnected Graph)"}\nTree Edges: ${finalResult.mstEdges
-        .map(e => `${e.from}—${e.to} (wt ${e.weight})`)
-        .join(", ")}\nRejected Cycle Edges: ${finalResult.rejectedEdgesCount}`;
+      const seenMst = [];
+      let runningWeight = 0;
+      let rejected = 0;
+      for (let i = 0; i <= stepIndex; i++) {
+        if (steps[i].type === "tree-edge" && steps[i].edge) {
+          seenMst.push(steps[i].edge);
+          runningWeight += steps[i].edge.weight ?? 1;
+        } else if (steps[i].type === "reject-edge") {
+          rejected++;
+        }
+      }
+      const edgeListStr = seenMst.length
+        ? seenMst
+            .map(e => `${e.from}—${e.to} (wt ${e.weight})`)
+            .join(", ")
+        : "None yet";
+
+      if (isFinal && finalResult) {
+        resultPanel.textContent = `★ Kruskal's MST Complete!\nTotal Weight: ${finalResult.totalWeight}\nSpanning: ${finalResult.isSpanning ? "Yes (V - 1 edges)" : "No (Disconnected Graph)"}\nTree Edges (${finalResult.mstEdges.length}): ${finalResult.mstEdges
+          .map(e => `${e.from}—${e.to} (wt ${e.weight})`)
+          .join(", ")}\nRejected Cycle Edges: ${finalResult.rejectedEdgesCount}`;
+      } else {
+        resultPanel.textContent = `[Step ${stepIndex + 1}/${steps.length}] Kruskal's MST in progress...\nRunning Weight: ${runningWeight}\nAccepted Edges (${seenMst.length}/${Math.max(nodes.length - 1, 0)}): ${edgeListStr}\nRejected Cycle Edges: ${rejected}`;
+      }
     } else if (algorithm === "dijkstra") {
-      const lines = Object.entries(finalResult.distances).map(
-        ([id, d]) => `${id}: ${d === Infinity ? "unreachable" : d}`
+      const dists =
+        currentStep.stateTable ||
+        (finalResult && finalResult.distances) ||
+        {};
+      const settled = new Set(currentStep.closedSet || []);
+      const lines = Object.entries(dists).map(
+        ([id, d]) =>
+          `${id}: ${d === Infinity ? "∞" : d} ${settled.has(id) ? "(settled)" : d !== Infinity ? "(candidate)" : "(unreached)"}`
       );
-      const pathLine = finalResult.path.length
-        ? `Shortest Path: ${finalResult.path.join(" → ")}`
-        : "No path exists between start and end nodes.";
-      resultPanel.textContent = `${pathLine}\n\nDistances from start:\n${lines.join("\n")}`;
+
+      if (isFinal && finalResult) {
+        const destNode = endSelect?.value;
+        const finalDist =
+          destNode && finalResult.distances[destNode] !== undefined
+            ? finalResult.distances[destNode]
+            : "—";
+        const pathLine =
+          finalResult.path && finalResult.path.length
+            ? `Shortest Path: ${finalResult.path.join(" → ")} (Distance: ${finalDist})`
+            : "No path exists between start and end nodes.";
+        resultPanel.textContent = `★ Dijkstra Execution Complete!\n${pathLine}\n\nFinal Distances from ${startSelect?.value || "start"}:\n${lines.join("\n")}`;
+      } else {
+        resultPanel.textContent = `[Step ${stepIndex + 1}/${steps.length}] Dijkstra in progress...\nSettled: [${Array.from(settled).join(", ") || "none"}]\nCurrent Distances:\n${lines.join("\n")}`;
+      }
     } else if (algorithm === "topo") {
-      const topoLine = finalResult.isDAG
-        ? `Topological Sort Order: ${finalResult.order.join(" → ")}`
-        : `Cycle Detected! Graph is NOT a DAG.\nPartial Order: ${finalResult.order.join(" → ")}`;
-      resultPanel.textContent = `${topoLine}\n\nFinal In-Degrees: ${JSON.stringify(finalResult.inDegrees)}`;
+      const closed = currentStep.closedSet || [];
+      const degs =
+        currentStep.stateTable ||
+        (finalResult && finalResult.inDegrees) ||
+        {};
+
+      if (isFinal && finalResult) {
+        const topoLine = finalResult.isDAG
+          ? `★ Topological Sort Complete!\nOrder: ${finalResult.order.join(" → ")}`
+          : `⚠ Cycle Detected! Graph is NOT a DAG.\nPartial Order: ${finalResult.order.join(" → ")}`;
+        resultPanel.textContent = `${topoLine}\n\nFinal In-Degrees: ${JSON.stringify(finalResult.inDegrees)}`;
+      } else {
+        resultPanel.textContent = `[Step ${stepIndex + 1}/${steps.length}] Kahn's Topo Sort in progress...\nOrder so far: [${closed.join(" → ") || "none"}]\nQueue (in-degree 0): [${(currentStep.openSet || []).join(", ")}]\nCurrent In-Degrees: ${JSON.stringify(degs)}`;
+      }
     } else if (algorithm === "scc") {
-      const sccLines = finalResult.components
-        .map((c, i) => `Component ${i + 1}: [${c.join(", ")}]`)
-        .join("\n");
-      resultPanel.textContent = `Tarjan's SCC Analysis: Found ${finalResult.sccCount} Strongly Connected Component(s):\n${sccLines}`;
+      const finalized = currentStep.closedSet || [];
+      const stack = currentStep.openSet || [];
+
+      if (isFinal && finalResult) {
+        const sccLines = finalResult.components
+          .map((c, i) => `Component ${i + 1}: [${c.join(", ")}]`)
+          .join("\n");
+        resultPanel.textContent = `★ Tarjan's SCC Analysis Complete!\nFound ${finalResult.sccCount} Strongly Connected Component(s):\n${sccLines}`;
+      } else {
+        resultPanel.textContent = `[Step ${stepIndex + 1}/${steps.length}] Tarjan's SCC in progress...\nActive Call/DFS Stack: [${stack.join(", ") || "empty"}]\nFinalized SCC Nodes: [${finalized.join(", ") || "none"}]`;
+      }
+    } else {
+      // BFS or DFS
+      const visited = currentStep.closedSet || [];
+      const open = currentStep.openSet || [];
+      const label = algorithm === "bfs" ? "Queue" : "Call Stack";
+
+      if (isFinal) {
+        resultPanel.textContent = `★ ${algorithm.toUpperCase()} Traversal Complete!\nTotal Nodes Visited: ${visited.length} / ${nodes.length}\nTraversal Order: ${visited.join(" → ")}`;
+      } else {
+        resultPanel.textContent = `[Step ${stepIndex + 1}/${steps.length}] ${algorithm.toUpperCase()} in progress...\nVisited so far: [${visited.join(" → ")}]\nCurrent ${label}: [${open.join(", ")}]`;
+      }
     }
   }
 
@@ -747,6 +938,10 @@
       playIcon.classList.remove("fa-pause");
       playIcon.classList.add("fa-play");
     }
+    if (btnPlay) {
+      btnPlay.setAttribute("title", "Play Animation");
+      btnPlay.setAttribute("aria-label", "Play Animation");
+    }
     if (playTimer) clearInterval(playTimer);
     playTimer = null;
   }
@@ -759,6 +954,17 @@
       playIcon.classList.remove("fa-play");
       playIcon.classList.add("fa-pause");
     }
+    if (btnPlay) {
+      btnPlay.setAttribute("title", "Pause Animation");
+      btnPlay.setAttribute("aria-label", "Pause Animation");
+    }
+
+    // If starting fresh, immediately advance to step 0
+    if (stepIndex < 0) {
+      goToStep(0);
+    }
+
+    if (playTimer) clearInterval(playTimer);
     playTimer = setInterval(() => {
       if (stepIndex >= steps.length - 1) {
         stopPlaying();
@@ -790,11 +996,15 @@
   });
 
   btnNext?.addEventListener("click", () => {
+    if (playing) stopPlaying();
     if (steps.length === 0) steps = computeSteps();
     goToStep(stepIndex + 1);
   });
 
-  btnPrev?.addEventListener("click", () => goToStep(stepIndex - 1));
+  btnPrev?.addEventListener("click", () => {
+    if (playing) stopPlaying();
+    goToStep(stepIndex - 1);
+  });
 
   btnResetPlay?.addEventListener("click", () => resetPlayback());
 
@@ -807,6 +1017,34 @@
     if (playing) {
       stopPlaying();
       startPlaying();
+    }
+  });
+
+  // Keyboard shortcut controls for animation playback
+  window.addEventListener("keydown", evt => {
+    const activeEl = document.activeElement;
+    if (
+      activeEl &&
+      (activeEl.tagName === "INPUT" ||
+        activeEl.tagName === "TEXTAREA" ||
+        activeEl.tagName === "SELECT")
+    ) {
+      return;
+    }
+    if (ioModal && !ioModal.hidden) return;
+
+    if (evt.code === "Space") {
+      evt.preventDefault();
+      btnPlay?.click();
+    } else if (evt.code === "ArrowRight") {
+      evt.preventDefault();
+      btnNext?.click();
+    } else if (evt.code === "ArrowLeft") {
+      evt.preventDefault();
+      btnPrev?.click();
+    } else if (evt.key === "r" || evt.key === "R") {
+      evt.preventDefault();
+      btnResetPlay?.click();
     }
   });
 
