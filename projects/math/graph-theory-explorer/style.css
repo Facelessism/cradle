@@ -425,25 +425,92 @@ input[type="range"]::-moz-range-thumb {
   cursor: crosshair;
 }
 
+/* Keyframe animations for algorithm playback visual feedback */
+@keyframes node-pulse-ring {
+  0% {
+    r: 20px;
+    stroke-width: 3.5px;
+  }
+  50% {
+    r: 25px;
+    stroke-width: 5px;
+  }
+  100% {
+    r: 20px;
+    stroke-width: 3.5px;
+  }
+}
+
+@keyframes edge-flow {
+  0% {
+    stroke-dashoffset: 24;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes edge-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.95));
+  }
+}
+
+@keyframes reject-flash {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .graph-canvas .edge-line {
   stroke: var(--cradle-border-hover);
   stroke-width: 2;
-  transition: stroke var(--cradle-transition-fast);
+  transition:
+    stroke var(--cradle-transition-fast),
+    stroke-width var(--cradle-transition-fast);
+}
+
+.graph-canvas .edge-line.active-edge {
+  stroke: #3b82f6;
+  stroke-width: 5;
+  stroke-dasharray: 8, 4;
+  animation:
+    edge-flow 0.8s linear infinite,
+    edge-glow 1.4s ease-in-out infinite;
 }
 
 .graph-canvas .edge-line.tree-edge {
-  stroke: var(--theme-accent);
+  stroke: #10b981;
   stroke-width: 4;
+  filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.4));
 }
 
 .graph-canvas .edge-line.frontier-edge {
   stroke: var(--cradle-warning);
-  stroke-width: 4;
+  stroke-width: 3.5;
+  stroke-dasharray: 6, 3;
+  animation: edge-flow 1.2s linear infinite;
+}
+
+.graph-canvas .edge-line.reject-edge {
+  stroke: var(--cradle-danger);
+  stroke-width: 3.5;
+  stroke-dasharray: 5, 5;
+  animation: reject-flash 0.8s infinite ease-in-out;
 }
 
 .graph-canvas .edge-line.path-edge {
   stroke: var(--cradle-danger);
-  stroke-width: 4;
+  stroke-width: 5;
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.7));
 }
 
 .graph-canvas .edge-weight {
@@ -455,26 +522,52 @@ input[type="range"]::-moz-range-thumb {
 .graph-canvas .node-circle {
   fill: var(--cradle-surface-2);
   stroke: var(--cradle-border-hover);
-  stroke-width: 2;
+  stroke-width: 2.5;
   cursor: grab;
   transition:
     fill var(--cradle-transition-fast),
-    stroke var(--cradle-transition-fast);
+    stroke var(--cradle-transition-fast),
+    stroke-width var(--cradle-transition-fast),
+    filter var(--cradle-transition-fast);
 }
 
 .graph-canvas .node-circle.visited {
-  fill: var(--theme-accent-light);
-  stroke: var(--theme-accent);
+  fill: rgba(16, 185, 129, 0.2);
+  stroke: #10b981;
+  stroke-width: 3;
 }
 
 .graph-canvas .node-circle.current {
   fill: var(--cradle-warning-bg);
   stroke: var(--cradle-warning);
+  stroke-width: 4;
+  animation: node-pulse-ring 1.3s infinite ease-in-out;
+  filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.75));
+}
+
+.graph-canvas .node-circle.frontier {
+  fill: var(--theme-accent-light);
+  stroke: var(--theme-accent);
+  stroke-width: 3;
+  stroke-dasharray: 4, 2;
 }
 
 .graph-canvas .node-circle.on-path {
   fill: var(--cradle-danger-bg);
   stroke: var(--cradle-danger);
+  stroke-width: 4;
+  filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.8));
+}
+
+.graph-canvas .node-badge {
+  font-size: 11px;
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 700;
+  fill: var(--theme-accent);
+  text-anchor: middle;
+  dominant-baseline: hanging;
+  pointer-events: none;
+  user-select: none;
 }
 
 .graph-canvas .node-label {
@@ -608,13 +701,12 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* Directed Edges and Graph Markers */
-.edge-line.reject-edge {
-  stroke: var(--cradle-danger);
-  stroke-dasharray: 4, 4;
-}
-
 .edge-line.directed {
   marker-end: url(#arrow-marker);
+}
+
+.edge-line.active-edge.directed {
+  marker-end: url(#arrow-marker-active);
 }
 
 .edge-line.tree-edge.directed {
@@ -627,6 +719,28 @@ input[type="range"]::-moz-range-thumb {
 
 .edge-line.frontier-edge.directed {
   marker-end: url(#arrow-marker-frontier);
+}
+
+.edge-line.reject-edge.directed {
+  marker-end: url(#arrow-marker-reject);
+}
+
+.player-keyboard-hint {
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  color: var(--cradle-muted);
+  margin-top: calc(-1 * var(--cradle-space-2));
+  margin-bottom: var(--cradle-space-3);
+}
+
+.player-keyboard-hint kbd {
+  background: var(--cradle-surface-2);
+  border: 1px solid var(--cradle-border);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
 }
 
 /* ===================== FRONTIER & STATE INSPECTION ===================== */

@@ -156,10 +156,56 @@ test("exportEdgeList and importEdgeList round-trip correctly", () => {
 
 test("exportJSON and importJSON serialize and parse graph schema", () => {
   const jsonStr = exportJSON(nodes, edges, { directed: true });
-  assert.match(jsonStr, /"version": "2\.0"/);
+  assert.match(jsonStr, /"version": "2.0"/);
 
   const imported = importJSON(jsonStr);
   assert.equal(imported.directed, true);
   assert.equal(imported.nodes.length, 4);
   assert.equal(imported.edges.length, 4);
+});
+
+/* ------------------------------------------------------------------ */
+/* Algorithm Playback Steps & Intermediate Telemetry                  */
+/* ------------------------------------------------------------------ */
+
+test("algorithm step sequences contain valid step metadata for animated playback", () => {
+  const bfsSteps = bfs(nodes, edges, "A");
+  assert.ok(bfsSteps.length > 0);
+  for (const step of bfsSteps) {
+    assert.ok(step.type);
+    assert.ok(step.description);
+    assert.ok(Array.isArray(step.openSet));
+    assert.ok(Array.isArray(step.closedSet));
+  }
+
+  const dijkstraRes = dijkstra(nodes, edges, "A", "D");
+  assert.ok(dijkstraRes.steps.length > 0);
+  const relaxSteps = dijkstraRes.steps.filter(s => s.type === "relax");
+  assert.ok(relaxSteps.length > 0);
+  for (const step of relaxSteps) {
+    assert.ok(step.edge);
+    assert.ok(step.stateTable);
+  }
+
+  const kruskalRes = kruskalMST(nodes, edges);
+  assert.ok(kruskalRes.steps.length > 0);
+  const treeSteps = kruskalRes.steps.filter(s => s.type === "tree-edge");
+  const rejectSteps = kruskalRes.steps.filter(s => s.type === "reject-edge");
+  assert.equal(treeSteps.length, 3);
+  assert.equal(rejectSteps.length, 1);
+
+  const topoRes = kahnTopologicalSort(nodes, edges);
+  assert.ok(topoRes.steps.length > 0);
+  for (const step of topoRes.steps) {
+    assert.ok(step.stateTable);
+  }
+
+  const sccRes = tarjanSCC(nodes, edges);
+  assert.ok(sccRes.steps.length > 0);
+  const visitSteps = sccRes.steps.filter(s => s.type === "visit");
+  assert.ok(visitSteps.length > 0);
+  for (const step of visitSteps) {
+    assert.ok(step.stateTable.disc);
+    assert.ok(step.stateTable.low);
+  }
 });

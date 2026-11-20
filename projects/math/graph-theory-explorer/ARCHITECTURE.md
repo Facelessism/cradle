@@ -170,7 +170,12 @@ Features include one-click clipboard copying, downloadable file exports, and val
 
 - **SVG Canvas Workspace**: Nodes and edges are native SVG elements (`<circle>`, `<line>`, `<text>`).
 - **Directed Graph Arrowheads**: SVG `<marker id="arrow-marker">` elements attach to directed edges. Directed edges are mathematically shortened by the node radius (20px) so arrowheads cleanly meet circle perimeters.
-- **Visual Classes**: Edge classes (`.frontier-edge`, `.tree-edge`, `.path-edge`, `.reject-edge`) and node classes (`.visited`, `.current`, `.on-path`) provide real-time animation cues.
+- **Visual Feedback & Animation**:
+  - Edge classes (`.active-edge`, `.frontier-edge`, `.tree-edge`, `.path-edge`, `.reject-edge`) with keyframe animations (`@keyframes edge-flow`, `@keyframes edge-glow`, `@keyframes reject-flash`) for real-time edge exploration.
+  - Node classes (`.visited`, `.current`, `.frontier`, `.on-path`) with keyframe pulsing ring animations (`@keyframes node-pulse-ring`) for active traversal focus.
+  - On-canvas telemetry badges (`.node-badge`) rendering dynamic intermediate values (`d:...`, `in:...`, `disc/low`) directly beneath node circles.
+  - Live intermediate results panel dynamically recalculating running metrics (e.g. running MST weight, in-degrees, distance relaxations, active stack) on every single playback step.
+  - Keyboard playback shortcuts (`Space` to play/pause, `←`/`→` to step, `R` to reset).
 
 ---
 
