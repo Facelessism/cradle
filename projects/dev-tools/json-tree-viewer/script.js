@@ -120,7 +120,9 @@ function tryParse() {
     if (treeContainer)
       treeContainer.innerHTML = `<p class="tree-placeholder" style="color:#ef4444">Parse error: ${escapeHtml(err.message)}</p>`;
     clearStats();
-    if (jsonPathBadge) {
+    if (jsonPathInput && jsonPathInput.value.trim()) {
+      handleJsonPathInput();
+    } else if (jsonPathBadge) {
       setJsonPathStatus("idle", "Waiting for valid JSON");
     }
     clearJsonPathHighlights();
@@ -573,7 +575,79 @@ function clearSearchHighlights() {
   });
 }
 
-// ─── JSONPath Query Evaluator ──────────────────────────────────────
+// ─── JSONPath Query Evaluator & Real-Time Validator ────────────────
+function handleJsonPathInput() {
+  if (!jsonPathInput) return;
+  const raw = jsonPathInput.value;
+  const trimmed = raw.trim();
+
+  if (clearJsonPathBtn) {
+    clearJsonPathBtn.hidden = raw === "";
+  }
+
+  const engine =
+    window.JsonPathEngine ||
+    (typeof JsonPathEngine !== "undefined" ? JsonPathEngine : null);
+
+  // 1. If blank
+  if (!trimmed) {
+    clearTimeout(jsonPathDebounceTimer);
+    jsonPathInput.classList.remove("input-error", "input-valid");
+    jsonPathInput.removeAttribute("aria-invalid");
+    setJsonPathStatus("idle", parsedData ? "Ready" : "Waiting for input");
+    clearJsonPathHighlights();
+    jsonPathMatches = [];
+    currentJsonPathIndex = -1;
+    if (jsonPathNav) jsonPathNav.hidden = true;
+    return;
+  }
+
+  if (!engine) {
+    setJsonPathStatus("error", "JSONPath engine not loaded");
+    return;
+  }
+
+  // 2. Real-time syntax validation: clearly distinguish valid from malformed
+  const validation = engine.validateJsonPath
+    ? engine.validateJsonPath(trimmed)
+    : { isValid: true, error: null };
+
+  if (!validation.isValid) {
+    // Malformed query: flag error visually and prevent execution
+    clearTimeout(jsonPathDebounceTimer);
+    jsonPathInput.classList.add("input-error");
+    jsonPathInput.classList.remove("input-valid");
+    jsonPathInput.setAttribute("aria-invalid", "true");
+    setJsonPathStatus("error", `✗ ${validation.error}`);
+    clearJsonPathHighlights();
+    jsonPathMatches = [];
+    currentJsonPathIndex = -1;
+    if (jsonPathNav) jsonPathNav.hidden = true;
+    return;
+  }
+
+  // 3. Valid expression syntax
+  jsonPathInput.classList.remove("input-error");
+  jsonPathInput.classList.add("input-valid");
+  jsonPathInput.setAttribute("aria-invalid", "false");
+
+  if (!parsedData) {
+    clearTimeout(jsonPathDebounceTimer);
+    setJsonPathStatus("idle", "✓ Valid syntax (waiting for JSON)");
+    clearJsonPathHighlights();
+    jsonPathMatches = [];
+    currentJsonPathIndex = -1;
+    if (jsonPathNav) jsonPathNav.hidden = true;
+    return;
+  }
+
+  // 4. Valid expression and parsedData available: debounce tree traversal / evaluation
+  clearTimeout(jsonPathDebounceTimer);
+  jsonPathDebounceTimer = setTimeout(() => {
+    executeJsonPath(trimmed);
+  }, 150);
+}
+
 function executeJsonPath(query) {
   if (!jsonPathInput) return;
   const raw = query !== undefined ? query : jsonPathInput.value;
@@ -581,25 +655,6 @@ function executeJsonPath(query) {
 
   if (clearJsonPathBtn) {
     clearJsonPathBtn.hidden = jsonPathQuery === "";
-  }
-
-  if (!parsedData) {
-    setJsonPathStatus("idle", "Waiting for valid JSON");
-    clearJsonPathHighlights();
-    jsonPathMatches = [];
-    currentJsonPathIndex = -1;
-    if (jsonPathNav) jsonPathNav.hidden = true;
-    return;
-  }
-
-  if (!jsonPathQuery) {
-    setJsonPathStatus("idle", "Ready");
-    jsonPathInput.classList.remove("input-error");
-    clearJsonPathHighlights();
-    jsonPathMatches = [];
-    currentJsonPathIndex = -1;
-    if (jsonPathNav) jsonPathNav.hidden = true;
-    return;
   }
 
   const engine =
@@ -610,11 +665,27 @@ function executeJsonPath(query) {
     return;
   }
 
-  const result = engine.evaluateJsonPath(parsedData, jsonPathQuery);
+  if (!jsonPathQuery) {
+    setJsonPathStatus("idle", parsedData ? "Ready" : "Waiting for input");
+    jsonPathInput.classList.remove("input-error", "input-valid");
+    jsonPathInput.removeAttribute("aria-invalid");
+    clearJsonPathHighlights();
+    jsonPathMatches = [];
+    currentJsonPathIndex = -1;
+    if (jsonPathNav) jsonPathNav.hidden = true;
+    return;
+  }
 
-  if (!result.isValid) {
+  // Real-time syntax pre-validation: prevent invalid queries from being executed
+  const validation = engine.validateJsonPath
+    ? engine.validateJsonPath(jsonPathQuery)
+    : { isValid: true, error: null };
+
+  if (!validation.isValid) {
     jsonPathInput.classList.add("input-error");
-    setJsonPathStatus("error", `✗ ${result.error}`);
+    jsonPathInput.classList.remove("input-valid");
+    jsonPathInput.setAttribute("aria-invalid", "true");
+    setJsonPathStatus("error", `✗ ${validation.error}`);
     clearJsonPathHighlights();
     jsonPathMatches = [];
     currentJsonPathIndex = -1;
@@ -623,6 +694,32 @@ function executeJsonPath(query) {
   }
 
   jsonPathInput.classList.remove("input-error");
+  jsonPathInput.classList.add("input-valid");
+  jsonPathInput.setAttribute("aria-invalid", "false");
+
+  if (!parsedData) {
+    setJsonPathStatus("idle", "✓ Valid syntax (waiting for JSON)");
+    clearJsonPathHighlights();
+    jsonPathMatches = [];
+    currentJsonPathIndex = -1;
+    if (jsonPathNav) jsonPathNav.hidden = true;
+    return;
+  }
+
+  const result = engine.evaluateJsonPath(parsedData, jsonPathQuery);
+
+  if (!result.isValid) {
+    jsonPathInput.classList.add("input-error");
+    jsonPathInput.classList.remove("input-valid");
+    jsonPathInput.setAttribute("aria-invalid", "true");
+    setJsonPathStatus("error", `✗ ${result.error}`);
+    clearJsonPathHighlights();
+    jsonPathMatches = [];
+    currentJsonPathIndex = -1;
+    if (jsonPathNav) jsonPathNav.hidden = true;
+    return;
+  }
+
   jsonPathMatches = result.matches || [];
 
   if (jsonPathMatches.length === 0) {
@@ -940,6 +1037,8 @@ document.addEventListener("keydown", e => {
     }
     if (e.key === "Escape") {
       jsonPathInput.value = "";
+      jsonPathInput.classList.remove("input-error", "input-valid");
+      jsonPathInput.removeAttribute("aria-invalid");
       jsonPathInput.blur();
       if (clearJsonPathBtn) clearJsonPathBtn.hidden = true;
       executeJsonPath("");
@@ -970,19 +1069,14 @@ document.addEventListener("keydown", e => {
   }
 });
 
-// JSONPath input listener with debounce
-jsonPathInput?.addEventListener("input", () => {
-  if (clearJsonPathBtn) clearJsonPathBtn.hidden = jsonPathInput.value === "";
-  clearTimeout(jsonPathDebounceTimer);
-  jsonPathDebounceTimer = setTimeout(() => {
-    executeJsonPath(jsonPathInput.value);
-  }, 150);
-});
+// JSONPath input listener with real-time syntax validation
+jsonPathInput?.addEventListener("input", handleJsonPathInput);
 
 clearJsonPathBtn?.addEventListener("click", () => {
   if (jsonPathInput) {
     jsonPathInput.value = "";
-    jsonPathInput.classList.remove("input-error");
+    jsonPathInput.classList.remove("input-error", "input-valid");
+    jsonPathInput.removeAttribute("aria-invalid");
   }
   clearJsonPathBtn.hidden = true;
   executeJsonPath("");
@@ -997,6 +1091,7 @@ presetChips.forEach(chip => {
     if (jsonPathInput && query) {
       jsonPathInput.value = query;
       if (clearJsonPathBtn) clearJsonPathBtn.hidden = false;
+      handleJsonPathInput();
       executeJsonPath(query);
     }
   });

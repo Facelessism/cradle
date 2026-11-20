@@ -54,8 +54,8 @@ The script is intentionally loaded at the end of the body, so the element lookup
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | Input editor           | Accepts pasted or typed JSON. The `input` event schedules parsing and updates the byte counter.                                         |
 | Parser                 | Calls `JSON.parse` inside a try/catch, reports the error position, and stores the result in `parsedData`.                               |
-| JSONPath Engine        | Pure helpers: tokenizes queries, parses expressions, evaluates matches (`$..price`, `$.store.book[*].author`), formats code paths.      |
-| JSONPath Filter Bar    | Real-time query input with inline syntax validation, match counters, match navigation (`▲`/`▼`), and one-click preset chips.            |
+| JSONPath Engine        | Pure helpers: tokenizes queries, parses expressions, validates syntax in real-time (`validateJsonPath`), evaluates matches (`$..price`, `$.store.book[*].author`), formats code paths. |
+| JSONPath Filter Bar    | Real-time query input with inline syntax validation, visual valid/error distinction, execution prevention for invalid queries, match navigation (`▲`/`▼`), and one-click preset chips. |
 | Tree renderer          | Walks the parsed value recursively and appends DOM nodes to a `DocumentFragment` before a single replacement of `treeContainer`.        |
 | Search                 | Performs a case-insensitive substring walk over keys and leaf values, then expands the ancestors of the first match.                    |
 | Interactive Hover Tooltip | Floating glassmorphic tooltip on row hover displaying exact code paths (`data.users[0].address.city`) and 1-click copy buttons.       |
@@ -71,9 +71,10 @@ The script is intentionally loaded at the end of the body, so the element lookup
 4. `renderTree()` creates a `DocumentFragment`, calls `renderNode()` for the root at path `$`, and appends the finished fragment.
 5. `renderNode()` emits one line per object or array, attaches hover tooltip triggers and quick copy action buttons, then recurses into children.
 6. When a JSONPath expression (e.g., `$.store.book[*].author` or `$..price`) is entered:
-   - `JsonPathEngine.evaluateJsonPath` parses the expression and validates syntax in real-time.
-   - If invalid, the syntax error is displayed in the badge with an error outline on the input.
-   - If valid, matching node paths are resolved, ancestors of all matching nodes are automatically expanded, and matching lines receive `.jsonpath-match` styling.
+   - `JsonPathEngine.validateJsonPath` parses the expression and validates syntax in real-time as keystrokes occur.
+   - If invalid/malformed, the input is immediately styled with `.input-error` (`aria-invalid="true"`), the badge displays the exact syntax error (`badge-error`), and invalid queries are strictly prevented from executing.
+   - If valid, the input receives `.input-valid` styling (`aria-invalid="false"`), and the query is safely executed against `parsedData`.
+   - Matching node paths are resolved, ancestors of all matching nodes are automatically expanded, and matching lines receive `.jsonpath-match` styling.
    - Users navigate matches sequentially via `▲`/`▼` or Enter/Shift+Enter.
 7. Hovering over any tree row activates the floating hover tooltip showing the exact dot/bracket notation code path (`data.users[0].address.city`) with copy buttons for Code Path, JSONPath, and Subtree JSON.
 8. Clicking a toggle updates `collapsedPaths` and re-renders. Clicking a line calls `selectPath()`, which updates the stats bar and the `.selected` class.
@@ -84,7 +85,7 @@ The script is intentionally loaded at the end of the body, so the element lookup
 | Feature                 | Description                                                                                                    |
 | ----------------------- | -------------------------------------------------------------------------------------------------------------- |
 | JSONPath Query Engine   | Supports expressions like `$.store.book[*].author`, `$..price`, `$.config.*`, and filters `[?(@.price < 10)]`. |
-| Inline Syntax Validator | Real-time feedback badge showing syntax error diagnostics (unclosed brackets, trailing dots, empty queries).    |
+| Inline Syntax Validator | Real-time feedback badge and input styling distinguishing valid from malformed expressions, preventing invalid query execution. |
 | Query Result Highlights | Visual highlight accents on all matching tree lines, with sequential navigation and auto-expansion of parents. |
 | Preset Query Chips      | Quick one-click chips for common exploratory patterns (`$.features[*].name`, `$..status`, `$.config.*`, etc.). |
 | Hover Path Tooltip      | Floating hover tooltip displaying exact code reference path (`data.users[0].address.city`) and copy actions.   |
