@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Core8 CPU Emulator is an interactive 8-bit pipelined CPU environment and visual assembly IDE. It features a 16-byte RAM space, 4 general-purpose registers (A, B, C, D), a Stack Pointer (SP), Program Counter (PC), status flags (Zero, Carry, Negative, Overflow), a 5-stage instruction pipeline simulator, a step-by-step assembly debugger (Step Over, Step Into, Step Out), visual line breakpoints, a scrollable memory hex dump viewer with direct byte editing and ASCII decoding, and a real-time disassembler.
+The Core8 CPU Emulator is an interactive 8-bit pipelined CPU environment and visual assembly IDE. It features a 16-byte RAM space, 4 general-purpose registers (A, B, C, D), a Stack Pointer (SP), Program Counter (PC), status flags (Zero, Carry, Negative, Overflow), a 5-stage instruction pipeline simulator, a step-by-step assembly debugger (Step Over, Step Into, Step Out) with nested subroutine debugging, visual line breakpoints, a Call Stack & Execution Flow Trace inspection suite, a scrollable memory hex dump viewer with direct byte editing and ASCII decoding, and a real-time disassembler.
 
 ---
 
@@ -156,9 +156,16 @@ Hex Viewer, Disassembler, Gutter markers, and SVG animations update in real time
 
 - **Interactive Assembly Debugger**:
   - Line-by-line stepping with **Step Into (F11)**, **Step Over (F10)**, and **Step Out (Shift+F11)**
+  - Depth-aware subroutine stepping: Step Over runs to completion of subroutine calls at the same frame level; Step Out unwinds execution to caller depth
   - Cycle-level stepping for in-depth pipeline inspection
   - Visual breakpoint toggling on instruction lines via clickable gutter dots (`●`)
   - Execution pause with detailed breakpoint hit notifications
+- **Nested Assembly & Call Stack Debugging**:
+  - Active call stack depth indicator displayed as a dedicated CPU register card (`Call Stack Depth`) and header badge
+  - Dedicated **Call Stack & Flow** inspection panel exposing active call frames (`callFrames`)
+  - Each frame card reveals frame depth, caller PC, subroutine target address, return address pushed to RAM stack, and SP at entry
+  - Real-time **Execution Flow & Instruction Trace** recording instruction steps, flow classifications (`CALL`, `RET`, `JMP`, `BRANCH_TAKEN`, `BRANCH_NOT_TAKEN`, `HALT`, `SEQ`), register diffs, flag changes, and memory operations
+  - Zero-overhead trace clearing utility
 - **Live CPU Flag Indicators**:
   - Live color-coded status pills for **Zero (Z)**, **Carry (C)**, **Negative (N)**, and **Overflow (V)**
   - Accurate signed two's-complement arithmetic overflow detection
@@ -179,7 +186,7 @@ Hex Viewer, Disassembler, Gutter markers, and SVG animations update in real time
   - Operand forwarding to resolve data hazards
   - Load-use stall detection and branch misprediction flushing
 - **Assembly Presets**:
-  - Counter, Fibonacci, Memory Copy, Conditional Logic, Subroutine & Stack (`CALL`/`RET`), and Flag Indicators (`Z/C/N/V`)
+  - Counter, Fibonacci, Memory Copy, Conditional Logic, Subroutine & Stack (`CALL`/`RET`), Flag Indicators (`Z/C/N/V`), and Nested Subroutines & Debugging
 - **Keyboard Shortcuts**:
   - F5 (Run/Pause), F10 (Step Over), F11 (Step Into), Shift+F11 (Step Out), Ctrl+Enter (Compile)
 
@@ -209,9 +216,10 @@ Hex Viewer, Disassembler, Gutter markers, and SVG animations update in real time
 ### `emulatorCore.js`
 
 - `OPCODES` — lookup map of mnemonics to byte opcodes
-- `createCPUState(ramSize)` — initializes registers (A, B, C, D, SP), PC, flags (Z, C, N, V), RAM, callStack, and halted state
+- `createCPUState(ramSize)` — initializes registers (A, B, C, D, SP), PC, flags (Z, C, N, V), RAM, callStack, callFrames, and halted state
 - `updateALUFlags(cpuState, result, op1, op2, opType)` — calculates Zero, Carry, Negative, and signed two's-complement Overflow
-- `executeSingleInstruction(cpuState, opcode, byte1, byte2)` — reference execution engine with stack and subroutine support
+- `executeSingleInstruction(cpuState, opcode, byte1, byte2)` — reference execution engine with stack and subroutine frame tracking
+- `executeSingleInstructionDetailed(cpuState, opcode, byte1, byte2)` — instrumented execution exposing register changes, flag changes, memory access, flow classifications, and call frames
 - `disassembleInstruction(ram, pc)` — decodes raw bytes at a given PC into instruction objects
 - `disassembleMemory(ram, start, length)` — disassembles a full RAM buffer into a sequence of instructions
 
@@ -220,8 +228,9 @@ Hex Viewer, Disassembler, Gutter markers, and SVG animations update in real time
 - `renderGutter()` / `toggleBreakpoint()` — interactive line gutter rendering with breakpoint markers and current line highlighting
 - `renderHexViewer()` / `startHexInlineEdit()` — scrollable hex table with PC/SP markers and direct byte editing
 - `renderDisassembler()` — live disassembled instruction list with breakpoint toggles and editor sync
-- `executeStepInto()` / `executeStepOver()` / `executeStepOut()` / `runUntilBreakpointOrHalt()` — debugger stepping engine
-- `wbStage()`, `memStage()`, `exStage()`, `idStage()`, `ifStage()` — 5-stage pipeline simulation with forwarding and stalls
+- `renderCallStackView()` / `renderTraceView()` — real-time visualization of nested call stack frames and execution flow step trace
+- `executeStepInto()` / `executeStepOver()` / `executeStepOut()` / `runUntilBreakpointOrHalt()` — depth-aware debugger stepping engine
+- `wbStage()`, `memStage()`, `exStage()`, `idStage()`, `ifStage()` — 5-stage pipeline simulation with forwarding, stalls, and execution trace recording
 - Keyboard shortcut listeners (`F5`, `F10`, `F11`, `Shift+F11`) and UI tab switcher
 
 ### `index.html`

@@ -316,6 +316,15 @@ body {
   background: rgba(217, 70, 239, 0.03);
 }
 
+.register-card.highlighted-depth {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.04);
+}
+
+.register-card.highlighted-depth .reg-val {
+  color: #a5b4fc;
+}
+
 .register-card.flags-card {
   grid-column: span 2;
 }
@@ -775,6 +784,200 @@ body {
   font-size: 0.9rem;
   font-weight: bold;
   color: #00ff66;
+}
+
+/* Call Stack & Flow Trace View Panel */
+.callstack-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.callstack-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.callstack-depth-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  color: #a5b4fc;
+  font-weight: bold;
+  font-size: 0.7rem;
+}
+
+.callstack-section,
+.trace-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.callstack-section-title {
+  font-size: 0.68rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #747d8c;
+  margin-top: 2px;
+}
+
+.callstack-frames-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 110px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  background: #090b10;
+  padding: 4px;
+}
+
+.callstack-empty-msg,
+.trace-empty-msg {
+  color: #64748b;
+  font-size: 0.74rem;
+  text-align: center;
+  padding: 10px 6px;
+  font-style: italic;
+}
+
+.call-frame-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 8px;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-left: 3px solid #6366f1;
+  border-radius: 4px;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.76rem;
+  transition: background 0.15s ease;
+}
+
+.call-frame-card:hover {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.call-frame-depth {
+  font-weight: bold;
+  color: #a5b4fc;
+}
+
+.call-frame-info {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.call-frame-target {
+  color: #38bdf8;
+  font-weight: bold;
+}
+
+.call-frame-ret {
+  color: #94a3b8;
+}
+
+.call-frame-sp {
+  color: #d946ef;
+}
+
+/* Execution Flow & Instruction Trace Area */
+.trace-scroll-area {
+  max-height: 160px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  background: #090b10;
+  display: flex;
+  flex-direction: column;
+}
+
+.trace-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.74rem;
+}
+
+.trace-entry:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.trace-step-num {
+  color: #475569;
+  min-width: 24px;
+  font-size: 0.68rem;
+}
+
+.trace-pc {
+  color: #00f2fe;
+  min-width: 38px;
+  font-weight: bold;
+}
+
+.trace-instr {
+  color: #e2e8f0;
+  min-width: 90px;
+}
+
+.trace-flow-badge {
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.trace-flow-call {
+  background: rgba(168, 85, 247, 0.25);
+  border: 1px solid #a855f7;
+  color: #d8b4fe;
+}
+
+.trace-flow-ret {
+  background: rgba(59, 130, 246, 0.25);
+  border: 1px solid #3b82f6;
+  color: #93c5fd;
+}
+
+.trace-flow-branch {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid #f59e0b;
+  color: #fcd34d;
+}
+
+.trace-flow-seq {
+  background: rgba(100, 116, 139, 0.15);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  color: #94a3b8;
+}
+
+.trace-flow-halt {
+  background: rgba(239, 68, 68, 0.25);
+  border: 1px solid #ef4444;
+  color: #fca5a5;
+}
+
+.trace-changes {
+  margin-left: auto;
+  font-size: 0.68rem;
+  color: #10b981;
+  white-space: nowrap;
 }
 
 /* Data Flow Animation Layer */

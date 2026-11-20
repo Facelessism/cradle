@@ -89,9 +89,16 @@ const btnDisasmCopy = document.getElementById("btn-disasm-copy");
 const tabBtnHex = document.getElementById("tab-btn-hex");
 const tabBtnDisasm = document.getElementById("tab-btn-disasm");
 const tabBtnRam = document.getElementById("tab-btn-ram");
+const tabBtnCallstack = document.getElementById("tab-btn-callstack");
 const viewHex = document.getElementById("view-hex");
 const viewDisasm = document.getElementById("view-disasm");
 const viewRam = document.getElementById("view-ram");
+const viewCallstack = document.getElementById("view-callstack");
+const callstackFramesList = document.getElementById("callstack-frames-list");
+const traceScrollList = document.getElementById("trace-scroll-list");
+const btnTraceClear = document.getElementById("btn-trace-clear");
+const badgeCallstackDepth = document.getElementById("badge-callstack-depth");
+const regDepth = document.getElementById("reg-depth");
 
 const PRESETS = {
   counter: `; Counter
@@ -142,6 +149,17 @@ SUB A, B       ; 128 - 1 = 127 -> Clears N and V
 MOV B, 127
 SUB A, B       ; 127 - 127 = 0 -> Sets Zero (Z)!
 HALT`,
+  nested_subroutines: `; Nested Subroutines & Debugging
+; Demonstrates nested CALL, RET, stack frames, and register flow
+CALL 3         ; Call Subroutine 1 (returns to 2)
+HALT           ; Main termination (addr 2)
+; Subroutine 1 (addr 3):
+INC A          ; A = 1 (addr 3)
+CALL 8         ; Call Subroutine 2 (addr 5, returns to 7)
+RET            ; Return to main (addr 7)
+; Subroutine 2 (addr 8):
+ADD A, A       ; A = 1 + 1 = 2 (addr 8)
+RET            ; Return to Subroutine 1 (addr 11)`,
 };
 
 if (presetSelector) {
@@ -270,6 +288,7 @@ function updateHardwareDashboard() {
   setRegText("reg-d", cpu.registers.D.toString(16).toUpperCase().padStart(2, "0"));
   setRegText("reg-pc", "0x" + cpu.PC.toString(16).toUpperCase().padStart(2, "0"));
   setRegText("reg-sp", "0x" + cpu.registers.SP.toString(16).toUpperCase().padStart(2, "0"));
+  setRegText("reg-depth", (cpu.callFrames ? cpu.callFrames.length : 0).toString());
 
   setRegText(
     "reg-flags",
@@ -320,6 +339,86 @@ function updateHardwareDashboard() {
   renderHexViewer();
   renderDisassembler();
   renderGutter();
+  renderCallStackView();
+  renderTraceView();
+}
+
+// Execution Trace state
+let executionTrace = [];
+const MAX_TRACE_ENTRIES = 100;
+
+function recordTraceStep(entry) {
+  executionTrace.push(entry);
+  if (executionTrace.length > MAX_TRACE_ENTRIES) {
+    executionTrace.shift();
+  }
+}
+
+function renderCallStackView() {
+  if (!callstackFramesList) return;
+  const depth = cpu.callFrames ? cpu.callFrames.length : 0;
+  if (badgeCallstackDepth) {
+    badgeCallstackDepth.textContent = `${depth} Frame${depth === 1 ? "" : "s"}`;
+  }
+  if (regDepth) {
+    regDepth.textContent = depth;
+  }
+
+  if (!cpu.callFrames || cpu.callFrames.length === 0) {
+    callstackFramesList.innerHTML = `<div class="callstack-empty-msg">No active subroutine frames (Main execution context)</div>`;
+    return;
+  }
+
+  callstackFramesList.innerHTML = cpu.callFrames
+    .slice()
+    .reverse()
+    .map((frame, idx) => {
+      const frameIndex = cpu.callFrames.length - idx;
+      return `
+        <div class="call-frame-card" data-depth="${frame.depth}">
+          <span class="call-frame-depth">Frame #${frameIndex} (Depth ${frame.depth})</span>
+          <div class="call-frame-info">
+            <span class="call-frame-target" title="Target subroutine address">Sub @ 0x${frame.targetAddr.toString(16).toUpperCase().padStart(2, "0")}</span>
+            <span class="call-frame-ret" title="Return address saved on stack">Ret -> 0x${frame.returnAddr.toString(16).toUpperCase().padStart(2, "0")}</span>
+            <span class="call-frame-sp" title="Stack pointer at entry">SP: 0x${frame.sp.toString(16).toUpperCase().padStart(2, "0")}</span>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderTraceView() {
+  if (!traceScrollList) return;
+  if (executionTrace.length === 0) {
+    traceScrollList.innerHTML = `<div class="trace-empty-msg">Trace is empty. Execute steps or clock cycles to inspect flow.</div>`;
+    return;
+  }
+
+  traceScrollList.innerHTML = executionTrace
+    .map(entry => {
+      let badgeClass = "trace-flow-seq";
+      if (entry.flowType === "CALL") badgeClass = "trace-flow-call";
+      else if (entry.flowType === "RET") badgeClass = "trace-flow-ret";
+      else if (entry.flowType === "BRANCH_TAKEN" || entry.flowType === "BRANCH_NOT_TAKEN") badgeClass = "trace-flow-branch";
+      else if (entry.flowType === "HALT") badgeClass = "trace-flow-halt";
+
+      const changesStr = entry.changes ? `<span class="trace-changes">${entry.changes}</span>` : "";
+
+      return `
+        <div class="trace-entry">
+          <span class="trace-step-num">#${entry.step}</span>
+          <span class="trace-pc">0x${entry.pc.toString(16).toUpperCase().padStart(2, "0")}</span>
+          <span class="trace-instr">${entry.instrStr}</span>
+          <span class="trace-flow-badge ${badgeClass}">${entry.flowType}</span>
+          <span class="trace-desc" style="color: #94a3b8; font-size: 0.7rem;">${entry.flowDesc}</span>
+          ${changesStr}
+        </div>
+      `;
+    })
+    .join("");
+
+  traceScrollList.scrollTop = traceScrollList.scrollHeight;
 }
 
 function updatePipelineUI(stage, instrStr, isStalled) {
@@ -540,6 +639,7 @@ function setupTabs() {
     { btn: tabBtnHex, view: viewHex },
     { btn: tabBtnDisasm, view: viewDisasm },
     { btn: tabBtnRam, view: viewRam },
+    { btn: tabBtnCallstack, view: viewCallstack },
   ];
 
   tabs.forEach(({ btn, view }) => {
@@ -775,6 +875,8 @@ function exStage(animations) {
 
   if (idReg.valid) {
     exReg = { ...idReg };
+    const preRegs = { ...cpu.registers };
+    const preFlags = { ...cpu.flags };
 
     let fwdVal1 = idReg.val1;
     let fwdVal2 = idReg.val2;
@@ -913,6 +1015,14 @@ function exStage(animations) {
         cpu.RAM[cpu.registers.SP] = retAddr;
         if (!cpu.callStack) cpu.callStack = [];
         cpu.callStack.push(retAddr);
+        if (!cpu.callFrames) cpu.callFrames = [];
+        cpu.callFrames.push({
+          depth: cpu.callStack.length,
+          callerPC: idReg.pc,
+          targetAddr: idReg.addr,
+          returnAddr: retAddr,
+          sp: cpu.registers.SP,
+        });
         exReg.branchTaken = true;
         exReg.branchTarget = idReg.addr;
         break;
@@ -922,6 +1032,7 @@ function exStage(animations) {
         const retAddr = cpu.RAM[cpu.registers.SP];
         cpu.registers.SP = (cpu.registers.SP + 1) % ramSize;
         if (cpu.callStack && cpu.callStack.length > 0) cpu.callStack.pop();
+        if (cpu.callFrames && cpu.callFrames.length > 0) cpu.callFrames.pop();
         exReg.branchTaken = true;
         exReg.branchTarget = retAddr;
         break;
@@ -937,6 +1048,57 @@ function exStage(animations) {
           : idReg.pc + getInstructionLength(idReg.opcode);
       }
     }
+
+    // Record step in execution flow trace
+    let flowType = "SEQ";
+    let flowDesc = "";
+    if (idReg.opcode === OPCODES.CALL) {
+      flowType = "CALL";
+      const depth = cpu.callFrames ? cpu.callFrames.length : 0;
+      flowDesc = `CALL 0x${idReg.addr.toString(16).toUpperCase().padStart(2, "0")} (Depth ${depth}, Ret 0x${((idReg.pc + 2) & (cpu.RAM.length - 1)).toString(16).toUpperCase().padStart(2, "0")})`;
+    } else if (idReg.opcode === OPCODES.RET) {
+      flowType = "RET";
+      const depth = cpu.callFrames ? cpu.callFrames.length : 0;
+      flowDesc = `RET to 0x${exReg.branchTarget.toString(16).toUpperCase().padStart(2, "0")} (Depth ${depth})`;
+    } else if (idReg.opcode === OPCODES.JMP) {
+      flowType = "JMP";
+      flowDesc = `JMP 0x${idReg.addr.toString(16).toUpperCase().padStart(2, "0")}`;
+    } else if (idReg.opcode === OPCODES.JZ || idReg.opcode === OPCODES.JNZ) {
+      flowType = exReg.branchTaken ? "BRANCH_TAKEN" : "BRANCH_NOT_TAKEN";
+      flowDesc = exReg.branchTaken
+        ? `Branch Taken -> 0x${idReg.addr.toString(16).toUpperCase().padStart(2, "0")}`
+        : "Fallthrough";
+    } else if (idReg.opcode === OPCODES.HALT) {
+      flowType = "HALT";
+      flowDesc = "Machine halted";
+    } else {
+      flowDesc = `Exec ${idReg.instrStr}`;
+    }
+
+    const regDiffs = [];
+    if (exReg.writeReg && exReg.destReg) {
+      regDiffs.push(`${exReg.destReg}: ${exReg.aluResult}`);
+    }
+    if (preRegs.SP !== cpu.registers.SP) {
+      regDiffs.push(`SP: 0x${preRegs.SP.toString(16).toUpperCase().padStart(2, "0")}->0x${cpu.registers.SP.toString(16).toUpperCase().padStart(2, "0")}`);
+    }
+    const flagDiffs = [];
+    for (const flg of ["Z", "C", "N", "V"]) {
+      if (preFlags[flg] !== cpu.flags[flg]) flagDiffs.push(`${flg}=${cpu.flags[flg]}`);
+    }
+    if (flagDiffs.length > 0) {
+      regDiffs.push(`[${flagDiffs.join(" ")}]`);
+    }
+
+    recordTraceStep({
+      step: executionTrace.length + 1,
+      pc: idReg.pc,
+      instrStr: idReg.instrStr,
+      flowType: flowType,
+      flowDesc: flowDesc,
+      depth: cpu.callFrames ? cpu.callFrames.length : 0,
+      changes: regDiffs.join(", "),
+    });
   }
   pipeline.EX_MEM = exReg;
 }
@@ -1168,7 +1330,7 @@ async function executeStepInto() {
   updateHardwareDashboard();
 }
 
-// Step Over: If current instruction is CALL, run until return address; otherwise Step Into
+// Step Over: If current instruction is CALL, run until return address at the same call depth; otherwise Step Into
 async function executeStepOver() {
   if (cpu.halted) {
     printConsole("Processor is halted. Reset machine to restart.");
@@ -1178,9 +1340,14 @@ async function executeStepOver() {
   const currentOpcode = cpu.RAM[cpu.PC];
   if (currentOpcode === OPCODES.CALL) {
     const returnAddr = (cpu.PC + 2) & (cpu.RAM.length - 1);
-    temporaryBreakpoint = returnAddr;
-    printConsole(`Stepping over CALL at 0x${cpu.PC.toString(16).toUpperCase().padStart(2, "0")} (will break at 0x${returnAddr.toString(16).toUpperCase().padStart(2, "0")})...`);
-    await runUntilBreakpointOrHalt();
+    const initialDepth = cpu.callStack ? cpu.callStack.length : 0;
+    printConsole(
+      `Stepping over CALL at 0x${cpu.PC.toString(16).toUpperCase().padStart(2, "0")} (depth ${initialDepth} -> breaks at 0x${returnAddr.toString(16).toUpperCase().padStart(2, "0")})...`
+    );
+    await runUntilBreakpointOrHalt(() => {
+      const curDepth = cpu.callStack ? cpu.callStack.length : 0;
+      return curDepth <= initialDepth && cpu.PC === returnAddr;
+    });
   } else {
     await executeStepInto();
   }
@@ -1193,18 +1360,24 @@ async function executeStepOut() {
     return;
   }
 
-  if (cpu.callStack && cpu.callStack.length > 0) {
+  const currentDepth = cpu.callStack ? cpu.callStack.length : 0;
+  if (currentDepth > 0) {
+    const targetDepth = currentDepth - 1;
     const returnAddr = cpu.callStack[cpu.callStack.length - 1];
-    temporaryBreakpoint = returnAddr;
-    printConsole(`Stepping out to caller at 0x${returnAddr.toString(16).toUpperCase().padStart(2, "0")}...`);
-    await runUntilBreakpointOrHalt();
+    printConsole(
+      `Stepping out from depth ${currentDepth} to ${targetDepth} (caller returns to 0x${returnAddr.toString(16).toUpperCase().padStart(2, "0")})...`
+    );
+    await runUntilBreakpointOrHalt(() => {
+      const curDepth = cpu.callStack ? cpu.callStack.length : 0;
+      return curDepth <= targetDepth;
+    });
   } else {
     printConsole("Not currently in a subroutine. Running until HALT...");
     await runUntilBreakpointOrHalt();
   }
 }
 
-async function runUntilBreakpointOrHalt() {
+async function runUntilBreakpointOrHalt(stepCondition = null) {
   runLoopActive = true;
   if (btnRun) btnRun.textContent = "⏸ Pause";
 
@@ -1216,6 +1389,11 @@ async function runUntilBreakpointOrHalt() {
       await executeClockCycleStep();
       cycleGuard++;
     } while (!cpu.halted && cpu.PC === startPC && cycleGuard < 10);
+
+    if (stepCondition && stepCondition()) {
+      runLoopActive = false;
+      break;
+    }
 
     const bp = checkBreakpoint(cpu.PC);
     if (bp.hit) {
@@ -1322,6 +1500,8 @@ function resetHardwareState(clearRAM = true) {
   cpu.flags = { Z: 1, C: 0, N: 0, V: 0 };
   cpu.halted = false;
   cpu.callStack = [];
+  cpu.callFrames = [];
+  executionTrace = [];
 
   if (clearRAM) cpu.RAM.fill(0);
 
@@ -1340,6 +1520,14 @@ if (btnReset) {
     resetHardwareState(true);
     setExecutionButtonsDisabled(true);
     printConsole("Processor reset. RAM and registers initialized.");
+  });
+}
+
+if (btnTraceClear) {
+  btnTraceClear.addEventListener("click", () => {
+    executionTrace = [];
+    renderTraceView();
+    printConsole("Execution trace cleared.");
   });
 }
 

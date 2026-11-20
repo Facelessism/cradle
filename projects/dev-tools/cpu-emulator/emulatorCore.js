@@ -32,6 +32,7 @@ function createCPUState(ramSize = 16) {
     RAM: new Uint8Array(size),
     halted: false,
     callStack: [],
+    callFrames: [],
   };
 }
 
@@ -242,6 +243,14 @@ function executeSingleInstruction(cpuState, opcode, byte1, byte2) {
       cpuState.RAM[cpuState.registers.SP] = returnAddr;
       if (!cpuState.callStack) cpuState.callStack = [];
       cpuState.callStack.push(returnAddr);
+      if (!cpuState.callFrames) cpuState.callFrames = [];
+      cpuState.callFrames.push({
+        depth: cpuState.callStack.length,
+        callerPC: cpuState.PC,
+        targetAddr: byte1 & (ramSize - 1),
+        returnAddr: returnAddr,
+        sp: cpuState.registers.SP,
+      });
       cpuState.PC = byte1 & (ramSize - 1);
       return;
     }
@@ -251,6 +260,9 @@ function executeSingleInstruction(cpuState, opcode, byte1, byte2) {
       cpuState.registers.SP = (cpuState.registers.SP + 1) % ramSize;
       if (cpuState.callStack && cpuState.callStack.length > 0) {
         cpuState.callStack.pop();
+      }
+      if (cpuState.callFrames && cpuState.callFrames.length > 0) {
+        cpuState.callFrames.pop();
       }
       cpuState.PC = retAddr & (ramSize - 1);
       return;
@@ -404,12 +416,157 @@ function disassembleMemory(ram, start = 0, length = null) {
   return result;
 }
 
+function executeSingleInstructionDetailed(cpuState, opcodeArg, byte1Arg, byte2Arg) {
+  if (!cpuState) throw new Error("cpuState is required");
+  const ramSize = cpuState.RAM.length;
+  const initialPC = cpuState.PC;
+  const opcode = opcodeArg !== undefined && opcodeArg !== null ? opcodeArg : cpuState.RAM[initialPC];
+  const len = getInstructionLength(opcode);
+  const byte1 = byte1Arg !== undefined && byte1Arg !== null ? byte1Arg : (len > 1 ? cpuState.RAM[(initialPC + 1) % ramSize] : null);
+  const byte2 = byte2Arg !== undefined && byte2Arg !== null ? byte2Arg : (len > 2 ? cpuState.RAM[(initialPC + 2) % ramSize] : null);
+  const mnemonic = getOpcodeMnemonic(opcode);
+  const disasm = disassembleInstruction(cpuState.RAM, initialPC);
+
+  const initialRegisters = { ...cpuState.registers };
+  const initialFlags = { ...cpuState.flags };
+
+  // Detect memory access before execution modifies pointers/RAM
+  const memoryAccess = [];
+  const destRegStr = byte1 !== null ? String.fromCharCode(byte1) : null;
+  const srcRegStr = byte2 !== null ? String.fromCharCode(byte2) : null;
+
+  if (opcode === OPCODES.PUSH && destRegStr && initialRegisters.hasOwnProperty(destRegStr)) {
+    const targetSP = (initialRegisters.SP - 1 + ramSize) % ramSize;
+    memoryAccess.push({
+      type: "write",
+      address: targetSP,
+      value: initialRegisters[destRegStr],
+      purpose: "stack_push",
+    });
+  } else if (opcode === OPCODES.POP && destRegStr && initialRegisters.hasOwnProperty(destRegStr)) {
+    memoryAccess.push({
+      type: "read",
+      address: initialRegisters.SP,
+      value: cpuState.RAM[initialRegisters.SP],
+      purpose: "stack_pop",
+    });
+  } else if (opcode === OPCODES.CALL) {
+    const returnAddr = (initialPC + 2) & (ramSize - 1);
+    const targetSP = (initialRegisters.SP - 1 + ramSize) % ramSize;
+    memoryAccess.push({
+      type: "write",
+      address: targetSP,
+      value: returnAddr,
+      purpose: "call_return_address",
+    });
+  } else if (opcode === OPCODES.RET) {
+    memoryAccess.push({
+      type: "read",
+      address: initialRegisters.SP,
+      value: cpuState.RAM[initialRegisters.SP],
+      purpose: "ret_target_address",
+    });
+  } else if (opcode === OPCODES.MOV_R_MEM) {
+    const targetAddr = byte1 & (ramSize - 1);
+    memoryAccess.push({
+      type: "write",
+      address: targetAddr,
+      value: srcRegStr && initialRegisters.hasOwnProperty(srcRegStr) ? initialRegisters[srcRegStr] : 0,
+      purpose: "memory_store",
+    });
+  } else if (opcode === OPCODES.MOV_MEM_R) {
+    const srcAddr = byte2 & (ramSize - 1);
+    memoryAccess.push({
+      type: "read",
+      address: srcAddr,
+      value: cpuState.RAM[srcAddr],
+      purpose: "memory_load",
+    });
+  }
+
+  // Execute the instruction
+  executeSingleInstruction(cpuState, opcode, byte1, byte2);
+
+  // Compute register changes
+  const registerChanges = {};
+  for (const reg of ["A", "B", "C", "D", "SP"]) {
+    if (initialRegisters[reg] !== cpuState.registers[reg]) {
+      registerChanges[reg] = {
+        from: initialRegisters[reg],
+        to: cpuState.registers[reg],
+      };
+    }
+  }
+
+  // Compute flag changes
+  const flagChanges = {};
+  for (const flag of ["Z", "C", "N", "V"]) {
+    if (initialFlags[flag] !== cpuState.flags[flag]) {
+      flagChanges[flag] = {
+        from: initialFlags[flag],
+        to: cpuState.flags[flag],
+      };
+    }
+  }
+
+  // Determine execution flow
+  let flowType = "SEQUENTIAL";
+  let flowDescription = `Advanced sequentially from 0x${initialPC.toString(16).toUpperCase().padStart(2, "0")} to 0x${cpuState.PC.toString(16).toUpperCase().padStart(2, "0")}`;
+
+  if (opcode === OPCODES.CALL) {
+    flowType = "CALL";
+    const target = byte1 & (ramSize - 1);
+    const ret = (initialPC + 2) & (ramSize - 1);
+    flowDescription = `Subroutine CALL to 0x${target.toString(16).toUpperCase().padStart(2, "0")} (returns to 0x${ret.toString(16).toUpperCase().padStart(2, "0")})`;
+  } else if (opcode === OPCODES.RET) {
+    flowType = "RET";
+    flowDescription = `Subroutine RET to 0x${cpuState.PC.toString(16).toUpperCase().padStart(2, "0")}`;
+  } else if (opcode === OPCODES.JMP) {
+    flowType = "JMP";
+    flowDescription = `Unconditional Jump to 0x${cpuState.PC.toString(16).toUpperCase().padStart(2, "0")}`;
+  } else if (opcode === OPCODES.JZ || opcode === OPCODES.JNZ) {
+    const taken = cpuState.PC !== ((initialPC + len) & (ramSize - 1));
+    flowType = taken ? "BRANCH_TAKEN" : "BRANCH_NOT_TAKEN";
+    flowDescription = taken
+      ? `Conditional branch taken to 0x${cpuState.PC.toString(16).toUpperCase().padStart(2, "0")}`
+      : `Conditional branch not taken (fallthrough to 0x${cpuState.PC.toString(16).toUpperCase().padStart(2, "0")})`;
+  } else if (opcode === OPCODES.HALT) {
+    flowType = "HALT";
+    flowDescription = "Processor HALT reached";
+  }
+
+  const currentFrames = cpuState.callFrames ? [...cpuState.callFrames] : [];
+  const currentStack = cpuState.callStack ? [...cpuState.callStack] : [];
+
+  return {
+    pc: initialPC,
+    nextPC: cpuState.PC,
+    opcode: opcode,
+    mnemonic: mnemonic,
+    instruction: disasm ? disasm.instruction : mnemonic,
+    registerChanges: registerChanges,
+    flagChanges: flagChanges,
+    memoryAccess: memoryAccess,
+    flow: {
+      type: flowType,
+      fromPC: initialPC,
+      toPC: cpuState.PC,
+      description: flowDescription,
+      depth: currentFrames.length,
+    },
+    callFrames: currentFrames,
+    callStack: currentStack,
+    depth: currentFrames.length,
+  };
+}
+
 if (typeof window !== "undefined") {
   window.OPCODES = OPCODES;
   window.createCPUState = createCPUState;
   window.getOpcodeMnemonic = getOpcodeMnemonic;
   window.getInstructionLength = getInstructionLength;
   window.executeSingleInstruction = executeSingleInstruction;
+  window.executeSingleInstructionDetailed = executeSingleInstructionDetailed;
   window.updateALUFlags = updateALUFlags;
   window.disassembleInstruction = disassembleInstruction;
   window.disassembleMemory = disassembleMemory;
@@ -422,6 +579,7 @@ if (typeof module !== "undefined" && module.exports) {
     getOpcodeMnemonic,
     getInstructionLength,
     executeSingleInstruction,
+    executeSingleInstructionDetailed,
     updateALUFlags,
     disassembleInstruction,
     disassembleMemory,
