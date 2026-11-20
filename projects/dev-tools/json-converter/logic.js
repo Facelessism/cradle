@@ -158,11 +158,10 @@ function toYaml(
     return obj === "" ? "''" : quoteYaml(obj);
   }
 
-  if (typeof obj === "object") {
+  if (typeof obj === "object" && obj !== null) {
     if (seen.has(obj)) {
       return "[Circular reference]";
     }
-    seen = new Set(seen).add(obj);
   }
 
   if (Array.isArray(obj)) {
@@ -170,27 +169,33 @@ function toYaml(
       return "[]";
     }
 
-    return (
-      "\n" +
-      obj
-        .map(item => {
-          const value = toYaml(item, indent + 1, depth + 1, maxDepth, seen);
+    seen.add(obj);
+    try {
+      return (
+        "\n" +
+        obj
+          .map(item => {
+            const value = toYaml(item, indent + 1, depth + 1, maxDepth, seen);
 
-          if (typeof item === "object" && item !== null) {
-            const lines = value.split("\n");
-            const firstLine = lines.shift();
+            if (typeof item === "object" && item !== null) {
+              const trimmedVal = value.replace(/^\n+/, "");
+              const lines = trimmedVal.split("\n");
+              const firstLine = lines.shift() || "";
 
-            const rest = lines.map(line => pad + "  " + line).join("\n");
+              const rest = lines.join("\n");
 
-            return (
-              pad + "- " + firstLine.trimStart() + (rest ? "\n" + rest : "")
-            );
-          }
+              return (
+                pad + "- " + firstLine.trimStart() + (rest ? "\n" + rest : "")
+              );
+            }
 
-          return pad + "- " + value;
-        })
-        .join("\n")
-    );
+            return pad + "- " + value;
+          })
+          .join("\n")
+      );
+    } finally {
+      seen.delete(obj);
+    }
   }
 
   if (typeof obj === "object") {
@@ -200,32 +205,37 @@ function toYaml(
       return "{}";
     }
 
-    return (
-      "\n" +
-      keys
-        .map(key => {
-          const value = toYaml(obj[key], indent + 1, depth + 1, maxDepth, seen);
+    seen.add(obj);
+    try {
+      return (
+        "\n" +
+        keys
+          .map(key => {
+            const value = toYaml(obj[key], indent + 1, depth + 1, maxDepth, seen);
 
-          const needsKeyQuote = /[:\-#\[\]{},"'!&*?|>%@`\n\r\s]/.test(key);
+            const needsKeyQuote = /[:\-#\[\]{},"'!&*?|>%@`\n\r\s]/.test(key);
 
-          const formattedKey = needsKeyQuote ? quoteYaml(key) : key;
+            const formattedKey = needsKeyQuote ? quoteYaml(key) : key;
 
-          const valueIsObject =
-            typeof obj[key] === "object" &&
-            obj[key] !== null &&
-            !Array.isArray(obj[key]) &&
-            Object.keys(obj[key]).length > 0;
+            const valueIsObject =
+              typeof obj[key] === "object" &&
+              obj[key] !== null &&
+              !Array.isArray(obj[key]) &&
+              Object.keys(obj[key]).length > 0;
 
-          const valueIsArray = Array.isArray(obj[key]) && obj[key].length > 0;
+            const valueIsArray = Array.isArray(obj[key]) && obj[key].length > 0;
 
-          if (valueIsObject || valueIsArray) {
-            return `${pad}${formattedKey}:${value}`;
-          }
+            if ((valueIsObject || valueIsArray) && value.startsWith("\n")) {
+              return `${pad}${formattedKey}:${value}`;
+            }
 
-          return `${pad}${formattedKey}: ${value}`;
-        })
-        .join("\n")
-    );
+            return `${pad}${formattedKey}: ${value}`;
+          })
+          .join("\n")
+      );
+    } finally {
+      seen.delete(obj);
+    }
   }
 
   return String(obj);
@@ -251,6 +261,37 @@ function escapeCsv(value) {
 }
 
 /**
+ * Safely stringify array items for CSV cell serialization with cycle detection.
+ */
+function safeArrayToString(arr, seen = new Set()) {
+  if (seen.has(arr)) {
+    return "[Circular]";
+  }
+  seen.add(arr);
+  try {
+    return arr
+      .map(item => {
+        if (item === null || item === undefined) {
+          return "";
+        }
+        if (typeof item === "object") {
+          if (seen.has(item)) {
+            return "[Circular]";
+          }
+          if (Array.isArray(item)) {
+            return safeArrayToString(item, seen);
+          }
+          return String(item);
+        }
+        return String(item);
+      })
+      .join(",");
+  } finally {
+    seen.delete(arr);
+  }
+}
+
+/**
  * Flatten a nested object to dot-notation keys.
  *
  * Example:
@@ -258,30 +299,20 @@ function escapeCsv(value) {
  * becomes:
  * { "a.b": 1 }
  */
-function flattenObj(obj, prefix, result, seen, depth) {
-  if (prefix === undefined) {
-    prefix = "";
-  }
-
-  if (result === undefined) {
-    result = {};
-  }
-
-  if (seen === undefined) {
-    seen = new Set();
-  }
-
-  if (depth === undefined) {
-    depth = 0;
-  }
-
+function flattenObj(obj, prefix = "", result = {}, seen = new Set(), depth = 0) {
   if (depth > 64) {
-    result[prefix || "value"] = String(obj ?? "");
+    if (prefix) {
+      result[prefix] = String(obj ?? "");
+    } else if (typeof obj !== "object" || obj === null) {
+      result["value"] = String(obj ?? "");
+    }
     return result;
   }
 
   if (obj === null || obj === undefined) {
-    result[prefix || "value"] = "";
+    if (prefix) {
+      result[prefix] = "";
+    }
     return result;
   }
 
@@ -290,25 +321,48 @@ function flattenObj(obj, prefix, result, seen, depth) {
       result[prefix || "value"] = "[Circular]";
       return result;
     }
-    seen = new Set(seen).add(obj);
   }
 
-  if (typeof obj !== "object" || Array.isArray(obj)) {
+  if (typeof obj !== "object") {
     result[prefix || "value"] = String(obj);
+    return result;
+  }
+
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) {
+      if (prefix) {
+        result[prefix] = "";
+      }
+      return result;
+    }
+
+    seen.add(obj);
+    try {
+      result[prefix || "value"] = safeArrayToString(obj, seen);
+    } finally {
+      seen.delete(obj);
+    }
     return result;
   }
 
   const keys = Object.keys(obj);
 
   if (keys.length === 0) {
-    result[prefix || "value"] = "";
+    if (prefix) {
+      result[prefix] = "";
+    }
     return result;
   }
 
-  for (const key of keys) {
-    const newPrefix = prefix ? `${prefix}.${key}` : key;
+  seen.add(obj);
+  try {
+    for (const key of keys) {
+      const newPrefix = prefix ? `${prefix}.${key}` : key;
 
-    flattenObj(obj[key], newPrefix, result, seen, depth + 1);
+      flattenObj(obj[key], newPrefix, result, seen, depth + 1);
+    }
+  } finally {
+    seen.delete(obj);
   }
 
   return result;
@@ -325,40 +379,54 @@ function toCsv(obj) {
     return "";
   }
 
-  if (Array.isArray(obj) && obj.length === 0) {
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) {
+      return "";
+    }
+
+    const allKeys = new Set();
+    const rows = obj.map(item => flattenObj(item));
+
+    for (const row of rows) {
+      for (const key of Object.keys(row)) {
+        allKeys.add(key);
+      }
+    }
+
+    if (allKeys.size === 0) {
+      return "";
+    }
+
+    const headers = Array.from(allKeys);
+    const lines = [headers.join(",")];
+
+    for (const row of rows) {
+      const values = headers.map(header =>
+        escapeCsv(row[header] !== undefined ? row[header] : "")
+      );
+
+      lines.push(values.join(","));
+    }
+
+    return lines.join("\n");
+  }
+
+  if (typeof obj === "object" && Object.keys(obj).length === 0) {
     return "";
   }
 
-  if (!Array.isArray(obj)) {
-    const flattened = flattenObj(obj);
-    const headers = Object.keys(flattened);
-    const values = Object.values(flattened);
+  const flattened = flattenObj(obj);
+  const headers = Object.keys(flattened);
 
-    return headers.join(",") + "\n" + values.map(escapeCsv).join(",");
+  if (headers.length === 0) {
+    return "";
   }
 
-  const allKeys = new Set();
+  const values = headers.map(header =>
+    escapeCsv(flattened[header] !== undefined ? flattened[header] : "")
+  );
 
-  const rows = obj.map(item => flattenObj(item));
-
-  for (const row of rows) {
-    for (const key of Object.keys(row)) {
-      allKeys.add(key);
-    }
-  }
-
-  const headers = Array.from(allKeys);
-  const lines = [headers.join(",")];
-
-  for (const row of rows) {
-    const values = headers.map(header =>
-      escapeCsv(row[header] !== undefined ? row[header] : "")
-    );
-
-    lines.push(values.join(","));
-  }
-
-  return lines.join("\n");
+  return headers.join(",") + "\n" + values.join(",");
 }
 
 /* ------------------------------------------------------------------ */
@@ -421,11 +489,10 @@ function toXml(
     return `${pad}<${name}/>`;
   }
 
-  if (typeof obj === "object") {
+  if (typeof obj === "object" && obj !== null) {
     if (seen.has(obj)) {
       return `${pad}<${name}>[Circular reference]</${name}>`;
     }
-    seen = new Set(seen).add(obj);
   }
 
   if (
@@ -441,13 +508,18 @@ function toXml(
       return `${pad}<${name}/>`;
     }
 
-    const itemName = name.replace(/s$/, "") || "item";
+    seen.add(obj);
+    try {
+      const itemName = name.replace(/s$/, "") || "item";
 
-    const items = obj
-      .map(item => toXml(item, itemName, indent + 1, depth + 1, maxDepth, seen))
-      .join("\n");
+      const items = obj
+        .map(item => toXml(item, itemName, indent + 1, depth + 1, maxDepth, seen))
+        .join("\n");
 
-    return `${pad}<${name}>\n` + `${items}\n` + `${pad}</${name}>`;
+      return `${pad}<${name}>\n` + `${items}\n` + `${pad}</${name}>`;
+    } finally {
+      seen.delete(obj);
+    }
   }
 
   if (typeof obj === "object") {
@@ -457,22 +529,27 @@ function toXml(
       return `${pad}<${name}/>`;
     }
 
-    const children = keys
-      .map(key => {
-        const childName = isValidXmlName(key) ? key : sanitizeXmlName(key);
+    seen.add(obj);
+    try {
+      const children = keys
+        .map(key => {
+          const childName = isValidXmlName(key) ? key : sanitizeXmlName(key);
 
-        return toXml(
-          obj[key],
-          childName,
-          indent + 1,
-          depth + 1,
-          maxDepth,
-          seen
-        );
-      })
-      .join("\n");
+          return toXml(
+            obj[key],
+            childName,
+            indent + 1,
+            depth + 1,
+            maxDepth,
+            seen
+          );
+        })
+        .join("\n");
 
-    return `${pad}<${name}>\n` + `${children}\n` + `${pad}</${name}>`;
+      return `${pad}<${name}>\n` + `${children}\n` + `${pad}</${name}>`;
+    } finally {
+      seen.delete(obj);
+    }
   }
 
   return `${pad}<${name}>` + escapeXml(String(obj)) + `</${name}>`;

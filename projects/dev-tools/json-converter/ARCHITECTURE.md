@@ -78,6 +78,9 @@ Partial or full re-render of the tree
 
 - Real-time JSON syntax validation with line and column error reporting
 - Three output formats: YAML, CSV, XML with one-click toggle
+- Robust conversion for empty structures (`{}`, `[]`, nested empty values) across YAML, CSV, and XML
+- Proper YAML list formatting for object arrays (`- key: val`) without extraneous line breaks
+- Cycle and shared reference detection via DFS call-stack tracking (`seen` set tracking active recursion branches), allowing shared DAG references without false circular warnings while safeguarding against genuine circular references and circular array stack overflows
 - Syntax-highlighted input pane using a transparent-textarea overlay technique
 - Format (pretty-print) and Minify buttons for the input JSON
 - Copy to clipboard and Download as `.yaml` / `.csv` / `.xml` file
@@ -146,7 +149,7 @@ None (uses native browser APIs).
 ## Known Limitations
 
 - Very deep nesting may lead to performance degradation due to recursive DOM construction.
-- No support for circular references in JSON (would cause infinite recursion).
+- Circular references cannot be represented in valid standard JSON format (input text), but JavaScript object graphs converted to YAML, CSV, and XML safely detect genuine cycles and label them without call-stack overflow.
 
 ---
 
