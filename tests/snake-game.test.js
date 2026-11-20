@@ -63,6 +63,111 @@ test("createInitialState rejects non-positive initialLength", () => {
     /initialLength must be a positive integer/
   );
 });
+
+test("Issue #1195 - board dimension validation accepts defaults and boundaries", () => {
+  assert.deepEqual(SnakeEngine.validateBoardDimensions(), {
+    gridSize: 20,
+    initialLength: 3,
+  });
+
+  assert.deepEqual(SnakeEngine.validateBoardDimensions(3, 3), {
+    gridSize: 3,
+    initialLength: 3,
+  });
+
+  assert.deepEqual(
+    SnakeEngine.validateBoardDimensions(
+      SnakeEngine.MAX_GRID_SIZE,
+      SnakeEngine.MAX_GRID_SIZE
+    ),
+    {
+      gridSize: SnakeEngine.MAX_GRID_SIZE,
+      initialLength: SnakeEngine.MAX_GRID_SIZE,
+    }
+  );
+});
+
+test("Issue #1195 - board dimensions reject invalid numbers", () => {
+  for (const gridSize of [0, -1, 2, 2.5, 201, NaN, Infinity, -Infinity]) {
+    assert.throws(() => SnakeEngine.validateBoardDimensions(gridSize, 1));
+  }
+
+  for (const initialLength of [0, -1, 2.5, NaN, Infinity, -Infinity]) {
+    assert.throws(() => SnakeEngine.validateBoardDimensions(20, initialLength));
+  }
+});
+
+test("Issue #1195 - board dimensions reject strings and unsupported types", () => {
+  for (const gridSize of ["", " ", "20", "20abc", true, false, null, [], {}]) {
+    assert.throws(() => SnakeEngine.validateBoardDimensions(gridSize, 1));
+  }
+
+  for (const initialLength of [
+    "",
+    " ",
+    "3",
+    "3abc",
+    true,
+    false,
+    null,
+    [],
+    {},
+  ]) {
+    assert.throws(() => SnakeEngine.validateBoardDimensions(20, initialLength));
+  }
+});
+
+test("Issue #1195 - invalid combined dimensions are rejected atomically", () => {
+  assert.throws(
+    () => SnakeEngine.createInitialState({ gridSize: 20, initialLength: 21 }),
+    /initialLength cannot be greater than gridSize/
+  );
+  assert.throws(
+    () => SnakeEngine.createInitialState({ gridSize: "20", initialLength: 3 }),
+    TypeError
+  );
+  assert.throws(
+    () => SnakeEngine.createInitialState({ gridSize: 20, initialLength: "3" }),
+    TypeError
+  );
+});
+
+test("Issue #1195 - valid custom boards remain playable and bounded", () => {
+  for (const gridSize of [3, 4, 20, 120, SnakeEngine.MAX_GRID_SIZE]) {
+    const initialLength = gridSize <= 4 ? 3 : 5;
+    const state = SnakeEngine.createInitialState({ gridSize, initialLength });
+
+    assert.equal(state.gridSize, gridSize);
+    assert.equal(state.snake.length, initialLength);
+    assert.ok(state.food);
+    state.snake.forEach(segment => {
+      assert.equal(SnakeEngine.checkWallCollision(segment, gridSize), false);
+    });
+  }
+
+  const fullLength = SnakeEngine.createInitialState({
+    gridSize: 200,
+    initialLength: 200,
+  });
+  assert.equal(fullLength.snake.length, 200);
+  fullLength.snake.forEach(segment => {
+    assert.equal(
+      SnakeEngine.checkWallCollision(segment, 200),
+      false
+    );
+  });
+});
+
+test("Issue #1195 - maze layout rejects invalid custom dimensions", () => {
+  assert.throws(
+    () => SnakeEngine.createMazeObstacles(0),
+    RangeError
+  );
+  assert.throws(
+    () => SnakeEngine.createMazeObstacles("20"),
+    TypeError
+  );
+});
 test("isValidDirectionChange prevents 180-degree suicidal reversal", () => {
   const { UP, DOWN, LEFT, RIGHT } = SnakeEngine.DIRECTIONS;
 
