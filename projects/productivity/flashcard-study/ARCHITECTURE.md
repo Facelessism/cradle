@@ -27,6 +27,7 @@ Flashcard Studio is a self-contained flashcard application for creating, studyin
 ```text
 flashcard-study/
 ├── index.html          # Dashboard, study view, modals, footer
+├── flashcardEngine.js  # Pure import validation, deduplication, and card-level merging helpers
 ├── script.js           # State, CRUD, study engine, import/export, keyboard shortcuts
 ├── style.css           # Deck grid, flashcard flip, modals, responsive
 └── ARCHITECTURE.md     # This file
@@ -50,11 +51,12 @@ graph TD
 
 ## Component Breakdown
 
-| File         | Responsibility                                                                                                                                  |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `index.html` | Page structure: stats bar, deck grid, study view with flashcard, 3 modals (deck, card, detail), import/export buttons, footer                   |
-| `script.js`  | All application logic: data persistence, deck/card CRUD, study mode with shuffle and scoring, flip animation, import/export, keyboard shortcuts |
-| `style.css`  | Visual design: deck cards with progress bars, 3D flashcard flip, modals, responsive grid, Cradle token usage                                    |
+| File                 | Responsibility                                                                                                                                  |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html`         | Page structure: stats bar, deck grid, study view with flashcard, 3 modals (deck, card, detail), import/export buttons, footer                   |
+| `flashcardEngine.js` | Pure import validation, card duplicate detection, and intelligent deck/card merging for browser and Node.js testing                           |
+| `script.js`          | All application logic: data persistence, deck/card CRUD, study mode with shuffle and scoring, flip animation, import/export, keyboard shortcuts |
+| `style.css`          | Visual design: deck cards with progress bars, 3D flashcard flip, modals, responsive grid, Cradle token usage                                    |
 
 ---
 
@@ -94,7 +96,7 @@ Every action persists to localStorage
 - **Keyboard shortcuts** — Space to flip, Arrow keys / J/K to mark known/unknown, Escape to exit
 - **Session scoring** — tracks known/unknown counts and accuracy percentage
 - **Session counter** — total study sessions incremented and displayed in stats
-- **Import/Export** — JSON file export of all decks; import to merge decks
+- **Import/Export** — JSON file export of all decks; idempotent import with card-level duplicate detection and valid update preservation
 - **Auto-persist** — all state saved to localStorage on every mutation
 - **Responsive design** — works on desktop, tablet, and mobile
 
@@ -124,6 +126,14 @@ Every action persists to localStorage
 - Uses `aria-label`, `role="button"`, `tabindex` for accessibility
 - File import input hidden; triggered by button click
 - Loads Cradle tokens and BackToHome component
+
+### `flashcardEngine.js`
+
+- **`validateBackup(input)`** — validates incoming JSON structure, deck properties, non-negative sessions, and identifier integrity
+- **`mergeImportedBackup(currentData, importedData)`** — pure function that merges imported decks and cards idempotently without mutating inputs
+- **Card-level deduplication** — checks duplicate cards by ID and by normalized `front` + `back` text (case- and whitespace-insensitive)
+- **Valid update preservation** — applies newer `lastReviewed` timestamps, higher `mastery` scores, and updated card text to matching cards
+- **`normalizeText(text)` / `cardContentKey(card)`** — helper utilities for reliable whitespace-collapsed, case-insensitive question/answer matching
 
 ### `script.js`
 
@@ -159,7 +169,7 @@ Every action persists to localStorage
 - **Random shuffle (not SR scheduling)** — keeps study sessions varied without requiring a scheduling algorithm; mastery still accumulates over sessions
 - **3D flip animation** — CSS `transform: rotateY(180deg)` with `preserve-3d` provides a tactile, satisfying card flip without JavaScript animation libraries
 - **Modal-based detail view** — avoids page navigation; keeps the user in context on the dashboard
-- **Import appends, not replaces** — merged decks rather than overwriting, so users can combine decks from different sources
+- **Import appends with card-level deduplication** — merges decks and cards rather than destructively overwriting; repeated imports of the same backup are idempotent and never create duplicate cards. Duplicate cards are detected by card ID or normalized question-and-answer content, while valid progress updates (newer review timestamps, updated mastery, and text edits) are selectively applied without mutating inputs.
 - **No external dependencies** — the entire app runs from a single HTML page with vanilla JS, consistent with Cradle's zero-build philosophy
 - **Keyboard-first study** — Space/arrows allow rapid-fire study without touching the mouse
 

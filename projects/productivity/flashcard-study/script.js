@@ -491,13 +491,33 @@ function importDecks(file) {
       saveData();
       renderDashboard();
 
-      if (result.skippedDecks > 0) {
-        alert(
-          `Import complete: ${result.importedDecks} new deck(s) added; ${result.skippedDecks} existing deck(s) skipped.`
-        );
-      } else {
-        alert(`Import complete: ${result.importedDecks} deck(s) added.`);
+      const parts = [];
+      if (result.importedDecks > 0) {
+        parts.push(`${result.importedDecks} new deck(s) added`);
       }
+      if (result.importedCards > 0) {
+        parts.push(`${result.importedCards} card(s) added`);
+      }
+      if (result.updatedCards > 0) {
+        parts.push(`${result.updatedCards} card(s) updated`);
+      }
+      if (result.skippedCards > 0) {
+        parts.push(`${result.skippedCards} duplicate card(s) skipped`);
+      }
+      if (
+        result.skippedDecks > 0 &&
+        result.importedCards === 0 &&
+        result.updatedCards === 0 &&
+        result.skippedCards === 0
+      ) {
+        parts.push(`${result.skippedDecks} existing deck(s) unchanged`);
+      }
+
+      const message =
+        parts.length > 0
+          ? `Import complete: ${parts.join("; ")}.`
+          : `Import complete: no changes made.`;
+      alert(message);
     } catch {
       alert("Could not parse the import file.");
     }
