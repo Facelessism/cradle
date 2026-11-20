@@ -501,6 +501,21 @@ test("shared references are not reported as circular", () => {
   assert.ok(!toXml(data, "root").includes("[Circular"));
 });
 
+test("deep DAG shared references across branches are preserved without false circular detection", () => {
+  const leaf = { val: 42 };
+  const mid1 = { leaf };
+  const mid2 = { leaf };
+  const root = { mid1, mid2 };
+
+  assert.ok(!toYaml(root).includes("[Circular"));
+  assert.ok(!toCsv([root]).includes("[Circular"));
+  assert.ok(!toXml(root, "root").includes("[Circular"));
+
+  const csv = toCsv([root]);
+  assert.match(csv, /mid1\.leaf\.val/);
+  assert.match(csv, /mid2\.leaf\.val/);
+});
+
 test("real cycles are still reported as circular", () => {
   const loop = { name: "a" };
   loop.self = loop;
@@ -508,4 +523,85 @@ test("real cycles are still reported as circular", () => {
   assert.ok(toYaml(loop).includes("[Circular"));
   assert.ok(toCsv([loop]).includes("[Circular"));
   assert.ok(toXml(loop, "root").includes("[Circular"));
+});
+
+test("multi-hop circular cycles are reported as circular", () => {
+  const first = { name: "first" };
+  const second = { name: "second", ref: first };
+  first.next = second;
+
+  assert.ok(toYaml(first).includes("[Circular"));
+  assert.ok(toCsv([first]).includes("[Circular"));
+  assert.ok(toXml(first, "root").includes("[Circular"));
+});
+
+test("circular arrays do not cause call stack overflow and are safely detected", () => {
+  const arr = [];
+  arr.push(arr);
+
+  assert.doesNotThrow(() => toYaml(arr));
+  assert.doesNotThrow(() => toCsv(arr));
+  assert.doesNotThrow(() => toCsv([arr]));
+  assert.doesNotThrow(() => toXml(arr, "root"));
+
+  assert.ok(toYaml(arr).includes("[Circular"));
+  assert.ok(toCsv([arr]).includes("[Circular"));
+  assert.ok(toXml(arr, "root").includes("[Circular"));
+});
+
+/* ------------------------------------------------------------------ */
+/* Empty structures handling in CSV, YAML, and XML                    */
+/* ------------------------------------------------------------------ */
+
+test("toCsv handles empty root object without generating value column", () => {
+  assert.equal(toCsv({}), "");
+});
+
+test("toCsv handles array of empty objects without generating value column", () => {
+  assert.equal(toCsv([{}]), "");
+  assert.equal(toCsv([{}, {}]), "");
+  assert.equal(toCsv([[]]), "");
+});
+
+test("toCsv handles array with mixed empty and non-empty objects without spurious value column", () => {
+  const csv = toCsv([{ a: 1 }, {}]);
+  const lines = csv.split("\n");
+
+  assert.equal(lines[0], "a");
+  assert.equal(lines[1], "1");
+  assert.equal(lines[2], "");
+  assert.ok(!csv.includes("value"));
+});
+
+test("toCsv handles nested empty objects and arrays in fields", () => {
+  const csv = toCsv({ a: {}, b: [] });
+  const lines = csv.split("\n");
+
+  assert.equal(lines[0], "a,b");
+  assert.equal(lines[1], ",");
+});
+
+test("toYaml formats array of objects cleanly without leading newline on first property", () => {
+  const yaml = toYaml([{ a: 1 }]).trimStart();
+  assert.equal(yaml, "- a: 1");
+
+  const multiKeyYaml = toYaml([{ a: 1, b: 2 }]).trimStart();
+  assert.equal(multiKeyYaml, "- a: 1\n  b: 2");
+});
+
+test("toYaml formats arrays of empty objects and arrays", () => {
+  const yaml = toYaml([{}, {}]).trimStart();
+  assert.equal(yaml, "- {}\n- {}");
+
+  const yamlWithNested = toYaml([{ a: {} }, { b: [] }]).trimStart();
+  assert.equal(yamlWithNested, "- a: {}\n- b: []");
+});
+
+test("toXml formats empty root and nested objects/arrays as self-closing tags", () => {
+  assert.equal(toXml({}).trim(), "<root/>");
+  assert.equal(toXml([]).trim(), "<root/>");
+
+  const xmlNested = toXml({ a: {}, b: [] }, "root");
+  assert.match(xmlNested, /<a\/>/);
+  assert.match(xmlNested, /<b\/>/);
 });
