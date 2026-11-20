@@ -4,6 +4,7 @@ const {
   OPCODES,
   createCPUState,
   executeSingleInstruction,
+  executeSingleInstructionDetailed,
   updateALUFlags,
   disassembleInstruction,
   disassembleMemory,
@@ -259,4 +260,124 @@ test("throws descriptive assembler errors for invalid operations", () => {
   assert.throws(() => {
     assembleCode("CALL", ram);
   }, /CALL requires a target address/);
+});
+
+test("tracks nested callFrames and callStack across multi-level CALL and RET", () => {
+  const cpu = createCPUState(16);
+  assert.equal(cpu.registers.SP, 15);
+  assert.deepEqual(cpu.callStack, []);
+  assert.deepEqual(cpu.callFrames, []);
+
+  // 1st Level: CALL 3 from PC = 0 (return address = 2)
+  cpu.PC = 0;
+  executeSingleInstruction(cpu, OPCODES.CALL, 3, null);
+  assert.equal(cpu.PC, 3);
+  assert.equal(cpu.registers.SP, 14);
+  assert.equal(cpu.RAM[14], 2);
+  assert.deepEqual(cpu.callStack, [2]);
+  assert.equal(cpu.callFrames.length, 1);
+  assert.deepEqual(cpu.callFrames[0], {
+    depth: 1,
+    callerPC: 0,
+    targetAddr: 3,
+    returnAddr: 2,
+    sp: 14,
+  });
+
+  // Execute inside subroutine 1: INC A (from 0 to 1)
+  executeSingleInstruction(cpu, OPCODES.INC, "A".charCodeAt(0), null);
+  assert.equal(cpu.registers.A, 1);
+  assert.equal(cpu.PC, 5); // 3 + len(INC)=2 -> 5
+
+  // 2nd Level: Nested CALL 8 from PC = 5 (return address = 7)
+  executeSingleInstruction(cpu, OPCODES.CALL, 8, null);
+  assert.equal(cpu.PC, 8);
+  assert.equal(cpu.registers.SP, 13);
+  assert.equal(cpu.RAM[13], 7);
+  assert.deepEqual(cpu.callStack, [2, 7]);
+  assert.equal(cpu.callFrames.length, 2);
+  assert.deepEqual(cpu.callFrames[1], {
+    depth: 2,
+    callerPC: 5,
+    targetAddr: 8,
+    returnAddr: 7,
+    sp: 13,
+  });
+
+  // Execute inside subroutine 2: ADD A, A (from 1 to 2)
+  executeSingleInstruction(cpu, OPCODES.ADD, "A".charCodeAt(0), "A".charCodeAt(0));
+  assert.equal(cpu.registers.A, 2);
+  assert.equal(cpu.PC, 11); // 8 + len(ADD)=3 -> 11
+
+  // 1st RET: Returns from subroutine 2 to subroutine 1 at PC = 7
+  executeSingleInstruction(cpu, OPCODES.RET, null, null);
+  assert.equal(cpu.PC, 7);
+  assert.equal(cpu.registers.SP, 14);
+  assert.deepEqual(cpu.callStack, [2]);
+  assert.equal(cpu.callFrames.length, 1);
+  assert.deepEqual(cpu.callFrames[0], {
+    depth: 1,
+    callerPC: 0,
+    targetAddr: 3,
+    returnAddr: 2,
+    sp: 14,
+  });
+
+  // 2nd RET: Returns from subroutine 1 to main at PC = 2
+  executeSingleInstruction(cpu, OPCODES.RET, null, null);
+  assert.equal(cpu.PC, 2);
+  assert.equal(cpu.registers.SP, 15);
+  assert.deepEqual(cpu.callStack, []);
+  assert.deepEqual(cpu.callFrames, []);
+});
+
+test("executeSingleInstructionDetailed exposes instruction state, register diffs, and execution flow", () => {
+  const cpu = createCPUState(16);
+  cpu.registers.A = 5;
+  cpu.registers.B = 3;
+
+  // Test ADD instruction details
+  const addResult = executeSingleInstructionDetailed(
+    cpu,
+    OPCODES.ADD,
+    "A".charCodeAt(0),
+    "B".charCodeAt(0)
+  );
+
+  assert.equal(addResult.pc, 0);
+  assert.equal(addResult.nextPC, 3);
+  assert.equal(addResult.mnemonic, "ADD");
+  assert.deepEqual(addResult.registerChanges, { A: { from: 5, to: 8 } });
+  assert.equal(addResult.flow.type, "SEQUENTIAL");
+  assert.equal(addResult.depth, 0);
+
+  // Test CALL instruction details
+  cpu.PC = 4;
+  const callResult = executeSingleInstructionDetailed(cpu, OPCODES.CALL, 10, null);
+  assert.equal(callResult.pc, 4);
+  assert.equal(callResult.nextPC, 10);
+  assert.equal(callResult.mnemonic, "CALL");
+  assert.equal(callResult.flow.type, "CALL");
+  assert.equal(callResult.flow.fromPC, 4);
+  assert.equal(callResult.flow.toPC, 10);
+  assert.equal(callResult.depth, 1);
+  assert.equal(callResult.callFrames.length, 1);
+  assert.equal(callResult.memoryAccess.length, 1);
+  assert.equal(callResult.memoryAccess[0].type, "write");
+  assert.equal(callResult.memoryAccess[0].value, 6); // 4 + 2
+  assert.equal(callResult.memoryAccess[0].purpose, "call_return_address");
+
+  // Test RET instruction details
+  cpu.PC = 12;
+  const retResult = executeSingleInstructionDetailed(cpu, OPCODES.RET, null, null);
+  assert.equal(retResult.pc, 12);
+  assert.equal(retResult.nextPC, 6);
+  assert.equal(retResult.mnemonic, "RET");
+  assert.equal(retResult.flow.type, "RET");
+  assert.equal(retResult.flow.toPC, 6);
+  assert.equal(retResult.depth, 0);
+  assert.equal(retResult.callFrames.length, 0);
+  assert.equal(retResult.memoryAccess.length, 1);
+  assert.equal(retResult.memoryAccess[0].type, "read");
+  assert.equal(retResult.memoryAccess[0].value, 6);
 });

@@ -105,6 +105,9 @@
                 <option value="flag_demo" style="background: #0f172a; color: #e2e8f0">
                   Flag Indicators (Z/C/N/V)
                 </option>
+                <option value="nested_subroutines" style="background: #0f172a; color: #e2e8f0">
+                  Nested Subroutines &amp; Debugging
+                </option>
               </select>
             </div>
           </div>
@@ -287,6 +290,10 @@
               <span class="reg-label">Stack Pointer (SP)</span>
               <span class="reg-val" id="reg-sp">0x0F</span>
             </div>
+            <div class="register-card highlighted-depth">
+              <span class="reg-label">Call Stack Depth</span>
+              <span class="reg-val" id="reg-depth">0</span>
+            </div>
             <div class="register-card flags-card">
               <span class="reg-label">Status Flags</span>
               <span class="reg-val sr-only" id="reg-flags">Z:1 C:0 N:0 V:0</span>
@@ -345,6 +352,16 @@
                 aria-label="RAM Grid View"
               >
                 RAM Grid
+              </button>
+              <button
+                id="tab-btn-callstack"
+                class="view-tab-btn"
+                role="tab"
+                aria-selected="false"
+                aria-controls="view-callstack"
+                aria-label="Call Stack and Execution Flow View"
+              >
+                Call Stack &amp; Flow
               </button>
             </div>
           </div>
@@ -413,6 +430,40 @@
           <!-- RAM Matrix View Panel -->
           <div id="view-ram" class="memory-panel-view" role="tabpanel" aria-labelledby="tab-btn-ram" hidden>
             <div class="ram-grid" id="ram-matrix"></div>
+          </div>
+
+          <!-- Call Stack & Execution Flow Panel -->
+          <div id="view-callstack" class="memory-panel-view" role="tabpanel" aria-labelledby="tab-btn-callstack" hidden>
+            <div class="callstack-toolbar">
+              <div class="callstack-status">
+                <span class="status-label">Active Subroutine Frames:</span>
+                <span class="callstack-depth-badge" id="badge-callstack-depth">0 Frames</span>
+              </div>
+              <div class="callstack-actions">
+                <button
+                  id="btn-trace-clear"
+                  class="btn-tool-sm"
+                  title="Clear execution trace history"
+                  aria-label="Clear execution trace history"
+                >
+                  Clear Trace
+                </button>
+              </div>
+            </div>
+
+            <div class="callstack-section">
+              <div class="callstack-section-title">Active Call Stack Frames (SP &amp; Return Addresses)</div>
+              <div id="callstack-frames-list" class="callstack-frames-list" role="region" aria-label="Active Call Stack Frames">
+                <div class="callstack-empty-msg">No active subroutine frames (Main execution context)</div>
+              </div>
+            </div>
+
+            <div class="trace-section">
+              <div class="callstack-section-title">Execution Flow &amp; Step Trace</div>
+              <div id="trace-scroll-list" class="trace-scroll-area" role="region" aria-label="Execution Flow and Instruction Step Trace">
+                <div class="trace-empty-msg">Trace is empty. Execute steps or clock cycles to inspect flow.</div>
+              </div>
+            </div>
           </div>
         </section>
       </aside>
