@@ -8,6 +8,8 @@
   "use strict";
 
   const GRID_SIZE = 20;
+  const MIN_GRID_SIZE = 3;
+  const MAX_GRID_SIZE = 200;
 
   const DIRECTIONS = {
     UP: { x: 0, y: -1, name: "UP" },
@@ -42,6 +44,52 @@
   };
 
   /**
+   * Validates square board dimensions before they reach canvas or game state.
+   * A 3x3 minimum provides one head and a 3-segment snake; 200 keeps the
+   * 400px canvas from allocating tiles smaller than 2px.
+   *
+   * @param {unknown} gridSize
+   * @param {unknown} initialLength
+   * @returns {{gridSize: number, initialLength: number}}
+   */
+  function validateBoardDimensions(gridSize = GRID_SIZE, initialLength = 3) {
+    if (
+      typeof gridSize !== "number" ||
+      Number.isNaN(gridSize) ||
+      !Number.isFinite(gridSize)
+    ) {
+      throw new TypeError("gridSize must be a finite number");
+    }
+    if (!Number.isInteger(gridSize)) {
+      throw new RangeError("gridSize must be a whole number");
+    }
+    if (gridSize < MIN_GRID_SIZE || gridSize > MAX_GRID_SIZE) {
+      throw new RangeError(
+        `gridSize must be between ${MIN_GRID_SIZE} and ${MAX_GRID_SIZE}`
+      );
+    }
+
+    if (
+      typeof initialLength !== "number" ||
+      Number.isNaN(initialLength) ||
+      !Number.isFinite(initialLength)
+    ) {
+      throw new TypeError("initialLength must be a finite number");
+    }
+    if (!Number.isInteger(initialLength)) {
+      throw new RangeError("initialLength must be a whole number");
+    }
+    if (initialLength < 1) {
+      throw new RangeError("initialLength must be a positive integer");
+    }
+    if (initialLength > gridSize) {
+      throw new RangeError("initialLength cannot be greater than gridSize");
+    }
+
+    return { gridSize, initialLength };
+  }
+
+  /**
    * Builds the fixed inner-wall layout used by Maze mode.
    * Four corner brackets plus two short centre bars. The snake's starting
    * row is always left clear so the opening moves are safe.
@@ -50,6 +98,9 @@
    * @returns {Array<Object>} Obstacle coordinates [{ x, y }]
    */
   function createMazeObstacles(gridSize = GRID_SIZE) {
+    const dimensions = validateBoardDimensions(gridSize, 1);
+    gridSize = dimensions.gridSize;
+
     const cells = new Map();
     const add = (x, y) => {
       if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
@@ -103,15 +154,11 @@
     mode: requestedMode = MODES.CLASSIC,
     powerUps = false,
   } = {}) {
-    if (!Number.isInteger(initialLength) || initialLength < 1) {
-      throw new RangeError("initialLength must be a positive integer");
-    }
+    const dimensions = validateBoardDimensions(gridSize, initialLength);
+    gridSize = dimensions.gridSize;
+    initialLength = dimensions.initialLength;
 
-    if (initialLength > gridSize) {
-      throw new RangeError("initialLength cannot be greater than gridSize");
-    }
-
-    const startX = Math.floor(gridSize / 2);
+    const startX = Math.max(initialLength - 1, Math.floor(gridSize / 2));
     const startY = Math.floor(gridSize / 2);
 
     const snake = Array.from({ length: initialLength }, (_, index) => ({
@@ -462,6 +509,9 @@
   }
 
   exports.GRID_SIZE = GRID_SIZE;
+  exports.MIN_GRID_SIZE = MIN_GRID_SIZE;
+  exports.MAX_GRID_SIZE = MAX_GRID_SIZE;
+  exports.validateBoardDimensions = validateBoardDimensions;
   exports.DIRECTIONS = DIRECTIONS;
   exports.MODES = MODES;
   exports.POWER_UP_TYPES = POWER_UP_TYPES;

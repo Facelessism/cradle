@@ -226,7 +226,7 @@ Power-ups are enabled with `createInitialState({ powerUps: true })` (the game UI
 ## Known Limitations
 
 - Audio requires an initial user interaction (click/touch/key) to unlock the Web Audio `AudioContext` as required by browser autoplay restrictions.
-- Grid resolution is fixed to 20×20 units.
+- The board is square and defaults to 20×20 units. Custom `gridSize` and `initialLength` values must be finite whole numbers; the engine accepts board sizes from 3 through 200 and requires `initialLength` to fit within the board.
 
 ---
 
