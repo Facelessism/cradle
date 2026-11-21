@@ -33,12 +33,16 @@
     "validate:build-strategy": "node scripts/build-minis.js --check",
     "build:minis": "node scripts/build-minis.js --build",
     "generate:sitemap": "node scripts/generate-sitemap.js",
-    "validate:sitemap": "node scripts/generate-sitemap.js --check"
+    "validate:sitemap": "node scripts/generate-sitemap.js --check",
+    "lhci": "lhci autorun --config=.lighthouserc.json",
+    "lhci:collect": "lhci collect --config=.lighthouserc.json",
+    "lhci:assert": "lhci assert --config=.lighthouserc.json"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.7",
     "live-server": "^1.2.2",
-    "prettier": "^3.0.0"
+    "prettier": "^3.0.0",
+    "@lhci/cli": "^0.14.0"
   },
   "repository": {
     "type": "git",
