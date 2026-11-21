@@ -1,481 +1,105 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Advanced QR Code Generator</title>
-    <meta
-      name="description"
-      content="Advanced QR Code Generator is a web application for creating, customizing, previewing, and downloading QR codes in real time. It supports payload construction f..."
-    />
 
-    <meta
-      name="description"
-      content="Generate, customize, and download beautiful QR codes instantly."
-    />
-    <link
-      rel="canonical"
-      href="https://facelessism.github.io/cradle/projects/productivity/advanced-qr-code-generator/"
-    />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="Advanced QR Code Generator" />
-    <meta
-      property="og:description"
-      content="Generate, customize, and download beautiful QR codes instantly."
-    />
-    <meta
-      property="og:url"
-      content="https://facelessism.github.io/cradle/projects/productivity/advanced-qr-code-generator/"
-    />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced QR Code Generator — Vector & Raster Export</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="icon" type="image/svg+xml" href="../../../assets/favicon.svg" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
-
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    />
-
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <!-- ===================== HEADER ===================== -->
-    <header class="app-header">
-      <div class="header-inner">
-        <div class="brand">
-          <span class="brand-icon"><i class="fa-solid fa-qrcode"></i></span>
-          <div class="brand-text">
-            <h1>QR Studio</h1>
-            <p>Advanced QR Code Generator</p>
-          </div>
-        </div>
-
-        <!-- Theme Toggle -->
-        <button
-          type="button"
-          id="theme-toggle"
-          class="theme-toggle"
-          aria-label="Toggle dark mode"
-          aria-pressed="false"
-          title="Toggle dark mode"
-        >
-          <i class="fa-solid fa-moon" id="theme-icon"></i>
-        </button>
-      </div>
+<body>
+  <main class="qr-app">
+    <header class="qr-header">
+      <a href="../../../index.html" class="back-link">← Back to Cradle</a>
+      <h1>Advanced QR Code Generator</h1>
+      <p>
+        Generate resolution-independent SVG vector QR codes with crisp module
+        geometry and high-DPI raster export.
+      </p>
     </header>
 
-    <!-- ===================== MAIN APP ===================== -->
-    <main class="app-container">
-      <!-- ----------- LEFT PANEL: CONTROLS ----------- -->
-      <section class="panel controls-panel" aria-label="QR Code Controls">
-        <!-- Content Input -->
-        <div class="card">
-          <h2 class="card-title">
-            <i class="fa-solid fa-pen-to-square"></i> Content
-          </h2>
-          <div class="form-group">
-            <label for="qr-text">Text or URL</label>
-            <textarea
-              id="qr-text"
-              class="text-input"
-              rows="3"
-              placeholder="Type a URL or any text to generate your QR code..."
-              aria-required="true"
-              aria-describedby="input-help"
-            ></textarea>
-            <span id="input-help" class="input-help"
-              >QR code updates live as you type</span
-            >
-          </div>
+    <section class="qr-workspace" aria-label="QR Generator Workspace">
+      <form id="qr-form" class="qr-controls" novalidate>
+        <div class="control-group">
+          <label for="qr-input">Content or URL</label>
+          <textarea id="qr-input" rows="3" placeholder="https://cradle-zeta.vercel.app"
+            required>https://cradle-zeta.vercel.app</textarea>
         </div>
 
-        <!-- Color Customization -->
-        <div class="card">
-          <h2 class="card-title"><i class="fa-solid fa-palette"></i> Colors &amp; Gradients</h2>
-          <div class="form-group">
-            <label for="fill-type">Module Fill Type</label>
-            <select id="fill-type" class="select-input" aria-label="Module fill type">
-              <option value="solid" selected>Solid Color</option>
-              <option value="linear">Linear Gradient</option>
-              <option value="radial">Radial Gradient</option>
-            </select>
-          </div>
-
-          <div class="form-row" id="solid-color-row">
-            <div class="form-group half">
-              <label for="fg-color">Foreground</label>
-              <div class="color-input-wrap">
-                <input
-                  type="color"
-                  id="fg-color"
-                  value="#2B2D42"
-                  aria-label="Foreground color"
-                />
-                <input
-                  type="text"
-                  id="fg-color-text"
-                  class="color-text"
-                  value="#2B2D42"
-                  placeholder="#2B2D42"
-                  maxlength="7"
-                  aria-label="Foreground color hex value"
-                />
-              </div>
-            </div>
-            <div class="form-group half">
-              <label for="bg-color">Background</label>
-              <div class="color-input-wrap">
-                <input
-                  type="color"
-                  id="bg-color"
-                  value="#FFFFFF"
-                  aria-label="Background color"
-                />
-                <input
-                  type="text"
-                  id="bg-color-text"
-                  class="color-text"
-                  value="#FFFFFF"
-                  placeholder="#FFFFFF"
-                  maxlength="7"
-                  aria-label="Background color hex value"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Gradient Controls (Visible when Linear/Radial Gradient is selected) -->
-          <div id="gradient-controls-wrap" class="gradient-controls-wrap" hidden>
-            <div class="form-row">
-              <div class="form-group half">
-                <label for="gradient-color-1">Gradient Start</label>
-                <div class="color-input-wrap">
-                  <input
-                    type="color"
-                    id="gradient-color-1"
-                    value="#2B2D42"
-                    aria-label="Gradient start color"
-                  />
-                  <input
-                    type="text"
-                    id="gradient-color-1-text"
-                    class="color-text"
-                    value="#2B2D42"
-                    placeholder="#2B2D42"
-                    maxlength="7"
-                    aria-label="Gradient start color hex value"
-                  />
-                </div>
-              </div>
-              <div class="form-group half">
-                <label for="gradient-color-2">Gradient End</label>
-                <div class="color-input-wrap">
-                  <input
-                    type="color"
-                    id="gradient-color-2"
-                    value="#6366F1"
-                    aria-label="Gradient end color"
-                  />
-                  <input
-                    type="text"
-                    id="gradient-color-2-text"
-                    class="color-text"
-                    value="#6366F1"
-                    placeholder="#6366F1"
-                    maxlength="7"
-                    aria-label="Gradient end color hex value"
-                  />
-                </div>
-              </div>
-            </div>
-            <div class="form-group" id="gradient-rotation-group">
-              <label for="gradient-rotation">
-                Gradient Angle <span class="value-badge" id="gradient-rotation-value">0°</span>
-              </label>
-              <input
-                type="range"
-                id="gradient-rotation"
-                min="0"
-                max="360"
-                step="5"
-                value="0"
-                aria-label="Gradient angle in degrees"
-                title="Gradient angle: 0°"
-                aria-valuemin="0"
-                aria-valuemax="360"
-                aria-valuenow="0"
-                aria-valuetext="0°"
-              />
-            </div>
-          </div>
-        </div>
-
-        <!-- Module & Corner Geometry -->
-        <div class="card">
-          <h2 class="card-title"><i class="fa-solid fa-shapes"></i> Module &amp; Corner Geometry</h2>
-          <div class="form-group">
-            <label for="dot-style">Dot Geometry Style</label>
-            <select id="dot-style" class="select-input" aria-label="Dot geometry style">
-              <option value="rounded" selected>Rounded Dots</option>
+        <div class="control-row">
+          <div class="control-group">
+            <label for="module-style">Module Geometry</label>
+            <select id="module-style">
+              <option value="square" selected>Sharp Square (Merged Path)</option>
+              <option value="rounded">Rounded Modules</option>
               <option value="dots">Circular Dots</option>
-              <option value="extra-rounded">Connected Squircle Modules</option>
-              <option value="diamond">Diamonds</option>
-              <option value="classy">Classy Curves</option>
-              <option value="classy-rounded">Classy Rounded Curves</option>
-              <option value="square">Classic Squares</option>
             </select>
           </div>
-          <div class="form-row">
-            <div class="form-group half">
-              <label for="corner-square-style">Corner Eye Outer Shape</label>
-              <select id="corner-square-style" class="select-input" aria-label="Corner eye outer shape">
-                <option value="extra-rounded" selected>Squircle Corner</option>
-                <option value="dot">Circular Corner</option>
-                <option value="square">Classic Square</option>
-              </select>
-            </div>
-            <div class="form-group half">
-              <label for="corner-dot-style">Corner Eye Inner Dot</label>
-              <select id="corner-dot-style" class="select-input" aria-label="Corner eye inner dot shape">
-                <option value="dot" selected>Circular Dot</option>
-                <option value="square">Square Dot</option>
-              </select>
-            </div>
+
+          <div class="control-group">
+            <label for="quiet-zone">Quiet Zone (Modules)</label>
+            <input id="quiet-zone" type="number" min="0" max="10" value="4" />
           </div>
         </div>
 
-        <!-- Size & Margin -->
-        <div class="card">
-          <h2 class="card-title">
-            <i class="fa-solid fa-ruler-combined"></i> Dimensions
-          </h2>
-          <div class="form-group">
-            <label for="qr-size">
-              Size <span class="value-badge" id="size-value">300px</span>
-            </label>
-            <input
-              type="range"
-              id="qr-size"
-              min="150"
-              max="600"
-              step="10"
-              value="300"
-              aria-label="QR code size"
-              title="QR code size: 300px"
-              aria-valuemin="150"
-              aria-valuemax="600"
-              aria-valuenow="300"
-              aria-valuetext="300px"
-            />
+        <div class="control-row">
+          <div class="control-group">
+            <label for="fg-color">Foreground Color</label>
+            <input id="fg-color" type="color" value="#0f172a" />
           </div>
-          <div class="form-group">
-            <label for="qr-margin">
-              Margin <span class="value-badge" id="margin-value">10px</span>
-            </label>
-            <input
-              type="range"
-              id="qr-margin"
-              min="0"
-              max="50"
-              step="1"
-              value="10"
-              aria-label="QR code margin"
-              title="QR code margin: 10px"
-              aria-valuemin="0"
-              aria-valuemax="50"
-              aria-valuenow="10"
-              aria-valuetext="10px"
-            />
+
+          <div class="control-group">
+            <label for="bg-color">Background Color</label>
+            <input id="bg-color" type="color" value="#ffffff" />
           </div>
         </div>
 
-        <!-- Error Correction -->
-        <div class="card">
-          <h2 class="card-title">
-            <i class="fa-solid fa-shield-halved"></i> Error Correction
-          </h2>
-          <div class="form-group">
-            <label for="error-level">Correction Level</label>
-            <select
-              id="error-level"
-              class="select-input"
-              aria-label="Error correction level"
-            >
-              <option value="L">Low (L) — 7% recovery</option>
-              <option value="M" selected>Medium (M) — 15% recovery</option>
-              <option value="Q">Quartile (Q) — 25% recovery</option>
-              <option value="H">High (H) — 30% recovery (Max Robustness)</option>
+        <div class="control-row">
+          <div class="control-group">
+            <label for="export-size">Export Dimensions (px)</label>
+            <select id="export-size">
+              <option value="256">256 × 256</option>
+              <option value="512" selected>512 × 512</option>
+              <option value="1024">1024 × 1024</option>
+              <option value="2048">2048 × 2048</option>
             </select>
           </div>
-          <div id="error-elevation-badge" class="elevation-badge" hidden>
-            <i class="fa-solid fa-shield-halved"></i>
-            <span>Auto-elevated to <strong>Level H (30%)</strong> for logo damage recovery</span>
-          </div>
-        </div>
 
-        <!-- Logo Upload -->
-        <div class="card">
-          <h2 class="card-title"><i class="fa-solid fa-image"></i> Center Logo Embedding</h2>
-          <div class="form-group">
-            <label for="logo-upload" class="upload-label" tabindex="0">
-              <i class="fa-solid fa-cloud-arrow-up"></i>
-              <span id="upload-text">Click to upload logo</span>
-              <small>PNG, JPG, JPEG, SVG</small>
+          <div class="control-group checkbox-group">
+            <label for="transparent-bg">
+              <input id="transparent-bg" type="checkbox" />
+              Transparent Background
             </label>
-            <input
-              type="file"
-              id="logo-upload"
-              accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml"
-              aria-label="Upload logo image"
-            />
-            <div class="form-group logo-size-group" id="logo-size-group">
-              <label for="logo-size">
-                Logo Scale <span class="value-badge" id="logo-size-value">30%</span>
-              </label>
-              <input
-                type="range"
-                id="logo-size"
-                min="15"
-                max="35"
-                step="1"
-                value="30"
-                aria-label="Center logo scale percentage"
-                title="Logo scale: 30%"
-                aria-valuemin="15"
-                aria-valuemax="35"
-                aria-valuenow="30"
-                aria-valuetext="30%"
-              />
-            </div>
-            <button
-              type="button"
-              id="remove-logo-btn"
-              class="btn btn-outline btn-small"
-              disabled
-              aria-label="Remove uploaded logo"
-            >
-              <i class="fa-solid fa-trash"></i> Remove Logo
-            </button>
           </div>
         </div>
+      </form>
 
-        <!-- Action Buttons -->
-        <div class="card action-card">
-          <h2 class="card-title">
-            <i class="fa-solid fa-download"></i> Multi-Format Export
-          </h2>
-          <div class="form-group">
-            <label for="export-resolution">Export Resolution (PNG)</label>
-            <select id="export-resolution" class="select-input" aria-label="Export resolution for raster images">
-              <option value="4000" selected>4000 × 4000 px (300 DPI Print Master)</option>
-              <option value="2000">2000 × 2000 px (Ultra HD)</option>
-              <option value="1000">1000 × 1000 px (HD Web)</option>
-              <option value="preview">Preview Size (Current Display)</option>
-            </select>
-          </div>
-          <div class="btn-grid">
-            <button
-              type="button"
-              id="download-png-btn"
-              class="btn btn-primary"
-              disabled
-              aria-label="Download high-resolution PNG image"
-            >
-              <i class="fa-solid fa-file-image"></i> Download PNG
-            </button>
-            <button
-              type="button"
-              id="download-svg-btn"
-              class="btn btn-primary"
-              disabled
-              aria-label="Download vector SVG file"
-            >
-              <i class="fa-solid fa-file-code"></i> Download SVG
-            </button>
-            <button
-              type="button"
-              id="download-eps-btn"
-              class="btn btn-primary"
-              disabled
-              aria-label="Download print-ready Encapsulated PostScript EPS file"
-            >
-              <i class="fa-solid fa-file-lines"></i> Download EPS
-            </button>
-            <button
-              type="button"
-              id="copy-image-btn"
-              class="btn btn-secondary"
-              disabled
-              aria-label="Copy QR image to clipboard"
-            >
-              <i class="fa-solid fa-copy"></i> Copy QR Image
-            </button>
-            <button type="button" id="reset-btn" class="btn btn-outline" aria-label="Reset all settings to defaults">
-              <i class="fa-solid fa-rotate-left"></i> Reset All
-            </button>
-          </div>
+      <div class="qr-preview-panel">
+        <div id="qr-preview-stage" class="qr-preview-stage" aria-live="polite"></div>
+
+        <div class="qr-meta" id="qr-meta">
+          Vector SVG • Crisp Edges Enabled
         </div>
-      </section>
 
-      <!-- ----------- RIGHT PANEL: PREVIEW ----------- -->
-      <section class="panel preview-panel" aria-label="QR Code Preview">
-        <div class="preview-card">
-          <h2 class="card-title">
-            <i class="fa-solid fa-eye"></i> Live Preview
-          </h2>
-
-          <div class="qr-stage">
-            <!-- Empty / Validation State -->
-            <div class="empty-state" id="empty-state">
-              <i class="fa-solid fa-qrcode empty-icon"></i>
-              <p>Enter text or a URL above to generate your QR code</p>
-            </div>
-
-            <!-- QR Code Render Target -->
-            <div id="qr-code-container" class="qr-code-container" hidden></div>
-          </div>
-
-          <p class="preview-hint">
-            <i class="fa-solid fa-circle-info"></i>
-            Your QR code updates instantly as you customize it.
-          </p>
+        <div class="export-actions">
+          <button type="button" id="download-svg-btn" class="btn btn-primary">
+            Download SVG (Vector)
+          </button>
+          <button type="button" id="copy-svg-btn" class="btn btn-secondary">
+            Copy SVG Markup
+          </button>
+          <button type="button" id="download-png-btn" class="btn btn-secondary">
+            Download PNG (Raster)
+          </button>
         </div>
-      </section>
-    </main>
 
-    <footer class="app-footer">
-      <p>Built with 💗 by Prince Hans</p>
-    </footer>
+        <p id="status-banner" class="status-banner" role="status"></p>
+      </div>
+    </section>
+  </main>
 
-    <!-- Toast Notification Container -->
-    <div
-      id="toast-container"
-      class="toast-container"
-      aria-live="polite"
-      aria-atomic="true"
-    ></div>
+  <script type="module" src="script.js"></script>
+</body>
 
-    <!-- QR Code Styling Library -->
-    <script
-      src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"
-      integrity="sha384-50pczvCB0no/P1Foou0eD0Bul/9JKfIgx04I0bMpay6npYYwWTUgQxlGS5T7yKmn"
-      crossorigin="anonymous"
-    ></script>
-    <!-- QR Engine Module -->
-    <script src="../../../src/components/ui/storage.js"></script>
-    <script src="qrEngine.js"></script>
-    <!-- App Script -->
-    <script src="script.js"></script>
-    <script
-      src="../../../src/components/ui/BackToHome/BackToHome.js"
-      defer
-    ></script>
-  </body>
 </html>
