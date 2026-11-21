@@ -28,9 +28,9 @@
   }
 
   /**
-   * Comprehensive ReDoS (Regular Expression Denial of Service)
-   * catastrophic backtracking complexity estimator and analyzer.
-   * Analyzes nested quantifiers, overlapping alternation, and adjacent unbounded repetitions.
+   * Heuristically flags common ReDoS (Regular Expression Denial of Service)
+   * patterns such as nested quantifiers, overlapping alternation, and adjacent
+   * unbounded repetitions. A clean result is not proof of runtime safety.
    */
   function analyzeReDoS(pattern) {
     if (typeof pattern !== "string" || !pattern) {
@@ -45,7 +45,7 @@
         pattern: String(pattern ?? ""),
         vulnerabilities: [],
         recommendations: [
-          "Pattern is empty or trivial. No backtracking risk.",
+          "Pattern is empty or trivial; no common ReDoS pattern was detected.",
         ],
         attackPayload: null,
       };
@@ -367,8 +367,8 @@
         pattern,
         vulnerabilities: [],
         recommendations: [
-          "Pattern demonstrates safe linear-time execution characteristics.",
-          "No catastrophic backtracking vulnerabilities detected.",
+          "No common ReDoS patterns were detected by this heuristic.",
+          "This result does not guarantee safe runtime behavior; consider the target regex engine and input.",
         ],
         attackPayload: null,
       };
@@ -383,7 +383,9 @@
         type: "clean",
         pattern,
         vulnerabilities: [],
-        recommendations: ["Pattern parsed safely."],
+        recommendations: [
+          "The heuristic could not complete its analysis. This does not guarantee safe runtime behavior.",
+        ],
         attackPayload: null,
       };
     }

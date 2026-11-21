@@ -790,6 +790,12 @@ body {
   color: var(--text-main);
 }
 
+.redos-heuristic-note {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .redos-recommendations-box {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
