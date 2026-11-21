@@ -168,28 +168,31 @@ document.addEventListener("DOMContentLoaded", () => {
             isSafe: true,
             isUnsafe: false,
             reason: null,
-            recommendations: ["Pattern demonstrates safe linear-time matching."],
+            recommendations: ["No common ReDoS patterns detected."],
             attackPayload: null,
           };
 
     // Update Complexity & Severity Badges
-    redosComplexityBadge.textContent =
-      analysis.complexity.split(" - ")[0] || "O(n)";
-    redosComplexityBadge.title = `Estimated time complexity: ${analysis.complexity}`;
+    redosComplexityBadge.textContent = analysis.isUnsafe
+      ? "Risk pattern"
+      : "Not detected";
+    redosComplexityBadge.title = analysis.isUnsafe
+      ? `Heuristic warning: pattern commonly associated with ${analysis.complexity} backtracking`
+      : "No common ReDoS pattern detected; this does not prove the regex is safe.";
 
     redosSeverityBadge.className = "badge";
     if (analysis.severity === "critical") {
       redosSeverityBadge.classList.add("badge-critical");
-      redosSeverityBadge.textContent = "Critical ReDoS";
+      redosSeverityBadge.textContent = "High Potential Risk";
     } else if (analysis.severity === "moderate") {
       redosSeverityBadge.classList.add("badge-moderate");
-      redosSeverityBadge.textContent = "Moderate Risk";
+      redosSeverityBadge.textContent = "Potential Risk";
     } else if (analysis.severity === "low") {
       redosSeverityBadge.classList.add("badge-low");
-      redosSeverityBadge.textContent = "Low Risk";
+      redosSeverityBadge.textContent = "Possible Risk";
     } else {
       redosSeverityBadge.classList.add("badge-safe");
-      redosSeverityBadge.textContent = "Safe";
+      redosSeverityBadge.textContent = "Not Detected";
     }
 
     // Update Meter Fill Bar
@@ -200,12 +203,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Diagnosis Text
     if (redosDiagnosis) {
       if (analysis.isUnsafe) {
-        redosDiagnosis.innerHTML = `<strong>⚠️ Vulnerability Detected:</strong> ${escapeHtml(
+        redosDiagnosis.innerHTML = `<strong>⚠️ Potential ReDoS Risk (heuristic):</strong> ${escapeHtml(
           analysis.reason || "High risk of catastrophic backtracking"
         )}`;
       } else {
         redosDiagnosis.textContent =
-          "Pattern demonstrates safe linear-time execution characteristics (Safe against ReDoS).";
+          "No common ReDoS patterns detected. This heuristic cannot guarantee runtime safety.";
       }
     }
 
@@ -277,7 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Pre-evaluation check for catastrophic backtracking (ReDoS) patterns
+    // Heuristic check for common catastrophic backtracking (ReDoS) patterns
     const safetyCheck =
       typeof RegexEngine !== "undefined" &&
       typeof RegexEngine.detectCatastrophicPattern === "function"
@@ -287,8 +290,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (safetyCheck && safetyCheck.isUnsafe) {
       regexError.classList.remove("hidden");
       regexError.innerHTML = `
-    <strong>⚠️ Unsafe Regex Warning (Catastrophic Backtracking):</strong> ${escapeHtml(safetyCheck.reason)}
-    <br><span class="regex-error-position">Execution blocked to prevent freezing the browser thread (ReDoS protection).</span>
+    <strong>⚠️ Potential ReDoS Risk (heuristic):</strong> ${escapeHtml(safetyCheck.reason)}
+    <br><span class="regex-error-position">Matching is paused for this pattern as a precaution. This check is not a guarantee of runtime safety.</span>
   `;
 
       highlightsOverlay.innerHTML = escapeHtml(testString);

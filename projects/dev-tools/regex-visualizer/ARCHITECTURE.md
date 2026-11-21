@@ -2,7 +2,7 @@
 
 ## Overview
 
-The RegEx Visualizer & Tester is an interactive developer tool designed to test, debug, and explain regular expressions in real time. It features a semantic token breakdown engine, highlighted live matches, an interactive capture group inspector with color-coded pill overlays, an automated catastrophic backtracking complexity estimator (ReDoS Meter) with visual severity ratings and remediation recommendations, and one-click multi-language code snippet generation for JavaScript, Python, Go, Rust, and Java.
+The RegEx Visualizer & Tester is an interactive developer tool designed to test, debug, and explain regular expressions in real time. It features a semantic token breakdown engine, highlighted live matches, an interactive capture group inspector with color-coded pill overlays, a heuristic check for common catastrophic backtracking patterns (ReDoS) with warnings and remediation recommendations, and one-click multi-language code snippet generation for JavaScript, Python, Go, Rust, and Java.
 
 ---
 
@@ -101,10 +101,10 @@ If pattern is safe:
 
 ## Key Features
 
-- **Automated Catastrophic Backtracking Complexity Estimator (ReDoS Meter)**:
+- **Heuristic ReDoS Pattern Check**:
   - Detects nested quantifiers (`(a+)+$`, `(a*)*`, `([0-9]+)+`), overlapping alternation repetitions (`(a|aa)+$`), and adjacent unbounded quantifiers (`.*.*`).
-  - Estimates asymptotic backtracking complexity: $O(n)$ Linear, $O(n^2)$ Polynomial, or $O(2^n)$ Exponential.
-  - Visual color-coded severity ratings: **Safe** (Green), **Low Risk** (Blue), **Moderate Risk** (Amber), and **Critical ReDoS** (Red pulse).
+  - Shows a heuristic risk level and recommendations; an unflagged result does not guarantee runtime safety because behavior depends on the regex engine and input.
+  - Visual color-coded severity ratings distinguish potential risk patterns from patterns where no common risk was detected.
   - Actionable remediation recommendations tailored to the specific detected vulnerability pattern.
   - Example malicious backtracking payload generator with 1-click clipboard copying.
 - **One-Click Multi-Language Code Snippet Generation**:

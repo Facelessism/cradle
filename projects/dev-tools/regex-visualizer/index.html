@@ -168,26 +168,29 @@
             <!-- ReDoS Catastrophic Backtracking Meter Card -->
             <div class="card redos-card">
               <div class="redos-header">
-                <h2>🛡️ ReDoS Backtracking Meter</h2>
+                <h2>🛡️ ReDoS Heuristic Check</h2>
                 <div class="redos-badges">
-                  <span id="redosComplexityBadge" class="badge badge-complexity">O(n)</span>
-                  <span id="redosSeverityBadge" class="badge badge-safe">Safe</span>
+                  <span id="redosComplexityBadge" class="badge badge-complexity">Not detected</span>
+                  <span id="redosSeverityBadge" class="badge badge-safe">Not Detected</span>
                 </div>
               </div>
-              <div class="redos-meter-wrapper" aria-label="Catastrophic Backtracking Risk Meter">
+              <div class="redos-meter-wrapper" aria-label="Heuristic ReDoS risk estimate">
                 <div class="redos-meter-track">
                   <div id="redosMeterFill" class="redos-meter-fill fill-safe" style="width: 10%;"></div>
                 </div>
                 <div class="redos-meter-labels">
-                  <span>Safe O(n)</span>
+                  <span>Not detected</span>
                   <span>Low</span>
-                  <span>Moderate O(n²)</span>
-                  <span>Critical O(2ⁿ)</span>
+                  <span>Moderate</span>
+                  <span>High</span>
                 </div>
               </div>
               <div class="redos-body">
                 <p id="redosDiagnosis" class="redos-diagnosis">
-                  Pattern demonstrates safe linear-time matching.
+                  No common ReDoS patterns detected.
+                </p>
+                <p class="redos-heuristic-note">
+                  This is a heuristic check for common backtracking patterns, not a guarantee of runtime safety. Risk depends on the regex engine and input.
                 </p>
                 <div id="redosRecommendationsContainer" class="redos-recommendations-box hidden">
                   <h3>Remediation Recommendations</h3>
