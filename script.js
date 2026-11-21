@@ -20,6 +20,13 @@ import {
   sanitizeProjectList,
 } from "./src/utils/projectSanitizer.js";
 import { registerServiceWorker } from "./src/utils/serviceWorkerRegistration.js";
+import {
+  computePageTitle,
+  parseFilterStateFromUrl,
+  buildFilterUrl,
+  SEARCH_QUERY_PARAM,
+  CATEGORY_QUERY_PARAM,
+} from "./src/utils/galleryUrlState.js";
 
 const projectsGrid = document.getElementById("projects-grid");
 const searchInput = document.getElementById("search");
@@ -39,23 +46,33 @@ const toggleRecentProjectsBtn = document.getElementById(
 const clearSearch = document.querySelector("#clearSearch");
 
 function updateClearSearchButton() {
+  if (!clearSearch || !searchInput) return;
   clearSearch.hidden = searchInput.value.trim() === "";
 }
 
-searchInput.addEventListener("input", () => {
-  updateClearSearchButton();
-});
+if (searchInput) {
+  searchInput.addEventListener("input", () => {
+    updateClearSearchButton();
+  });
+}
 
-clearSearch.addEventListener("click", () => {
-  searchInput.value = "";
+if (clearSearch) {
+  clearSearch.addEventListener("click", () => {
+    const hadQuery = searchInput ? searchInput.value.trim() !== "" : false;
+    if (searchInput) searchInput.value = "";
+    updateClearSearchButton();
 
-  // Trigger the existing search/filter logic
-  searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+    if (hadQuery) {
+      applyFilters({ push: true });
+    }
 
-  searchInput.focus();
+    if (typeof hideSearchSuggestions === "function") {
+      hideSearchSuggestions();
+    }
 
-  updateClearSearchButton();
-});
+    if (searchInput) searchInput.focus();
+  });
+}
 
 updateClearSearchButton();
 
@@ -122,61 +139,71 @@ function openHighlightedProject(card) {
   }
 }
 
-const SEARCH_QUERY_PARAM = "q";
-const CATEGORY_QUERY_PARAM = "category";
+function updatePageTitle() {
+  if (typeof document === "undefined") return;
+  const query = searchInput ? searchInput.value : "";
+  document.title = computePageTitle({
+    query,
+    selectedCategory,
+  });
+}
 
 function restoreFiltersFromUrl() {
   if (typeof window === "undefined" || !window.location) return;
-  const params = new URLSearchParams(window.location.search);
-  const query = params.get(SEARCH_QUERY_PARAM);
-  const category = params.get(CATEGORY_QUERY_PARAM);
+  const { query, category } = parseFilterStateFromUrl(window.location.search);
 
-  if (query && searchInput) {
+  if (searchInput) {
     searchInput.value = query;
     updateClearSearchButton();
   }
 
-  if (category) {
-    selectedCategory = category.toLowerCase().trim();
-  }
+  selectedCategory = category;
 }
 
-function updateUrlFilterState() {
+function updateUrlFilterState(options = {}) {
+  const { push = false } = options;
   if (typeof window === "undefined" || !window.location || !window.history)
     return;
-  const params = new URLSearchParams(window.location.search);
-  const query = searchInput ? searchInput.value.trim() : "";
 
-  if (query) {
-    params.set(SEARCH_QUERY_PARAM, query);
-  } else {
-    params.delete(SEARCH_QUERY_PARAM);
-  }
-
-  if (selectedCategory && selectedCategory !== "all") {
-    params.set(CATEGORY_QUERY_PARAM, selectedCategory);
-  } else {
-    params.delete(CATEGORY_QUERY_PARAM);
-  }
-
-  const queryString = params.toString();
-  const nextUrl = `${window.location.pathname}${
-    queryString ? `?${queryString}` : ""
-  }${window.location.hash || ""}`;
+  const query = searchInput ? searchInput.value : "";
+  const nextUrl = buildFilterUrl(
+    window.location.pathname,
+    window.location.search,
+    window.location.hash,
+    { query, selectedCategory }
+  );
 
   const currentUrl = `${window.location.pathname}${window.location.search}${
     window.location.hash || ""
   }`;
 
-  if (
-    nextUrl !== currentUrl &&
-    typeof window.history.replaceState === "function"
-  ) {
-    window.history.replaceState(null, "", nextUrl);
+  if (nextUrl !== currentUrl) {
+    if (push && typeof window.history.pushState === "function") {
+      window.history.pushState(null, "", nextUrl);
+    } else if (typeof window.history.replaceState === "function") {
+      window.history.replaceState(null, "", nextUrl);
+    }
   }
 }
 
+if (
+  typeof window !== "undefined" &&
+  typeof window.addEventListener === "function"
+) {
+  window.addEventListener("popstate", () => {
+    restoreFiltersFromUrl();
+    validateSelectedCategory();
+    renderCategories();
+    applyFilters({ push: false });
+    hideSearchSuggestions();
+    clearActiveCard();
+    updatePageTitle();
+  });
+}
+
 function validateSelectedCategory() {
+  if (!Array.isArray(allProjects) || allProjects.length === 0) return;
+
   const categories = new Set(
     allProjects
       .map(project =>
@@ -408,8 +435,9 @@ function renderCategories() {
       children: label,
       ariaLabel: `${label} projects`,
       onClick: () => {
+        if (selectedCategory === category) return;
         selectedCategory = category;
-        applyFilters();
+        applyFilters({ push: true });
         renderCategories();
         searchInput.focus();
       },
@@ -770,7 +798,7 @@ function selectSearchSuggestion(index) {
   }
 
   renderCategories();
-  applyFilters();
+  applyFilters({ push: true });
   hideSearchSuggestions();
   updateClearSearchButton();
   searchInput.focus();
@@ -837,13 +865,15 @@ async function copyProjectUrl(rawProject, button) {
   }
 }
 
-function applyFilters() {
-  const query = searchInput.value.toLowerCase().trim();
+function applyFilters(options = {}) {
+  const push = Boolean(options && options.push === true);
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
 
   if (filterWorker) {
     if (filterWorker.postMessage({ allProjects, selectedCategory, query })) {
       updateClearButtonVisibility(query);
-      updateUrlFilterState();
+      updateUrlFilterState({ push });
+      updatePageTitle();
       return;
     }
   }
@@ -852,7 +882,8 @@ function applyFilters() {
 
   renderProjects(sortProjectList(filtered));
   updateClearButtonVisibility(query);
-  updateUrlFilterState();
+  updateUrlFilterState({ push });
+  updatePageTitle();
 }
 
 function updateClearButtonVisibility(query) {
@@ -864,11 +895,14 @@ function updateClearButtonVisibility(query) {
 }
 
 function clearFilters() {
+  const hadFilters =
+    (searchInput && searchInput.value.trim() !== "") ||
+    selectedCategory !== "all";
   searchInput.value = "";
   selectedCategory = "all";
 
   clearActiveCard();
-  applyFilters();
+  applyFilters({ push: hadFilters });
   renderCategories();
   hideSearchSuggestions();
   updateClearSearchButton();
@@ -929,6 +963,11 @@ searchInput.addEventListener("keydown", event => {
       selectSearchSuggestion(activeSuggestionIndex);
       return;
     }
+
+    // Commit current query into browser history on Enter
+    window.clearTimeout(filterDebounceTimer);
+    applyFilters({ push: true });
+    hideSearchSuggestions();
   }
 
   if (event.key === "Escape") {
@@ -1348,6 +1387,7 @@ document.addEventListener("keydown", e => {
 
 document.addEventListener("DOMContentLoaded", () => {
   restoreFiltersFromUrl();
+  updatePageTitle();
   renderRecentProjects();
   loadProjects();
   registerServiceWorker();
