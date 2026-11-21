@@ -487,6 +487,60 @@ html.light-theme .recent-project-card::before {
   grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
 
   gap: 1.25rem;
+
+  width: 100%;
+}
+
+.project-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* Critical: allows flex/grid item to shrink below content width */
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Card Header / Title */
+.project-card h3,
+.project-title {
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/* Card Description */
+.project-card p,
+.project-description {
+  margin: 0.5rem 0 1rem;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
+  line-height: 1.5;
+  flex-grow: 1;
+  /* Keeps card footers/buttons aligned across rows */
+}
+
+@media (max-width: 480px) {
+
+  .projects-grid,
+  #projects-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .project-card {
+    padding: 1rem;
+  }
+
+  .project-card p,
+  .project-description {
+    font-size: 0.925rem;
+    line-height: 1.45;
+  }
 }
 
 .projects-grid p {
@@ -847,6 +901,7 @@ select:focus:not(:focus-visible),
     transform: translateY(20px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
