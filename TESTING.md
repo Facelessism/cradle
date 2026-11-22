@@ -88,3 +88,30 @@ If any of these gates fail, the CI pipeline halts and marks the commit as failed
 1. If adding a new mini-project with complex logic (e.g. `projects/games/sudoku/`), abstract the logic into `sudokuLogic.js` (UMD module).
 2. Create `tests/sudoku-logic.test.js` using `require('node:test')`.
 3. The file will be automatically discovered by `npm test`.
+
+## 4. Lighthouse CI
+
+Lighthouse CI checks the landing page and configured project pages for
+performance, accessibility, best practices, and SEO regressions.
+
+The GitHub Actions workflow runs when relevant landing-page or shared
+files change in a pull request targeting `main`. It also runs on matching
+pushes to `main` and supports manual execution through GitHub Actions.
+
+Unrelated changes do not trigger the Lighthouse workflow.
+
+### Run locally
+
+Install dependencies:
+
+```bash
+npm ci
+```
+
+Run Lighthouse CI:
+
+```bash
+npm run lhci
+```
+
+HTML and JSON reports are saved in the `.lighthouseci/` directory.
