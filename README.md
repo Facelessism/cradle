@@ -24,38 +24,91 @@ Cradle is a repository for my small ideas, experiments and lightweight prototype
 ```bash
 Cradle/
 │
+├── .github/
+│   ├── ISSUE_TEMPLATE/       # GitHub issue templates
+│   ├── workflows/            # GitHub Actions automation workflows
+│   └── PULL_REQUEST_TEMPLATE.md
+│
+├── .vscode/
+│   └── settings.json         # Editor workspace settings
+│
+├── assets/
+│   ├── favicon.svg
+│   ├── icon-192.png
+│   ├── icon-192-maskable.png
+│   ├── icon-512.png
+│   ├── icon-512-maskable.png
+│   └── social-preview.*      # Social preview images
+│
+├── client/
+│   └── src/
+│       ├── components/
+│       │   └── shared/       # Shared React components
+│       ├── styles/           # Client-side styles and design tokens
+│       └── utils/            # Client-side utility functions
+│
 ├── data/
-│   └── projects.json
+│   └── projects.json        # Mini-project registry
+│
+├── docs/
+│   ├── ASSET_PIPELINE.md
+│   ├── BUILD_STRATEGY.md
+│   ├── MINI_CONTRACT.md
+│   └── SHARED_UI_POLICY.md
 │
 ├── projects/
-│   ├── aiml/                  # AI & Machine Learning prototypes
-│   ├── dev-tools/             # Developer utilities & code formatters
-│   ├── editor/                # Creative design & document generation tools
-│   ├── file-tools/            # File processing & metadata analyzers
-│   ├── games/                 # Interactive browser & arcade games
-│   ├── math/                  # Mathematical visualizations & algorithms
-│   ├── misc/                  # Audio, camera & hardware utilities
-│   └── productivity/          # Personal trackers & planning tools
+│   ├── aiml/                 # AI & Machine Learning projects
+│   ├── dev-tools/            # Developer utilities and tools
+│   ├── editor/               # Creative design and editing tools
+│   ├── file-tools/           # File processing utilities
+│   ├── games/                # Interactive browser games
+│   ├── math/                 # Mathematical tools and visualizations
+│   ├── misc/                 # Miscellaneous browser utilities
+│   └── productivity/         # Productivity and planning tools
 │
-├── scripts/                   # Generators & project validation scripts
-├── src/                       # Shared UI components & design tokens
-├── tests/                     # Automated test suites & validation checks
+├── schemas/
+│   ├── project-entry.schema.json
+│   └── projects-registry.schema.json
 │
-├── ARCHITECTURE.md            # Overall repository architecture overview
-├── ARCHITECTURE_TEMPLATE.md   # Standardized template for mini projects
-├── CONTRIBUTING.md            # Guidelines for repository contributors
-├── docs/
-│   ├── ASSET_PIPELINE.md      # Asset naming, fingerprinting and caching
-│   └── MINI_CONTRACT.md       # Contract every mini-project must follow
-├── README.md                  # Project overview documentation
-├── SECURE_DEPLOYMENT_CHECKLIST.md # Baseline security checklist for production
-├── SECURITY.md                # Vulnerability disclosure, incident response, and security policy
-├── STORAGE_POLICY.md          # Storage API and conflict-resolution strategy
-├── THIRD_PARTY_POLICY.md      # Rules for loading external models and scripts
-├── index.html                 # Main landing page entry point
-├── script.js                  # Global landing page logic & search engine
-└── style.css                  # Core CSS design system
+├── scripts/                  # Project generation and validation scripts
+├── src/                      # Shared UI components and design tokens
+├── tests/                    # Automated tests and validation suites
+│
+├── .gitignore
+├── .lighthouserc.json
+├── .node-version
+├── .nvmrc
+├── .prettierignore
+├── .prettierrc
+├── 404.html                  # Custom not-found page
+├── ARCHITECTURE.md           # Repository architecture overview
+├── ARCHITECTURE_TEMPLATE.md  # Mini-project architecture template
+├── CODE_OF_CONDUCT.md        # Community participation guidelines
+├── CONTRIBUTING.md           # Contribution guidelines
+├── CREDENTIALS_AND_SECRETS.md # Credentials and secrets guidance
+├── index.html                # Main landing page
+├── LICENSE                   # Project license
+├── manifest.json             # Application manifest
+├── manifest.webmanifest      # Web app manifest
+├── package.json              # Project scripts and dependencies
+├── package-lock.json         # Locked dependency versions
+├── README.md                 # Project overview and documentation
+├── RELEASE_INTEGRITY.md      # Release integrity guidance
+├── robots.txt                # Search engine crawling rules
+├── script.js                 # Landing page logic and search
+├── SECURE_DEPLOYMENT_CHECKLIST.md
+├── SECURITY.md               # Security policy and vulnerability reporting
+├── sitemap.xml               # Search engine sitemap
+├── STORAGE_POLICY.md         # Storage and conflict-resolution policy
+├── style.css                 # Main stylesheet
+├── sw.js                     # Service worker
+├── TESTING.md                # Testing instructions
+├── THIRD_PARTY_POLICY.md     # External dependency and script policy
+├── TROUBLESHOOT.md           # Troubleshooting guide
+└── vercel.json               # Vercel deployment configuration
 ```
+
+Note: `.git/` is intentionally omitted because it contains Git's internal repository metadata.
 
 ## Available Projects
 
