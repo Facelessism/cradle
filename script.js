@@ -63,7 +63,7 @@ if (clearSearch) {
     updateClearSearchButton();
 
     if (hadQuery) {
-      applyFilters({ push: true });
+      applyFilters();
     }
 
     if (typeof hideSearchSuggestions === "function") {
@@ -160,12 +160,26 @@ function restoreFiltersFromUrl() {
   selectedCategory = category;
 }
 
-function updateUrlFilterState(options = {}) {
-  const { push = false } = options;
-  if (typeof window === "undefined" || !window.location || !window.history)
+const URL_UPDATE_DEBOUNCE_DELAY = 250;
+let urlUpdateTimer;
+
+function debouncedUpdateUrlFilterState() {
+  if (typeof window === "undefined") return;
+
+  window.clearTimeout(urlUpdateTimer);
+
+  urlUpdateTimer = window.setTimeout(() => {
+    updateUrlFilterState();
+  }, URL_UPDATE_DEBOUNCE_DELAY);
+}
+
+function updateUrlFilterState() {
+  if (typeof window === "undefined" || !window.location || !window.history) {
     return;
+  }
 
   const query = searchInput ? searchInput.value : "";
+
   const nextUrl = buildFilterUrl(
     window.location.pathname,
     window.location.search,
@@ -177,12 +191,11 @@ function updateUrlFilterState(options = {}) {
     window.location.hash || ""
   }`;
 
-  if (nextUrl !== currentUrl) {
-    if (push && typeof window.history.pushState === "function") {
-      window.history.pushState(null, "", nextUrl);
-    } else if (typeof window.history.replaceState === "function") {
-      window.history.replaceState(null, "", nextUrl);
-    }
+  if (
+    nextUrl !== currentUrl &&
+    typeof window.history.replaceState === "function"
+  ) {
+    window.history.replaceState(null, "", nextUrl);
   }
 }
 
@@ -194,7 +207,7 @@ if (
     restoreFiltersFromUrl();
     validateSelectedCategory();
     renderCategories();
-    applyFilters({ push: false });
+    applyFilters();
     hideSearchSuggestions();
     clearActiveCard();
     updatePageTitle();
@@ -437,7 +450,7 @@ function renderCategories() {
       onClick: () => {
         if (selectedCategory === category) return;
         selectedCategory = category;
-        applyFilters({ push: true });
+        applyFilters();
         renderCategories();
         searchInput.focus();
       },
@@ -798,7 +811,7 @@ function selectSearchSuggestion(index) {
   }
 
   renderCategories();
-  applyFilters({ push: true });
+  applyFilters();
   hideSearchSuggestions();
   updateClearSearchButton();
   searchInput.focus();
@@ -865,14 +878,13 @@ async function copyProjectUrl(rawProject, button) {
   }
 }
 
-function applyFilters(options = {}) {
-  const push = Boolean(options && options.push === true);
+function applyFilters() {
   const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
 
   if (filterWorker) {
     if (filterWorker.postMessage({ allProjects, selectedCategory, query })) {
       updateClearButtonVisibility(query);
-      updateUrlFilterState({ push });
+      debouncedUpdateUrlFilterState();
       updatePageTitle();
       return;
     }
@@ -882,7 +894,7 @@ function applyFilters(options = {}) {
 
   renderProjects(sortProjectList(filtered));
   updateClearButtonVisibility(query);
-  updateUrlFilterState({ push });
+  debouncedUpdateUrlFilterState();
   updatePageTitle();
 }
 
@@ -895,14 +907,11 @@ function updateClearButtonVisibility(query) {
 }
 
 function clearFilters() {
-  const hadFilters =
-    (searchInput && searchInput.value.trim() !== "") ||
-    selectedCategory !== "all";
   searchInput.value = "";
   selectedCategory = "all";
 
   clearActiveCard();
-  applyFilters({ push: hadFilters });
+  applyFilters();
   renderCategories();
   hideSearchSuggestions();
   updateClearSearchButton();
@@ -964,9 +973,9 @@ searchInput.addEventListener("keydown", event => {
       return;
     }
 
-    // Commit current query into browser history on Enter
+    // Apply the current query immediately when Enter is pressed
     window.clearTimeout(filterDebounceTimer);
-    applyFilters({ push: true });
+    applyFilters();
     hideSearchSuggestions();
   }
 

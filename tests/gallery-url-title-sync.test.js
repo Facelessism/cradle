@@ -185,18 +185,16 @@ test("Browser navigation and filter synchronization simulation", () => {
     },
   };
 
-  function applySimulationFilters(inputQuery, inputCategory, push = false) {
+  function applySimulationFilters(inputQuery, inputCategory) {
     const nextUrl = buildFilterUrl(
       mockWindow.location.pathname,
       mockWindow.location.search,
       mockWindow.location.hash,
       { query: inputQuery, selectedCategory: inputCategory }
     );
-    if (push) {
-      mockWindow.history.pushState(null, "", nextUrl);
-    } else {
-      mockWindow.history.replaceState(null, "", nextUrl);
-    }
+
+    mockWindow.history.replaceState(null, "", nextUrl);
+
     documentTitle = computePageTitle({
       query: inputQuery,
       selectedCategory: inputCategory,
@@ -204,22 +202,22 @@ test("Browser navigation and filter synchronization simulation", () => {
   }
 
   // 1. Initial page load without filters
-  applySimulationFilters("", "all", false);
+  applySimulationFilters("", "all");
   assert.equal(currentSearch, "");
   assert.equal(documentTitle, "Cradle");
   assert.equal(historyEntries.length, 1);
 
-  // 2. User selects category 'games' -> pushed to history
-  applySimulationFilters("", "games", true);
+  // 2. User selects category 'games' -> URL replaced
+  applySimulationFilters("", "games");
   assert.equal(currentSearch, "?category=games");
   assert.equal(documentTitle, "Games | Cradle");
-  assert.equal(historyEntries.length, 2);
+  assert.equal(historyEntries.length, 1);
 
   // 3. User types search query 'snake' -> replaced in history
-  applySimulationFilters("snake", "games", false);
+  applySimulationFilters("snake", "games");
   assert.equal(currentSearch, "?category=games&q=snake");
   assert.equal(documentTitle, 'Search: "snake" in Games | Cradle');
-  assert.equal(historyEntries.length, 2); // No new history entry pushed
+  assert.equal(historyEntries.length, 1); // No new history entry pushed
 
   // 4. User navigates back via popstate to category 'games' (empty search)
   currentSearch = "?category=games";
@@ -235,17 +233,17 @@ test("Browser navigation and filter synchronization simulation", () => {
   documentTitle = computePageTitle(restored2);
   assert.equal(documentTitle, "Cradle");
 
-  // 6. User submits query via Enter key -> pushed to history
-  applySimulationFilters("chess", "all", true);
+  // 6. User submits query via Enter key -> URL replaced
+  applySimulationFilters("chess", "all");
   assert.equal(currentSearch, "?q=chess");
   assert.equal(documentTitle, 'Search: "chess" | Cradle');
-  assert.equal(historyEntries.length, 3);
+  assert.equal(historyEntries.length, 1);
 
-  // 7. User clears search -> pushed to history
-  applySimulationFilters("", "all", true);
+  // 7. User clears search -> URL replaced
+  applySimulationFilters("", "all");
   assert.equal(currentSearch, "");
   assert.equal(documentTitle, "Cradle");
-  assert.equal(historyEntries.length, 4);
+  assert.equal(historyEntries.length, 1);
 });
 
 test("buildFilterUrl preserves unrelated query parameters when modifying filters", () => {
