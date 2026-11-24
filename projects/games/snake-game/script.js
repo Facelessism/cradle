@@ -204,7 +204,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ── Direction Input ── */
   function requestDirection(newDir) {
-    if (gameState.isGameOver) return;
+    // Ignore input before Start, while paused, and after game over
+    if (!isRunning || gameState.isGameOver) return;
 
     // Buffer up to 2 moves to avoid drop when chaining rapid turns
     const lastDir =
