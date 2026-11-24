@@ -211,7 +211,7 @@ test("ranks exact title match > prefix match > tag match > description fuzzy mat
       id: "fuzzy-desc",
       title: "Audio Workstation",
       category: "productivity",
-      description: "Music composer with virtual guitarr synthesizer",
+      description: "Music composer with virtual guitxr synthesizer",
     },
     {
       id: "desc-match",
@@ -325,4 +325,53 @@ test("does not trigger fuzzy matching for short terms of 4 or fewer letters", ()
   const gamMatch = filterProjects(projects, "all", "gam");
   assert.equal(gamMatch.length, 1);
   assert.equal(gamMatch[0].id, "game");
+});
+
+// Issue #1198: Multi-word title relevance
+test("ranks multi-word title matches above description matches", () => {
+  const projects = [
+    {
+      id: "description-match",
+      title: "Sound Studio",
+      category: "dev-tools",
+      description: "A guitar tuner tool for musicians",
+    },
+    {
+      id: "title-match",
+      title: "Guitar Pro Tuner",
+      category: "dev-tools",
+      description: "Precision audio equipment",
+    },
+  ];
+
+  const results = filterProjects(projects, "all", "guitar tuner");
+
+  assert.deepEqual(
+    results.map(project => project.id),
+    ["title-match", "description-match"]
+  );
+});
+
+test("preserves original order when multi-word title relevance scores tie", () => {
+  const projects = [
+    {
+      id: "first",
+      title: "Guitar Pro Tuner",
+      category: "dev-tools",
+      description: "Precision audio equipment",
+    },
+    {
+      id: "second",
+      title: "Tuner Guitar Pro",
+      category: "dev-tools",
+      description: "Musical equipment",
+    },
+  ];
+
+  const results = filterProjects(projects, "all", "guitar tuner");
+
+  assert.deepEqual(
+    results.map(project => project.id),
+    ["first", "second"]
+  );
 });

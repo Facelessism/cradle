@@ -147,22 +147,30 @@ export function computeRelevanceScore(project, query) {
 
   // 1. Title matching
   if (title) {
+    const titleWords = extractWords(title);
+    const queryTerms = extractWords(q);
+
     if (title === q) {
       titleScore = 1000;
     } else if (title.startsWith(q)) {
       titleScore = 800;
-    } else {
-      const titleWords = extractWords(title);
-      if (titleWords.some(w => w.startsWith(q))) {
-        titleScore = 600;
-      } else if (title.includes(q)) {
-        titleScore = 500;
-      } else if (q.length > 4 && matchesFuzzy(titleWords, q)) {
-        titleScore = 400;
-      }
+    } else if (
+      queryTerms.length > 1 &&
+      queryTerms.every(term =>
+        titleWords.some(word => word === term)
+      )
+    ) {
+      // All query terms appear as complete words in the title,
+      // even when they are not adjacent.
+      titleScore = 700;
+    } else if (titleWords.some(w => w.startsWith(q))) {
+      titleScore = 600;
+    } else if (title.includes(q)) {
+      titleScore = 500;
+    } else if (q.length > 4 && matchesFuzzy(titleWords, q)) {
+      titleScore = 400;
     }
   }
-
   // 2. Tag matching
   if (tags.length > 0) {
     for (const tag of tags) {
@@ -185,7 +193,7 @@ export function computeRelevanceScore(project, query) {
   if (category) {
     if (category === q || searchableCat === q) {
       catScore = 120;
-    } else if (category.includes(q) || searchableCat.includes(q)) {
+    } else if (q.length > 3 && (category.includes(q) || searchableCat.includes(q))) {
       catScore = 100;
     }
   }
