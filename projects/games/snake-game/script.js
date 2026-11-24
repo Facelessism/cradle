@@ -204,7 +204,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ── Direction Input ── */
   function requestDirection(newDir) {
-    if (gameState.isGameOver) return;
+    // Direction input is accepted only during active gameplay.
+    if (!isRunning || gameState.isPaused || gameState.isGameOver) return;
 
     // Buffer up to 2 moves to avoid drop when chaining rapid turns
     const lastDir =
@@ -297,6 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function pauseGame() {
     isRunning = false;
     gameState.isPaused = true;
+    inputQueue = [];
     startBtn.hidden = false;
     startBtn.disabled = false;
     startBtn.textContent = "▶ Resume";
