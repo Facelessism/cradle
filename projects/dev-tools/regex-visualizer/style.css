@@ -937,3 +937,120 @@ body {
   background: rgba(239, 68, 68, 0.15) !important;
   border-color: #ef4444 !important;
 }
+
+/* Reusable Regex Snippet Library */
+.regex-library-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.library-subtitle {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.library-compatibility {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.07);
+  color: #cbd5e1;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.regex-library-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.snippet-language-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.snippet-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.snippet-library-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.snippet-library-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.snippet-library-heading h3 {
+  margin: 0.25rem 0 0;
+  font-size: 1rem;
+}
+
+.snippet-category {
+  color: #60a5fa;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.snippet-library-item p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.snippet-pattern {
+  display: block;
+  overflow-wrap: anywhere;
+  padding: 0.65rem;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #a7f3d0;
+  font-family: "Fira Code", monospace;
+  font-size: 0.82rem;
+}
+
+.snippet-library-item .codegen-pre {
+  max-width: 100%;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.snippet-library-item .codegen-pre code {
+  font-size: 0.78rem;
+}
+
+.snippet-engine-note {
+  margin-top: auto !important;
+  color: #94a3b8 !important;
+  font-size: 0.78rem !important;
+}
+
+@media (max-width: 600px) {
+  .snippet-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .snippet-library-heading {
+    align-items: flex-start;
+  }
+}

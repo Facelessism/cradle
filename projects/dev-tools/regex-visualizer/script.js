@@ -244,6 +244,156 @@ document.addEventListener("DOMContentLoaded", () => {
     codeSnippetOutput.textContent = snippet;
   }
 
+
+// Reusable, language-specific regex snippet library
+  const snippetLibrary = [
+    {
+      name: "Email Address",
+      category: "Validation",
+      description: "A practical basic email format check.",
+      pattern: "^[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
+      examples: {
+        javascript: 'const regex = /^[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;' + "`n" + 'const valid = regex.test(email);',
+        python: 'import re' + "`n" + 'regex = r"^[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"' + "`n" + 'valid = re.fullmatch(regex, email) is not None',
+        go: 'pattern := `^[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$`' + "`n" + 'valid, err := regexp.MatchString(pattern, email)',
+        rust: 'let regex = Regex::new(r"^[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")?;' + "`n" + 'let valid = regex.is_match(email);',
+        java: 'Pattern pattern = Pattern.compile("^[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");' + "`n" + 'boolean valid = pattern.matcher(email).matches();'
+      },
+      note: "Basic ASCII email format validation only; it does not verify whether an address exists."
+    },
+    {
+      name: "URL",
+      category: "Web",
+      description: "Matches a basic HTTP or HTTPS URL.",
+      pattern: "^https?://\\S+$",
+      examples: {
+        javascript: 'const regex = /^https?:\\/\\/\\S+$/;' + "`n" + 'const valid = regex.test(url);',
+        python: 'import re' + "`n" + 'regex = r"^https?://\\S+$"' + "`n" + 'valid = re.fullmatch(regex, url) is not None',
+        go: 'pattern := `^https?://\\S+$`' + "`n" + 'valid, err := regexp.MatchString(pattern, url)',
+        rust: 'let regex = Regex::new(r"^https?://\\S+$")?;' + "`n" + 'let valid = regex.is_match(url);',
+        java: 'Pattern pattern = Pattern.compile("^https?://\\\\S+$");' + "`n" + 'boolean valid = pattern.matcher(url).matches();'
+      },
+      note: "Checks the HTTP/HTTPS prefix and absence of whitespace only. It is not a complete URL validator."
+    },
+    {
+      name: "Date (YYYY-MM-DD)",
+      category: "Date & Time",
+      description: "Matches the YYYY-MM-DD date shape.",
+      pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      examples: {
+        javascript: 'const regex = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;' + "`n" + 'const valid = regex.test(date);',
+        python: 'import re' + "`n" + 'regex = r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$"' + "`n" + 'valid = re.fullmatch(regex, date) is not None',
+        go: 'pattern := `^[0-9]{4}-[0-9]{2}-[0-9]{2}$`' + "`n" + 'valid, err := regexp.MatchString(pattern, date)',
+        rust: 'let regex = Regex::new(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")?;' + "`n" + 'let valid = regex.is_match(date);',
+        java: 'Pattern pattern = Pattern.compile("^[0-9]{4}-[0-9]{2}-[0-9]{2}$");' + "`n" + 'boolean valid = pattern.matcher(date).matches();'
+      },
+      note: "Checks the date format only, not calendar validity (for example, February 31)."
+    },
+    {
+      name: "Digits Only",
+      category: "Numbers",
+      description: "Matches a string containing one or more ASCII digits.",
+      pattern: "^[0-9]+$",
+      examples: {
+        javascript: 'const regex = /^[0-9]+$/;' + "`n" + 'const valid = regex.test(value);',
+        python: 'import re' + "`n" + 'regex = r"^[0-9]+$"' + "`n" + 'valid = re.fullmatch(regex, value) is not None',
+        go: 'pattern := `^[0-9]+$`' + "`n" + 'valid, err := regexp.MatchString(pattern, value)',
+        rust: 'let regex = Regex::new(r"^[0-9]+$")?;' + "`n" + 'let valid = regex.is_match(value);',
+        java: 'Pattern pattern = Pattern.compile("^[0-9]+$");' + "`n" + 'boolean valid = pattern.matcher(value).matches();'
+      },
+      note: "Matches one or more ASCII digits."
+    }
+  ];
+  const snippetLibraryContainer = document.getElementById("regexSnippetLibrary");
+  let snippetLibraryLanguage = "javascript";
+
+  function escapeLibraryHtml(value) {
+    return String(value).replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
+  }
+
+  function renderSnippetLibrary() {
+    if (!snippetLibraryContainer) return;
+
+    const languages = ["javascript", "python", "go", "rust", "java"];
+    const languageLabels = {
+      javascript: "JavaScript",
+      python: "Python",
+      go: "Go",
+      rust: "Rust",
+      java: "Java"
+    };
+
+    snippetLibraryContainer.innerHTML = `
+      <div class="snippet-language-filters" role="group" aria-label="Filter snippets by language">
+        ${languages.map((language) => `
+          <button type="button"
+            class="lang-tab ${snippetLibraryLanguage === language ? "active" : ""}"
+            data-library-lang="${language}"
+            aria-pressed="${snippetLibraryLanguage === language}">
+            ${languageLabels[language]}
+          </button>
+        `).join("")}
+      </div>
+      <div class="snippet-cards">
+        ${snippetLibrary.map((snippet, index) => `
+          <article class="snippet-library-item">
+            <div class="snippet-library-heading">
+              <div>
+                <span class="snippet-category">${escapeLibraryHtml(snippet.category)}</span>
+                <h3>${escapeLibraryHtml(snippet.name)}</h3>
+              </div>
+              <button type="button" class="btn btn-small btn-copy"
+                data-copy-snippet="${index}">Copy</button>
+            </div>
+            <p>${escapeLibraryHtml(snippet.description)}</p>
+            <code class="snippet-pattern">${escapeLibraryHtml(snippet.pattern)}</code>
+            <pre class="codegen-pre"><code>${escapeLibraryHtml(snippet.examples[snippetLibraryLanguage])}</code></pre>
+            <p class="snippet-engine-note"><strong>Note:</strong> ${escapeLibraryHtml(snippet.note)}</p>
+          </article>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  if (snippetLibraryContainer) {
+    snippetLibraryContainer.addEventListener("click", async (event) => {
+      const languageButton = event.target.closest("[data-library-lang]");
+      if (languageButton) {
+        snippetLibraryLanguage = languageButton.dataset.libraryLang;
+        renderSnippetLibrary();
+        return;
+      }
+
+      const copyButton = event.target.closest("[data-copy-snippet]");
+      if (copyButton) {
+        const snippet = snippetLibrary[Number(copyButton.dataset.copySnippet)];
+        if (!snippet) return;
+
+        try {
+          await navigator.clipboard.writeText(snippet.examples[snippetLibraryLanguage]);
+          const originalText = copyButton.textContent;
+          copyButton.textContent = "Copied!";
+          copyButton.classList.add("btn-copied");
+          setTimeout(() => {
+            copyButton.textContent = originalText;
+            copyButton.classList.remove("btn-copied");
+          }, 1500);
+        } catch (error) {
+          console.error("Snippet copy failed:", error);
+          copyButton.textContent = "Copy failed";
+        }
+      }
+    });
+
+    renderSnippetLibrary();
+  }
+
   // Run initial state
   runRegexProcessor();
 
