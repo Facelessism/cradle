@@ -10,8 +10,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const scoreEl = document.getElementById("scoreValue");
   const highScoreEl = document.getElementById("highScoreValue");
   const lengthEl = document.getElementById("lengthValue");
+  const scoreLabel = document.getElementById("scoreLabel");
+  const highScoreLabel = document.getElementById("highScoreLabel");
+  const lengthLabel = document.getElementById("lengthLabel");
+  const scoresContainer = document.querySelector(".scores-container");
   const speedSelect = document.getElementById("speedSelect");
   const modeSelect = document.getElementById("modeSelect");
+  const playerModeSelect = document.getElementById("playerModeSelect");
   const startBtn = document.getElementById("startBtn");
   const pauseBtn = document.getElementById("pauseBtn");
   const resetBtn = document.getElementById("resetBtn");
@@ -19,7 +24,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const deathReasonEl = document.getElementById("deathReason");
   const finalScoreEl = document.getElementById("finalScore");
   const finalHighScoreEl = document.getElementById("finalHighScore");
+  const finalScoreLabel = document.getElementById("finalScoreLabel");
+  const finalHighScoreLabel = document.getElementById("finalHighScoreLabel");
   const restartBtn = document.getElementById("restartBtn");
+  const powerupLegend = document.querySelector(".powerup-legend");
 
   // D-Pad buttons for mobile
   const btnUp = document.getElementById("dpadUp");
@@ -146,9 +154,16 @@ document.addEventListener("DOMContentLoaded", () => {
       : SnakeEngine.MODES.CLASSIC;
   }
 
+  function getSelectedPlayerMode() {
+    return playerModeSelect?.value === SnakeEngine.PLAYER_MODES.DUEL
+      ? SnakeEngine.PLAYER_MODES.DUEL
+      : SnakeEngine.PLAYER_MODES.SINGLE;
+  }
+
   let gameState = SnakeEngine.createInitialState({
     highScore: loadHighScore(),
     mode: getSelectedMode(),
+    playerMode: getSelectedPlayerMode(),
     powerUps: true,
   });
 
@@ -156,6 +171,10 @@ document.addEventListener("DOMContentLoaded", () => {
   let isRunning = false;
   let lastTickTime = 0;
   let inputQueue = [];
+  let playerInputQueues = {
+    player1: [],
+    player2: [],
+  };
 
   /* ── Drawing Helpers ── */
   function resolveCSSColor(variableName, fallback) {
@@ -203,9 +222,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const TILE_SIZE = canvas.width / TILE_COUNT; // 400 / 20 = 20px
 
   /* ── Direction Input ── */
-  function requestDirection(newDir) {
+  function requestDirection(newDir, playerId = "player1") {
     // Direction input is accepted only during active gameplay.
     if (!isRunning || gameState.isPaused || gameState.isGameOver) return;
+
+    if (gameState.playerMode === SnakeEngine.PLAYER_MODES.DUEL) {
+      const player = gameState.players.find(
+        candidate => candidate.id === playerId
+      );
+      if (!player) return;
+      const queue = playerInputQueues[playerId];
+      if (!player.isAlive || !queue || queue.length >= 2) return;
+
+      const lastDir =
+        queue.length > 0 ? queue[queue.length - 1] : player.nextDirection;
+      if (SnakeEngine.isValidDirectionChange(lastDir, newDir)) {
+        queue.push(newDir);
+        playSound("turn");
+      }
+      return;
+    }
 
     // Buffer up to 2 moves to avoid drop when chaining rapid turns
     const lastDir =
@@ -233,32 +269,44 @@ document.addEventListener("DOMContentLoaded", () => {
     if (currentTime - lastTickTime >= currentSpeed) {
       lastTickTime = currentTime;
 
-      // Apply buffered input if any
-      if (inputQueue.length > 0) {
+      if (gameState.playerMode === SnakeEngine.PLAYER_MODES.DUEL) {
+        gameState.players.forEach(player => {
+          const queue = playerInputQueues[player.id];
+          if (queue.length > 0) player.nextDirection = queue.shift();
+        });
+      } else if (inputQueue.length > 0) {
         gameState.nextDirection = inputQueue.shift();
       }
 
-      const prevScore = gameState.score;
+      const prevScores = gameState.players
+        ? gameState.players.map(player => player.score)
+        : [gameState.score];
       const prevHighScore = gameState.highScore;
       const prevPowerUp = gameState.powerUp;
       gameState = SnakeEngine.stepGame(gameState);
 
-      const head = gameState.snake[0];
-      const collectedPowerUp =
-        prevPowerUp &&
-        !gameState.isGameOver &&
-        head.x === prevPowerUp.x &&
-        head.y === prevPowerUp.y;
+      const collectedPowerUp = gameState.players
+        ? false
+        : prevPowerUp &&
+          !gameState.isGameOver &&
+          gameState.snake[0].x === prevPowerUp.x &&
+          gameState.snake[0].y === prevPowerUp.y;
 
       if (collectedPowerUp) {
         playSound("powerup");
       }
 
-      // Check for score increase (food eaten or bonus power-up)
-      if (gameState.score > prevScore) {
+      const scores = gameState.players
+        ? gameState.players.map(player => player.score)
+        : [gameState.score];
+      const scoreIncreased = scores.some(
+        (score, index) => score > prevScores[index]
+      );
+      if (scoreIncreased) {
         if (!collectedPowerUp) playSound("eat");
-        if (gameState.score > prevHighScore) {
-          saveHighScore(gameState.score);
+        const bestScore = Math.max(...scores);
+        if (bestScore > prevHighScore) {
+          saveHighScore(bestScore);
         }
       }
 
@@ -299,6 +347,7 @@ document.addEventListener("DOMContentLoaded", () => {
     isRunning = false;
     gameState.isPaused = true;
     inputQueue = [];
+    playerInputQueues = { player1: [], player2: [] };
     startBtn.hidden = false;
     startBtn.disabled = false;
     startBtn.textContent = "▶ Resume";
@@ -311,11 +360,13 @@ document.addEventListener("DOMContentLoaded", () => {
     isRunning = false;
     cancelAnimationFrame(gameLoopId);
     inputQueue = [];
+    playerInputQueues = { player1: [], player2: [] };
 
     const currentHigh = Math.max(gameState.highScore, loadHighScore());
     gameState = SnakeEngine.createInitialState({
       highScore: currentHigh,
       mode: getSelectedMode(),
+      playerMode: getSelectedPlayerMode(),
       powerUps: true,
     });
 
@@ -325,6 +376,7 @@ document.addEventListener("DOMContentLoaded", () => {
     pauseBtn.hidden = true;
     gameOverModal.hidden = true;
 
+    updatePlayerModeUI();
     updateHUD();
     render();
   }
@@ -334,8 +386,11 @@ document.addEventListener("DOMContentLoaded", () => {
     cancelAnimationFrame(gameLoopId);
     playSound("gameover");
 
-    if (gameState.score >= gameState.highScore) {
-      saveHighScore(gameState.score);
+    const bestScore = gameState.players
+      ? Math.max(...gameState.players.map(player => player.score))
+      : gameState.score;
+    if (bestScore >= gameState.highScore) {
+      saveHighScore(bestScore);
     }
 
     startBtn.hidden = false;
@@ -343,8 +398,20 @@ document.addEventListener("DOMContentLoaded", () => {
     startBtn.textContent = "↻ Play Again";
     pauseBtn.hidden = true;
 
-    // Show Game Over modal with specific death reason
-    if (gameState.deathReason === "self") {
+    if (gameState.playerMode === SnakeEngine.PLAYER_MODES.DUEL) {
+      const winner = gameState.players.find(
+        player => player.id === gameState.winner
+      );
+      deathReasonEl.textContent = winner
+        ? `${winner.name} wins!`
+        : gameState.deathReason === "win"
+          ? "Draw! The board is full."
+          : "Draw! Both snakes were eliminated.";
+      finalScoreLabel.textContent = "Player 1";
+      finalHighScoreLabel.textContent = "Player 2";
+      finalScoreEl.textContent = gameState.players[0].score;
+      finalHighScoreEl.textContent = gameState.players[1].score;
+    } else if (gameState.deathReason === "self") {
       deathReasonEl.textContent = "💀 You collided with your own body!";
     } else if (gameState.deathReason === "wall") {
       deathReasonEl.textContent = "💥 You crashed into the wall!";
@@ -357,16 +424,41 @@ document.addEventListener("DOMContentLoaded", () => {
       deathReasonEl.textContent = "💀 Game Over!";
     }
 
-    finalScoreEl.textContent = gameState.score;
-    finalHighScoreEl.textContent = gameState.highScore;
+    if (gameState.playerMode !== SnakeEngine.PLAYER_MODES.DUEL) {
+      finalScoreLabel.textContent = "Score";
+      finalHighScoreLabel.textContent = "High Score";
+      finalScoreEl.textContent = gameState.score;
+      finalHighScoreEl.textContent = gameState.highScore;
+    }
     gameOverModal.hidden = false;
   }
 
   /* ── HUD Update ── */
   function updateHUD() {
+    if (gameState.players) {
+      scoreLabel.textContent = "Player 1";
+      highScoreLabel.textContent = "Player 2";
+      lengthLabel.textContent = "Lengths P1 / P2";
+      scoreEl.textContent = gameState.players[0].score;
+      highScoreEl.textContent = gameState.players[1].score;
+      lengthEl.textContent = `${gameState.players[0].snake.length} / ${gameState.players[1].snake.length}`;
+      return;
+    }
+
+    scoreLabel.textContent = "Score";
+    highScoreLabel.textContent = "High Score";
+    lengthLabel.textContent = "Length";
     scoreEl.textContent = gameState.score;
     highScoreEl.textContent = gameState.highScore;
     lengthEl.textContent = gameState.snake.length;
+  }
+
+  function updatePlayerModeUI() {
+    const isDuel = getSelectedPlayerMode() === SnakeEngine.PLAYER_MODES.DUEL;
+    document.getElementById("singlePlayerControls").hidden = isDuel;
+    document.getElementById("duelPlayerControls").hidden = !isDuel;
+    powerupLegend.hidden = isDuel;
+    scoresContainer.classList.toggle("scores-container--duel", isDuel);
   }
 
   /* ── Canvas Rendering ── */
@@ -473,65 +565,78 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Draw Snake
-    const snake = gameState.snake;
-    for (let i = snake.length - 1; i >= 0; i--) {
-      const segment = snake[i];
-      const sx = segment.x * TILE_SIZE;
-      const sy = segment.y * TILE_SIZE;
-      const isHead = i === 0;
+    // Draw each snake independently; the single-player palette is unchanged.
+    const snakesToRender = gameState.players
+      ? gameState.players.map(player => ({
+          snake: player.snake,
+          direction: player.direction,
+          headColor: player.color,
+          glowColor: player.color,
+          bodyHue: player.id === "player1" ? 155 : 198,
+        }))
+      : [
+          {
+            snake: gameState.snake,
+            direction: gameState.direction,
+            headColor: "#34d399",
+            glowColor: "#10b981",
+            bodyHue: 155,
+          },
+        ];
 
-      ctx.save();
-      if (isHead) {
-        // Glowing Head
-        ctx.shadowColor = "#10b981";
-        ctx.shadowBlur = 10;
-        ctx.fillStyle = "#34d399";
-        ctx.beginPath();
-        roundRect(sx + 1, sy + 1, TILE_SIZE - 2, TILE_SIZE - 2, 6);
-        ctx.fill();
+    snakesToRender.forEach(
+      ({ snake, direction, headColor, glowColor, bodyHue }) => {
+        for (let i = snake.length - 1; i >= 0; i--) {
+          const segment = snake[i];
+          const sx = segment.x * TILE_SIZE;
+          const sy = segment.y * TILE_SIZE;
+          const isHead = i === 0;
 
-        // Eyes on the head
-        ctx.fillStyle = "#0f172a";
-        const eyeOffset = 5;
-        const eyeSize = 3;
-        const dir = gameState.direction;
+          ctx.save();
+          if (isHead) {
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = 10;
+            ctx.fillStyle = headColor;
+            ctx.beginPath();
+            roundRect(sx + 1, sy + 1, TILE_SIZE - 2, TILE_SIZE - 2, 6);
+            ctx.fill();
 
-        let eye1X, eye1Y, eye2X, eye2Y;
-        if (dir.x === 1) {
-          // RIGHT
-          eye1X = eye2X = sx + TILE_SIZE - 6;
-          eye1Y = sy + eyeOffset;
-          eye2Y = sy + TILE_SIZE - eyeOffset - eyeSize;
-        } else if (dir.x === -1) {
-          // LEFT
-          eye1X = eye2X = sx + 3;
-          eye1Y = sy + eyeOffset;
-          eye2Y = sy + TILE_SIZE - eyeOffset - eyeSize;
-        } else if (dir.y === -1) {
-          // UP
-          eye1Y = eye2Y = sy + 3;
-          eye1X = sx + eyeOffset;
-          eye2X = sx + TILE_SIZE - eyeOffset - eyeSize;
-        } else {
-          // DOWN
-          eye1Y = eye2Y = sy + TILE_SIZE - 6;
-          eye1X = sx + eyeOffset;
-          eye2X = sx + TILE_SIZE - eyeOffset - eyeSize;
+            ctx.fillStyle = "#0f172a";
+            const eyeOffset = 5;
+            const eyeSize = 3;
+
+            let eye1X, eye1Y, eye2X, eye2Y;
+            if (direction.x === 1) {
+              eye1X = eye2X = sx + TILE_SIZE - 6;
+              eye1Y = sy + eyeOffset;
+              eye2Y = sy + TILE_SIZE - eyeOffset - eyeSize;
+            } else if (direction.x === -1) {
+              eye1X = eye2X = sx + 3;
+              eye1Y = sy + eyeOffset;
+              eye2Y = sy + TILE_SIZE - eyeOffset - eyeSize;
+            } else if (direction.y === -1) {
+              eye1Y = eye2Y = sy + 3;
+              eye1X = sx + eyeOffset;
+              eye2X = sx + TILE_SIZE - eyeOffset - eyeSize;
+            } else {
+              eye1Y = eye2Y = sy + TILE_SIZE - 6;
+              eye1X = sx + eyeOffset;
+              eye2X = sx + TILE_SIZE - eyeOffset - eyeSize;
+            }
+
+            ctx.fillRect(eye1X, eye1Y, eyeSize, eyeSize);
+            ctx.fillRect(eye2X, eye2Y, eyeSize, eyeSize);
+          } else {
+            const t = i / snake.length;
+            ctx.fillStyle = `hsl(${bodyHue - t * 25}, ${80 - t * 20}%, ${45 - t * 10}%)`;
+            ctx.beginPath();
+            roundRect(sx + 1.5, sy + 1.5, TILE_SIZE - 3, TILE_SIZE - 3, 4);
+            ctx.fill();
+          }
+          ctx.restore();
         }
-
-        ctx.fillRect(eye1X, eye1Y, eyeSize, eyeSize);
-        ctx.fillRect(eye2X, eye2Y, eyeSize, eyeSize);
-      } else {
-        // Body segment
-        const t = i / snake.length; // 0 (near head) to 1 (tail)
-        ctx.fillStyle = `hsl(${155 - t * 25}, ${80 - t * 20}%, ${45 - t * 10}%)`;
-        ctx.beginPath();
-        roundRect(sx + 1.5, sy + 1.5, TILE_SIZE - 3, TILE_SIZE - 3, 4);
-        ctx.fill();
       }
-      ctx.restore();
-    }
+    );
 
     // Active timed effect indicator (top bar that shrinks as the effect runs out)
     const effect = gameState.activeEffect;
@@ -580,6 +685,10 @@ document.addEventListener("DOMContentLoaded", () => {
     resetGame();
     modeSelect.blur();
   });
+  playerModeSelect?.addEventListener("change", () => {
+    resetGame();
+    playerModeSelect.blur();
+  });
   restartBtn.addEventListener("click", () => {
     resetGame();
     startGame();
@@ -590,27 +699,41 @@ document.addEventListener("DOMContentLoaded", () => {
     // Avoid interfering when user is on a select or input
     if (e.target.tagName === "SELECT" || e.target.tagName === "INPUT") return;
 
+    const singlePlayerDirections = {
+      ArrowUp: SnakeEngine.DIRECTIONS.UP,
+      KeyW: SnakeEngine.DIRECTIONS.UP,
+      ArrowDown: SnakeEngine.DIRECTIONS.DOWN,
+      KeyS: SnakeEngine.DIRECTIONS.DOWN,
+      ArrowLeft: SnakeEngine.DIRECTIONS.LEFT,
+      KeyA: SnakeEngine.DIRECTIONS.LEFT,
+      ArrowRight: SnakeEngine.DIRECTIONS.RIGHT,
+      KeyD: SnakeEngine.DIRECTIONS.RIGHT,
+    };
+    const duelPlayerDirections = {
+      KeyW: ["player1", SnakeEngine.DIRECTIONS.UP],
+      KeyS: ["player1", SnakeEngine.DIRECTIONS.DOWN],
+      KeyA: ["player1", SnakeEngine.DIRECTIONS.LEFT],
+      KeyD: ["player1", SnakeEngine.DIRECTIONS.RIGHT],
+      ArrowUp: ["player2", SnakeEngine.DIRECTIONS.UP],
+      ArrowDown: ["player2", SnakeEngine.DIRECTIONS.DOWN],
+      ArrowLeft: ["player2", SnakeEngine.DIRECTIONS.LEFT],
+      ArrowRight: ["player2", SnakeEngine.DIRECTIONS.RIGHT],
+    };
+
+    if (gameState.playerMode === SnakeEngine.PLAYER_MODES.DUEL) {
+      const control = duelPlayerDirections[e.code];
+      if (control) {
+        e.preventDefault();
+        requestDirection(control[1], control[0]);
+        return;
+      }
+    } else if (singlePlayerDirections[e.code]) {
+      e.preventDefault();
+      requestDirection(singlePlayerDirections[e.code]);
+      return;
+    }
+
     switch (e.code) {
-      case "ArrowUp":
-      case "KeyW":
-        e.preventDefault();
-        requestDirection(SnakeEngine.DIRECTIONS.UP);
-        break;
-      case "ArrowDown":
-      case "KeyS":
-        e.preventDefault();
-        requestDirection(SnakeEngine.DIRECTIONS.DOWN);
-        break;
-      case "ArrowLeft":
-      case "KeyA":
-        e.preventDefault();
-        requestDirection(SnakeEngine.DIRECTIONS.LEFT);
-        break;
-      case "ArrowRight":
-      case "KeyD":
-        e.preventDefault();
-        requestDirection(SnakeEngine.DIRECTIONS.RIGHT);
-        break;
       case "Space":
         e.preventDefault();
         if (gameState.isGameOver) {
@@ -696,6 +819,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ── Initial Render ── */
   gameOverModal.hidden = true;
+  updatePlayerModeUI();
   updateHUD();
   render();
 });

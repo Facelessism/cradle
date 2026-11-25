@@ -34,15 +34,15 @@
 
       <div class="scores-container" aria-label="Game stats">
         <div class="score-card">
-          <span class="score-card__label">Score</span>
+          <span id="scoreLabel" class="score-card__label">Score</span>
           <strong id="scoreValue">0</strong>
         </div>
         <div class="score-card">
-          <span class="score-card__label">High Score</span>
+          <span id="highScoreLabel" class="score-card__label">High Score</span>
           <strong id="highScoreValue">0</strong>
         </div>
         <div class="score-card">
-          <span class="score-card__label">Length</span>
+          <span id="lengthLabel" class="score-card__label">Length</span>
           <strong id="lengthValue">3</strong>
         </div>
       </div>
@@ -59,6 +59,11 @@
           <select id="modeSelect" class="speed-select">
             <option value="classic" selected>Classic</option>
             <option value="maze">Maze</option>
+          </select>
+          <label for="playerModeSelect">Players:</label>
+          <select id="playerModeSelect" class="speed-select">
+            <option value="single" selected>1 Player</option>
+            <option value="duel">2 Players</option>
           </select>
         </div>
         <div class="btn-group">
@@ -83,11 +88,13 @@
             <p id="deathReason" class="death-reason">You crashed!</p>
             <div class="final-stats">
               <div class="stat-item">
-                <span class="stat-label">Score</span>
+                <span id="finalScoreLabel" class="stat-label">Score</span>
                 <span id="finalScore" class="stat-value">0</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">High Score</span>
+                <span id="finalHighScoreLabel" class="stat-label"
+                  >High Score</span
+                >
                 <span id="finalHighScore" class="stat-value">0</span>
               </div>
             </div>
@@ -133,12 +140,22 @@
         </button>
       </div>
 
-      <p class="controls-legend">
-        Controls: <kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd
-        ><kbd class="kbd">←</kbd><kbd class="kbd">→</kbd> or
-        <kbd class="kbd">W</kbd><kbd class="kbd">A</kbd><kbd class="kbd">S</kbd
-        ><kbd class="kbd">D</kbd> to move | <kbd class="kbd">Space</kbd> to
-        pause | <kbd class="kbd">R</kbd> to reset
+      <p id="controlsLegend" class="controls-legend">
+        <span id="singlePlayerControls">
+          Controls: <kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd
+          ><kbd class="kbd">←</kbd><kbd class="kbd">→</kbd> or
+          <kbd class="kbd">W</kbd><kbd class="kbd">A</kbd
+          ><kbd class="kbd">S</kbd><kbd class="kbd">D</kbd> to move |
+          <kbd class="kbd">Space</kbd> to pause | <kbd class="kbd">R</kbd> to
+          reset
+        </span>
+        <span id="duelPlayerControls" hidden>
+          Player 1: <kbd class="kbd">W</kbd><kbd class="kbd">A</kbd
+          ><kbd class="kbd">S</kbd><kbd class="kbd">D</kbd> | Player 2:
+          <kbd class="kbd">↑</kbd><kbd class="kbd">←</kbd
+          ><kbd class="kbd">↓</kbd><kbd class="kbd">→</kbd> |
+          <kbd class="kbd">Space</kbd> pause | <kbd class="kbd">R</kbd> reset
+        </span>
       </p>
 
       <ul class="powerup-legend" aria-label="Power-ups">

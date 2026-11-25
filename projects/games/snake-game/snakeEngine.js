@@ -23,6 +23,11 @@
     MAZE: "maze",
   };
 
+  const PLAYER_MODES = {
+    SINGLE: "single",
+    DUEL: "duel",
+  };
+
   /**
    * Special food types. Durations are measured in game ticks so they pause
    * with the game and do not depend on the selected speed.
@@ -89,6 +94,49 @@
     return { gridSize, initialLength };
   }
 
+  function createDuelPlayers(gridSize, initialLength) {
+    if (gridSize < initialLength * 2 + 2) {
+      throw new RangeError(
+        "Two-player mode requires at least two snake lengths plus two free columns"
+      );
+    }
+
+    const player1HeadX = initialLength - 1;
+    const player2HeadX = gridSize - initialLength;
+    const player1HeadY = initialLength - 1;
+    const player2HeadY = gridSize - initialLength;
+    const createSnake = (headX, headY, step) =>
+      Array.from({ length: initialLength }, (_, index) => ({
+        x: headX + step * index,
+        y: headY,
+      }));
+
+    return [
+      {
+        id: "player1",
+        name: "Player 1",
+        color: "#34d399",
+        snake: createSnake(player1HeadX, player1HeadY, -1),
+        direction: { ...DIRECTIONS.RIGHT },
+        nextDirection: { ...DIRECTIONS.RIGHT },
+        score: 0,
+        isAlive: true,
+        deathReason: null,
+      },
+      {
+        id: "player2",
+        name: "Player 2",
+        color: "#38bdf8",
+        snake: createSnake(player2HeadX, player2HeadY, 1),
+        direction: { ...DIRECTIONS.LEFT },
+        nextDirection: { ...DIRECTIONS.LEFT },
+        score: 0,
+        isAlive: true,
+        deathReason: null,
+      },
+    ];
+  }
+
   /**
    * Builds the fixed inner-wall layout used by Maze mode.
    * Four corner brackets plus two short centre bars. The snake's starting
@@ -152,6 +200,7 @@
     initialLength = 3,
     highScore = 0,
     mode: requestedMode = MODES.CLASSIC,
+    playerMode: requestedPlayerMode = PLAYER_MODES.SINGLE,
     powerUps = false,
   } = {}) {
     const dimensions = validateBoardDimensions(gridSize, initialLength);
@@ -167,22 +216,38 @@
     }));
 
     const mode = requestedMode === MODES.MAZE ? MODES.MAZE : MODES.CLASSIC;
+    const playerMode =
+      requestedPlayerMode === PLAYER_MODES.DUEL
+        ? PLAYER_MODES.DUEL
+        : PLAYER_MODES.SINGLE;
+    const players =
+      playerMode === PLAYER_MODES.DUEL
+        ? createDuelPlayers(gridSize, initialLength)
+        : null;
     const obstacles = mode === MODES.MAZE ? createMazeObstacles(gridSize) : [];
+    const startingSnakes = players
+      ? players.flatMap(player => player.snake)
+      : snake;
 
     return {
       gridSize,
       mode,
+      playerMode,
+      players,
       obstacles,
-      snake,
-      direction: { ...DIRECTIONS.RIGHT },
-      nextDirection: { ...DIRECTIONS.RIGHT },
-      food: generateFood(snake, gridSize, Math.random, obstacles),
+      snake: players ? players[0].snake : snake,
+      direction: players ? players[0].direction : { ...DIRECTIONS.RIGHT },
+      nextDirection: players
+        ? players[0].nextDirection
+        : { ...DIRECTIONS.RIGHT },
+      food: generateFood(startingSnakes, gridSize, Math.random, obstacles),
       score: 0,
       highScore,
       isGameOver: false,
       isPaused: false,
       deathReason: null, // "self" | "wall" | "obstacle" | "win"
-      powerUpsEnabled: powerUps === true,
+      winner: null,
+      powerUpsEnabled: powerUps === true && !players,
       powerUp: null, // { x, y, type, ticksLeft } while on the board
       activeEffect: null, // { type, ticksLeft } while a timed effect runs
     };
@@ -377,6 +442,128 @@
     return 1;
   }
 
+  function samePosition(first, second) {
+    return first.x === second.x && first.y === second.y;
+  }
+
+  function stepDuelGame(state, randomFn) {
+    const directions = state.players.map(
+      player => player.nextDirection || player.direction
+    );
+    const nextHeads = state.players.map((player, index) =>
+      getNextHeadPosition(player.snake[0], directions[index])
+    );
+    const eating = nextHeads.map(
+      head => Boolean(state.food) && samePosition(head, state.food)
+    );
+    const deathReasons = state.players.map(() => null);
+
+    state.players.forEach((player, index) => {
+      if (!player.isAlive) {
+        deathReasons[index] = player.deathReason || "eliminated";
+        return;
+      }
+      if (checkWallCollision(nextHeads[index], state.gridSize)) {
+        deathReasons[index] = "wall";
+      } else if (checkObstacleCollision(nextHeads[index], state.obstacles)) {
+        deathReasons[index] = "obstacle";
+      } else if (
+        checkSelfCollision(nextHeads[index], player.snake, eating[index])
+      ) {
+        deathReasons[index] = "self";
+      }
+    });
+
+    if (samePosition(nextHeads[0], nextHeads[1])) {
+      deathReasons[0] = "snake";
+      deathReasons[1] = "snake";
+    }
+
+    state.players.forEach((player, index) => {
+      const opponentIndex = 1 - index;
+      const opponent = state.players[opponentIndex];
+      if (!player.isAlive || deathReasons[index]) return;
+
+      const opponentWillMove =
+        opponent.isAlive && deathReasons[opponentIndex] === null;
+      const opponentBody =
+        opponentWillMove && !eating[opponentIndex]
+          ? opponent.snake.slice(0, -1)
+          : opponent.snake;
+      if (
+        opponentBody.some(segment => samePosition(segment, nextHeads[index]))
+      ) {
+        deathReasons[index] = "snake";
+      }
+    });
+
+    const players = state.players.map((player, index) => {
+      if (!player.isAlive || deathReasons[index]) {
+        return {
+          ...player,
+          isAlive: false,
+          deathReason: deathReasons[index],
+        };
+      }
+
+      const snake = [nextHeads[index], ...player.snake];
+      if (!eating[index]) snake.pop();
+      return {
+        ...player,
+        snake,
+        direction: directions[index],
+        nextDirection: directions[index],
+        score: player.score + (eating[index] ? 10 : 0),
+      };
+    });
+
+    const foodEaten = players.some(
+      (player, index) => player.isAlive && eating[index]
+    );
+    const food = foodEaten
+      ? generateFood(
+          players.flatMap(player => player.snake),
+          state.gridSize,
+          randomFn,
+          state.obstacles
+        )
+      : state.food;
+    const survivingPlayers = players.filter(player => player.isAlive);
+    const isElimination = survivingPlayers.length < players.length;
+    const isGameOver = isElimination || food === null;
+    const winner =
+      isElimination && survivingPlayers.length === 1
+        ? survivingPlayers[0].id
+        : null;
+    const firstPlayer = players[0];
+
+    return {
+      ...state,
+      players,
+      snake: firstPlayer.snake,
+      direction: firstPlayer.direction,
+      nextDirection: firstPlayer.nextDirection,
+      score: firstPlayer.score,
+      highScore: Math.max(
+        state.highScore,
+        ...players.map(player => player.score)
+      ),
+      food,
+      powerUp: null,
+      activeEffect: null,
+      powerUpsEnabled: false,
+      isGameOver,
+      deathReason: isGameOver
+        ? winner
+          ? "duel"
+          : isElimination
+            ? "draw"
+            : "win"
+        : null,
+      winner,
+    };
+  }
+
   /**
    * Advances the game state by one tick.
    *
@@ -387,6 +574,10 @@
   function stepGame(state, randomFn = Math.random) {
     if (state.isGameOver || state.isPaused) {
       return state;
+    }
+
+    if (state.playerMode === PLAYER_MODES.DUEL) {
+      return stepDuelGame(state, randomFn);
     }
 
     const direction = state.nextDirection || state.direction;
@@ -514,6 +705,7 @@
   exports.validateBoardDimensions = validateBoardDimensions;
   exports.DIRECTIONS = DIRECTIONS;
   exports.MODES = MODES;
+  exports.PLAYER_MODES = PLAYER_MODES;
   exports.POWER_UP_TYPES = POWER_UP_TYPES;
   exports.POWER_UP_CONFIG = POWER_UP_CONFIG;
   exports.spawnPowerUp = spawnPowerUp;

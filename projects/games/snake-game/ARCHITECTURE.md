@@ -2,7 +2,7 @@
 
 ## Overview
 
-Snake Game is a modern web-based arcade mini project built entirely with vanilla JavaScript and HTML5 Canvas. The player maneuvers an ever-growing serpent across a grid to eat fruit, accumulating points and increasing in body length while steering clear of walls and avoiding self-collision. It provides fluid gameplay, Web Audio API sound synthesis, dual control options (keyboard and touch D-Pad/swipes), and persistent high scores using `CradleStorage`.
+Snake Game is a modern web-based arcade mini project built entirely with vanilla JavaScript and HTML5 Canvas. Players maneuver one or two ever-growing serpents across a shared grid to eat fruit, accumulate points, and avoid collisions. It provides Web Audio API sound synthesis, keyboard and touch controls, and persistent high scores using `CradleStorage`.
 
 ---
 
@@ -117,6 +117,7 @@ Canvas renders updated snake, food, and grid; HUD updates DOM scores
 ## Key Features
 
 - **Precise Self-Collision Detection**: Prevents the snake from crossing or passing through any segment of its own body, immediately ending the game with clear feedback.
+- **Local Two-Player Duel**: Two snakes move on the same board. Player 1 uses WASD and Player 2 uses the arrow keys; wall, self, and snake-to-snake collisions eliminate the affected player. A sole survivor wins; simultaneous elimination is a draw.
 - **Direction Reversal Guard**: Rejects instant 180-degree reversal inputs that would cause immediate self-collision.
 - **Buffered Input System**: Queues up to two directional inputs per tick, ensuring quick corner turns execute reliably without input drops.
 - **Web Audio API Synthesis**: Generates dynamic retro sound blips for eating fruit, turning, and game-over crashes without loading audio files.
@@ -151,6 +152,7 @@ Canvas renders updated snake, food, and grid; HUD updates DOM scores
 ### `snakeEngine.js`
 
 - `createInitialState(options)`: Instantiates fresh game state with default 3-segment snake centered on grid. `options.mode` is `"classic"` (default, no inner walls) or `"maze"` (adds `state.obstacles`).
+- `createInitialState({ playerMode: "duel" })`: Starts two independently controlled snakes on a shared board. Duel mode disables single-player power-ups.
 - `createMazeObstacles(gridSize)`: Returns the fixed Maze-mode wall layout (four corner brackets and two centre bars), keeping the snake's starting row clear.
 - `isValidDirectionChange(currentDir, nextDir)`: Rejects 180° immediate reversal moves.
 - `checkWallCollision(position, gridSize)`: Evaluates if position is outside bounds `[0, gridSize - 1]`.
@@ -169,6 +171,7 @@ Canvas renders updated snake, food, and grid; HUD updates DOM scores
 - `playSound(type)`: Synthesizes oscillators (`sine`, `sawtooth`, `triangle`) for game audio.
 - `requestDirection(dir)`: Buffers valid directional keypresses.
 - Event listeners for arrow keys, WASD, touch swipes, and button actions.
+- Player-mode selection, per-player keyboard queues, duel HUD, and winner/draw messaging.
 
 ### `style.css`
 
@@ -190,7 +193,7 @@ Canvas renders updated snake, food, and grid; HUD updates DOM scores
 
 ## Power-Ups
 
-Power-ups are enabled with `createInitialState({ powerUps: true })` (the game UI always enables them; the engine default is off so the core rules stay unchanged for other callers).
+Power-ups are enabled with `createInitialState({ powerUps: true })` in single-player mode (the game UI enables them; the engine default is off so the core rules stay unchanged for other callers). Duel mode disables power-ups so both players compete on equal terms.
 
 - After normal food is eaten there is a 25% chance a power-up appears, if none is already on the board.
 - An uncollected power-up disappears after 60 ticks and blinks during its last 15.
@@ -219,7 +222,7 @@ Power-ups are enabled with `createInitialState({ powerUps: true })` (the game UI
 ## Future Improvements
 
 - Add particle explosion effects on game over.
-- Introduce local two-player split-screen or duel mode.
+- Add per-player touch controls for duel mode on mobile devices.
 
 ---
 
