@@ -4,9 +4,32 @@ on:
   push:
     branches:
       - main
+    paths: &lighthouse_paths
+      - "index.html"
+      - "style.css"
+      - "script.js"
+      - "sw.js"
+      - "manifest.json"
+      - "manifest.webmanifest"
+      - "assets/**"
+      - "src/**"
+      - "client/**"
+      - "data/projects.json"
+      - "projects/productivity/advanced-qr-code-generator/**"
+      - "projects/dev-tools/json-tree-viewer/**"
+      - "projects/games/2048-game/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".nvmrc"
+      - ".lighthouserc.json"
+      - ".github/workflows/lighthouse.yml"
+
   pull_request:
     branches:
       - main
+    paths: *lighthouse_paths
+
+  workflow_dispatch:
 
 permissions:
   contents: read
