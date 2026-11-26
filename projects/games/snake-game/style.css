@@ -86,6 +86,7 @@ h1 {
 }
 
 .score-card {
+  position: relative;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: 12px;
@@ -93,6 +94,17 @@ h1 {
   text-align: center;
   backdrop-filter: blur(8px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.scores-container--duel .score-card:first-child::after {
+  position: absolute;
+  top: 20%;
+  right: -6px;
+  width: 1px;
+  height: 60%;
+  background: var(--text-muted);
+  content: "";
+  opacity: 0.55;
 }
 
 .score-card__label {
